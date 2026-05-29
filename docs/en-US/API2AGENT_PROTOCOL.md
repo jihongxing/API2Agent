@@ -331,11 +331,17 @@ Ledger is measurement, not billing.
 
 Replay turns recorded execution history into a debug and regression tool.
 
-Draft command:
+Current command:
 
 ```text
 api2agent replay <usage_event_id>
 ```
+
+Current implementation status:
+
+- replay preflight is implemented
+- exact replay is not implemented yet
+- the command returns `replayable: false` until request metadata capture exists
 
 Minimum replay data:
 

@@ -120,6 +120,29 @@ def test_usage_store_records_routing_decision(tmp_path: Path) -> None:
     assert stored.failover_policy.max_attempts == 2
 
 
+def test_usage_store_gets_usage_event_by_id(tmp_path: Path) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    store.record(
+        UsageEvent(
+            id="event_123",
+            project_id="local",
+            capability_id="public_ip_lookup",
+            provider_id="ipify",
+            tool_id="get",
+            method="GET",
+            path="/",
+            status_code=200,
+            success=True,
+        )
+    )
+
+    stored = store.get_usage_event("event_123")
+
+    assert stored is not None
+    assert stored.id == "event_123"
+    assert stored.success is True
+
+
 def test_usage_store_returns_local_ledger_rows(tmp_path: Path) -> None:
     store = UsageStore(tmp_path / "usage.sqlite")
     store.record(

@@ -274,6 +274,48 @@ def test_decision_command_prints_decision_and_usage_events(tmp_path) -> None:
     assert payload["usage_events"][0]["provider_id"] == "ipify"
 
 
+def test_replay_command_returns_preflight_audit(tmp_path) -> None:
+    db = tmp_path / "usage.sqlite"
+    store = UsageStore(db)
+    store.record_routing_decision(
+        RoutingDecision(
+            id="decision_123",
+            project_id="local",
+            capability_id="public_ip_lookup",
+            strategy="first",
+            selected_provider_id="ipify",
+            ranked_provider_ids=["ipify"],
+        )
+    )
+    store.record(
+        UsageEvent(
+            id="event_123",
+            routing_decision_id="decision_123",
+            execution_mode="direct",
+            project_id="local",
+            capability_id="public_ip_lookup",
+            provider_id="ipify",
+            tool_id="get",
+            method="GET",
+            path="/",
+            status_code=200,
+            success=True,
+            latency_ms=100,
+            estimated_cost=0.01,
+        )
+    )
+
+    result = runner.invoke(app, ["replay", "event_123", "--db", str(db), "--json"])
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["contract_version"] == "replay.v0.1"
+    assert payload["replayable"] is False
+    assert payload["usage_event"]["id"] == "event_123"
+    assert payload["routing_decision"]["id"] == "decision_123"
+    assert "request_params" in payload["missing_for_exact_replay"]
+
+
 def test_decision_command_preserves_stable_contract_fields(tmp_path) -> None:
     fixture = json.loads(Path("tests/fixtures/decision_audit/failover_audit.json").read_text(encoding="utf-8"))
     db = tmp_path / "usage.sqlite"

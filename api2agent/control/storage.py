@@ -127,6 +127,19 @@ class UsageStore:
             ]
         return [UsageEvent.model_validate({**row, "success": bool(row["success"])}) for row in rows]
 
+    def get_usage_event(self, event_id: str) -> UsageEvent | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM usage_events WHERE id = ?",
+                (event_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        data = dict(row)
+        return UsageEvent.model_validate({**data, "success": bool(data["success"])})
+
     def count(self, project_id: str | None = None) -> int:
         query = "SELECT COUNT(*) FROM usage_events"
         params: tuple[Any, ...] = ()

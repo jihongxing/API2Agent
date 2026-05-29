@@ -331,11 +331,17 @@ Ledger 是 measurement，不是 billing。
 
 Replay 把已记录的 execution history 变成 debug 和 regression 工具。
 
-草案命令：
+当前命令：
 
 ```text
 api2agent replay <usage_event_id>
 ```
+
+当前实现状态：
+
+- replay preflight 已实现
+- exact replay 尚未实现
+- 在 request metadata capture 存在前，命令会返回 `replayable: false`
 
 最小 replay 数据：
 

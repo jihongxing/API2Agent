@@ -167,7 +167,24 @@ Expected ledger shape:
 - one successful `wttr_in` row
 - both in `direct` execution mode
 
-## 6. Generate A Local Capability Package
+## 6. Replay Preflight
+
+`replay` currently works as a preflight and audit view. It finds the usage event and routing decision, then reports whether exact replay is possible.
+
+```bash
+python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
+```
+
+Current expected result:
+
+- `replayable`: `false`
+- usage event is returned
+- routing decision is returned
+- missing exact replay fields are listed
+
+Exact replay will require request params and credential references to be captured safely.
+
+## 7. Generate A Local Capability Package
 
 ```bash
 api2agent generate examples/openapi/basic.yaml --force
@@ -185,7 +202,7 @@ python -m api2agent.cli test api2agent-output
 
 This proves the compiler path still works alongside the SDK execution loop.
 
-## 7. What This Proves
+## 8. What This Proves
 
 API2Agent v0.1-alpha proves:
 
@@ -193,5 +210,6 @@ API2Agent v0.1-alpha proves:
 - providers can be compared under one capability
 - provider failure can be recorded and recovered with failover
 - every attempt can be audited through the ledger
+- failed attempts can be inspected through replay preflight
 
 Marketplace, hosted SaaS, and payment are intentionally out of scope.

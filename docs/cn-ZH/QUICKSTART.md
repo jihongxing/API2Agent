@@ -167,7 +167,24 @@ python -m api2agent.cli ledger --db .dogfood/quickstart-failover.sqlite --capabi
 - 一条成功的 `wttr_in` row
 - 两条都是 `direct` execution mode
 
-## 6. 生成本地 Capability Package
+## 6. Replay Preflight
+
+`replay` 当前是 preflight 和 audit view。它会找到 usage event 和 routing decision，然后报告是否可以 exact replay。
+
+```bash
+python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
+```
+
+当前期望结果：
+
+- `replayable`: `false`
+- 返回 usage event
+- 返回 routing decision
+- 列出 exact replay 缺失字段
+
+Exact replay 需要后续安全捕获 request params 和 credential references。
+
+## 7. 生成本地 Capability Package
 
 ```bash
 api2agent generate examples/openapi/basic.yaml --force
@@ -185,7 +202,7 @@ python -m api2agent.cli test api2agent-output
 
 这证明 compiler path 和 SDK execution loop 可以同时工作。
 
-## 7. 证明了什么
+## 8. 证明了什么
 
 API2Agent v0.1-alpha 证明：
 
@@ -193,5 +210,6 @@ API2Agent v0.1-alpha 证明：
 - 多个 providers 可以在同一个 capability 下比较
 - provider 失败可以被记录，并通过 failover 恢复
 - 每个 attempt 都可以通过 ledger 审计
+- 失败 attempt 可以通过 replay preflight 检查
 
 Marketplace、hosted SaaS 和 payment 都刻意不在当前范围内。

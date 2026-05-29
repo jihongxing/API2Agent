@@ -21,6 +21,7 @@ from api2agent.parsers.openapi import parse_openapi_file
 
 app = typer.Typer(help="Turn APIs into verified Agent capability packages.")
 DECISION_USAGE_CONTRACT_VERSION = "decision_usage.v0.1"
+REPLAY_CONTRACT_VERSION = "replay.v0.1"
 
 
 @app.command()
@@ -314,6 +315,57 @@ def inspect_decision(
             f"  - {event.provider_id}/{event.tool_id}: success={event.success} "
             f"status={status} latency={event.latency_ms:.2f}ms cost={event.estimated_cost:.4f}"
         )
+
+
+@app.command("replay")
+def replay_usage_event(
+    usage_event_id: str = typer.Argument(..., help="Usage event id to prepare for replay."),
+    db: Path = typer.Option(Path("api2agent-usage.sqlite"), "--db", help="SQLite database for usage events."),
+    json_output: bool = typer.Option(False, "--json", help="Print raw replay preflight JSON."),
+) -> None:
+    """Inspect a usage event and report whether it can be deterministically replayed."""
+    store = UsageStore(db)
+    event = store.get_usage_event(usage_event_id)
+    if event is None:
+        raise typer.BadParameter(f"Usage event not found: {usage_event_id}")
+
+    decision = store.get_routing_decision(event.routing_decision_id) if event.routing_decision_id else None
+    warnings = [
+        "Exact replay is not available yet because request parameters and credential references are not stored in usage_events.",
+        "Use this command as a replay preflight and audit view until request metadata capture is implemented.",
+    ]
+    payload = {
+        "contract_version": REPLAY_CONTRACT_VERSION,
+        "usage_event": event.model_dump(mode="json"),
+        "routing_decision": decision.model_dump(mode="json") if decision else None,
+        "replayable": False,
+        "warnings": warnings,
+        "missing_for_exact_replay": [
+            "request_params",
+            "request_body",
+            "credential_reference",
+            "provider_runtime_reference",
+        ],
+    }
+    if json_output:
+        typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+        return
+
+    typer.echo(f"Usage event: {event.id}")
+    typer.echo(f"Replayable: {payload['replayable']}")
+    typer.echo(f"Project: {event.project_id}")
+    typer.echo(f"Capability: {event.capability_id}")
+    typer.echo(f"Provider: {event.provider_id}")
+    typer.echo(f"Tool: {event.tool_id}")
+    typer.echo(f"Success: {event.success}")
+    if decision:
+        typer.echo(f"Routing decision: {decision.id}")
+        typer.echo(f"Strategy: {decision.strategy}")
+        if decision.ranked_provider_ids:
+            typer.echo("Ranked providers: " + ", ".join(decision.ranked_provider_ids))
+    typer.echo("Warnings:")
+    for warning in warnings:
+        typer.echo(f"  - {warning}")
 
 
 @app.command("registry")
