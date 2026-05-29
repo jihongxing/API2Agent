@@ -1,0 +1,57 @@
+openapi: 3.0.3
+info:
+  title: Multi Tools API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+paths:
+  /users:
+    get:
+      operationId: listUsers
+      tags:
+        - users
+      summary: List users.
+      responses:
+        "200":
+          description: OK
+    post:
+      operationId: createUser
+      tags:
+        - users
+      summary: Create a user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "201":
+          description: Created
+  /repos:
+    get:
+      operationId: listRepos
+      tags:
+        - repos
+      summary: List repos.
+      responses:
+        "200":
+          description: OK
+  /orgs/{org}/repos:
+    get:
+      operationId: listOrgRepos
+      tags:
+        - repos
+      summary: List org repos.
+      parameters:
+        - name: org
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK

@@ -1,0 +1,63 @@
+openapi: 3.0.3
+info:
+  title: Ref API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+components:
+  parameters:
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+    NewUser:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+  requestBodies:
+    NewUserBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NewUser"
+  responses:
+    UserResponse:
+      description: A user.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/User"
+paths:
+  /users/{user_id}:
+    get:
+      operationId: getUserByRef
+      summary: Fetch a user by referenced parameter.
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          $ref: "#/components/responses/UserResponse"
+  /users:
+    post:
+      operationId: createUserByRef
+      summary: Create a user by referenced request body.
+      requestBody:
+        $ref: "#/components/requestBodies/NewUserBody"
+      responses:
+        "201":
+          $ref: "#/components/responses/UserResponse"
+

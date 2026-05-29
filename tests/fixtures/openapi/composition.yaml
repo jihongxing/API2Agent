@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  title: Composition API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+components:
+  schemas:
+    BaseUser:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+    UserEmail:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+    User:
+      allOf:
+        - $ref: "#/components/schemas/BaseUser"
+        - $ref: "#/components/schemas/UserEmail"
+    NewUser:
+      allOf:
+        - $ref: "#/components/schemas/UserEmail"
+        - type: object
+          properties:
+            name:
+              type: string
+    StringId:
+      type: string
+    IntegerId:
+      type: integer
+paths:
+  /users:
+    post:
+      operationId: createComposedUser
+      summary: Create a composed user.
+      parameters:
+        - name: lookup_id
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/StringId"
+              - $ref: "#/components/schemas/IntegerId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewUser"
+      responses:
+        "201":
+          description: Created user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+

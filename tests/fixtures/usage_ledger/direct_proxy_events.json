@@ -1,0 +1,64 @@
+{
+  "usage_events": [
+    {
+      "id": "usage_ledger_direct",
+      "routing_decision_id": "decision_direct",
+      "execution_mode": "direct",
+      "project_id": "local",
+      "capability_id": "public_ip_lookup",
+      "provider_id": "ipify",
+      "tool_id": "get",
+      "method": "GET",
+      "path": "/",
+      "status_code": 200,
+      "success": true,
+      "latency_ms": 100.0,
+      "estimated_cost": 0.001,
+      "error_type": null,
+      "created_at": "2026-05-30T00:00:01Z"
+    },
+    {
+      "id": "usage_ledger_proxy",
+      "routing_decision_id": "decision_proxy",
+      "execution_mode": "proxy",
+      "project_id": "local",
+      "capability_id": "public_ip_lookup",
+      "provider_id": "ipify",
+      "tool_id": "get",
+      "method": "GET",
+      "path": "/",
+      "status_code": 200,
+      "success": true,
+      "latency_ms": 300.0,
+      "estimated_cost": 0.002,
+      "error_type": null,
+      "created_at": "2026-05-30T00:00:02Z"
+    }
+  ],
+  "expected_group_by_mode_rows": [
+    {
+      "project_id": "local",
+      "capability_id": "public_ip_lookup",
+      "provider_id": "ipify",
+      "execution_mode": "direct",
+      "total_calls": 1,
+      "successful_calls": 1,
+      "failed_calls": 0,
+      "success_rate": 1.0,
+      "average_latency_ms": 100.0,
+      "estimated_cost": 0.001
+    },
+    {
+      "project_id": "local",
+      "capability_id": "public_ip_lookup",
+      "provider_id": "ipify",
+      "execution_mode": "proxy",
+      "total_calls": 1,
+      "successful_calls": 1,
+      "failed_calls": 0,
+      "success_rate": 1.0,
+      "average_latency_ms": 300.0,
+      "estimated_cost": 0.002
+    }
+  ]
+}

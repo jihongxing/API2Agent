@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: Body Query Header API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+paths:
+  /items/{item_id}:
+    post:
+      operationId: createItem
+      summary: Create or update an item.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: verbose
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: X-Trace-Id
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "201":
+          description: Created
+

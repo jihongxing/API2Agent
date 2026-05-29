@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: JSONPlaceholder Lite
+  version: 1.0.0
+servers:
+  - url: https://jsonplaceholder.typicode.com
+paths:
+  /posts/{post_id}:
+    get:
+      operationId: getPost
+      summary: Fetch a post by ID.
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The post ID.
+      responses:
+        "200":
+          description: A post.
+          content:
+            application/json:
+              schema:
+                type: object
+

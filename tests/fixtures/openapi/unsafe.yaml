@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: Unsafe API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+paths:
+  /orders:
+    post:
+      operationId: createOrder
+      summary: Create an order.
+      responses:
+        "201":
+          description: Created
+  /orders/{order_id}:
+    delete:
+      operationId: deleteOrder
+      summary: Delete an order.
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+

@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: Server Variables API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/{version}
+    variables:
+      version:
+        default: v1
+paths:
+  /public:
+    get:
+      operationId: getPublic
+      summary: Uses the global server.
+      responses:
+        "200":
+          description: OK
+  /admin:
+    servers:
+      - url: https://admin.example.com/{version}
+        variables:
+          version:
+            default: v2
+    get:
+      operationId: getAdmin
+      summary: Uses the path-level server.
+      responses:
+        "200":
+          description: OK
+  /regional:
+    get:
+      operationId: getRegional
+      summary: Uses the operation-level server.
+      servers:
+        - url: https://{region}.example.com
+          variables:
+            region:
+              default: us
+      responses:
+        "200":
+          description: OK
+
