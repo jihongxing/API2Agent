@@ -385,6 +385,31 @@ def replay_usage_event(
         typer.echo(json.dumps(replay_result, indent=2, ensure_ascii=False))
 
 
+@app.command("golden")
+def mark_golden_event(
+    usage_event_id: str = typer.Argument(..., help="Usage event id to mark as a golden trace."),
+    db: Path = typer.Option(Path("api2agent-usage.sqlite"), "--db", help="SQLite database for usage events."),
+    unset: bool = typer.Option(False, "--unset", help="Remove the golden marker from this usage event."),
+    json_output: bool = typer.Option(False, "--json", help="Print raw golden trace JSON."),
+) -> None:
+    """Mark or unmark a usage event as a golden trace."""
+    store = UsageStore(db)
+    event = store.mark_golden(usage_event_id, is_golden=not unset)
+    if event is None:
+        raise typer.BadParameter(f"Usage event not found: {usage_event_id}")
+
+    payload = {
+        "usage_event": event.model_dump(mode="json"),
+        "is_golden": event.is_golden,
+    }
+    if json_output:
+        typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+        return
+
+    typer.echo(f"Usage event: {event.id}")
+    typer.echo(f"Golden: {event.is_golden}")
+
+
 @app.command("registry")
 def inspect_registry(
     registry: Path = typer.Argument(..., help="JSON file containing provider candidates."),

@@ -299,6 +299,7 @@ Usage event 记录 execution attempt。
 - `request_metadata`
 - `credential_reference`
 - `provider_runtime_reference`
+- `is_golden`
 - `created_at`
 
 稳定 execution modes：
@@ -380,7 +381,7 @@ Golden trace 是已知正确的 execution，可作为 benchmark 或 regression r
 }
 ```
 
-Golden trace support 在早期 alpha 代码中可以是可选项，但 protocol 不应该阻塞它。
+Golden trace marker 已在 usage events 上实现。
 
 ## 13. Error Taxonomy
 

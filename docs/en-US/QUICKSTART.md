@@ -224,7 +224,17 @@ Record the replay execution in the ledger without affecting routing metrics:
 python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --record --json
 ```
 
-## 8. Generate A Local Capability Package
+## 8. Golden Trace Marker
+
+Mark a known-good usage event as a golden trace:
+
+```bash
+python -m api2agent.cli golden <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
+```
+
+Golden traces are future baselines for replay, benchmarks, scoring, and regression tests.
+
+## 9. Generate A Local Capability Package
 
 ```bash
 api2agent generate examples/openapi/basic.yaml --force
@@ -242,7 +252,7 @@ python -m api2agent.cli test api2agent-output
 
 This proves the compiler path still works alongside the SDK execution loop.
 
-## 9. What This Proves
+## 10. What This Proves
 
 API2Agent v0.1-alpha proves:
 
@@ -252,5 +262,6 @@ API2Agent v0.1-alpha proves:
 - shadow providers can collect benchmark data without changing the main result
 - every attempt can be audited through the ledger
 - failed attempts can be inspected through replay preflight
+- known-good attempts can be marked as golden traces
 
 Marketplace, hosted SaaS, and payment are intentionally out of scope.

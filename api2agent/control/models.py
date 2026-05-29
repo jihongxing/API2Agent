@@ -23,6 +23,7 @@ class UsageEvent(BaseModel):
     request_metadata: dict[str, Any] | None = None
     credential_reference: str | None = None
     provider_runtime_reference: str | None = None
+    is_golden: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

@@ -79,12 +79,13 @@ Implemented:
 - exact replay execution for supported SDK and no-credential HTTP events
 - optional replay usage recording with `execution_mode=replay`
 - explicit routing metrics policy for `shadow` and `replay`
+- golden trace marker for usage events
 
 Not implemented yet:
 
 - local generated package replay execution
 - generated package shadow execution mode
-- golden trace marker
+- golden trace filtering command
 - hard enforcement of capability naming rule
 - endpoint-level auth
 - base URL override
@@ -425,6 +426,8 @@ Current hardening result:
 - see `docs/en-US/REPLAY_DOGFOOD_REPORT.md`.
 - replay recording verified as a ledger row excluded from routing metrics.
 - shadow metrics policy verified: included by default, removable with explicit option.
+- golden trace marker verified against a real `wttr_in` shadow event.
+- see `docs/en-US/GOLDEN_TRACE_DOGFOOD_REPORT.md`.
 
 ## 9. Phase 6: Hosted Control Plane
 

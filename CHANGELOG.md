@@ -34,6 +34,7 @@ All notable API2Agent changes will be documented in this file.
 - Exact replay execution for supported SDK and no-credential HTTP events.
 - Optional replay usage recording with isolated `replay` execution mode.
 - Explicit metrics policy: include `shadow` by default, exclude `replay` by default.
+- Golden trace marker for usage events.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -50,6 +51,7 @@ All notable API2Agent changes will be documented in this file.
 - Exact replay dogfooded against a real `wttr_in` shadow event.
 - Replay recording dogfooded and verified as excluded from routing metrics.
 - Shadow metrics policy dogfooded with include/exclude comparison.
+- Golden trace marker dogfooded against a real `wttr_in` shadow event.
 - Full test suite: `87 passed`.
 
 ### Planned Next

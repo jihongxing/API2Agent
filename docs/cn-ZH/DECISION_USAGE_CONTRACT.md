@@ -57,6 +57,7 @@
 - `request_metadata`
 - `credential_reference`
 - `provider_runtime_reference`
+- `is_golden`
 - `created_at`
 
 稳定 `execution_mode` values：

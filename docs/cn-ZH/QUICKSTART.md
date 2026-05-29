@@ -224,7 +224,17 @@ python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failove
 python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --record --json
 ```
 
-## 8. 生成本地 Capability Package
+## 8. Golden Trace Marker
+
+把 known-good usage event 标记为 golden trace：
+
+```bash
+python -m api2agent.cli golden <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
+```
+
+Golden traces 是未来 replay、benchmark、scoring 和 regression tests 的基准。
+
+## 9. 生成本地 Capability Package
 
 ```bash
 api2agent generate examples/openapi/basic.yaml --force
@@ -242,7 +252,7 @@ python -m api2agent.cli test api2agent-output
 
 这证明 compiler path 和 SDK execution loop 可以同时工作。
 
-## 9. 证明了什么
+## 10. 证明了什么
 
 API2Agent v0.1-alpha 证明：
 
@@ -252,5 +262,6 @@ API2Agent v0.1-alpha 证明：
 - shadow providers 可以在不改变主结果的情况下采集 benchmark data
 - 每个 attempt 都可以通过 ledger 审计
 - 失败 attempt 可以通过 replay preflight 检查
+- known-good attempts 可以被标记为 golden traces
 
 Marketplace、hosted SaaS 和 payment 都刻意不在当前范围内。

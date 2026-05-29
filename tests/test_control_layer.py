@@ -149,6 +149,31 @@ def test_usage_store_gets_usage_event_by_id(tmp_path: Path) -> None:
     assert stored.provider_runtime_reference == "test:runtime"
 
 
+def test_usage_store_marks_golden_event(tmp_path: Path) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    store.record(
+        UsageEvent(
+            id="event_123",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="open_meteo",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+        )
+    )
+
+    marked = store.mark_golden("event_123")
+    unmarked = store.mark_golden("event_123", is_golden=False)
+
+    assert marked is not None
+    assert marked.is_golden is True
+    assert unmarked is not None
+    assert unmarked.is_golden is False
+
+
 def test_usage_store_returns_local_ledger_rows(tmp_path: Path) -> None:
     store = UsageStore(tmp_path / "usage.sqlite")
     store.record(

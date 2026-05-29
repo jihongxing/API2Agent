@@ -79,12 +79,13 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - supported SDK 和 no-credential HTTP events 的 exact replay execution
 - optional replay usage recording，使用 `execution_mode=replay`
 - `shadow` 和 `replay` 的 routing metrics policy 已显式化
+- usage events 的 golden trace marker
 
 尚未实现：
 
 - local generated package replay execution
 - generated package shadow execution mode
-- golden trace marker
+- golden trace filtering command
 - hard enforcement of capability naming rule
 - endpoint-level auth
 - base URL override
@@ -425,6 +426,8 @@ capability registry JSON
 - 详见 `docs/cn-ZH/REPLAY_DOGFOOD_REPORT.md`。
 - replay recording 已验证为 ledger row，并且不进入 routing metrics。
 - shadow metrics policy 已验证：默认包含，可用显式选项排除。
+- golden trace marker 已用真实 `wttr_in` shadow event 验证。
+- 详见 `docs/cn-ZH/GOLDEN_TRACE_DOGFOOD_REPORT.md`。
 
 ## 9. Phase 6：Hosted Control Plane
 

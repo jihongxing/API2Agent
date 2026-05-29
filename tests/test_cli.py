@@ -410,6 +410,32 @@ def test_replay_command_can_record_replay_usage_event(tmp_path, monkeypatch) -> 
     assert replay_event.request_metadata["replay_source_event_id"] == "event_replay"
 
 
+def test_golden_command_marks_usage_event(tmp_path) -> None:
+    db = tmp_path / "usage.sqlite"
+    store = UsageStore(db)
+    store.record(
+        UsageEvent(
+            id="event_golden",
+            execution_mode="direct",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="open_meteo",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+        )
+    )
+
+    result = runner.invoke(app, ["golden", "event_golden", "--db", str(db), "--json"])
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["is_golden"] is True
+    assert payload["usage_event"]["is_golden"] is True
+
+
 def test_decision_command_preserves_stable_contract_fields(tmp_path) -> None:
     fixture = json.loads(Path("tests/fixtures/decision_audit/failover_audit.json").read_text(encoding="utf-8"))
     db = tmp_path / "usage.sqlite"
@@ -458,6 +484,7 @@ def test_decision_command_preserves_stable_contract_fields(tmp_path) -> None:
         "request_metadata",
         "credential_reference",
         "provider_runtime_reference",
+        "is_golden",
         "created_at",
     }
 

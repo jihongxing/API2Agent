@@ -299,6 +299,7 @@ Stable fields:
 - `request_metadata`
 - `credential_reference`
 - `provider_runtime_reference`
+- `is_golden`
 - `created_at`
 
 Stable execution modes:
@@ -380,7 +381,7 @@ Draft field:
 }
 ```
 
-Golden trace support is optional in early alpha code, but the protocol should allow it.
+Golden trace marker support is implemented on usage events.
 
 ## 13. Error Taxonomy
 

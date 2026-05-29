@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS usage_events (
   request_metadata TEXT,
   credential_reference TEXT,
   provider_runtime_reference TEXT,
+  is_golden INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
 """
@@ -61,6 +62,7 @@ class UsageStore:
             self._ensure_usage_column(connection, "request_metadata", "TEXT")
             self._ensure_usage_column(connection, "credential_reference", "TEXT")
             self._ensure_usage_column(connection, "provider_runtime_reference", "TEXT")
+            self._ensure_usage_column(connection, "is_golden", "INTEGER NOT NULL DEFAULT 0")
             self._ensure_routing_decision_column(connection, "failover_policy", "TEXT")
 
     def record(self, event: UsageEvent) -> UsageEvent:
@@ -72,23 +74,32 @@ class UsageStore:
                   id, routing_decision_id, execution_mode, project_id, capability_id, provider_id, tool_id,
                   method, path, status_code, success, latency_ms,
                   estimated_cost, error_type, request_metadata, credential_reference,
-                  provider_runtime_reference, created_at
+                  provider_runtime_reference, is_golden, created_at
                 ) VALUES (
                   :id, :routing_decision_id, :execution_mode, :project_id, :capability_id, :provider_id, :tool_id,
                   :method, :path, :status_code, :success, :latency_ms,
                   :estimated_cost, :error_type, :request_metadata, :credential_reference,
-                  :provider_runtime_reference, :created_at
+                  :provider_runtime_reference, :is_golden, :created_at
                 )
                 """,
                 {
                     **data,
                     "success": 1 if event.success else 0,
+                    "is_golden": 1 if event.is_golden else 0,
                     "request_metadata": json.dumps(data["request_metadata"], ensure_ascii=False)
                     if data.get("request_metadata") is not None
                     else None,
                 },
             )
         return event
+
+    def mark_golden(self, event_id: str, is_golden: bool = True) -> UsageEvent | None:
+        with self._connect() as connection:
+            connection.execute(
+                "UPDATE usage_events SET is_golden = ? WHERE id = ?",
+                (1 if is_golden else 0, event_id),
+            )
+        return self.get_usage_event(event_id)
 
     def record_routing_decision(self, decision: RoutingDecision) -> RoutingDecision:
         data = decision.model_dump(mode="json")
@@ -321,7 +332,13 @@ class UsageStore:
     def _usage_event_from_row(self, row: dict[str, Any]) -> UsageEvent:
         if row.get("request_metadata"):
             row["request_metadata"] = json.loads(row["request_metadata"])
-        return UsageEvent.model_validate({**row, "success": bool(row["success"])})
+        return UsageEvent.model_validate(
+            {
+                **row,
+                "success": bool(row["success"]),
+                "is_golden": bool(row.get("is_golden")),
+            }
+        )
 
     def _ensure_usage_column(self, connection: sqlite3.Connection, name: str, definition: str) -> None:
         columns = {row["name"] for row in connection.execute("PRAGMA table_info(usage_events)").fetchall()}

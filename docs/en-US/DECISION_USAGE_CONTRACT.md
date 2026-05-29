@@ -57,6 +57,7 @@ The following `usage_events[]` fields are stable:
 - `request_metadata`
 - `credential_reference`
 - `provider_runtime_reference`
+- `is_golden`
 - `created_at`
 
 Stable `execution_mode` values:
