@@ -13,6 +13,9 @@ class CredentialResolutionError(ValueError):
     pass
 
 
+CREDENTIAL_PRECEDENCE = ("inline", "config", "request")
+
+
 class LocalCredentialResolver:
     def __init__(self, config_credentials: Iterable[CredentialDefinition] | None = None) -> None:
         self.config_credentials = list(config_credentials or [])
@@ -53,10 +56,23 @@ class LocalCredentialResolver:
         )
 
     def _find_config_credential(self, request: CredentialResolutionRequest) -> CredentialDefinition | None:
-        for credential in self.config_credentials:
-            if credential.provider_id == request.provider_id:
+        matches = [
+            credential
+            for credential in self.config_credentials
+            if credential.provider_id == request.provider_id
+        ]
+        if not matches:
+            return None
+
+        for credential in matches:
+            if credential.owner_id == request.project_id:
                 return credential
-        return None
+
+        for credential in matches:
+            if credential.owner_type == "project" and credential.owner_id == "local":
+                return credential
+
+        return matches[0]
 
     def _secret_for(self, credential: CredentialDefinition) -> str | None:
         if credential.source == "none" or credential.auth_type == "none":

@@ -219,6 +219,22 @@ Proxy credential intent 是一个脱敏的 control-plane object：
 
 它告诉 proxy 应该解析哪个 credential，但不会包含 raw provider secret。
 
+### Credential Resolution Policy
+
+Resolver precedence 是确定性的：
+
+```text
+inline override -> config credential -> request credential/env intent -> none
+```
+
+Config credential owner matching 也是确定性的：
+
+1. 精确匹配 `owner_id == project_id`
+2. project credential 且 `owner_id == local`
+3. config order 中第一个 matching credential
+
+这让本地 BYOK 在 hosted identity 和 policy enforcement 出现前保持可预测。
+
 ### Phase C3：Hosted Credential Store
 
 - encrypted credential storage
@@ -240,11 +256,11 @@ Proxy credential intent 是一个脱敏的 control-plane object：
 下一项工程任务应该是：
 
 ```text
-Credential precedence and ownership policy hardening
+Credential scope matching for capability and tool access
 ```
 
 验收标准：
 
-- inline、config、env credentials 之间的 precedence 会形成明确 policy
-- credential ownership fields 会被一致校验，并进入 redacted metadata
-- 多个 credentials 命中同一个 provider 时，conflict behavior 是确定性的
+- credential `scope` 可以限制 capability 或 tool usage
+- resolver 会用 redacted errors 拒绝 out-of-scope credentials
+- scope checks 通过时，usage events 继续保留 credential attribution

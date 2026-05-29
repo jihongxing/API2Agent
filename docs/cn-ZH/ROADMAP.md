@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Credential precedence and ownership policy hardening
+Credential scope matching for capability and tool access
 ```
 
 当前实现结果：
@@ -495,9 +495,12 @@ Credential precedence and ownership policy hardening
 - local proxy 会解析 credential intent，在转发前注入 provider auth，并记录脱敏后的 usage attribution。
 - local proxy 可以加载 project-level credential config files。
 - payload 不携带 credential intent 时，proxy 也可以使用 config credentials。
+- credential resolver precedence 已明确：inline、config、request/env intent、none。
+- config credential owner matching 会优先选择 exact project owner，然后是 local project owner，最后才按 config order。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 - proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
+- credential policy dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_POLICY_DOGFOOD_REPORT.md`。
 
 实施 checklist：
 
@@ -530,6 +533,11 @@ Credential precedence and ownership policy hardening
    - 新增 `api2agent proxy --credential-config`
    - 允许 proxy resolver 在 payload 没有 credential intent 时使用 config credentials
    - config credential secrets 不进入 usage metadata
+8. Credential precedence and ownership policy hardening - complete
+   - 暴露 deterministic credential precedence
+   - 优先选择当前 `project_id` 拥有的 config credentials
+   - fallback 到 local owner，再 fallback 到 config order
+   - redacted resolver output 保留 owner metadata
 
 验收测试集：
 
@@ -545,6 +553,8 @@ Credential precedence and ownership policy hardening
 - proxy 能把 resolved credentials 注入 forwarded requests
 - proxy 会把 missing credentials 记录到 ledger，且不会继续 forward
 - proxy 可以加载 config credentials 并完成注入，且 metadata 不包含 raw secret
+- resolver 会按 inline、config、request credentials 的顺序选择
+- resolver 会先选择 project-owned config credentials，再选择 local fallback
 
 ## 9. Phase 6：Hosted Control Plane
 

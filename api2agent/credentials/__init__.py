@@ -5,9 +5,14 @@ from api2agent.credentials.models import (
     CredentialResolutionRequest,
     ResolvedCredential,
 )
-from api2agent.credentials.resolver import CredentialResolutionError, LocalCredentialResolver
+from api2agent.credentials.resolver import (
+    CREDENTIAL_PRECEDENCE,
+    CredentialResolutionError,
+    LocalCredentialResolver,
+)
 
 __all__ = [
+    "CREDENTIAL_PRECEDENCE",
     "CredentialDefinition",
     "CredentialInjectionPatch",
     "CredentialResolutionError",

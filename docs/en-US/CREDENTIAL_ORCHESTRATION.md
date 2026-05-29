@@ -219,6 +219,22 @@ Proxy credential intent is a redacted control-plane object:
 
 It tells the proxy which credential to resolve, but it does not contain the raw provider secret.
 
+### Credential Resolution Policy
+
+Resolver precedence is deterministic:
+
+```text
+inline override -> config credential -> request credential/env intent -> none
+```
+
+Config credential owner matching is also deterministic:
+
+1. exact `owner_id == project_id`
+2. project credential with `owner_id == local`
+3. first matching credential in config order
+
+This keeps local BYOK predictable before hosted identity and policy enforcement exist.
+
 ### Phase C3: Hosted Credential Store
 
 - encrypted credential storage
@@ -240,11 +256,11 @@ It tells the proxy which credential to resolve, but it does not contain the raw 
 The next engineering task should be:
 
 ```text
-Credential precedence and ownership policy hardening
+Credential scope matching for capability and tool access
 ```
 
 Acceptance criteria:
 
-- precedence between inline, config, and env credentials is documented as policy
-- credential ownership fields are consistently validated and surfaced in metadata
-- conflict behavior is deterministic when multiple credentials match one provider
+- credential `scope` can restrict usage by capability or tool
+- resolver rejects out-of-scope credentials with redacted errors
+- usage events preserve credential attribution when scope checks pass

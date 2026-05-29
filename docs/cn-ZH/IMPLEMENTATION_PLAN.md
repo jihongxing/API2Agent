@@ -260,11 +260,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Local proxy 会解析 credential intent，并在转发前注入 provider auth。
 - Local proxy 可以通过 `--credential-config` 加载 JSON/YAML credential config。
 - payload 不携带 credential intent 时，config credentials 可以作为 provider-level fallback。
+- Credential precedence 是确定性的：inline、config、request/env intent、none。
+- Config credential ownership 会优先选择 exact project owner，然后是 local owner，最后按 config order。
 
 下一项工程任务：
 
 ```text
-Credential precedence and ownership policy hardening
+Credential scope matching for capability and tool access
 ```
 
 ## 9. Marketplace 是后面的结果

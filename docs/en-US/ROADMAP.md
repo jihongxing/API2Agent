@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Credential precedence and ownership policy hardening
+Credential scope matching for capability and tool access
 ```
 
 Current implementation result:
@@ -495,9 +495,12 @@ Current implementation result:
 - the local proxy resolves credential intent, injects provider auth, and records redacted usage attribution.
 - local proxy can load project-level credential config files.
 - config credentials can be used when proxy payloads do not include credential intent.
+- credential resolver precedence is now explicit: inline, config, request/env intent, none.
+- config credential owner matching now prefers exact project owner, then local project owner, then config order.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
+- credential policy dogfood completed; see `docs/en-US/CREDENTIAL_POLICY_DOGFOOD_REPORT.md`.
 
 Implementation checklist:
 
@@ -530,6 +533,11 @@ Implementation checklist:
    - add `api2agent proxy --credential-config`
    - allow proxy resolver to use config credentials without credential intent in the payload
    - keep config credential secrets out of usage metadata
+8. Credential precedence and ownership policy hardening - complete
+   - expose deterministic credential precedence
+   - prefer config credentials owned by the current `project_id`
+   - fallback to local owner before raw config order
+   - preserve owner metadata in redacted resolver output
 
 Acceptance test set:
 
@@ -545,6 +553,8 @@ Acceptance test set:
 - proxy injects resolved credentials into forwarded requests
 - proxy records missing credentials in the ledger without forwarding
 - proxy loads config credentials and injects them without raw secret metadata
+- resolver chooses inline over config over request credentials
+- resolver chooses project-owned config credentials before local fallback
 
 ## 9. Phase 6: Hosted Control Plane
 

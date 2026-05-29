@@ -260,11 +260,13 @@ Current implementation:
 - Local proxy resolves credential intent and injects provider auth before forwarding.
 - Local proxy can load JSON/YAML credential config through `--credential-config`.
 - Config credentials can be used as provider-level fallback when payload credential intent is absent.
+- Credential precedence is deterministic: inline, config, request/env intent, none.
+- Config credential ownership prefers exact project owner, then local owner, then config order.
 
 Next engineering task:
 
 ```text
-Credential precedence and ownership policy hardening
+Credential scope matching for capability and tool access
 ```
 
 ## 9. Marketplace Is Later

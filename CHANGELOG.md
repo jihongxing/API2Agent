@@ -45,6 +45,7 @@ All notable API2Agent changes will be documented in this file.
 - Proxy-side credential intent and credential injection.
 - Proxy missing-credential usage events without provider forwarding.
 - Project-level credential config loading for the local proxy.
+- Deterministic credential precedence and project-owner matching policy.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -67,7 +68,8 @@ All notable API2Agent changes will be documented in this file.
 - Credential resolver dogfooded with env-based bearer injection and replay.
 - Proxy credential injection dogfooded with env-based bearer intent and missing-secret failure.
 - Proxy credential config dogfooded with config-based query injection.
-- Full test suite: `120 passed`.
+- Credential policy dogfooded across inline/config/request precedence and owner fallback.
+- Full test suite: `123 passed`.
 
 ### Planned Next
 

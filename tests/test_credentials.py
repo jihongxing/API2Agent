@@ -1,6 +1,6 @@
 from api2agent.credentials.config import load_credential_config
 from api2agent.credentials.models import CredentialDefinition, CredentialResolutionRequest
-from api2agent.credentials.resolver import LocalCredentialResolver
+from api2agent.credentials.resolver import CREDENTIAL_PRECEDENCE, LocalCredentialResolver
 
 
 def test_resolver_reads_env_credential(monkeypatch) -> None:
@@ -161,6 +161,129 @@ def test_inline_credential_override_wins(monkeypatch) -> None:
 
     assert result.credential_reference == "inline:cred_inline"
     assert result.injection_patch.headers == {"X-Token": "inline-secret"}
+
+
+def test_config_credential_precedes_request_credential(monkeypatch) -> None:
+    monkeypatch.setenv("TEST_API_TOKEN", "env-secret")
+    resolver = LocalCredentialResolver(
+        [
+            CredentialDefinition(
+                credential_id="cred_config",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                injection_name="X-Token",
+                source="config",
+                secret_value="config-secret",
+            )
+        ]
+    )
+
+    result = resolver.resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="api_key",
+            injection_mode="header",
+            credential=CredentialDefinition(
+                credential_id="cred_request",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                injection_name="X-Token",
+                source="env",
+                secret_ref="TEST_API_TOKEN",
+            ),
+        )
+    )
+
+    assert CREDENTIAL_PRECEDENCE == ("inline", "config", "request")
+    assert result.credential_reference == "config:cred_config"
+    assert result.injection_patch.headers == {"X-Token": "config-secret"}
+
+
+def test_config_credential_owner_match_wins_for_project() -> None:
+    resolver = LocalCredentialResolver(
+        [
+            CredentialDefinition(
+                credential_id="cred_local",
+                owner_id="local",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="query",
+                injection_name="api_key",
+                source="config",
+                secret_value="local-secret",
+            ),
+            CredentialDefinition(
+                credential_id="cred_project_a",
+                owner_id="project_a",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="query",
+                injection_name="api_key",
+                source="config",
+                secret_value="project-secret",
+            ),
+        ]
+    )
+
+    result = resolver.resolve(
+        CredentialResolutionRequest(
+            project_id="project_a",
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="none",
+            injection_mode="none",
+        )
+    )
+
+    assert result.credential_reference == "config:cred_project_a"
+    assert result.injection_patch.query == {"api_key": "project-secret"}
+    assert result.redacted_metadata["owner_id"] == "project_a"
+
+
+def test_config_credential_falls_back_to_local_owner() -> None:
+    resolver = LocalCredentialResolver(
+        [
+            CredentialDefinition(
+                credential_id="cred_other",
+                owner_id="other_project",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="query",
+                injection_name="api_key",
+                source="config",
+                secret_value="other-secret",
+            ),
+            CredentialDefinition(
+                credential_id="cred_local",
+                owner_id="local",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="query",
+                injection_name="api_key",
+                source="config",
+                secret_value="local-secret",
+            ),
+        ]
+    )
+
+    result = resolver.resolve(
+        CredentialResolutionRequest(
+            project_id="project_a",
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="none",
+            injection_mode="none",
+        )
+    )
+
+    assert result.credential_reference == "config:cred_local"
+    assert result.injection_patch.query == {"api_key": "local-secret"}
 
 
 def test_auth_type_none_skips_credentials() -> None:
