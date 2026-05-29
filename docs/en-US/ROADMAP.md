@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Proxy-side Credential Injection Design
+Credential config loading for local proxy
 ```
 
 Current implementation result:
@@ -491,7 +491,10 @@ Current implementation result:
 - generated runners can consume credential injection patches through local execution env.
 - `execute_capability` resolves credentials and writes `credential_reference`.
 - local package replay can re-resolve credentials from redacted metadata.
+- generated runners in proxy mode now send credential intent instead of provider secrets.
+- the local proxy resolves credential intent, injects provider auth, and records redacted usage attribution.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
+- proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 
 Implementation checklist:
 
@@ -514,6 +517,11 @@ Implementation checklist:
    - replay warns when required credentials cannot be resolved
    - replay can execute when credentials are resolvable
    - replay metadata remains redacted
+6. Proxy-side credential injection - complete
+   - generated runners send credential intent to the proxy
+   - proxy resolves env-based credential intent and injects provider auth before forwarding
+   - missing proxy credentials create failed usage events without calling the provider
+   - proxy usage metadata stores redacted credential metadata only
 
 Acceptance test set:
 
@@ -526,6 +534,8 @@ Acceptance test set:
 - raw secret is absent from SQLite usage metadata
 - replay reports missing credential clearly
 - replay executes when the credential can be resolved
+- proxy injects resolved credentials into forwarded requests
+- proxy records missing credentials in the ledger without forwarding
 
 ## 9. Phase 6: Hosted Control Plane
 

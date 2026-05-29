@@ -1,4 +1,5 @@
 import importlib
+import json
 import sys
 from pathlib import Path
 
@@ -244,7 +245,6 @@ def test_execute_tool_can_call_api2agent_proxy(tmp_path, monkeypatch) -> None:
             return FakeResponse()
 
         env = {
-            runner.CAPABILITY["auth"]["env"]: "secret-token",
             "API2AGENT_PROXY_URL": "http://127.0.0.1:8765",
             "API2AGENT_PROXY_KEY": "proxy-secret",
             "API2AGENT_PROJECT_ID": "local",
@@ -280,8 +280,20 @@ def test_execute_tool_can_call_api2agent_proxy(tmp_path, monkeypatch) -> None:
         assert payload["request"]["method"] == "POST"
         assert payload["request"]["url"] == "https://api.example.com/items/123"
         assert payload["request"]["params"] == {"verbose": True}
-        assert payload["request"]["headers"]["Authorization"] == "Bearer secret-token"
+        assert payload["request"]["headers"] == {"X-Trace-Id": "trace-123"}
         assert payload["request"]["json"] == {"name": "demo"}
+        assert payload["credential"] == {
+            "credential_id": "github_BODY_QUERY_HEADER_API_TOKEN",
+            "owner_type": "project",
+            "owner_id": "local",
+            "provider_id": "github",
+            "auth_type": "bearer",
+            "injection_mode": "header",
+            "injection_name": "Authorization",
+            "source": "env",
+            "secret_ref": "BODY_QUERY_HEADER_API_TOKEN",
+        }
+        assert "secret-token" not in json.dumps(payload)
     finally:
         sys.path.remove(str(output_dir))
         sys.modules.pop("runner", None)

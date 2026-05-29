@@ -29,7 +29,9 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
         return {{"ok": False, "error": {{"type": "missing_parameters", "parameters": missing}}}}
 
     url = _build_url(tool, params)
-    auth_result = _auth_headers()
+    proxy_url = os.getenv("API2AGENT_PROXY_URL")
+    use_proxy = bool(proxy_url and proxy_url.startswith(("http://", "https://")))
+    auth_result = {{}} if use_proxy else _auth_headers()
     if "error" in auth_result:
         return {{"ok": False, "error": auth_result["error"]}}
 
@@ -50,11 +52,10 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
     request_kwargs = {{"headers": headers, "params": query, "timeout": 20}}
     if tool.get("request_body") and "body" in params:
         request_kwargs["json"] = params["body"]
-    _apply_credential_injection(request_kwargs)
+    if use_proxy:
+        return _proxy_call(tool, url, request_kwargs, proxy_url, _proxy_credential_intent())
 
-    proxy_url = os.getenv("API2AGENT_PROXY_URL")
-    if proxy_url and proxy_url.startswith(("http://", "https://")):
-        return _proxy_call(tool, url, request_kwargs, proxy_url)
+    _apply_credential_injection(request_kwargs)
 
     try:
         response = httpx.request(tool["method"], url, **request_kwargs)
@@ -79,17 +80,26 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
     return result
 
 
-def _proxy_call(tool: dict, url: str, request_kwargs: dict, proxy_url: str) -> dict:
+def _proxy_call(
+    tool: dict,
+    url: str,
+    request_kwargs: dict,
+    proxy_url: str,
+    credential: dict | None = None,
+) -> dict:
     proxy_headers = {{}}
     proxy_key = os.getenv("API2AGENT_PROXY_KEY")
     if proxy_key:
         proxy_headers["Authorization"] = f"Bearer {{proxy_key}}"
 
+    project_id = os.getenv("API2AGENT_PROJECT_ID") or "local"
+    capability_id = os.getenv("API2AGENT_CAPABILITY_ID") or CAPABILITY.get("name", "unknown")
+    provider_id = os.getenv("API2AGENT_PROVIDER_ID") or CAPABILITY.get("name", "unknown")
     payload = {{
-        "project_id": os.getenv("API2AGENT_PROJECT_ID") or "local",
+        "project_id": project_id,
         "routing_decision_id": os.getenv("API2AGENT_ROUTING_DECISION_ID"),
-        "capability_id": os.getenv("API2AGENT_CAPABILITY_ID") or CAPABILITY.get("name", "unknown"),
-        "provider_id": os.getenv("API2AGENT_PROVIDER_ID") or CAPABILITY.get("name", "unknown"),
+        "capability_id": capability_id,
+        "provider_id": provider_id,
         "tool_id": tool["name"],
         "estimated_cost": _estimated_cost(),
         "request": {{
@@ -101,6 +111,10 @@ def _proxy_call(tool: dict, url: str, request_kwargs: dict, proxy_url: str) -> d
             "timeout": request_kwargs.get("timeout") or 20,
         }},
     }}
+    if credential:
+        credential.setdefault("owner_id", project_id)
+        credential.setdefault("provider_id", provider_id)
+        payload["credential"] = credential
 
     try:
         response = httpx.post(
@@ -134,6 +148,31 @@ def _estimated_cost() -> float:
         return float(raw)
     except ValueError:
         return 0.0
+
+
+def _proxy_credential_intent() -> dict | None:
+    auth = CAPABILITY.get("auth") or {{}}
+    auth_type = auth.get("type")
+    if auth_type not in {{"api_key", "bearer"}}:
+        return None
+
+    env_name = auth.get("env")
+    if not env_name:
+        return None
+
+    provider_id = os.getenv("API2AGENT_PROVIDER_ID") or CAPABILITY.get("name", "unknown")
+    injection_name = auth.get("header") or ("Authorization" if auth_type == "bearer" else "X-API-Key")
+    return {{
+        "credential_id": os.getenv("API2AGENT_CREDENTIAL_ID") or f"{{provider_id}}_{{env_name}}",
+        "owner_type": os.getenv("API2AGENT_CREDENTIAL_OWNER_TYPE") or "project",
+        "owner_id": os.getenv("API2AGENT_CREDENTIAL_OWNER_ID") or os.getenv("API2AGENT_PROJECT_ID") or "local",
+        "provider_id": provider_id,
+        "auth_type": auth_type,
+        "injection_mode": "header",
+        "injection_name": injection_name,
+        "source": "env",
+        "secret_ref": env_name,
+    }}
 
 
 def _apply_credential_injection(request_kwargs: dict) -> None:

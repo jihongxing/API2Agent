@@ -190,13 +190,32 @@ Virtual cost can be recorded before payment exists:
 - inject into generated runner execution - implemented
 - redact request metadata - implemented
 - write `credential_reference` into usage events - implemented
-- proxy request injection - future work
+- proxy request injection - implemented
 
 ### Phase C2: Proxy Credential Injection
 
-- generated runners send intent and metadata
-- proxy resolves and injects credentials
-- generated files no longer need to hold provider secrets
+- generated runners send intent and metadata - implemented
+- proxy resolves and injects credentials - implemented
+- generated files no longer need to send provider secrets in proxy mode - implemented
+- missing proxy credentials are recorded as failed usage events without forwarding - implemented
+
+Proxy credential intent is a redacted control-plane object:
+
+```json
+{
+  "credential_id": "github_GITHUB_TOKEN",
+  "owner_type": "project",
+  "owner_id": "local",
+  "provider_id": "github",
+  "auth_type": "bearer",
+  "injection_mode": "header",
+  "injection_name": "Authorization",
+  "source": "env",
+  "secret_ref": "GITHUB_TOKEN"
+}
+```
+
+It tells the proxy which credential to resolve, but it does not contain the raw provider secret.
 
 ### Phase C3: Hosted Credential Store
 
@@ -219,13 +238,12 @@ Virtual cost can be recorded before payment exists:
 The next engineering task should be:
 
 ```text
-Proxy-side Credential Injection Design
+Credential config loading for local proxy
 ```
 
 Acceptance criteria:
 
-- schema is represented in code models
-- env/config/inline sources are defined
-- resolver returns a redacted credential reference and injection patch
-- proxy or generated execution can attach resolved credentials
-- usage events keep credential references without raw secrets
+- proxy can load project-level config credentials
+- proxy can resolve env and config credentials through the same resolver contract
+- config-loaded proxy credentials remain redacted in usage metadata
+- generated runner proxy mode remains provider-secret-free

@@ -10,6 +10,13 @@ from pydantic import ValidationError
 
 from api2agent.control.models import ProxyRequest, UsageEvent
 from api2agent.control.storage import UsageStore
+from api2agent.credentials.models import (
+    CredentialDefinition,
+    CredentialInjectionPatch,
+    CredentialResolutionRequest,
+    ResolvedCredential,
+)
+from api2agent.credentials.resolver import LocalCredentialResolver
 
 Forwarder = Callable[[str, str, dict[str, Any]], httpx.Response]
 
@@ -45,8 +52,13 @@ def execute_proxy_call(
             latency_ms=0.0,
             estimated_cost=0.0,
             error_type="quota_exceeded",
-            request_metadata=_safe_request_metadata(method, url, request),
-            credential_reference=_credential_reference(request),
+            request_metadata=_safe_request_metadata(
+                method,
+                url,
+                request,
+                credential_metadata=_safe_credential_metadata(proxy_request.credential),
+            ),
+            credential_reference=_credential_reference(request, proxy_request.credential),
             provider_runtime_reference="proxy:http",
         )
         store.record(event)
@@ -57,18 +69,59 @@ def execute_proxy_call(
             "error": {"type": "quota_exceeded", "message": "Project quota exceeded."},
         }
 
+    resolved_credential = _resolve_proxy_credential(proxy_request)
+    if not resolved_credential.resolved:
+        event = UsageEvent(
+            routing_decision_id=proxy_request.routing_decision_id,
+            execution_mode="proxy",
+            project_id=proxy_request.project_id,
+            capability_id=proxy_request.capability_id,
+            provider_id=proxy_request.provider_id,
+            tool_id=proxy_request.tool_id,
+            method=method,
+            path=path,
+            status_code=401,
+            success=False,
+            latency_ms=0.0,
+            estimated_cost=0.0,
+            error_type=resolved_credential.error_type or "credential_resolution_failed",
+            request_metadata=_safe_request_metadata(
+                method,
+                url,
+                request,
+                credential_metadata=_safe_credential_metadata(
+                    proxy_request.credential,
+                    resolved_credential=resolved_credential,
+                ),
+            ),
+            credential_reference=resolved_credential.credential_reference,
+            provider_runtime_reference="proxy:http",
+        )
+        store.record(event)
+        return 401, {
+            "ok": False,
+            "proxied": True,
+            "usage_event_id": event.id,
+            "error": {
+                "type": resolved_credential.error_type or "credential_resolution_failed",
+                "message": resolved_credential.error_message or "Proxy credential resolution failed.",
+            },
+        }
+
     forwarder = forwarder or _forward_request
     start = perf_counter()
     try:
+        forward_options = {
+            "headers": dict(request.get("headers") or {}),
+            "params": dict(request.get("params") or {}),
+            "json": dict(request["json"]) if isinstance(request.get("json"), dict) else request.get("json"),
+            "timeout": request.get("timeout") or 20,
+        }
+        _apply_credential_injection(forward_options, resolved_credential.injection_patch)
         response = forwarder(
             method,
             url,
-            {
-                "headers": request.get("headers") or {},
-                "params": request.get("params") or {},
-                "json": request.get("json"),
-                "timeout": request.get("timeout") or 20,
-            },
+            forward_options,
         )
         latency_ms = (perf_counter() - start) * 1000
         try:
@@ -90,8 +143,20 @@ def execute_proxy_call(
             latency_ms=latency_ms,
             estimated_cost=proxy_request.estimated_cost,
             error_type=None if response.is_success else "http_status",
-            request_metadata=_safe_request_metadata(method, url, request),
-            credential_reference=_credential_reference(request),
+            request_metadata=_safe_request_metadata(
+                method,
+                url,
+                request,
+                credential_metadata=_safe_credential_metadata(
+                    proxy_request.credential,
+                    resolved_credential=resolved_credential,
+                ),
+            ),
+            credential_reference=_credential_reference(
+                request,
+                proxy_request.credential,
+                resolved_credential=resolved_credential,
+            ),
             provider_runtime_reference="proxy:http",
         )
         store.record(event)
@@ -120,8 +185,20 @@ def execute_proxy_call(
             latency_ms=latency_ms,
             estimated_cost=0.0,
             error_type="http_error",
-            request_metadata=_safe_request_metadata(method, url, request),
-            credential_reference=_credential_reference(request),
+            request_metadata=_safe_request_metadata(
+                method,
+                url,
+                request,
+                credential_metadata=_safe_credential_metadata(
+                    proxy_request.credential,
+                    resolved_credential=resolved_credential,
+                ),
+            ),
+            credential_reference=_credential_reference(
+                request,
+                proxy_request.credential,
+                resolved_credential=resolved_credential,
+            ),
             provider_runtime_reference="proxy:http",
         )
         store.record(event)
@@ -153,14 +230,22 @@ def _forward_request(method: str, url: str, options: dict[str, Any]) -> httpx.Re
     return httpx.request(method, url, **options)
 
 
-def _safe_request_metadata(method: str, url: str, request: dict[str, Any]) -> dict[str, Any]:
-    return {
+def _safe_request_metadata(
+    method: str,
+    url: str,
+    request: dict[str, Any],
+    credential_metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    metadata = {
         "method": method,
         "url": url,
         "params": request.get("params") or {},
         "json": request.get("json"),
         "headers": _redact_headers(request.get("headers") or {}),
     }
+    if credential_metadata is not None:
+        metadata["credential"] = credential_metadata
+    return metadata
 
 
 def _redact_headers(headers: dict[str, Any]) -> dict[str, Any]:
@@ -171,7 +256,75 @@ def _redact_headers(headers: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _credential_reference(request: dict[str, Any]) -> str | None:
+def _resolve_proxy_credential(proxy_request: ProxyRequest) -> ResolvedCredential:
+    if not proxy_request.credential:
+        return ResolvedCredential(
+            resolved=True,
+            credential_reference=_credential_reference(proxy_request.request) or "none",
+            redacted_metadata={"source": "request_headers" if _credential_reference(proxy_request.request) else "none"},
+        )
+
+    try:
+        credential = CredentialDefinition.model_validate(proxy_request.credential)
+    except ValidationError as exc:
+        return ResolvedCredential(
+            resolved=False,
+            credential_reference="invalid",
+            error_type="invalid_credential",
+            error_message=f"Invalid proxy credential: {exc}",
+            redacted_metadata=_safe_credential_metadata(proxy_request.credential) or {},
+        )
+
+    request = CredentialResolutionRequest(
+        project_id=proxy_request.project_id,
+        capability_id=proxy_request.capability_id,
+        provider_id=proxy_request.provider_id,
+        tool_id=proxy_request.tool_id,
+        auth_type=credential.auth_type,
+        injection_mode=credential.injection_mode,
+        injection_name=credential.injection_name,
+        credential=credential,
+    )
+    return LocalCredentialResolver().resolve(request)
+
+
+def _apply_credential_injection(options: dict[str, Any], patch: CredentialInjectionPatch) -> None:
+    if patch.headers:
+        options.setdefault("headers", {}).update(patch.headers)
+    if patch.query:
+        options.setdefault("params", {}).update(patch.query)
+    if patch.body:
+        existing = options.get("json")
+        if isinstance(existing, dict):
+            existing.update(patch.body)
+        else:
+            options["json"] = dict(patch.body)
+
+
+def _safe_credential_metadata(
+    credential: dict[str, Any] | None,
+    resolved_credential: ResolvedCredential | None = None,
+) -> dict[str, Any] | None:
+    if resolved_credential is not None and resolved_credential.redacted_metadata:
+        return dict(resolved_credential.redacted_metadata)
+    if credential is None:
+        return None
+    return {key: value for key, value in credential.items() if key != "secret_value"}
+
+
+def _credential_reference(
+    request: dict[str, Any],
+    credential: dict[str, Any] | None = None,
+    resolved_credential: ResolvedCredential | None = None,
+) -> str | None:
+    if resolved_credential is not None:
+        return resolved_credential.credential_reference
+    if credential is not None:
+        safe_metadata = _safe_credential_metadata(credential) or {}
+        if safe_metadata.get("source") == "env":
+            return f"env:{safe_metadata.get('secret_ref')}"
+        if safe_metadata.get("source") in {"config", "inline"}:
+            return f"{safe_metadata.get('source')}:{safe_metadata.get('credential_id')}"
     headers = request.get("headers") or {}
     for key in headers:
         if str(key).lower() in {"authorization", "x-api-key", "api-key"}:

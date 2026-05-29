@@ -59,3 +59,4 @@ class ProxyRequest(BaseModel):
     tool_id: str
     estimated_cost: float = 0.0
     request: dict[str, Any]
+    credential: dict[str, Any] | None = None

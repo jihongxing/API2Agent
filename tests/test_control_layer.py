@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -97,6 +98,156 @@ def test_proxy_call_forwards_and_records_usage(tmp_path: Path) -> None:
     assert correlated_events[0].routing_decision_id == "decision_123"
     assert correlated_events[0].credential_reference == "header:Authorization"
     assert correlated_events[0].request_metadata["headers"]["Authorization"] == "[REDACTED]"
+
+
+def test_proxy_call_resolves_credential_intent_before_forwarding(tmp_path: Path, monkeypatch) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    captured = {}
+    monkeypatch.setenv("TEST_API_TOKEN", "secret-token")
+
+    def fake_forwarder(method, url, options):
+        captured["method"] = method
+        captured["url"] = url
+        captured["options"] = options
+        return httpx.Response(200, json={"ok": True})
+
+    status, result = execute_proxy_call(
+        {
+            "project_id": "local",
+            "routing_decision_id": "decision_credential",
+            "capability_id": "github.repos.list",
+            "provider_id": "github",
+            "tool_id": "list_repos",
+            "estimated_cost": 0.01,
+            "credential": {
+                "credential_id": "github_TEST_API_TOKEN",
+                "owner_type": "project",
+                "owner_id": "local",
+                "provider_id": "github",
+                "auth_type": "bearer",
+                "injection_mode": "header",
+                "injection_name": "Authorization",
+                "source": "env",
+                "secret_ref": "TEST_API_TOKEN",
+            },
+            "request": {
+                "method": "GET",
+                "url": "https://api.github.com/repos",
+                "headers": {"X-Trace-Id": "trace-123"},
+                "params": {"visibility": "public"},
+            },
+        },
+        store=store,
+        forwarder=fake_forwarder,
+    )
+
+    event = store.usage_for_routing_decision("decision_credential")[0]
+    metadata_json = json.dumps(event.request_metadata)
+
+    assert status == 200
+    assert result["ok"] is True
+    assert captured["options"]["headers"]["Authorization"] == "Bearer secret-token"
+    assert captured["options"]["headers"]["X-Trace-Id"] == "trace-123"
+    assert event.credential_reference == "env:TEST_API_TOKEN"
+    assert event.request_metadata["credential"]["secret_ref"] == "TEST_API_TOKEN"
+    assert "secret-token" not in metadata_json
+
+
+def test_proxy_call_records_missing_credential_without_forwarding(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    called = False
+    monkeypatch.delenv("TEST_API_TOKEN", raising=False)
+
+    def fake_forwarder(method, url, options):
+        nonlocal called
+        called = True
+        return httpx.Response(200, json={"ok": True})
+
+    status, result = execute_proxy_call(
+        {
+            "project_id": "local",
+            "routing_decision_id": "decision_missing_credential",
+            "capability_id": "github.repos.list",
+            "provider_id": "github",
+            "tool_id": "list_repos",
+            "credential": {
+                "credential_id": "github_TEST_API_TOKEN",
+                "provider_id": "github",
+                "auth_type": "bearer",
+                "injection_mode": "header",
+                "source": "env",
+                "secret_ref": "TEST_API_TOKEN",
+            },
+            "request": {
+                "method": "GET",
+                "url": "https://api.github.com/repos",
+            },
+        },
+        store=store,
+        forwarder=fake_forwarder,
+    )
+
+    event = store.usage_for_routing_decision("decision_missing_credential")[0]
+
+    assert status == 401
+    assert result["ok"] is False
+    assert result["error"]["type"] == "missing_credential_secret"
+    assert called is False
+    assert event.success is False
+    assert event.status_code == 401
+    assert event.error_type == "missing_credential_secret"
+    assert event.credential_reference == "env:TEST_API_TOKEN"
+
+
+def test_proxy_body_credential_injection_does_not_mutate_usage_metadata(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    captured = {}
+    monkeypatch.setenv("TEST_API_TOKEN", "secret-token")
+
+    def fake_forwarder(method, url, options):
+        captured["options"] = options
+        return httpx.Response(200, json={"ok": True})
+
+    status, result = execute_proxy_call(
+        {
+            "project_id": "local",
+            "routing_decision_id": "decision_body_credential",
+            "capability_id": "example.items.create",
+            "provider_id": "example",
+            "tool_id": "create_item",
+            "credential": {
+                "credential_id": "example_TEST_API_TOKEN",
+                "provider_id": "example",
+                "auth_type": "api_key",
+                "injection_mode": "body",
+                "injection_name": "api_key",
+                "source": "env",
+                "secret_ref": "TEST_API_TOKEN",
+            },
+            "request": {
+                "method": "POST",
+                "url": "https://api.example.com/items",
+                "json": {"name": "demo"},
+            },
+        },
+        store=store,
+        forwarder=fake_forwarder,
+    )
+
+    event = store.usage_for_routing_decision("decision_body_credential")[0]
+    metadata_json = json.dumps(event.request_metadata)
+
+    assert status == 200
+    assert result["ok"] is True
+    assert captured["options"]["json"] == {"name": "demo", "api_key": "secret-token"}
+    assert event.request_metadata["json"] == {"name": "demo"}
+    assert "secret-token" not in metadata_json
 
 
 def test_usage_store_records_routing_decision(tmp_path: Path) -> None:

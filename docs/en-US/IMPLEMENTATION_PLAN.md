@@ -256,11 +256,13 @@ Current implementation:
 - Generated package execution can inject credentials.
 - Usage events record `credential_reference`.
 - Local package replay can re-resolve credentials from redacted metadata.
+- Generated package proxy mode sends credential intent instead of provider secrets.
+- Local proxy resolves credential intent and injects provider auth before forwarding.
 
 Next engineering task:
 
 ```text
-Proxy-side Credential Injection Design
+Credential config loading for local proxy
 ```
 
 ## 9. Marketplace Is Later

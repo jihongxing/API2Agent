@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Proxy-side Credential Injection Design
+Credential config loading for local proxy
 ```
 
 当前实现结果：
@@ -491,7 +491,10 @@ Proxy-side Credential Injection Design
 - generated runners 可以通过 local execution env 消费 credential injection patches。
 - `execute_capability` 会 resolve credentials，并写入 `credential_reference`。
 - local package replay 可以基于 redacted metadata 重新 resolve credentials。
+- proxy mode 下，generated runners 现在只发送 credential intent，不发送 provider secrets。
+- local proxy 会解析 credential intent，在转发前注入 provider auth，并记录脱敏后的 usage attribution。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
+- proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 
 实施 checklist：
 
@@ -514,6 +517,11 @@ Proxy-side Credential Injection Design
    - required credentials 无法 resolve 时，replay 必须 warning
    - credentials 可 resolve 时，replay 可以执行
    - replay metadata 保持 redacted
+6. Proxy-side credential injection - complete
+   - generated runners 会把 credential intent 发送给 proxy
+   - proxy 会解析 env-based credential intent，并在转发前注入 provider auth
+   - proxy credential 缺失时，会生成 failed usage event，且不调用 provider
+   - proxy usage metadata 只保存 redacted credential metadata
 
 验收测试集：
 
@@ -526,6 +534,8 @@ Proxy-side Credential Injection Design
 - raw secret 不存在于 SQLite usage metadata
 - replay 能清晰报告 missing credential
 - credential 可 resolve 时 replay 可以执行
+- proxy 能把 resolved credentials 注入 forwarded requests
+- proxy 会把 missing credentials 记录到 ledger，且不会继续 forward
 
 ## 9. Phase 6：Hosted Control Plane
 

@@ -256,11 +256,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Generated package execution 可以 inject credentials。
 - Usage events 会记录 `credential_reference`。
 - Local package replay 可以基于 redacted metadata 重新 resolve credentials。
+- Generated package proxy mode 会发送 credential intent，而不是 provider secrets。
+- Local proxy 会解析 credential intent，并在转发前注入 provider auth。
 
 下一项工程任务：
 
 ```text
-Proxy-side Credential Injection Design
+Credential config loading for local proxy
 ```
 
 ## 9. Marketplace 是后面的结果

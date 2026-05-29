@@ -190,13 +190,32 @@ Credential orchestration 支撑 billing-ready measurement，但它不是 billing
 - 注入 generated runner execution - 已实现
 - redacts request metadata - 已实现
 - 把 `credential_reference` 写入 usage events - 已实现
-- proxy request injection - future work
+- proxy request injection - 已实现
 
 ### Phase C2：Proxy Credential Injection
 
-- generated runners 发送 intent 和 metadata
-- proxy 负责 resolve 并 inject credentials
-- generated files 不再需要持有 provider secrets
+- generated runners 发送 intent 和 metadata - 已实现
+- proxy 负责 resolve 并 inject credentials - 已实现
+- proxy mode 下 generated files 不再需要发送 provider secrets - 已实现
+- proxy credential 缺失时会记录 failed usage events，且不继续 forward - 已实现
+
+Proxy credential intent 是一个脱敏的 control-plane object：
+
+```json
+{
+  "credential_id": "github_GITHUB_TOKEN",
+  "owner_type": "project",
+  "owner_id": "local",
+  "provider_id": "github",
+  "auth_type": "bearer",
+  "injection_mode": "header",
+  "injection_name": "Authorization",
+  "source": "env",
+  "secret_ref": "GITHUB_TOKEN"
+}
+```
+
+它告诉 proxy 应该解析哪个 credential，但不会包含 raw provider secret。
 
 ### Phase C3：Hosted Credential Store
 
@@ -219,13 +238,12 @@ Credential orchestration 支撑 billing-ready measurement，但它不是 billing
 下一项工程任务应该是：
 
 ```text
-Proxy-side Credential Injection Design
+Credential config loading for local proxy
 ```
 
 验收标准：
 
-- schema 有对应 code models
-- env/config/inline sources 被定义
-- resolver 返回 redacted credential reference 和 injection patch
-- proxy 或 generated execution 可以附加 resolved credentials
-- usage events 保存 credential references，但不保存 raw secrets
+- proxy 可以加载 project-level config credentials
+- proxy 可以通过同一套 resolver contract 解析 env 和 config credentials
+- config-loaded proxy credentials 在 usage metadata 中保持 redacted
+- generated runner proxy mode 继续保持不携带 provider secret
