@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from api2agent.control.models import ProxyRequest, UsageEvent
 from api2agent.control.storage import UsageStore
+from api2agent.credentials.config import load_credential_config
 from api2agent.credentials.models import (
     CredentialDefinition,
     CredentialInjectionPatch,
@@ -26,6 +27,7 @@ def execute_proxy_call(
     store: UsageStore,
     quota: int | None = None,
     forwarder: Forwarder | None = None,
+    credential_resolver: LocalCredentialResolver | None = None,
 ) -> tuple[int, dict[str, Any]]:
     try:
         proxy_request = ProxyRequest.model_validate(payload)
@@ -69,7 +71,10 @@ def execute_proxy_call(
             "error": {"type": "quota_exceeded", "message": "Project quota exceeded."},
         }
 
-    resolved_credential = _resolve_proxy_credential(proxy_request)
+    resolved_credential = _resolve_proxy_credential(
+        proxy_request,
+        credential_resolver=credential_resolver or LocalCredentialResolver(),
+    )
     if not resolved_credential.resolved:
         event = UsageEvent(
             routing_decision_id=proxy_request.routing_decision_id,
@@ -216,9 +221,17 @@ def run_proxy_server(
     db_path: Path,
     api_key: str | None = None,
     quota: int | None = None,
+    credential_config: Path | None = None,
 ) -> None:
     store = UsageStore(db_path)
-    handler = _make_handler(store=store, api_key=api_key, quota=quota)
+    credentials = load_credential_config(credential_config) if credential_config else []
+    credential_resolver = LocalCredentialResolver(credentials)
+    handler = _make_handler(
+        store=store,
+        api_key=api_key,
+        quota=quota,
+        credential_resolver=credential_resolver,
+    )
     server = ThreadingHTTPServer((host, port), handler)
     try:
         server.serve_forever()
@@ -256,13 +269,29 @@ def _redact_headers(headers: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _resolve_proxy_credential(proxy_request: ProxyRequest) -> ResolvedCredential:
+def _resolve_proxy_credential(
+    proxy_request: ProxyRequest,
+    credential_resolver: LocalCredentialResolver,
+) -> ResolvedCredential:
     if not proxy_request.credential:
-        return ResolvedCredential(
-            resolved=True,
-            credential_reference=_credential_reference(proxy_request.request) or "none",
-            redacted_metadata={"source": "request_headers" if _credential_reference(proxy_request.request) else "none"},
+        resolved = credential_resolver.resolve(
+            CredentialResolutionRequest(
+                project_id=proxy_request.project_id,
+                capability_id=proxy_request.capability_id,
+                provider_id=proxy_request.provider_id,
+                tool_id=proxy_request.tool_id,
+                auth_type="none",
+                injection_mode="none",
+            )
         )
+        request_credential_reference = _credential_reference(proxy_request.request)
+        if resolved.credential_reference == "none" and request_credential_reference:
+            return ResolvedCredential(
+                resolved=True,
+                credential_reference=request_credential_reference,
+                redacted_metadata={"source": "request_headers"},
+            )
+        return resolved
 
     try:
         credential = CredentialDefinition.model_validate(proxy_request.credential)
@@ -285,7 +314,7 @@ def _resolve_proxy_credential(proxy_request: ProxyRequest) -> ResolvedCredential
         injection_name=credential.injection_name,
         credential=credential,
     )
-    return LocalCredentialResolver().resolve(request)
+    return credential_resolver.resolve(request)
 
 
 def _apply_credential_injection(options: dict[str, Any], patch: CredentialInjectionPatch) -> None:
@@ -332,7 +361,14 @@ def _credential_reference(
     return None
 
 
-def _make_handler(store: UsageStore, api_key: str | None, quota: int | None):
+def _make_handler(
+    store: UsageStore,
+    api_key: str | None,
+    quota: int | None,
+    credential_resolver: LocalCredentialResolver | None = None,
+):
+    credential_resolver = credential_resolver or LocalCredentialResolver()
+
     class ProxyHandler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:
             if self.path != "/v1/proxy/call":
@@ -349,7 +385,12 @@ def _make_handler(store: UsageStore, api_key: str | None, quota: int | None):
                 self._send_json(400, {"ok": False, "error": {"type": "invalid_json"}})
                 return
 
-            status, result = execute_proxy_call(payload, store=store, quota=quota)
+            status, result = execute_proxy_call(
+                payload,
+                store=store,
+                quota=quota,
+                credential_resolver=credential_resolver,
+            )
             self._send_json(status, result)
 
         def do_GET(self) -> None:

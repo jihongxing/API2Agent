@@ -198,6 +198,8 @@ Virtual cost can be recorded before payment exists:
 - proxy resolves and injects credentials - implemented
 - generated files no longer need to send provider secrets in proxy mode - implemented
 - missing proxy credentials are recorded as failed usage events without forwarding - implemented
+- proxy can load project-level JSON/YAML credential config - implemented
+- proxy can resolve config credentials even when payloads do not include credential intent - implemented
 
 Proxy credential intent is a redacted control-plane object:
 
@@ -238,12 +240,11 @@ It tells the proxy which credential to resolve, but it does not contain the raw 
 The next engineering task should be:
 
 ```text
-Credential config loading for local proxy
+Credential precedence and ownership policy hardening
 ```
 
 Acceptance criteria:
 
-- proxy can load project-level config credentials
-- proxy can resolve env and config credentials through the same resolver contract
-- config-loaded proxy credentials remain redacted in usage metadata
-- generated runner proxy mode remains provider-secret-free
+- precedence between inline, config, and env credentials is documented as policy
+- credential ownership fields are consistently validated and surfaced in metadata
+- conflict behavior is deterministic when multiple credentials match one provider

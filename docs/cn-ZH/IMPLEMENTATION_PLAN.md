@@ -258,11 +258,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Local package replay 可以基于 redacted metadata 重新 resolve credentials。
 - Generated package proxy mode 会发送 credential intent，而不是 provider secrets。
 - Local proxy 会解析 credential intent，并在转发前注入 provider auth。
+- Local proxy 可以通过 `--credential-config` 加载 JSON/YAML credential config。
+- payload 不携带 credential intent 时，config credentials 可以作为 provider-level fallback。
 
 下一项工程任务：
 
 ```text
-Credential config loading for local proxy
+Credential precedence and ownership policy hardening
 ```
 
 ## 9. Marketplace 是后面的结果

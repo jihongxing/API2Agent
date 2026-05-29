@@ -35,6 +35,36 @@ def test_test_command_executes_smoke_test(tmp_path, monkeypatch) -> None:
     assert kwargs["cwd"] == package_dir
 
 
+def test_proxy_command_passes_credential_config(tmp_path, monkeypatch) -> None:
+    config = tmp_path / "credentials.yaml"
+    config.write_text("credentials: []\n", encoding="utf-8")
+    captured = {}
+
+    def fake_run_proxy_server(**kwargs):
+        captured.update(kwargs)
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("api2agent.cli.run_proxy_server", fake_run_proxy_server)
+
+    result = runner.invoke(
+        app,
+        [
+            "proxy",
+            "--port",
+            "8765",
+            "--db",
+            str(tmp_path / "usage.sqlite"),
+            "--credential-config",
+            str(config),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert captured["credential_config"] == config
+    assert "Credential config:" in result.output
+    assert "Proxy stopped." in result.output
+
+
 def test_generate_command_refuses_non_empty_output_without_force(tmp_path) -> None:
     output_dir = tmp_path / "api2agent-output"
     output_dir.mkdir()

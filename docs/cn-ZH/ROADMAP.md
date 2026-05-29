@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Credential config loading for local proxy
+Credential precedence and ownership policy hardening
 ```
 
 当前实现结果：
@@ -493,8 +493,11 @@ Credential config loading for local proxy
 - local package replay 可以基于 redacted metadata 重新 resolve credentials。
 - proxy mode 下，generated runners 现在只发送 credential intent，不发送 provider secrets。
 - local proxy 会解析 credential intent，在转发前注入 provider auth，并记录脱敏后的 usage attribution。
+- local proxy 可以加载 project-level credential config files。
+- payload 不携带 credential intent 时，proxy 也可以使用 config credentials。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
+- proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
 
 实施 checklist：
 
@@ -522,6 +525,11 @@ Credential config loading for local proxy
    - proxy 会解析 env-based credential intent，并在转发前注入 provider auth
    - proxy credential 缺失时，会生成 failed usage event，且不调用 provider
    - proxy usage metadata 只保存 redacted credential metadata
+7. Credential config loading for local proxy - complete
+   - 新增 JSON/YAML credential config loader
+   - 新增 `api2agent proxy --credential-config`
+   - 允许 proxy resolver 在 payload 没有 credential intent 时使用 config credentials
+   - config credential secrets 不进入 usage metadata
 
 验收测试集：
 
@@ -536,6 +544,7 @@ Credential config loading for local proxy
 - credential 可 resolve 时 replay 可以执行
 - proxy 能把 resolved credentials 注入 forwarded requests
 - proxy 会把 missing credentials 记录到 ledger，且不会继续 forward
+- proxy 可以加载 config credentials 并完成注入，且 metadata 不包含 raw secret
 
 ## 9. Phase 6：Hosted Control Plane
 

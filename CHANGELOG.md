@@ -44,6 +44,7 @@ All notable API2Agent changes will be documented in this file.
 - Credential-safe usage attribution and local package replay.
 - Proxy-side credential intent and credential injection.
 - Proxy missing-credential usage events without provider forwarding.
+- Project-level credential config loading for the local proxy.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -65,7 +66,8 @@ All notable API2Agent changes will be documented in this file.
 - Generated package shadow/replay dogfooded against real no-auth `ipify` and `httpbin` APIs.
 - Credential resolver dogfooded with env-based bearer injection and replay.
 - Proxy credential injection dogfooded with env-based bearer intent and missing-secret failure.
-- Full test suite: `116 passed`.
+- Proxy credential config dogfooded with config-based query injection.
+- Full test suite: `120 passed`.
 
 ### Planned Next
 

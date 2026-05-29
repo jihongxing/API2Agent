@@ -18,18 +18,18 @@ class LocalCredentialResolver:
         self.config_credentials = list(config_credentials or [])
 
     def resolve(self, request: CredentialResolutionRequest) -> ResolvedCredential:
-        if request.auth_type == "none" or request.injection_mode == "none":
+        candidates = [
+            request.inline_credential,
+            self._find_config_credential(request),
+            request.credential,
+        ]
+        if (request.auth_type == "none" or request.injection_mode == "none") and not any(candidates):
             return ResolvedCredential(
                 resolved=True,
                 credential_reference="none",
                 redacted_metadata={"source": "none", "provider_id": request.provider_id},
             )
 
-        candidates = [
-            request.inline_credential,
-            self._find_config_credential(request),
-            request.credential,
-        ]
         for credential in candidates:
             if credential is None:
                 continue

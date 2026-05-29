@@ -31,10 +31,10 @@ The proxy resolves the env credential locally, injects it into the forwarded pro
 
 ```text
 pytest tests/test_control_layer.py tests/test_runner_generation.py
-23 passed
+24 passed
 
 pytest
-116 passed
+120 passed
 ```
 
 ## Product Learning

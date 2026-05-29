@@ -225,6 +225,22 @@ api2agent ledger --db api2agent-usage.sqlite --golden-only
 ```
 
 Generated runners use proxy mode when `API2AGENT_PROXY_URL` is set.
+The proxy can also load project-level credentials without putting provider secrets into generated packages:
+
+```bash
+api2agent proxy --db api2agent-usage.sqlite --credential-config credentials.yaml
+```
+
+```yaml
+credentials:
+  - credential_id: github_token
+    provider_id: github
+    auth_type: bearer
+    injection_mode: header
+    injection_name: Authorization
+    source: env
+    secret_ref: GITHUB_TOKEN
+```
 
 Route a semantic capability to a provider candidate using observed metrics:
 

@@ -1,3 +1,4 @@
+from api2agent.credentials.config import load_credential_config
 from api2agent.credentials.models import (
     CredentialDefinition,
     CredentialInjectionPatch,
@@ -13,4 +14,5 @@ __all__ = [
     "CredentialResolutionRequest",
     "LocalCredentialResolver",
     "ResolvedCredential",
+    "load_credential_config",
 ]

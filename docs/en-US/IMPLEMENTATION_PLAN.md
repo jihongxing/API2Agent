@@ -258,11 +258,13 @@ Current implementation:
 - Local package replay can re-resolve credentials from redacted metadata.
 - Generated package proxy mode sends credential intent instead of provider secrets.
 - Local proxy resolves credential intent and injects provider auth before forwarding.
+- Local proxy can load JSON/YAML credential config through `--credential-config`.
+- Config credentials can be used as provider-level fallback when payload credential intent is absent.
 
 Next engineering task:
 
 ```text
-Credential config loading for local proxy
+Credential precedence and ownership policy hardening
 ```
 
 ## 9. Marketplace Is Later

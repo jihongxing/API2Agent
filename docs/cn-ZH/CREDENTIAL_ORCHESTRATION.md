@@ -198,6 +198,8 @@ Credential orchestration 支撑 billing-ready measurement，但它不是 billing
 - proxy 负责 resolve 并 inject credentials - 已实现
 - proxy mode 下 generated files 不再需要发送 provider secrets - 已实现
 - proxy credential 缺失时会记录 failed usage events，且不继续 forward - 已实现
+- proxy 可以加载 project-level JSON/YAML credential config - 已实现
+- payload 不携带 credential intent 时，proxy 也可以解析 config credentials - 已实现
 
 Proxy credential intent 是一个脱敏的 control-plane object：
 
@@ -238,12 +240,11 @@ Proxy credential intent 是一个脱敏的 control-plane object：
 下一项工程任务应该是：
 
 ```text
-Credential config loading for local proxy
+Credential precedence and ownership policy hardening
 ```
 
 验收标准：
 
-- proxy 可以加载 project-level config credentials
-- proxy 可以通过同一套 resolver contract 解析 env 和 config credentials
-- config-loaded proxy credentials 在 usage metadata 中保持 redacted
-- generated runner proxy mode 继续保持不携带 provider secret
+- inline、config、env credentials 之间的 precedence 会形成明确 policy
+- credential ownership fields 会被一致校验，并进入 redacted metadata
+- 多个 credentials 命中同一个 provider 时，conflict behavior 是确定性的

@@ -8,6 +8,8 @@ from api2agent.capabilities.models import RoutingDecision
 from api2agent.control.models import UsageEvent
 from api2agent.control.proxy import execute_proxy_call
 from api2agent.control.storage import UsageStore
+from api2agent.credentials.models import CredentialDefinition
+from api2agent.credentials.resolver import LocalCredentialResolver
 
 
 def test_usage_store_summarizes_events(tmp_path: Path) -> None:
@@ -248,6 +250,56 @@ def test_proxy_body_credential_injection_does_not_mutate_usage_metadata(
     assert captured["options"]["json"] == {"name": "demo", "api_key": "secret-token"}
     assert event.request_metadata["json"] == {"name": "demo"}
     assert "secret-token" not in metadata_json
+
+
+def test_proxy_call_uses_config_credential_when_payload_has_no_credential(tmp_path: Path) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    captured = {}
+    credential_resolver = LocalCredentialResolver(
+        [
+            CredentialDefinition(
+                credential_id="cred_example",
+                provider_id="example",
+                auth_type="api_key",
+                injection_mode="query",
+                injection_name="api_key",
+                source="config",
+                secret_value="config-secret",
+            )
+        ]
+    )
+
+    def fake_forwarder(method, url, options):
+        captured["options"] = options
+        return httpx.Response(200, json={"ok": True})
+
+    status, result = execute_proxy_call(
+        {
+            "project_id": "local",
+            "routing_decision_id": "decision_config_credential",
+            "capability_id": "example.items.list",
+            "provider_id": "example",
+            "tool_id": "list_items",
+            "request": {
+                "method": "GET",
+                "url": "https://api.example.com/items",
+                "params": {"limit": 10},
+            },
+        },
+        store=store,
+        forwarder=fake_forwarder,
+        credential_resolver=credential_resolver,
+    )
+
+    event = store.usage_for_routing_decision("decision_config_credential")[0]
+    metadata_json = json.dumps(event.request_metadata)
+
+    assert status == 200
+    assert result["ok"] is True
+    assert captured["options"]["params"] == {"limit": 10, "api_key": "config-secret"}
+    assert event.credential_reference == "config:cred_example"
+    assert event.request_metadata["credential"]["credential_id"] == "cred_example"
+    assert "config-secret" not in metadata_json
 
 
 def test_usage_store_records_routing_decision(tmp_path: Path) -> None:

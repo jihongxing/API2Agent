@@ -31,10 +31,10 @@ Proxy 在本地解析 env credential，把它注入 forwarded provider request�
 
 ```text
 pytest tests/test_control_layer.py tests/test_runner_generation.py
-23 passed
+24 passed
 
 pytest
-116 passed
+120 passed
 ```
 
 ## 产品结论

@@ -1,3 +1,4 @@
+from api2agent.credentials.config import load_credential_config
 from api2agent.credentials.models import CredentialDefinition, CredentialResolutionRequest
 from api2agent.credentials.resolver import LocalCredentialResolver
 
@@ -59,6 +60,59 @@ def test_resolver_reads_config_credential() -> None:
     assert result.resolved is True
     assert result.credential_reference == "config:cred_demo"
     assert result.injection_patch.query == {"api_key": "config-secret"}
+
+
+def test_resolver_reads_config_credential_without_auth_hint() -> None:
+    resolver = LocalCredentialResolver(
+        [
+            CredentialDefinition(
+                credential_id="cred_demo",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="query",
+                injection_name="api_key",
+                source="config",
+                secret_value="config-secret",
+            )
+        ]
+    )
+
+    result = resolver.resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="none",
+            injection_mode="none",
+        )
+    )
+
+    assert result.resolved is True
+    assert result.credential_reference == "config:cred_demo"
+    assert result.injection_patch.query == {"api_key": "config-secret"}
+
+
+def test_load_credential_config_reads_yaml_object(tmp_path) -> None:
+    config = tmp_path / "credentials.yaml"
+    config.write_text(
+        """
+credentials:
+  - credential_id: cred_demo
+    provider_id: demo
+    auth_type: api_key
+    injection_mode: header
+    injection_name: X-API-Key
+    source: config
+    secret_value: config-secret
+""",
+        encoding="utf-8",
+    )
+
+    credentials = load_credential_config(config)
+
+    assert len(credentials) == 1
+    assert credentials[0].credential_id == "cred_demo"
+    assert credentials[0].provider_id == "demo"
 
 
 def test_inline_credential_override_wins(monkeypatch) -> None:

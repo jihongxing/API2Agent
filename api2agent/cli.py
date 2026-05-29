@@ -191,6 +191,11 @@ def proxy(
     db: Path = typer.Option(Path("api2agent-usage.sqlite"), "--db", help="SQLite database for usage events."),
     api_key: Optional[str] = typer.Option(None, "--api-key", help="Optional Bearer token required by the proxy."),
     quota: Optional[int] = typer.Option(None, "--quota", help="Optional max calls per project."),
+    credential_config: Optional[Path] = typer.Option(
+        None,
+        "--credential-config",
+        help="JSON/YAML file containing project-level credentials for proxy injection.",
+    ),
 ) -> None:
     """Run the local API2Agent proxy for controllable execution."""
     if quota is not None and quota < 1:
@@ -198,11 +203,20 @@ def proxy(
 
     typer.echo(f"API2Agent proxy listening on http://{host}:{port}")
     typer.echo(f"Usage database: {db}")
+    if credential_config is not None:
+        typer.echo(f"Credential config: {credential_config}")
     if quota is not None:
         typer.echo(f"Project quota: {quota} calls")
 
     try:
-        run_proxy_server(host=host, port=port, db_path=db, api_key=api_key, quota=quota)
+        run_proxy_server(
+            host=host,
+            port=port,
+            db_path=db,
+            api_key=api_key,
+            quota=quota,
+            credential_config=credential_config,
+        )
     except KeyboardInterrupt:
         typer.echo("Proxy stopped.")
 
