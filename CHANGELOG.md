@@ -56,9 +56,9 @@ All notable API2Agent changes will be documented in this file.
 - Shadow metrics policy dogfooded with include/exclude comparison.
 - Golden trace marker dogfooded against a real `wttr_in` shadow event.
 - Generated package shadow/replay paths covered by regression tests.
+- Generated package shadow/replay dogfooded against real no-auth `ipify` and `httpbin` APIs.
 - Full test suite: `103 passed`.
 
 ### Planned Next
 
-- Dogfood generated package shadow/replay against a no-auth real API package.
 - Decide when capability naming moves from warning to hard enforcement.

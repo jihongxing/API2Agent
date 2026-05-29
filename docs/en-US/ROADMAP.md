@@ -431,7 +431,7 @@ Current hardening result:
 - golden trace listing and `ledger --golden-only` filtering are implemented.
 - generated package shadow execution mode is implemented for `api2agent call`.
 - local generated package replay execution is implemented for `local_package:<package_dir>` events.
-- generated package shadow + replay dogfood completed; see `docs/en-US/GENERATED_PACKAGE_SHADOW_REPLAY_DOGFOOD_REPORT.md`.
+- generated package shadow + replay dogfood completed with local and real no-auth API packages; see `docs/en-US/GENERATED_PACKAGE_SHADOW_REPLAY_DOGFOOD_REPORT.md`.
 
 ## 9. Phase 6: Hosted Control Plane
 

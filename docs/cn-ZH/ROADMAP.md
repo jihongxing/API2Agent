@@ -431,7 +431,7 @@ capability registry JSON
 - golden trace listing 和 `ledger --golden-only` filtering 已实现。
 - generated package shadow execution mode 已在 `api2agent call` 中实现。
 - local generated package replay execution 已支持 `local_package:<package_dir>` events。
-- generated package shadow + replay dogfood 已完成；详见 `docs/cn-ZH/GENERATED_PACKAGE_SHADOW_REPLAY_DOGFOOD_REPORT.md`。
+- generated package shadow + replay 已用本地 package 和真实 no-auth API package 完成 dogfood；详见 `docs/cn-ZH/GENERATED_PACKAGE_SHADOW_REPLAY_DOGFOOD_REPORT.md`。
 
 ## 9. Phase 6：Hosted Control Plane
 
