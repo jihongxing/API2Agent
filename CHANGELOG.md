@@ -33,6 +33,7 @@ All notable API2Agent changes will be documented in this file.
 - SDK shadow execution mode for benchmark-only provider calls.
 - Exact replay execution for supported SDK and no-credential HTTP events.
 - Optional replay usage recording with isolated `replay` execution mode.
+- Explicit metrics policy: include `shadow` by default, exclude `replay` by default.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -48,6 +49,7 @@ All notable API2Agent changes will be documented in this file.
 - Shadow mode dogfooded with `open_meteo` as main provider and `wttr_in` as shadow provider.
 - Exact replay dogfooded against a real `wttr_in` shadow event.
 - Replay recording dogfooded and verified as excluded from routing metrics.
+- Shadow metrics policy dogfooded with include/exclude comparison.
 - Full test suite: `87 passed`.
 
 ### Planned Next

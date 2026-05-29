@@ -172,6 +172,12 @@ print(result["shadow_attempts"])
 - shadow provider：`wttr_in`
 - ledger 同时包含 `direct` 和 `shadow` execution modes
 
+Shadow metrics 默认会进入 routing aggregates。CLI routing path 可以用以下参数排除：
+
+```bash
+--exclude-shadow-metrics
+```
+
 ## 6. Inspect Ledger
 
 如果已经安装 `api2agent` console script：

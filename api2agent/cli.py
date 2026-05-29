@@ -441,6 +441,11 @@ def route(
         "--preset",
         help="Named routing policy preset: balanced, reliability_first, cost_first, latency_first.",
     ),
+    exclude_shadow_metrics: bool = typer.Option(
+        False,
+        "--exclude-shadow-metrics",
+        help="Exclude shadow execution events from routing metrics.",
+    ),
     json_output: bool = typer.Option(False, "--json", help="Print raw routing result JSON."),
 ) -> None:
     """Select a provider candidate for a capability using observed metrics."""
@@ -460,7 +465,7 @@ def route(
         raise typer.BadParameter(f"Invalid routing policy: {label}") from exc
 
     store = UsageStore(db)
-    metrics = store.metrics_for_capability(capability_id)
+    metrics = store.metrics_for_capability(capability_id, include_shadow=not exclude_shadow_metrics)
     selected = select_provider(providers, metrics, policy)
     ranked = rank_providers(providers, metrics, policy)
     decision = RoutingDecision(
@@ -526,6 +531,11 @@ def call(
         "--retry-on-status",
         help="HTTP status code eligible for failover. Can be used multiple times.",
     ),
+    exclude_shadow_metrics: bool = typer.Option(
+        False,
+        "--exclude-shadow-metrics",
+        help="Exclude shadow execution events from routing metrics.",
+    ),
     json_output: bool = typer.Option(False, "--json", help="Print raw call result JSON."),
 ) -> None:
     """Route and execute a capability through a local generated provider package."""
@@ -565,6 +575,7 @@ def call(
         preset=preset,
         proxy_url=proxy_url,
         failover=failover,
+        include_shadow_metrics=not exclude_shadow_metrics,
         failover_policy=build_failover_policy(
             enabled=failover,
             candidate_count=len(candidate_providers),

@@ -78,6 +78,7 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - SDK shadow execution mode
 - supported SDK 和 no-credential HTTP events 的 exact replay execution
 - optional replay usage recording，使用 `execution_mode=replay`
+- `shadow` 和 `replay` 的 routing metrics policy 已显式化
 
 尚未实现：
 
@@ -369,7 +370,6 @@ capability registry JSON
 立即下一步：
 
 - 决定 capability naming 何时从 warning 升级为 hard enforcement
-- 决定 shadow metrics 是否进入默认 routing aggregates
 - 保持 policy 本地、显式，不引入隐藏的 marketplace-style provider preference
 
 ## 8. Phase 5.5：v0.1-alpha 产品抓手加固
@@ -424,6 +424,7 @@ capability registry JSON
 - exact replay execution 已用真实 `wttr_in` shadow event 验证。
 - 详见 `docs/cn-ZH/REPLAY_DOGFOOD_REPORT.md`。
 - replay recording 已验证为 ledger row，并且不进入 routing metrics。
+- shadow metrics policy 已验证：默认包含，可用显式选项排除。
 
 ## 9. Phase 6：Hosted Control Plane
 

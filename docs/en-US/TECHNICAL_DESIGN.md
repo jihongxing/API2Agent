@@ -355,6 +355,11 @@ Planned execution modes:
 
 `replay` records debug executions in the ledger without affecting default routing metrics.
 
+Metrics policy:
+
+- include `shadow` by default because shadow is benchmark signal
+- exclude `replay` by default because replay is debug signal
+
 ## 5. Why Python Still Makes Sense Now
 
 Python remains reasonable for the current compiler because:

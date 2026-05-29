@@ -172,6 +172,12 @@ Expected:
 - shadow provider: `wttr_in`
 - ledger includes both `direct` and `shadow` execution modes
 
+Shadow metrics are included in routing aggregates by default. CLI routing paths can opt out with:
+
+```bash
+--exclude-shadow-metrics
+```
+
 ## 6. Inspect Ledger
 
 If the `api2agent` console script is installed:

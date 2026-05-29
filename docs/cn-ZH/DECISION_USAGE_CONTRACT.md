@@ -108,7 +108,14 @@ routing decision
 - shadow benchmark execution
 - replay debug execution
 
-Replay rows 会进入 ledger，但默认不进入 provider routing metrics。
+Metrics policy：
+
+- `direct` events 会进入 provider routing metrics
+- `proxy` events 会进入 provider routing metrics
+- `shadow` events 默认进入 provider routing metrics
+- `replay` events 默认不进入 provider routing metrics
+
+Replay rows 会进入 ledger，但不进入 provider routing metrics。
 
 ## 稳定 Ledger Row 字段
 

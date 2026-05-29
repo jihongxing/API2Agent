@@ -23,9 +23,10 @@ def execute_capability(
     proxy_url: str | None = None,
     failover: bool = False,
     failover_policy: FailoverPolicy | None = None,
+    include_shadow_metrics: bool = True,
 ) -> dict[str, Any]:
     candidates = [provider for provider in providers if provider.capability_id == capability_id]
-    metrics = store.metrics_for_capability(capability_id)
+    metrics = store.metrics_for_capability(capability_id, include_shadow=include_shadow_metrics)
     selected = select_provider(candidates, metrics, policy)
     ranked = rank_providers(candidates, metrics, policy)
     effective_failover_policy = failover_policy or build_failover_policy(

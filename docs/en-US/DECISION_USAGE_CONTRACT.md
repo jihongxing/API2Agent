@@ -108,7 +108,14 @@ This allows local reports to distinguish:
 - shadow benchmark execution
 - replay debug execution
 
-Replay rows are included in the ledger, but excluded from provider routing metrics by default.
+Metrics policy:
+
+- `direct` events are included in provider routing metrics
+- `proxy` events are included in provider routing metrics
+- `shadow` events are included in provider routing metrics by default
+- `replay` events are excluded from provider routing metrics by default
+
+Replay rows are included in the ledger, but excluded from provider routing metrics.
 
 ## Stable Ledger Row Fields
 

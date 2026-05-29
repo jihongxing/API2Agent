@@ -260,12 +260,24 @@ class UsageStore:
             )
         return ledger_rows
 
-    def metrics_for_capability(self, capability_id: str) -> list[MetricsSnapshot]:
+    def metrics_for_capability(
+        self,
+        capability_id: str,
+        *,
+        include_shadow: bool = True,
+        include_replay: bool = False,
+    ) -> list[MetricsSnapshot]:
+        mode_clauses = []
+        if not include_shadow:
+            mode_clauses.append("execution_mode != 'shadow'")
+        if not include_replay:
+            mode_clauses.append("execution_mode != 'replay'")
+        mode_sql = "\n                      AND " + "\n                      AND ".join(mode_clauses) if mode_clauses else ""
         with self._connect() as connection:
             rows = [
                 dict(row)
                 for row in connection.execute(
-                    """
+                    f"""
                     SELECT
                       capability_id,
                       provider_id,
@@ -275,7 +287,7 @@ class UsageStore:
                       AVG(estimated_cost) AS estimated_cost_per_call
                     FROM usage_events
                     WHERE capability_id = ?
-                      AND execution_mode != 'replay'
+                      {mode_sql}
                     GROUP BY capability_id, provider_id
                     """,
                     (capability_id,),

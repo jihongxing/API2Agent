@@ -78,6 +78,7 @@ Implemented:
 - SDK shadow execution mode
 - exact replay execution for supported SDK and no-credential HTTP events
 - optional replay usage recording with `execution_mode=replay`
+- explicit routing metrics policy for `shadow` and `replay`
 
 Not implemented yet:
 
@@ -369,7 +370,6 @@ Current dogfood result:
 Immediate next step:
 
 - decide when capability naming moves from warning to hard enforcement
-- decide whether shadow metrics should be included in default routing aggregates
 - keep policy local and explicit: no hidden marketplace-style provider preference
 
 ## 8. Phase 5.5: v0.1-alpha Product Hook Hardening
@@ -424,6 +424,7 @@ Current hardening result:
 - exact replay execution verified against a real `wttr_in` shadow event.
 - see `docs/en-US/REPLAY_DOGFOOD_REPORT.md`.
 - replay recording verified as a ledger row excluded from routing metrics.
+- shadow metrics policy verified: included by default, removable with explicit option.
 
 ## 9. Phase 6: Hosted Control Plane
 

@@ -355,6 +355,11 @@ Proxy mode 仍然是 controllable execution 和未来经济计量的首选路径
 
 `replay` 会把 debug executions 记录进 ledger，但不影响默认 routing metrics。
 
+Metrics policy：
+
+- 默认包含 `shadow`，因为 shadow 是 benchmark signal
+- 默认排除 `replay`，因为 replay 是 debug signal
+
 ## 5. 为什么现在仍然适合 Python
 
 Python 作为当前 compiler 仍然合理，因为：

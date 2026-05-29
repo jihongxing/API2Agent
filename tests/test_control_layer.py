@@ -312,13 +312,30 @@ def test_usage_store_metrics_exclude_replay_events(tmp_path: Path) -> None:
             latency_ms=900,
         )
     )
+    store.record(
+        UsageEvent(
+            execution_mode="shadow",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="open_meteo",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+            latency_ms=300,
+        )
+    )
 
     metrics = store.metrics_for_capability("weather.get")
+    metrics_without_shadow = store.metrics_for_capability("weather.get", include_shadow=False)
 
     assert len(metrics) == 1
-    assert metrics[0].total_calls == 1
+    assert metrics[0].total_calls == 2
     assert metrics[0].success_rate == 1.0
-    assert metrics[0].average_latency_ms == 100
+    assert metrics[0].average_latency_ms == 200
+    assert metrics_without_shadow[0].total_calls == 1
+    assert metrics_without_shadow[0].average_latency_ms == 100
 
 
 def test_proxy_call_enforces_quota_before_forwarding(tmp_path: Path) -> None:

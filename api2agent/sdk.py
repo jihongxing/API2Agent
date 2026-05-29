@@ -35,11 +35,19 @@ def call(
     retry_on_error_types: list[str] | None = None,
     shadow: bool = False,
     shadow_provider_ids: list[str] | None = None,
+    include_shadow_metrics: bool = True,
     db: Path | str = Path("api2agent-usage.sqlite"),
 ) -> dict[str, Any]:
     store = UsageStore(Path(db))
     adapter_classes = _adapters_for_capability(capability)
-    ranked_provider_ids, decision_strategy = _rank_provider_ids(capability, adapter_classes, provider_id, store, strategy)
+    ranked_provider_ids, decision_strategy = _rank_provider_ids(
+        capability,
+        adapter_classes,
+        provider_id,
+        store,
+        strategy,
+        include_shadow_metrics,
+    )
     failover_policy = _build_sdk_failover_policy(
         enabled=failover,
         candidate_count=len(ranked_provider_ids),
@@ -54,7 +62,7 @@ def call(
         preset="sdk_core_loop_v0",
         selected_provider_id=ranked_provider_ids[0] if ranked_provider_ids else None,
         ranked_provider_ids=ranked_provider_ids,
-        metrics=store.metrics_for_capability(capability),
+        metrics=store.metrics_for_capability(capability, include_shadow=include_shadow_metrics),
         failover_policy=failover_policy,
     )
     store.record_routing_decision(decision)
@@ -123,6 +131,7 @@ def _rank_provider_ids(
     provider_id: str | None = None,
     store: UsageStore | None = None,
     strategy: SdkRoutingStrategy = "lowest_latency",
+    include_shadow_metrics: bool = True,
 ) -> tuple[list[str], str]:
     if provider_id:
         if provider_id not in adapters:
@@ -141,7 +150,7 @@ def _rank_provider_ids(
     ]
     ranked = rank_providers(
         candidates,
-        store.metrics_for_capability(capability) if store is not None else [],
+        store.metrics_for_capability(capability, include_shadow=include_shadow_metrics) if store is not None else [],
         RoutingPolicy(strategy=policy_strategy),
     )
     ranked_provider_ids = [candidate.provider_id for candidate in ranked]
