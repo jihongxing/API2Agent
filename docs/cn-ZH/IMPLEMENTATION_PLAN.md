@@ -228,11 +228,39 @@ api2agent route capability-registry.json \
 }
 ```
 
-## 8. Marketplace 是后面的结果
+## 8. Credential Orchestration MVP
+
+Credential orchestration 在 billing 和 marketplace 之前。
+
+定义：
+
+- Credential Schema v0.1
+- owner types：user、project、platform、provider
+- sources：env、config、inline、none
+- resolver order
+- injection patch contract
+- usage event `credential_reference`
+- redaction rules
+
+完成条件：
+
+- 一个 authenticated API 可以使用 resolved local credential 调用
+- raw secrets 不会存入 usage events
+- exact replay 需要 credential 但无法 resolve 时会 warning
+- ledger 可以保留 credential attribution，且不暴露 secrets
+
+下一项工程任务：
+
+```text
+Credential Schema v0.1 + Local Resolver Design
+```
+
+## 9. Marketplace 是后面的结果
 
 在以下条件成立前，不要做 marketplace UI：
 
 - proxy works
+- credential orchestration exists
 - metrics exist
 - capability abstraction exists
 - routing works

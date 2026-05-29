@@ -83,10 +83,13 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - golden trace filtering command
 - local generated package replay execution
 - generated package shadow execution mode
+- Credential Orchestration strategy document
 
 尚未实现：
 
 - hard enforcement of capability naming rule
+- Credential Schema v0.1
+- local Credential Resolver
 - endpoint-level auth
 - base URL override
 - manual write tests
@@ -432,6 +435,52 @@ capability registry JSON
 - generated package shadow execution mode 已在 `api2agent call` 中实现。
 - local generated package replay execution 已支持 `local_package:<package_dir>` events。
 - generated package shadow + replay 已用本地 package 和真实 no-auth API package 完成 dogfood；详见 `docs/cn-ZH/GENERATED_PACKAGE_SHADOW_REPLAY_DOGFOOD_REPORT.md`。
+
+## 8.6 Phase 5.6：Credential Orchestration MVP
+
+状态：计划中的下一步。
+
+目标：
+
+让 API2Agent 具备 credential-aware 能力，但不直接做 payment 或 hosted vault。
+
+范围：
+
+- Credential Schema v0.1
+- credential owner model：
+  - user
+  - project
+  - platform
+  - provider
+- credential sources：
+  - env
+  - config
+  - inline
+  - none
+- local credential resolver
+- credential injection patch
+- usage event `credential_reference`
+- request metadata 和 replay metadata 中的 secret redaction
+
+退出标准：
+
+- 一个 authenticated API 可以通过 resolved credentials 调用
+- raw secrets 不进入 usage events
+- required credential 无法 resolve 时，replay 会 warning
+- ledger 可以保留 credential attribution，且不暴露 secrets
+
+禁止扩展：
+
+- 不做 hosted vault
+- 不做 payment processing
+- 不做 provider settlement
+- 不做 marketplace credential onboarding
+
+立即下一步任务：
+
+```text
+Credential Schema v0.1 + Local Resolver Design
+```
 
 ## 9. Phase 6：Hosted Control Plane
 

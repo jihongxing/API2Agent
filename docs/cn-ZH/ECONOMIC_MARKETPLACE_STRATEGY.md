@@ -28,6 +28,8 @@ API2Agent 不只是 API 转 tool 的工具。
 
 不要直接从“免费工具”跳到“支付收费”。中间缺失的关键层是控制权。
 
+在控制权之后，下一个缺失的中间层是 credential orchestration：谁拥有调用权、使用哪个 credential、消耗的是谁的资源。
+
 ## 2. 正确阶段逻辑
 
 ### Phase 1：Free Tooling Layer
@@ -76,6 +78,35 @@ Agent -> API2Agent Proxy -> third-party API
 ```
 
 这会创造未来计量、路由和收费的权利。
+
+### Phase 2.5：Credential Orchestration Layer
+
+目标：
+
+在引入 payment 之前，先让受控流量可以归因到 credential owner。
+
+必需能力：
+
+- credential ownership model
+- credential resolver
+- credential injection
+- credential masking
+- usage event `credential_reference`
+- BYOK、platform-key、provider-key 和 no-credential modes
+
+关键变化：
+
+```text
+Agent -> API2Agent Proxy -> third-party API
+```
+
+变成：
+
+```text
+Agent -> API2Agent Proxy -> resolved credential -> third-party API
+```
+
+这会创造未来区分 user-paid calls、platform-paid calls、provider-sponsored calls 和 free/internal calls 的能力。
 
 ### Phase 3：Billing Layer
 

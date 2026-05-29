@@ -37,6 +37,7 @@ OpenAPI / curl
 ```text
 Agent / generated runtime
   -> API2Agent Proxy
+  -> Credential Resolver
   -> third-party API
   -> Usage Event
   -> Metrics Store
@@ -46,6 +47,7 @@ Agent / generated runtime
 目的：
 
 - control traffic
+- resolve and inject provider credentials
 - observe success/cost/latency
 - enable quota and future billing
 - enable capability routing
@@ -98,7 +100,7 @@ api2agent/
 
 - receive normalized tool calls
 - enforce project identity
-- attach provider credentials
+- resolve and attach provider credentials
 - forward to third-party APIs
 - record usage events
 - return structured success/error response
@@ -122,6 +124,31 @@ Body：
   "params": {}
 }
 ```
+
+### 3.3.1 Credential Orchestration Layer
+
+职责：
+
+- model credential ownership
+- resolve 哪个 credential 可以用于 provider call
+- 把 credentials 注入 headers、query params 或 request bodies
+- 防止 raw secrets 进入 usage events、replay metadata 或 logs
+- 把 `credential_reference` 挂到 usage events
+
+最小 local sources：
+
+- environment variables
+- project config
+- inline override
+- public APIs 使用 `none`
+
+未来 hosted sources：
+
+- project vault credential
+- platform credential
+- provider-managed credential
+
+这一层不是 billing。它是 permission 和 attribution layer，是未来 billing 或 marketplace settlement 可信的前置条件。
 
 ### 3.4 Metrics Layer
 
@@ -247,7 +274,24 @@ Provider registry files 在 route 或 call execution 前会先做 schema validat
   "status_code": 200,
   "latency_ms": 950,
   "estimated_cost": 0.01,
-  "error_type": null
+  "error_type": null,
+  "credential_reference": "cred_123"
+}
+```
+
+### Credential
+
+```json
+{
+  "credential_id": "cred_123",
+  "owner_type": "project",
+  "owner_id": "proj_123",
+  "provider_id": "github",
+  "auth_type": "api_key",
+  "injection_mode": "header",
+  "injection_name": "Authorization",
+  "source": "env",
+  "secret_ref": "GITHUB_TOKEN"
 }
 ```
 
@@ -403,15 +447,26 @@ api2agent generate openapi.yaml --proxy https://api.api2agent.com
 
 Generated runner 应该能选择调用 proxy，而不是直连 third-party API。
 
-### Priority 3：定义 Usage Event Schema
+### Priority 3：定义 Credential Schema And Local Resolver
+
+Hosted execution 成为 economic infrastructure 之前，API2Agent 必须知道：
+
+- credential 属于谁
+- credential 如何被解析
+- credential 如何被注入
+- usage events 如何安全引用它
+
+先从 env/config/inline sources 开始，不做 hosted vault。
+
+### Priority 4：定义 Usage Event Schema
 
 做 billing 前，先定义 event contract。
 
-### Priority 4：定义 Capability Schema v0.1
+### Priority 5：定义 Capability Schema v0.1
 
 要让 provider comparison 和 routing 可靠，先定义什么叫两个 API 可以在同一个 capability 下比较。
 
-### Priority 5：构建 Routing v0
+### Priority 6：构建 Routing v0
 
 从简单 routing 开始：
 
@@ -419,7 +474,7 @@ Generated runner 应该能选择调用 proxy，而不是直连 third-party API�
 - lowest estimated cost
 - highest observed success rate
 
-### Priority 6：v0.1-alpha 产品抓手
+### Priority 7：v0.1-alpha 产品抓手
 
 alpha 产品抓手是 Reliability + Observability。
 
@@ -446,6 +501,7 @@ alpha 产品抓手是 Reliability + Observability。
 - metrics store
 - quota enforcement
 - credential vault
+- credential orchestration
 - routing
 - registry
 - billing

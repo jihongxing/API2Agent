@@ -38,6 +38,7 @@ All notable API2Agent changes will be documented in this file.
 - Golden trace listing and ledger filtering.
 - Generated package shadow execution mode for `api2agent call`.
 - Local generated package replay execution.
+- Credential Orchestration strategy and MVP-2.5 planning docs.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 

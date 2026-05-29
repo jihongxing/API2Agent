@@ -2,7 +2,7 @@
 
 ## 1. MVP Definition
 
-API2Agent now has a two-stage MVP.
+API2Agent now has a staged MVP.
 
 ```text
 MVP-1: Usable
@@ -10,11 +10,16 @@ MVP-1: Usable
 
 MVP-2: Controllable
   generated package -> API2Agent Proxy -> third-party API -> usage event / metrics / quota
+
+MVP-2.5: Credential-aware
+  generated package/proxy -> credential resolver -> provider API -> usage event with credential_reference
 ```
 
 MVP-1 proves that APIs can become Agent-callable tools.
 
 MVP-2 proves that API2Agent can observe and control the execution path, which is required before billing, routing, and marketplace.
+
+MVP-2.5 proves that API2Agent can attribute API execution rights without becoming a payment system.
 
 ## 2. Current Implementation Status
 
@@ -41,6 +46,8 @@ Adjacent work already implemented:
 
 These adjacent pieces are not a license to continue beyond the roadmap. Routing execution loop must wait for the roadmap phase to be accepted.
 
+Credential orchestration status: documented, not implemented.
+
 ## 3. MVP Promise
 
 User-facing promise:
@@ -54,6 +61,8 @@ Internal promise:
 Strategic boundary:
 
 > Payment, full billing, routing, and marketplace are not in MVP. Proxy, usage events, and quota are in MVP-2.
+
+> Credential schema and local resolver are MVP-2.5 because credential ownership is required before API2Agent can become billing-ready infrastructure.
 
 ## 4. MVP Commands
 
@@ -150,6 +159,21 @@ The generated runner must:
 - include project/capability/provider/tool metadata in proxy calls
 - send a normalized HTTP request payload to the proxy
 
+## 7.5 MVP-2.5 Functional Requirements: Credential-Aware
+
+The credential resolver must:
+
+- support env/config/inline sources
+- represent credential owner and provider
+- return an injection patch without exposing raw secrets
+- attach `credential_reference` to usage events
+- redact secrets from replay metadata and logs
+
+The proxy path should:
+
+- prefer proxy-side credential injection when possible
+- keep generated packages from storing provider secrets in hosted mode
+
 Usage reporting must show:
 
 - total calls
@@ -227,6 +251,15 @@ Expected:
 - proxy blocks calls after quota is exceeded
 - quota failure is recorded and returned clearly
 
+### Test 6: Credential Resolution
+
+Expected:
+
+- resolver can select an env/config credential for a provider
+- execution injects the credential into the provider request
+- usage event contains `credential_reference`
+- raw secret is not stored in usage event metadata
+
 ## 10. MVP Exit Criteria
 
 MVP-1 is complete when:
@@ -243,4 +276,11 @@ MVP-2 is complete when:
 - proxy enforces quota
 - usage report shows success/cost/latency
 
-After MVP-2, the next phase is Capability Schema v0.1 and Routing v0.
+MVP-2.5 is complete when:
+
+- credential schema is implemented
+- local resolver supports env/config/inline sources
+- execution can inject resolved credentials
+- usage events safely record credential references
+
+After MVP-2.5, the next phase is hardening capability naming and hosted control-plane design.

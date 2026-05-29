@@ -27,6 +27,7 @@ The long-term product can become larger:
 Agent request
   -> Capability Layer
   -> Routing Layer
+  -> Credential Orchestration
   -> API2Agent Proxy
   -> third-party API / workflow
   -> metrics, quota, pricing
@@ -69,6 +70,7 @@ The difference:
 - Capability is intent.
 - Metrics make candidates comparable.
 - Routing turns metrics into decisions.
+- Credentials define who has the right to call and whose resource is consumed.
 - Economics can later turn usage into commercial products.
 
 API2Agent must therefore evolve from generation to controlled execution.
@@ -104,6 +106,21 @@ Includes:
 - latency/success/failure measurement
 
 ### Layer 3: Economic Layer
+
+Before economics, API2Agent needs a credential orchestration layer.
+
+Includes:
+
+- credential ownership
+- credential resolution
+- credential injection
+- credential masking
+- `credential_reference` in usage events
+- BYOK, platform-key, provider-key, and no-credential modes
+
+This is not payment. It is the permission and attribution layer required before payment can be trustworthy.
+
+### Layer 3.5: Economic Layer
 
 Makes usage chargeable later.
 
@@ -290,6 +307,10 @@ One implementation of a capability.
 
 A recorded execution attempt.
 
+### Credential
+
+The right to call a provider API, with ownership, injection, and safe usage attribution metadata.
+
 ### Metrics Snapshot
 
 Aggregated success/cost/latency data for routing and far-term marketplace comparison.
@@ -315,6 +336,7 @@ Commercial surface:
 - hosted proxy
 - hosted metrics
 - quotas
+- credential orchestration
 - credential vault
 - routing
 - private registry
@@ -339,6 +361,17 @@ Mitigation:
 - design proxy mode early
 - make hosted execution useful before billing
 - make metrics visible to users
+
+### Risk: Missing Credential Ownership
+
+If API2Agent cannot say which credential was used and who owns it, usage data cannot become reliable quota, routing, billing, or marketplace data.
+
+Mitigation:
+
+- define Credential Schema v0.1
+- build a local credential resolver
+- inject credentials through proxy when possible
+- keep raw secrets out of usage events and replay metadata
 
 ### Risk: Building Marketplace Too Early
 

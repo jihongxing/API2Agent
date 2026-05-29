@@ -83,10 +83,13 @@ Implemented:
 - golden trace filtering command
 - local generated package replay execution
 - generated package shadow execution mode
+- Credential Orchestration strategy document
 
 Not implemented yet:
 
 - hard enforcement of capability naming rule
+- Credential Schema v0.1
+- local Credential Resolver
 - endpoint-level auth
 - base URL override
 - manual write tests
@@ -432,6 +435,52 @@ Current hardening result:
 - generated package shadow execution mode is implemented for `api2agent call`.
 - local generated package replay execution is implemented for `local_package:<package_dir>` events.
 - generated package shadow + replay dogfood completed with local and real no-auth API packages; see `docs/en-US/GENERATED_PACKAGE_SHADOW_REPLAY_DOGFOOD_REPORT.md`.
+
+## 8.6 Phase 5.6: Credential Orchestration MVP
+
+Status: planned next.
+
+Goal:
+
+Make API2Agent credential-aware without building payments or hosted vaults yet.
+
+Scope:
+
+- Credential Schema v0.1
+- credential owner model:
+  - user
+  - project
+  - platform
+  - provider
+- credential sources:
+  - env
+  - config
+  - inline
+  - none
+- local credential resolver
+- credential injection patch
+- usage event `credential_reference`
+- secret redaction in request metadata and replay metadata
+
+Exit criteria:
+
+- one authenticated API can be called through resolved credentials
+- raw secrets do not enter usage events
+- replay warns when a required credential cannot be resolved
+- ledger can preserve credential attribution without exposing secrets
+
+Do not expand:
+
+- no hosted vault yet
+- no payment processing
+- no provider settlement
+- no marketplace credential onboarding
+
+Immediate next task:
+
+```text
+Credential Schema v0.1 + Local Resolver Design
+```
 
 ## 9. Phase 6: Hosted Control Plane
 

@@ -228,11 +228,39 @@ Minimal provider registry:
 }
 ```
 
-## 8. Marketplace Is Later
+## 8. Credential Orchestration MVP
+
+Credential orchestration comes before billing and marketplace work.
+
+Define:
+
+- Credential Schema v0.1
+- owner types: user, project, platform, provider
+- sources: env, config, inline, none
+- resolver order
+- injection patch contract
+- usage event `credential_reference`
+- redaction rules
+
+Done when:
+
+- one authenticated API can be called with a resolved local credential
+- raw secrets are not stored in usage events
+- replay warns when exact replay needs a credential that cannot be resolved
+- ledger can preserve credential attribution without exposing secrets
+
+Next engineering task:
+
+```text
+Credential Schema v0.1 + Local Resolver Design
+```
+
+## 9. Marketplace Is Later
 
 Do not build a marketplace UI before:
 
 - proxy works
+- credential orchestration exists
 - metrics exist
 - capability abstraction exists
 - routing works

@@ -2,7 +2,7 @@
 
 ## 1. MVP 定义
 
-API2Agent 现在有两段 MVP。
+API2Agent 现在是分阶段 MVP。
 
 ```text
 MVP-1：可用
@@ -10,11 +10,16 @@ MVP-1：可用
 
 MVP-2：可控
   generated package -> API2Agent Proxy -> third-party API -> usage event / metrics / quota
+
+MVP-2.5：Credential-aware
+  generated package/proxy -> credential resolver -> provider API -> usage event with credential_reference
 ```
 
 MVP-1 证明 API 可以变成 Agent-callable tools。
 
 MVP-2 证明 API2Agent 可以观测和控制执行路径，这是 billing、routing 和 marketplace 的前置条件。
+
+MVP-2.5 证明 API2Agent 可以归因 API execution rights，而不是直接变成 payment system。
 
 ## 2. 当前实现状态
 
@@ -41,6 +46,8 @@ MVP-2 状态：第一版本地实现已完成，等待 dogfood。
 
 这些相邻能力不代表可以继续越过路线图。Routing execution loop 必须等对应 roadmap phase 被接受后再实现。
 
+Credential orchestration 状态：已文档化，尚未实现。
+
 ## 3. MVP 承诺
 
 面向用户的承诺：
@@ -54,6 +61,8 @@ MVP-2 状态：第一版本地实现已完成，等待 dogfood。
 战略边界：
 
 > Payment、full billing、routing、marketplace 不在 MVP 内。Proxy、usage events、quota 在 MVP-2 内。
+
+> Credential schema 和 local resolver 属于 MVP-2.5，因为 credential ownership 是 API2Agent 成为 billing-ready infrastructure 的前置条件。
 
 ## 4. MVP 命令
 
@@ -160,6 +169,21 @@ Usage reporting 必须展示：
 - estimated cost
 - error counts
 
+## 7.5 MVP-2.5 功能需求：Credential-Aware
+
+Credential resolver 必须：
+
+- 支持 env/config/inline sources
+- 表达 credential owner 和 provider
+- 返回 injection patch，但不暴露 raw secrets
+- 把 `credential_reference` 挂到 usage events
+- 从 replay metadata 和 logs 中 redacts secrets
+
+Proxy path 应该：
+
+- 尽可能优先使用 proxy-side credential injection
+- hosted mode 下避免 generated packages 保存 provider secrets
+
 ## 8. MVP 非功能需求
 
 ### Reliability
@@ -227,6 +251,15 @@ Usage reporting 必须展示：
 - proxy 在 quota exceeded 后阻止调用
 - quota failure 被记录并清晰返回
 
+### 测试 6：Credential Resolution
+
+预期：
+
+- resolver 可以为 provider 选择 env/config credential
+- execution 会把 credential 注入 provider request
+- usage event 包含 `credential_reference`
+- raw secret 不存入 usage event metadata
+
 ## 10. MVP 退出标准
 
 MVP-1 完成条件：
@@ -243,4 +276,11 @@ MVP-2 完成条件：
 - proxy enforce quota
 - usage report 展示 success/cost/latency
 
-MVP-2 之后，下一阶段是 Capability Schema v0.1 和 Routing v0。
+MVP-2.5 完成条件：
+
+- credential schema 已实现
+- local resolver 支持 env/config/inline sources
+- execution 可以注入 resolved credentials
+- usage events 安全记录 credential references
+
+MVP-2.5 之后，下一阶段是加固 capability naming 和设计 hosted control plane。

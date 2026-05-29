@@ -60,6 +60,8 @@
 - `is_golden`
 - `created_at`
 
+`credential_reference` 保留给 credential orchestration。它必须引用 credential identity 或 redacted source，绝不能保存 raw secret。
+
 稳定 `execution_mode` values：
 
 - `direct`

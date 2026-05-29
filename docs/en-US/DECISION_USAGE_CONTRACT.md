@@ -60,6 +60,8 @@ The following `usage_events[]` fields are stable:
 - `is_golden`
 - `created_at`
 
+`credential_reference` is reserved for credential orchestration. It must reference a credential identity or redacted source, never a raw secret.
+
 Stable `execution_mode` values:
 
 - `direct`

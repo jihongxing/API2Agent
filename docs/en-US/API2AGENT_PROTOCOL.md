@@ -15,6 +15,7 @@ API description
   -> capability
   -> provider candidate
   -> routing decision
+  -> credential resolution
   -> execution attempt
   -> usage event
   -> ledger row
@@ -68,6 +69,54 @@ Identity must attach to:
 - future billing exports
 
 Without identity, API2Agent is only an anonymous traffic pipe.
+
+## 3.1 Credential Orchestration Layer
+
+Most real APIs are not marketplace-ready. Many have credentials but no per-call payment model; many internal APIs have no formal billing system at all.
+
+API2Agent therefore needs credential orchestration before it needs payment.
+
+Credential orchestration answers:
+
+- who owns the right to call
+- which credential is used
+- how the credential is injected
+- which project or agent consumed it
+- how the usage event references it without exposing secrets
+
+Draft credential shape:
+
+```json
+{
+  "credential_id": "cred_123",
+  "owner_type": "project",
+  "owner_id": "proj_123",
+  "provider_id": "github",
+  "auth_type": "api_key",
+  "injection_mode": "header",
+  "injection_name": "Authorization",
+  "source": "env",
+  "secret_ref": "GITHUB_TOKEN"
+}
+```
+
+Supported ownership modes:
+
+- `user`
+- `project`
+- `platform`
+- `provider`
+
+Supported early sources:
+
+- `env`
+- `config`
+- `inline`
+- future `vault`
+
+Credential orchestration is not billing. It is the permission and attribution layer that makes billing-ready usage possible later.
+
+See `docs/en-US/CREDENTIAL_ORCHESTRATION.md`.
 
 ## 4. Capability Layer
 
@@ -302,6 +351,8 @@ Stable fields:
 - `is_golden`
 - `created_at`
 
+`credential_reference` must never contain a raw secret. It should point to a resolved credential identity or a redacted credential source.
+
 Stable execution modes:
 
 - `direct`
@@ -458,10 +509,14 @@ Implemented:
 - SDK benchmark helper
 - explicit SDK routing strategy
 - SDK failover with attempts recorded under one routing decision
+- generated package shadow and replay execution
+- golden trace listing and ledger filtering
 
 Not yet implemented:
 
 - full identity layer
+- credential schema and resolver
+- credential orchestration
 - credential vault
 - hosted control plane
 - provider onboarding workflow

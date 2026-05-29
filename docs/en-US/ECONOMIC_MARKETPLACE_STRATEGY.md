@@ -28,6 +28,8 @@ Economic and marketplace work only becomes relevant after the API2Agent executio
 
 Do not jump directly from "free tooling" to "billing." The missing middle is control.
 
+After control, the next missing middle is credential orchestration: who owns the right to call, which credential is used, and whose resource was consumed.
+
 ## 2. Correct Phase Logic
 
 ### Phase 1: Free Tooling Layer
@@ -76,6 +78,35 @@ Agent -> API2Agent Proxy -> third-party API
 ```
 
 This creates the future right to meter, route, and charge.
+
+### Phase 2.5: Credential Orchestration Layer
+
+Goal:
+
+Make controlled traffic attributable to a credential owner before introducing payment.
+
+Required capabilities:
+
+- credential ownership model
+- credential resolver
+- credential injection
+- credential masking
+- usage event `credential_reference`
+- BYOK, platform-key, provider-key, and no-credential modes
+
+The important shift:
+
+```text
+Agent -> API2Agent Proxy -> third-party API
+```
+
+becomes:
+
+```text
+Agent -> API2Agent Proxy -> resolved credential -> third-party API
+```
+
+This creates the future right to distinguish user-paid calls, platform-paid calls, provider-sponsored calls, and free/internal calls.
 
 ### Phase 3: Billing Layer
 

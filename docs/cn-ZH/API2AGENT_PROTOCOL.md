@@ -15,6 +15,7 @@ API description
   -> capability
   -> provider candidate
   -> routing decision
+  -> credential resolution
   -> execution attempt
   -> usage event
   -> ledger row
@@ -68,6 +69,54 @@ Identity 必须挂到：
 - future billing exports
 
 没有 identity，API2Agent 只是匿名流量管道。
+
+## 3.1 Credential Orchestration Layer
+
+真实 API 大多不是 marketplace-ready。很多 API 有 credentials，但没有按调用付费模型；很多 internal APIs 甚至没有正式 billing system。
+
+因此，API2Agent 需要先做 credential orchestration，而不是先做 payment。
+
+Credential orchestration 回答：
+
+- 谁拥有调用权
+- 使用哪个 credential
+- credential 如何被注入
+- 哪个 project 或 agent 消耗了它
+- usage event 如何引用它且不暴露 secrets
+
+Credential 草案：
+
+```json
+{
+  "credential_id": "cred_123",
+  "owner_type": "project",
+  "owner_id": "proj_123",
+  "provider_id": "github",
+  "auth_type": "api_key",
+  "injection_mode": "header",
+  "injection_name": "Authorization",
+  "source": "env",
+  "secret_ref": "GITHUB_TOKEN"
+}
+```
+
+支持的 ownership modes：
+
+- `user`
+- `project`
+- `platform`
+- `provider`
+
+早期支持的 sources：
+
+- `env`
+- `config`
+- `inline`
+- future `vault`
+
+Credential orchestration 不是 billing。它是 permission 和 attribution layer，使未来 billing-ready usage 成立。
+
+详见 `docs/cn-ZH/CREDENTIAL_ORCHESTRATION.md`。
 
 ## 4. Capability Layer
 
@@ -302,6 +351,8 @@ Usage event 记录 execution attempt。
 - `is_golden`
 - `created_at`
 
+`credential_reference` 绝不能包含 raw secret。它应该指向 resolved credential identity 或 redacted credential source。
+
 稳定 execution modes：
 
 - `direct`
@@ -458,10 +509,14 @@ usage event
 - SDK benchmark helper
 - SDK 显式 routing strategy
 - SDK failover，并把 attempts 记录到同一个 routing decision 下
+- generated package shadow and replay execution
+- golden trace listing and ledger filtering
 
 尚未实现：
 
 - full identity layer
+- credential schema and resolver
+- credential orchestration
 - credential vault
 - hosted control plane
 - provider onboarding workflow

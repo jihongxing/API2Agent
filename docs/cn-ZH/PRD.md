@@ -27,6 +27,7 @@ OpenAPI / curl
 Agent request
   -> Capability Layer
   -> Routing Layer
+  -> Credential Orchestration
   -> API2Agent Proxy
   -> third-party API / workflow
   -> metrics, quota, pricing
@@ -69,6 +70,7 @@ API2Agent 不只是 “Agent 时代的 Stainless”。Stainless 帮人类用 SDK
 - Capability 是意图。
 - Metrics 让候选实现可比较。
 - Routing 把 metrics 变成决策。
+- Credentials 定义谁有调用权，以及消耗的是谁的资源。
 - Economics 未来可以把 usage 变成商业化产品。
 
 所以 API2Agent 必须从 generation 走向 controlled execution。
@@ -103,7 +105,22 @@ API2Agent 不只是 “Agent 时代的 Stainless”。Stainless 帮人类用 SDK
 - structured logs
 - latency/success/failure measurement
 
-### Layer 3：Economic Layer
+### Layer 3：Credential Orchestration Layer
+
+在 economics 之前，API2Agent 需要 credential orchestration layer。
+
+包括：
+
+- credential ownership
+- credential resolution
+- credential injection
+- credential masking
+- usage events 中的 `credential_reference`
+- BYOK、platform-key、provider-key 和 no-credential modes
+
+这不是 payment。它是 payment 可信之前必须具备的 permission and attribution layer。
+
+### Layer 3.5：Economic Layer
 
 让 usage 未来可收费。
 
@@ -290,6 +307,10 @@ Agent 想完成的语义任务。
 
 一次执行尝试的记录。
 
+### Credential
+
+调用 provider API 的权利，包含 ownership、injection 和 safe usage attribution metadata。
+
 ### Metrics Snapshot
 
 用于 routing 和远期 marketplace 比较的 success/cost/latency 聚合数据。
@@ -315,6 +336,7 @@ Open-core 拆分：
 - hosted proxy
 - hosted metrics
 - quotas
+- credential orchestration
 - credential vault
 - routing
 - private registry
@@ -339,6 +361,17 @@ free tooling -> controlled usage -> metered usage -> paid usage -> far-term mark
 - 尽早设计 proxy mode
 - 在 billing 前让 hosted execution 本身有价值
 - 让 metrics 对用户可见
+
+### 风险：缺少 Credential Ownership
+
+如果 API2Agent 不能说明用了哪个 credential、credential 属于谁，那么 usage data 就无法成为可信的 quota、routing、billing 或 marketplace data。
+
+缓解：
+
+- 定义 Credential Schema v0.1
+- 构建 local credential resolver
+- 尽可能通过 proxy 注入 credentials
+- raw secrets 不进入 usage events 和 replay metadata
 
 ### 风险：过早做 Marketplace
 

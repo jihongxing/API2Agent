@@ -37,6 +37,7 @@ Purpose:
 ```text
 Agent / generated runtime
   -> API2Agent Proxy
+  -> Credential Resolver
   -> third-party API
   -> Usage Event
   -> Metrics Store
@@ -46,6 +47,7 @@ Agent / generated runtime
 Purpose:
 
 - control traffic
+- resolve and inject provider credentials
 - observe success/cost/latency
 - enable quota and future billing
 - enable capability routing
@@ -98,7 +100,7 @@ Responsibilities:
 
 - receive normalized tool calls
 - enforce project identity
-- attach provider credentials
+- resolve and attach provider credentials
 - forward to third-party APIs
 - record usage events
 - return structured success/error response
@@ -122,6 +124,31 @@ Body:
   "params": {}
 }
 ```
+
+### 3.3.1 Credential Orchestration Layer
+
+Responsibilities:
+
+- model credential ownership
+- resolve which credential may be used for a provider call
+- inject credentials into headers, query params, or request bodies
+- prevent raw secrets from entering usage events, replay metadata, or logs
+- attach `credential_reference` to usage events
+
+Minimum local sources:
+
+- environment variables
+- project config
+- inline override
+- `none` for public APIs
+
+Future hosted sources:
+
+- project vault credential
+- platform credential
+- provider-managed credential
+
+This layer is not billing. It is the permission and attribution layer required before billing or marketplace settlement can be credible.
 
 ### 3.4 Metrics Layer
 
@@ -247,7 +274,24 @@ Invalid registry JSON should fail before routing, so bad provider metadata canno
   "status_code": 200,
   "latency_ms": 950,
   "estimated_cost": 0.01,
-  "error_type": null
+  "error_type": null,
+  "credential_reference": "cred_123"
+}
+```
+
+### Credential
+
+```json
+{
+  "credential_id": "cred_123",
+  "owner_type": "project",
+  "owner_id": "proj_123",
+  "provider_id": "github",
+  "auth_type": "api_key",
+  "injection_mode": "header",
+  "injection_name": "Authorization",
+  "source": "env",
+  "secret_ref": "GITHUB_TOKEN"
 }
 ```
 
@@ -403,15 +447,26 @@ api2agent generate openapi.yaml --proxy https://api.api2agent.com
 
 Generated runner should be able to call proxy instead of third-party API directly.
 
-### Priority 3: Define Usage Event Schema
+### Priority 3: Define Credential Schema And Local Resolver
+
+Before hosted execution can become economic infrastructure, API2Agent must know:
+
+- who owns the credential
+- how the credential is resolved
+- how it is injected
+- how usage events reference it safely
+
+Start with env/config/inline sources and no hosted vault.
+
+### Priority 4: Define Usage Event Schema
 
 Before building billing, define the event contract.
 
-### Priority 4: Define Capability Schema v0.1
+### Priority 5: Define Capability Schema v0.1
 
 Before provider comparison and routing can become reliable, define what makes two APIs comparable under one capability.
 
-### Priority 5: Build Routing v0
+### Priority 6: Build Routing v0
 
 Start with simple routing:
 
@@ -419,7 +474,7 @@ Start with simple routing:
 - lowest estimated cost
 - highest observed success rate
 
-### Priority 6: v0.1-alpha Product Hook
+### Priority 7: v0.1-alpha Product Hook
 
 The alpha product hook is Reliability + Observability.
 
@@ -446,6 +501,7 @@ Commercial:
 - metrics store
 - quota enforcement
 - credential vault
+- credential orchestration
 - routing
 - registry
 - billing
