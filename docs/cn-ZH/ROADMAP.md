@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Authenticated proxy credential dogfood with a real API
+Credential orchestration milestone closeout and Phase 6 readiness review
 ```
 
 当前实现结果：
@@ -503,6 +503,8 @@ Authenticated proxy credential dogfood with a real API
 - disabled 和 expired credentials 会在 secret resolution 之前返回 machine-readable errors。
 - usage CLI 现在可以通过 `api2agent usage --credential-audit` 打印 credential audit events。
 - credential audit output 使用 allowlist，并聚合 credential-related failures。
+- authenticated proxy credential dogfood 已通过真实 `https://httpbin.org/bearer` API 验证。
+- local BYOK loop 现在覆盖 config credential resolution、auth injection、usage ledger 和 audit CLI。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 - proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
@@ -510,6 +512,7 @@ Authenticated proxy credential dogfood with a real API
 - credential scope dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_SCOPE_DOGFOOD_REPORT.md`。
 - credential lifecycle dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_LIFECYCLE_DOGFOOD_REPORT.md`。
 - credential audit CLI dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_AUDIT_CLI_DOGFOOD_REPORT.md`。
+- authenticated proxy credential dogfood 已完成；详见 `docs/cn-ZH/AUTHENTICATED_PROXY_CREDENTIAL_DOGFOOD_REPORT.md`。
 
 实施 checklist：
 
@@ -562,6 +565,11 @@ Authenticated proxy credential dogfood with a real API
    - 新增 JSON 和 text audit output
    - 包含 `credential_reference`、selected metadata 和 credential failure counts
    - 省略非 allowlisted metadata，例如 `secret_value`
+12. Authenticated proxy credential dogfood with a real API - complete
+   - 使用 credential config authenticate 一个真实 provider request
+   - 验证 provider 可以收到 Bearer auth
+   - 验证 usage metadata 和 audit CLI 保持 secret-safe
+   - 在双语 docs 中记录 dogfood results
 
 验收测试集：
 
@@ -585,6 +593,8 @@ Authenticated proxy credential dogfood with a real API
 - resolver 会为 accepted credentials 记录 lifecycle audit metadata
 - usage CLI 可以打印 credential audit JSON，且不暴露 raw secrets
 - usage CLI 可以打印 credential audit text，且不暴露 raw secrets
+- authenticated real API dogfood 返回 provider `authenticated=true`
+- credential audit CLI 可以报告 real API event，且不泄漏 raw token
 
 ## 9. Phase 6：Hosted Control Plane
 

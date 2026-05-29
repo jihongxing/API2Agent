@@ -281,6 +281,16 @@ Audit output includes:
 
 Audit output uses an allowlist and never prints `secret_value`.
 
+### Real Authenticated Dogfood
+
+The local BYOK loop has been verified against a real authenticated API:
+
+```text
+proxy request -> credential config -> resolver -> auth injection -> real API -> usage ledger -> credential audit CLI
+```
+
+See `docs/en-US/AUTHENTICATED_PROXY_CREDENTIAL_DOGFOOD_REPORT.md`.
+
 ### Phase C3: Hosted Credential Store
 
 - encrypted credential storage
@@ -302,11 +312,11 @@ Audit output uses an allowlist and never prints `secret_value`.
 The next engineering task should be:
 
 ```text
-Authenticated proxy credential dogfood with a real API
+Credential orchestration milestone closeout and Phase 6 readiness review
 ```
 
 Acceptance criteria:
 
-- run at least one authenticated real API through proxy credential config
-- verify provider receives auth while usage metadata stays redacted
-- document failure modes for missing, expired, or scoped credentials
+- summarize current credential orchestration capabilities and limits
+- identify which parts are ready for hosted control plane work
+- decide whether to move next into hosted identity, vault, or more local hardening

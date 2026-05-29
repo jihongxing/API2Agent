@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Authenticated proxy credential dogfood with a real API
+Credential orchestration milestone closeout and Phase 6 readiness review
 ```
 
 Current implementation result:
@@ -503,6 +503,8 @@ Current implementation result:
 - disabled and expired credentials fail with machine-readable errors before secret resolution.
 - usage CLI can now print credential audit events through `api2agent usage --credential-audit`.
 - credential audit output uses an allowlist and groups credential-related failures.
+- authenticated proxy credential dogfood passed against the real `https://httpbin.org/bearer` API.
+- the local BYOK loop now covers config credential resolution, auth injection, usage ledger, and audit CLI.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
@@ -510,6 +512,7 @@ Current implementation result:
 - credential scope dogfood completed; see `docs/en-US/CREDENTIAL_SCOPE_DOGFOOD_REPORT.md`.
 - credential lifecycle dogfood completed; see `docs/en-US/CREDENTIAL_LIFECYCLE_DOGFOOD_REPORT.md`.
 - credential audit CLI dogfood completed; see `docs/en-US/CREDENTIAL_AUDIT_CLI_DOGFOOD_REPORT.md`.
+- authenticated proxy credential dogfood completed; see `docs/en-US/AUTHENTICATED_PROXY_CREDENTIAL_DOGFOOD_REPORT.md`.
 
 Implementation checklist:
 
@@ -562,6 +565,11 @@ Implementation checklist:
    - add JSON and text audit output
    - include `credential_reference`, selected metadata, and credential failure counts
    - omit non-allowlisted metadata such as `secret_value`
+12. Authenticated proxy credential dogfood with a real API - complete
+   - use credential config to authenticate a real provider request
+   - verify provider receives Bearer auth
+   - verify usage metadata and audit CLI remain secret-safe
+   - record dogfood results in bilingual docs
 
 Acceptance test set:
 
@@ -585,6 +593,8 @@ Acceptance test set:
 - resolver records lifecycle audit metadata for accepted credentials
 - usage CLI prints credential audit JSON without raw secrets
 - usage CLI prints credential audit text without raw secrets
+- authenticated real API dogfood returns provider `authenticated=true`
+- credential audit CLI reports the real API event without raw token leakage
 
 ## 9. Phase 6: Hosted Control Plane
 

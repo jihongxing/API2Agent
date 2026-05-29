@@ -75,6 +75,7 @@ All notable API2Agent changes will be documented in this file.
 - Credential scope dogfooded across allow, deny, and no-fallback cases.
 - Credential lifecycle dogfooded across disabled, expired, and active credentials.
 - Credential audit CLI dogfooded with JSON/text output and allowlisted metadata.
+- Authenticated proxy credential dogfooded against real httpbin bearer auth.
 - Full test suite: `132 passed`.
 
 ### Planned Next

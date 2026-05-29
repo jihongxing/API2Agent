@@ -281,6 +281,16 @@ Audit output 包含：
 
 Audit output 使用 allowlist，绝不会打印 `secret_value`。
 
+### Real Authenticated Dogfood
+
+Local BYOK loop 已经通过一个真实 authenticated API 验证：
+
+```text
+proxy request -> credential config -> resolver -> auth injection -> real API -> usage ledger -> credential audit CLI
+```
+
+详见 `docs/cn-ZH/AUTHENTICATED_PROXY_CREDENTIAL_DOGFOOD_REPORT.md`。
+
 ### Phase C3：Hosted Credential Store
 
 - encrypted credential storage
@@ -302,11 +312,11 @@ Audit output 使用 allowlist，绝不会打印 `secret_value`。
 下一项工程任务应该是：
 
 ```text
-Authenticated proxy credential dogfood with a real API
+Credential orchestration milestone closeout and Phase 6 readiness review
 ```
 
 验收标准：
 
-- 至少用一个 authenticated real API 跑通 proxy credential config
-- 验证 provider 能收到 auth，同时 usage metadata 保持 redacted
-- 记录 missing、expired 或 scoped credentials 的 failure modes
+- 总结当前 credential orchestration capabilities 和 limits
+- 识别哪些部分已经 ready for hosted control plane work
+- 决定下一步进入 hosted identity、vault，还是继续 local hardening

@@ -267,11 +267,12 @@ Current implementation:
 - Credential lifecycle metadata supports status, expiry, and rotation hints.
 - Disabled and expired credentials fail with redacted machine-readable errors.
 - Usage CLI can print secret-safe credential audit events and failure counts.
+- Real authenticated proxy credential dogfood passed against httpbin bearer auth.
 
 Next engineering task:
 
 ```text
-Authenticated proxy credential dogfood with a real API
+Credential orchestration milestone closeout and Phase 6 readiness review
 ```
 
 ## 9. Marketplace Is Later
