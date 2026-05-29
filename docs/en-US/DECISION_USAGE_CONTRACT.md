@@ -54,6 +54,9 @@ The following `usage_events[]` fields are stable:
 - `latency_ms`
 - `estimated_cost`
 - `error_type`
+- `request_metadata`
+- `credential_reference`
+- `provider_runtime_reference`
 - `created_at`
 
 Stable `execution_mode` values:

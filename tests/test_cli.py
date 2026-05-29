@@ -311,9 +311,10 @@ def test_replay_command_returns_preflight_audit(tmp_path) -> None:
     assert result.exit_code == 0
     assert payload["contract_version"] == "replay.v0.1"
     assert payload["replayable"] is False
+    assert payload["exact_replay_metadata_ready"] is False
     assert payload["usage_event"]["id"] == "event_123"
     assert payload["routing_decision"]["id"] == "decision_123"
-    assert "request_params" in payload["missing_for_exact_replay"]
+    assert "request_metadata" in payload["missing_for_exact_replay"]
 
 
 def test_decision_command_preserves_stable_contract_fields(tmp_path) -> None:
@@ -361,6 +362,9 @@ def test_decision_command_preserves_stable_contract_fields(tmp_path) -> None:
         "latency_ms",
         "estimated_cost",
         "error_type",
+        "request_metadata",
+        "credential_reference",
+        "provider_runtime_reference",
         "created_at",
     }
 

@@ -296,6 +296,9 @@ Usage event 记录 execution attempt。
 - `latency_ms`
 - `estimated_cost`
 - `error_type`
+- `request_metadata`
+- `credential_reference`
+- `provider_runtime_reference`
 - `created_at`
 
 稳定 execution modes：
@@ -341,7 +344,8 @@ api2agent replay <usage_event_id>
 
 - replay preflight 已实现
 - exact replay 尚未实现
-- 在 request metadata capture 存在前，命令会返回 `replayable: false`
+- 在 provider re-run execution 实现前，命令会返回 `replayable: false`
+- 当 safe request metadata 和 provider runtime references 存在时，命令会返回 `exact_replay_metadata_ready: true`
 
 最小 replay 数据：
 
@@ -350,10 +354,17 @@ api2agent replay <usage_event_id>
 - capability ID
 - provider ID
 - tool ID
-- input metadata where safely available
+- request metadata where safely available
 - redacted credential references
 
 如果 credentials、request body 或 provider state 没有保留，导致无法完全 replay，必须给出明确 warning。
+
+当前 preflight 字段：
+
+- `replayable`
+- `exact_replay_metadata_ready`
+- `missing_for_exact_replay`
+- `warnings`
 
 ## 12.2 Golden Trace Contract
 

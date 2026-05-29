@@ -63,6 +63,7 @@ def execute_capability(
                 decision=decision,
                 provider=provider,
                 result=result,
+                params=params,
                 latency_ms=latency_ms,
             )
         if not result.get("ok"):
@@ -176,6 +177,7 @@ def _record_direct_usage_event(
     decision: RoutingDecision,
     provider: ProviderCandidate,
     result: dict[str, Any],
+    params: dict[str, Any],
     latency_ms: float,
 ) -> None:
     method = result.get("method")
@@ -199,5 +201,7 @@ def _record_direct_usage_event(
             latency_ms=latency_ms,
             estimated_cost=provider.estimated_cost,
             error_type=error.get("type"),
+            request_metadata={"params": params},
+            provider_runtime_reference=f"local_package:{provider.metadata.get('package_dir')}",
         )
     )

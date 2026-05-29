@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS usage_events (
   latency_ms REAL NOT NULL,
   estimated_cost REAL NOT NULL,
   error_type TEXT,
+  request_metadata TEXT,
+  credential_reference TEXT,
+  provider_runtime_reference TEXT,
   created_at TEXT NOT NULL
 );
 """
@@ -55,6 +58,9 @@ class UsageStore:
             connection.execute(ROUTING_DECISION_SCHEMA)
             self._ensure_usage_column(connection, "routing_decision_id", "TEXT")
             self._ensure_usage_column(connection, "execution_mode", "TEXT NOT NULL DEFAULT 'proxy'")
+            self._ensure_usage_column(connection, "request_metadata", "TEXT")
+            self._ensure_usage_column(connection, "credential_reference", "TEXT")
+            self._ensure_usage_column(connection, "provider_runtime_reference", "TEXT")
             self._ensure_routing_decision_column(connection, "failover_policy", "TEXT")
 
     def record(self, event: UsageEvent) -> UsageEvent:
@@ -65,14 +71,22 @@ class UsageStore:
                 INSERT INTO usage_events (
                   id, routing_decision_id, execution_mode, project_id, capability_id, provider_id, tool_id,
                   method, path, status_code, success, latency_ms,
-                  estimated_cost, error_type, created_at
+                  estimated_cost, error_type, request_metadata, credential_reference,
+                  provider_runtime_reference, created_at
                 ) VALUES (
                   :id, :routing_decision_id, :execution_mode, :project_id, :capability_id, :provider_id, :tool_id,
                   :method, :path, :status_code, :success, :latency_ms,
-                  :estimated_cost, :error_type, :created_at
+                  :estimated_cost, :error_type, :request_metadata, :credential_reference,
+                  :provider_runtime_reference, :created_at
                 )
                 """,
-                {**data, "success": 1 if event.success else 0},
+                {
+                    **data,
+                    "success": 1 if event.success else 0,
+                    "request_metadata": json.dumps(data["request_metadata"], ensure_ascii=False)
+                    if data.get("request_metadata") is not None
+                    else None,
+                },
             )
         return event
 
@@ -125,7 +139,7 @@ class UsageStore:
                     (decision_id,),
                 ).fetchall()
             ]
-        return [UsageEvent.model_validate({**row, "success": bool(row["success"])}) for row in rows]
+        return [self._usage_event_from_row(row) for row in rows]
 
     def get_usage_event(self, event_id: str) -> UsageEvent | None:
         with self._connect() as connection:
@@ -137,8 +151,7 @@ class UsageStore:
         if row is None:
             return None
 
-        data = dict(row)
-        return UsageEvent.model_validate({**data, "success": bool(data["success"])})
+        return self._usage_event_from_row(dict(row))
 
     def count(self, project_id: str | None = None) -> int:
         query = "SELECT COUNT(*) FROM usage_events"
@@ -291,6 +304,11 @@ class UsageStore:
         connection = sqlite3.connect(self.path)
         connection.row_factory = sqlite3.Row
         return connection
+
+    def _usage_event_from_row(self, row: dict[str, Any]) -> UsageEvent:
+        if row.get("request_metadata"):
+            row["request_metadata"] = json.loads(row["request_metadata"])
+        return UsageEvent.model_validate({**row, "success": bool(row["success"])})
 
     def _ensure_usage_column(self, connection: sqlite3.Connection, name: str, definition: str) -> None:
         columns = {row["name"] for row in connection.execute("PRAGMA table_info(usage_events)").fetchall()}

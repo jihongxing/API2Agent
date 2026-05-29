@@ -296,6 +296,9 @@ Stable fields:
 - `latency_ms`
 - `estimated_cost`
 - `error_type`
+- `request_metadata`
+- `credential_reference`
+- `provider_runtime_reference`
 - `created_at`
 
 Stable execution modes:
@@ -341,7 +344,8 @@ Current implementation status:
 
 - replay preflight is implemented
 - exact replay is not implemented yet
-- the command returns `replayable: false` until request metadata capture exists
+- the command returns `replayable: false` until provider re-run execution is implemented
+- the command returns `exact_replay_metadata_ready: true` when safe request metadata and provider runtime references exist
 
 Minimum replay data:
 
@@ -350,10 +354,17 @@ Minimum replay data:
 - capability ID
 - provider ID
 - tool ID
-- input metadata where safely available
+- request metadata where safely available
 - redacted credential references
 
 Replay must warn when exact replay is impossible because credentials, request body, or provider state were not retained.
+
+Current preflight fields:
+
+- `replayable`
+- `exact_replay_metadata_ready`
+- `missing_for_exact_replay`
+- `warnings`
 
 ## 12.2 Golden Trace Contract
 

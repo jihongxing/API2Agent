@@ -65,7 +65,7 @@ def call(
     for index, attempted_provider_id in enumerate(attempts):
         adapter = adapter_classes[attempted_provider_id]()
         result = adapter.call(input)
-        event = _record_usage(store, decision, adapter, result)
+        event = _record_usage(store, decision, adapter, result, input)
         attempt_results.append(
             {
                 "provider_id": adapter.provider_id,
@@ -148,6 +148,7 @@ def _record_usage(
     decision: RoutingDecision,
     adapter: ProviderAdapter,
     result: AdapterResult,
+    input: dict[str, Any],
 ) -> UsageEvent:
     event = UsageEvent(
         routing_decision_id=decision.id,
@@ -163,6 +164,8 @@ def _record_usage(
         latency_ms=result.latency_ms,
         estimated_cost=result.cost.estimated_cost,
         error_type=result.error_type,
+        request_metadata={"input": input},
+        provider_runtime_reference=f"sdk:{adapter.__class__.__name__}",
     )
     return store.record(event)
 

@@ -12,6 +12,7 @@ from api2agent.capabilities.execution import execute_capability
 from api2agent.capabilities.policies import routing_policy_preset
 from api2agent.capabilities.registry import capability_naming_warnings, load_provider_registry, provider_package_warnings
 from api2agent.capabilities.routing import rank_providers, select_provider
+from api2agent.control.models import UsageEvent
 from api2agent.control.proxy import run_proxy_server
 from api2agent.control.storage import UsageStore
 from api2agent.filters import ToolFilter, filter_capability
@@ -330,22 +331,18 @@ def replay_usage_event(
         raise typer.BadParameter(f"Usage event not found: {usage_event_id}")
 
     decision = store.get_routing_decision(event.routing_decision_id) if event.routing_decision_id else None
-    warnings = [
-        "Exact replay is not available yet because request parameters and credential references are not stored in usage_events.",
-        "Use this command as a replay preflight and audit view until request metadata capture is implemented.",
-    ]
+    missing_for_exact_replay = _missing_replay_fields(event)
+    warnings = ["Replay execution is not wired to re-run providers yet; this command is a preflight and audit view."]
+    if missing_for_exact_replay:
+        warnings.append("Exact replay metadata is incomplete for this usage event.")
     payload = {
         "contract_version": REPLAY_CONTRACT_VERSION,
         "usage_event": event.model_dump(mode="json"),
         "routing_decision": decision.model_dump(mode="json") if decision else None,
         "replayable": False,
+        "exact_replay_metadata_ready": not missing_for_exact_replay,
         "warnings": warnings,
-        "missing_for_exact_replay": [
-            "request_params",
-            "request_body",
-            "credential_reference",
-            "provider_runtime_reference",
-        ],
+        "missing_for_exact_replay": missing_for_exact_replay,
     }
     if json_output:
         typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
@@ -582,6 +579,15 @@ def _format_auth(auth: dict) -> str:
     env = auth.get("env") or "(missing env name)"
     header = auth.get("header") or "(default header)"
     return f"{auth_type} via {header}, env={env}"
+
+
+def _missing_replay_fields(event: UsageEvent) -> list[str]:
+    missing = []
+    if not event.request_metadata:
+        missing.append("request_metadata")
+    if not event.provider_runtime_reference:
+        missing.append("provider_runtime_reference")
+    return missing
 
 
 def _format_tool_details(tool: dict) -> list[str]:

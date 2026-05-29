@@ -73,11 +73,12 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - alpha Quickstart，覆盖 SDK call、benchmark、failover、ledger 和 compiler path
 - clean baseline commit：`7157226`
 - replay preflight command，用于 usage event audit
+- SDK、proxy 和 local package execution paths 已安全捕获 replay metadata
 - alpha capability naming validation warnings
 
 尚未实现：
 
-- exact replay metadata capture
+- exact replay execution
 - shadow execution mode
 - golden trace marker
 - hard enforcement of capability naming rule
@@ -364,7 +365,7 @@ capability registry JSON
 
 立即下一步：
 
-- 为 exact replay 安全捕获 request metadata
+- 基于已捕获 metadata 实现 exact replay execution
 - 决定 capability naming 何时从 warning 升级为 hard enforcement
 - 设计用于 benchmark-only provider calls 的 `shadow` execution mode
 - 保持 policy 本地、显式，不引入隐藏的 marketplace-style provider preference
@@ -414,6 +415,7 @@ capability registry JSON
 - Quickstart failover path 已用 controlled `open_meteo` failure 加真实 `wttr_in` fallback 验证。
 - clean baseline commit 已创建：`7157226`。
 - `api2agent replay` preflight 已用失败的 Quickstart usage event 验证。
+- replay metadata capture 已验证，返回 `exact_replay_metadata_ready: true`。
 - alpha capability naming warnings 已用 legacy `public_ip_lookup` 验证。
 
 ## 9. Phase 6：Hosted Control Plane

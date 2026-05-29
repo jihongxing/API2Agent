@@ -45,6 +45,9 @@ def execute_proxy_call(
             latency_ms=0.0,
             estimated_cost=0.0,
             error_type="quota_exceeded",
+            request_metadata=_safe_request_metadata(method, url, request),
+            credential_reference=_credential_reference(request),
+            provider_runtime_reference="proxy:http",
         )
         store.record(event)
         return 429, {
@@ -87,6 +90,9 @@ def execute_proxy_call(
             latency_ms=latency_ms,
             estimated_cost=proxy_request.estimated_cost,
             error_type=None if response.is_success else "http_status",
+            request_metadata=_safe_request_metadata(method, url, request),
+            credential_reference=_credential_reference(request),
+            provider_runtime_reference="proxy:http",
         )
         store.record(event)
         result = {
@@ -114,6 +120,9 @@ def execute_proxy_call(
             latency_ms=latency_ms,
             estimated_cost=0.0,
             error_type="http_error",
+            request_metadata=_safe_request_metadata(method, url, request),
+            credential_reference=_credential_reference(request),
+            provider_runtime_reference="proxy:http",
         )
         store.record(event)
         return 502, {
@@ -142,6 +151,32 @@ def run_proxy_server(
 
 def _forward_request(method: str, url: str, options: dict[str, Any]) -> httpx.Response:
     return httpx.request(method, url, **options)
+
+
+def _safe_request_metadata(method: str, url: str, request: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "method": method,
+        "url": url,
+        "params": request.get("params") or {},
+        "json": request.get("json"),
+        "headers": _redact_headers(request.get("headers") or {}),
+    }
+
+
+def _redact_headers(headers: dict[str, Any]) -> dict[str, Any]:
+    sensitive = {"authorization", "x-api-key", "api-key", "cookie", "set-cookie"}
+    return {
+        key: "[REDACTED]" if str(key).lower() in sensitive else value
+        for key, value in headers.items()
+    }
+
+
+def _credential_reference(request: dict[str, Any]) -> str | None:
+    headers = request.get("headers") or {}
+    for key in headers:
+        if str(key).lower() in {"authorization", "x-api-key", "api-key"}:
+            return f"header:{key}"
+    return None
 
 
 def _make_handler(store: UsageStore, api_key: str | None, quota: int | None):

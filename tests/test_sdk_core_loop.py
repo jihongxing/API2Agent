@@ -146,6 +146,8 @@ def test_sdk_call_records_routing_usage_and_ledger(tmp_path: Path, monkeypatch) 
     assert len(events) == 1
     assert events[0].execution_mode == "direct"
     assert events[0].provider_id == "open_meteo"
+    assert events[0].request_metadata == {"input": {"city": "San Francisco"}}
+    assert events[0].provider_runtime_reference == "sdk:FakeAdapter"
     assert ledger[0].total_calls == 1
 
 

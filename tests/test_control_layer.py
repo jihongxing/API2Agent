@@ -95,6 +95,8 @@ def test_proxy_call_forwards_and_records_usage(tmp_path: Path) -> None:
     assert summary.estimated_cost == 0.01
     assert len(correlated_events) == 1
     assert correlated_events[0].routing_decision_id == "decision_123"
+    assert correlated_events[0].credential_reference == "header:Authorization"
+    assert correlated_events[0].request_metadata["headers"]["Authorization"] == "[REDACTED]"
 
 
 def test_usage_store_records_routing_decision(tmp_path: Path) -> None:
@@ -133,6 +135,8 @@ def test_usage_store_gets_usage_event_by_id(tmp_path: Path) -> None:
             path="/",
             status_code=200,
             success=True,
+            request_metadata={"params": {"q": "demo"}},
+            provider_runtime_reference="test:runtime",
         )
     )
 
@@ -141,6 +145,8 @@ def test_usage_store_gets_usage_event_by_id(tmp_path: Path) -> None:
     assert stored is not None
     assert stored.id == "event_123"
     assert stored.success is True
+    assert stored.request_metadata == {"params": {"q": "demo"}}
+    assert stored.provider_runtime_reference == "test:runtime"
 
 
 def test_usage_store_returns_local_ledger_rows(tmp_path: Path) -> None:

@@ -20,6 +20,9 @@ class UsageEvent(BaseModel):
     latency_ms: float = 0.0
     estimated_cost: float = 0.0
     error_type: str | None = None
+    request_metadata: dict[str, Any] | None = None
+    credential_reference: str | None = None
+    provider_runtime_reference: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

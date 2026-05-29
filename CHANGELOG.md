@@ -28,6 +28,7 @@ All notable API2Agent changes will be documented in this file.
 - SDK failover with failed and fallback attempts recorded under one routing decision.
 - Benchmark helper for repeated weather provider comparison.
 - Replay preflight command for usage event audit.
+- Safe replay metadata capture for SDK, proxy, and local package execution paths.
 - Alpha capability naming validation warnings for `<domain>.<resource>.<action>`.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
@@ -39,11 +40,12 @@ All notable API2Agent changes will be documented in this file.
 - Repeated benchmark calls for `open_meteo` and `wttr_in` with p50/p95 latency.
 - SDK failover from controlled `open_meteo` failure to real `wttr_in` fallback.
 - Replay preflight dogfooded against a failed Quickstart usage event.
+- Replay metadata capture dogfooded with `exact_replay_metadata_ready: true`.
 - Registry naming warnings dogfooded against legacy `public_ip_lookup`.
 - Full test suite: `87 passed`.
 
 ### Planned Next
 
-- Exact replay metadata capture for request params and credential references.
+- Exact replay execution that re-runs providers from captured metadata.
 - `shadow` execution mode for benchmark-only provider calls.
 - Golden trace marker for known-good executions.
