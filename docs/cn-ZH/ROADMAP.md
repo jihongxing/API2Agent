@@ -482,6 +482,40 @@ capability registry JSON
 Credential Schema v0.1 + Local Resolver Design
 ```
 
+实施 checklist：
+
+1. Credential data models
+   - 新增 `api2agent/credentials/models.py`
+   - 定义 `CredentialDefinition`、`CredentialSource`、`CredentialResolutionRequest`、`ResolvedCredential` 和 `CredentialInjectionPatch`
+   - 校验 `owner_type`、`auth_type`、`injection_mode` 和 `source`
+2. Local Credential Resolver
+   - 新增 `api2agent/credentials/resolver.py`
+   - 按以下顺序 resolve：inline override、project config、environment variable、none
+   - 返回 redacted credential reference 和 injection patch
+3. Execution integration
+   - 把 resolver 接入 generated package / routing execution path
+   - 把 resolved credentials 注入 provider requests
+   - 保持 direct local mode 可用
+4. Usage attribution
+   - 把 `credential_reference` 写入 usage events
+   - 确保 raw secrets 不进入 usage event metadata、decision output、ledger output 或 logs
+5. Replay and masking behavior
+   - required credentials 无法 resolve 时，replay 必须 warning
+   - credentials 可 resolve 时，replay 可以执行
+   - replay metadata 保持 redacted
+
+验收测试集：
+
+- resolver 可以读取 env credentials
+- resolver 可以读取 config credentials
+- inline credential override 优先级最高
+- `auth_type=none` 不要求 credentials
+- authenticated provider 能收到 injected header/query/body patch
+- usage event 包含 `credential_reference`
+- raw secret 不存在于 SQLite usage metadata
+- replay 能清晰报告 missing credential
+- credential 可 resolve 时 replay 可以执行
+
 ## 9. Phase 6：Hosted Control Plane
 
 状态：计划中。

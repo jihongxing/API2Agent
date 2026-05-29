@@ -482,6 +482,40 @@ Immediate next task:
 Credential Schema v0.1 + Local Resolver Design
 ```
 
+Implementation checklist:
+
+1. Credential data models
+   - add `api2agent/credentials/models.py`
+   - define `CredentialDefinition`, `CredentialSource`, `CredentialResolutionRequest`, `ResolvedCredential`, and `CredentialInjectionPatch`
+   - validate `owner_type`, `auth_type`, `injection_mode`, and `source`
+2. Local Credential Resolver
+   - add `api2agent/credentials/resolver.py`
+   - resolve in this order: inline override, project config, environment variable, none
+   - return a redacted credential reference and injection patch
+3. Execution integration
+   - connect resolver to generated package / routing execution path
+   - inject resolved credentials into provider requests
+   - keep direct local mode working
+4. Usage attribution
+   - write `credential_reference` into usage events
+   - ensure raw secrets never enter usage event metadata, decision output, ledger output, or logs
+5. Replay and masking behavior
+   - replay warns when required credentials cannot be resolved
+   - replay can execute when credentials are resolvable
+   - replay metadata remains redacted
+
+Acceptance test set:
+
+- resolver reads env credentials
+- resolver reads config credentials
+- inline credential override wins
+- `auth_type=none` does not require credentials
+- authenticated provider receives the injected header/query/body patch
+- usage event contains `credential_reference`
+- raw secret is absent from SQLite usage metadata
+- replay reports missing credential clearly
+- replay executes when the credential can be resolved
+
 ## 9. Phase 6: Hosted Control Plane
 
 Status: planned.
