@@ -32,6 +32,7 @@ All notable API2Agent changes will be documented in this file.
 
 ### Verified
 
+- Baseline commit created: `7157226`.
 - Real API dogfood across Swagger Petstore, GitHub REST, httpbin, JSONPlaceholder, ipify, Open-Meteo, and wttr.in.
 - Repeated benchmark calls for `open_meteo` and `wttr_in` with p50/p95 latency.
 - SDK failover from controlled `open_meteo` failure to real `wttr_in` fallback.
@@ -39,7 +40,6 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Alpha Quickstart hardening.
 - Capability naming validation: `<domain>.<resource>.<action>`.
 - Deterministic replay design and local command.
 - `shadow` execution mode for benchmark-only provider calls.

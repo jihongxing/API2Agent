@@ -71,10 +71,10 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - v0.1-alpha plan 已把 Reliability + Observability 定为产品抓手
 - CHANGELOG
 - alpha Quickstart，覆盖 SDK call、benchmark、failover、ledger 和 compiler path
+- clean baseline commit：`7157226`
 
 尚未实现：
 
-- clean baseline commit
 - replay command
 - shadow execution mode
 - golden trace marker
@@ -362,7 +362,6 @@ capability registry JSON
 
 立即下一步：
 
-- 创建 clean repo baseline commit
 - 实现或明确设计 `api2agent replay`
 - 把 capability naming rule 加入 validation/docs
 - 设计用于 benchmark-only provider calls 的 `shadow` execution mode
@@ -411,6 +410,7 @@ capability registry JSON
 - 双语 Quickstart 已创建。
 - Quickstart compiler path 已用 `generate`、`inspect`、`test` 验证。
 - Quickstart failover path 已用 controlled `open_meteo` failure 加真实 `wttr_in` fallback 验证。
+- clean baseline commit 已创建：`7157226`。
 
 ## 9. Phase 6：Hosted Control Plane
 

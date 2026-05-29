@@ -71,10 +71,10 @@ Implemented:
 - v0.1-alpha plan with Reliability + Observability as the product hook
 - CHANGELOG
 - alpha Quickstart with SDK call, benchmark, failover, ledger, and compiler path
+- clean baseline commit: `7157226`
 
 Not implemented yet:
 
-- clean baseline commit
 - replay command
 - shadow execution mode
 - golden trace marker
@@ -362,7 +362,6 @@ Current dogfood result:
 
 Immediate next step:
 
-- create a clean repo baseline commit
 - implement or explicitly design `api2agent replay`
 - add the capability naming rule to validation/docs
 - design `shadow` execution mode for benchmark-only provider calls
@@ -411,6 +410,7 @@ Current hardening result:
 - bilingual Quickstart created.
 - Quickstart compiler path verified with `generate`, `inspect`, and `test`.
 - Quickstart failover path verified with controlled `open_meteo` failure and real `wttr_in` fallback.
+- clean baseline commit created: `7157226`.
 
 ## 9. Phase 6: Hosted Control Plane
 
