@@ -306,10 +306,13 @@ Stable execution modes:
 - `direct`
 - `proxy`
 - `shadow`
+- `replay`
 
 Planned execution modes:
 
 - `race`: execute multiple providers concurrently and return the best eligible result
+
+`replay` events are audit/debug records. They are excluded from default routing metrics.
 
 ## 12. Ledger Contract
 

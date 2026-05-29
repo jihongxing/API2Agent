@@ -282,6 +282,45 @@ def test_usage_store_filters_ledger_by_capability_and_provider(tmp_path: Path) -
     assert rows[0].estimated_cost == 0.01
 
 
+def test_usage_store_metrics_exclude_replay_events(tmp_path: Path) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    store.record(
+        UsageEvent(
+            execution_mode="direct",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="open_meteo",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+            latency_ms=100,
+        )
+    )
+    store.record(
+        UsageEvent(
+            execution_mode="replay",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="open_meteo",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=500,
+            success=False,
+            latency_ms=900,
+        )
+    )
+
+    metrics = store.metrics_for_capability("weather.get")
+
+    assert len(metrics) == 1
+    assert metrics[0].total_calls == 1
+    assert metrics[0].success_rate == 1.0
+    assert metrics[0].average_latency_ms == 100
+
+
 def test_proxy_call_enforces_quota_before_forwarding(tmp_path: Path) -> None:
     store = UsageStore(tmp_path / "usage.sqlite")
     store.record(

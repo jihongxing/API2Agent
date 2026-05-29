@@ -1,3 +1,4 @@
+from time import perf_counter
 from typing import Any
 
 import httpx
@@ -66,6 +67,7 @@ def _execute_http_replay(event: UsageEvent) -> dict[str, Any]:
     if not isinstance(url, str) or not url:
         return _error("missing_http_url", "HTTP replay requires request_metadata.url.")
 
+    start = perf_counter()
     response = httpx.request(
         method,
         url,
@@ -74,6 +76,7 @@ def _execute_http_replay(event: UsageEvent) -> dict[str, Any]:
         headers=_replay_headers(metadata.get("headers") or {}),
         timeout=20,
     )
+    latency_ms = (perf_counter() - start) * 1000
     try:
         body: Any = response.json()
     except ValueError:
@@ -84,6 +87,7 @@ def _execute_http_replay(event: UsageEvent) -> dict[str, Any]:
         "runtime": event.provider_runtime_reference,
         "provider_id": event.provider_id,
         "status_code": response.status_code,
+        "latency_ms": latency_ms,
         "body": body,
         "error_type": None if response.is_success else "http_status",
     }

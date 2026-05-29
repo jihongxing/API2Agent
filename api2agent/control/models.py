@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class UsageEvent(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     routing_decision_id: str | None = None
-    execution_mode: Literal["direct", "proxy", "shadow"] = "proxy"
+    execution_mode: Literal["direct", "proxy", "shadow", "replay"] = "proxy"
     project_id: str
     capability_id: str
     provider_id: str
@@ -41,7 +41,7 @@ class UsageLedgerRow(BaseModel):
     project_id: str
     capability_id: str
     provider_id: str
-    execution_mode: Literal["direct", "proxy", "shadow"] | None = None
+    execution_mode: Literal["direct", "proxy", "shadow", "replay"] | None = None
     total_calls: int = 0
     successful_calls: int = 0
     failed_calls: int = 0

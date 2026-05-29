@@ -64,6 +64,7 @@
 - `direct`
 - `proxy`
 - `shadow`
+- `replay`
 
 ## 稳定顶层 Inspection 字段
 
@@ -105,6 +106,9 @@ routing decision
 - direct local execution
 - proxy-controlled execution
 - shadow benchmark execution
+- replay debug execution
+
+Replay rows 会进入 ledger，但默认不进入 provider routing metrics。
 
 ## 稳定 Ledger Row 字段
 

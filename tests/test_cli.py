@@ -364,6 +364,52 @@ def test_replay_command_executes_supported_sdk_replay(tmp_path, monkeypatch) -> 
     assert payload["replay_result"]["output"]["temperature_2m"] == 17.0
 
 
+def test_replay_command_can_record_replay_usage_event(tmp_path, monkeypatch) -> None:
+    class FakeReplayAdapter:
+        provider_id = "fake_weather"
+        capability_id = "weather.get"
+
+        def call(self, input):
+            return AdapterResult(
+                ok=True,
+                capability_id=self.capability_id,
+                provider_id=self.provider_id,
+                output={"city": input["city"]},
+                status_code=200,
+                latency_ms=5,
+            )
+
+    monkeypatch.setitem(replay_module.SDK_ADAPTERS, "sdk:FakeReplayAdapter", FakeReplayAdapter)
+    db = tmp_path / "usage.sqlite"
+    store = UsageStore(db)
+    store.record(
+        UsageEvent(
+            id="event_replay",
+            execution_mode="direct",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="fake_weather",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=500,
+            success=False,
+            request_metadata={"input": {"city": "San Francisco"}},
+            provider_runtime_reference="sdk:FakeReplayAdapter",
+        )
+    )
+
+    result = runner.invoke(app, ["replay", "event_replay", "--db", str(db), "--execute", "--record", "--json"])
+    payload = json.loads(result.output)
+    replay_event = UsageStore(db).get_usage_event(payload["recorded_usage_event_id"])
+
+    assert result.exit_code == 0
+    assert payload["recorded_usage_event_id"]
+    assert replay_event is not None
+    assert replay_event.execution_mode == "replay"
+    assert replay_event.request_metadata["replay_source_event_id"] == "event_replay"
+
+
 def test_decision_command_preserves_stable_contract_fields(tmp_path) -> None:
     fixture = json.loads(Path("tests/fixtures/decision_audit/failover_audit.json").read_text(encoding="utf-8"))
     db = tmp_path / "usage.sqlite"

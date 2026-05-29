@@ -49,6 +49,19 @@ Replay execution:
 }
 ```
 
+Replay was also executed with `--record`, producing an additional ledger row:
+
+| Provider | Execution Mode | Calls | Success Rate |
+| --- | --- | ---: | ---: |
+| `wttr_in` | `replay` | 1 | 100% |
+
+Routing metrics still excluded the replay row:
+
+```text
+open_meteo 1 1.0 3342.38
+wttr_in 1 1.0 1786.19
+```
+
 An additional replay against the original `open_meteo` main event was executable but returned a live timeout. That is acceptable and useful: replay does not pretend provider state is frozen. It re-runs the captured call and surfaces the current provider behavior.
 
 ## What This Proves
@@ -66,4 +79,6 @@ Replay has moved from audit-only preflight to executable debugging for supported
 - SDK adapters supported first
 - HTTP/proxy replay exists only when credentials are not required
 - replay execution does not write a new usage event yet
+- replay execution only writes a new usage event when `--record` is used
+- replay events are excluded from default routing metrics
 - local generated package replay is still future work

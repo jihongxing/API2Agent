@@ -275,6 +275,7 @@ class UsageStore:
                       AVG(estimated_cost) AS estimated_cost_per_call
                     FROM usage_events
                     WHERE capability_id = ?
+                      AND execution_mode != 'replay'
                     GROUP BY capability_id, provider_id
                     """,
                     (capability_id,),

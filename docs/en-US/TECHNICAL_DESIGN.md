@@ -343,6 +343,7 @@ Both modes also write `execution_mode`:
 - `direct`
 - `proxy`
 - `shadow`
+- `replay`
 
 Proxy mode remains the preferred path for controllable execution and future economic measurement.
 
@@ -351,6 +352,8 @@ Planned execution modes:
 - `race`: execute multiple providers concurrently and return the best eligible result
 
 `shadow` lets API2Agent collect provider comparison data without making routing risky for the user.
+
+`replay` records debug executions in the ledger without affecting default routing metrics.
 
 ## 5. Why Python Still Makes Sense Now
 

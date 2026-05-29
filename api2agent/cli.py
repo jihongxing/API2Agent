@@ -324,9 +324,13 @@ def replay_usage_event(
     usage_event_id: str = typer.Argument(..., help="Usage event id to prepare for replay."),
     db: Path = typer.Option(Path("api2agent-usage.sqlite"), "--db", help="SQLite database for usage events."),
     execute: bool = typer.Option(False, "--execute", help="Re-run the provider call when exact replay is supported."),
+    record: bool = typer.Option(False, "--record", help="Record replay execution as a replay usage event."),
     json_output: bool = typer.Option(False, "--json", help="Print raw replay preflight JSON."),
 ) -> None:
     """Inspect a usage event and report whether it can be deterministically replayed."""
+    if record and not execute:
+        raise typer.BadParameter("--record requires --execute.")
+
     store = UsageStore(db)
     event = store.get_usage_event(usage_event_id)
     if event is None:
@@ -341,6 +345,7 @@ def replay_usage_event(
     if not replayable:
         warnings.append("Replay execution is not available for this usage event.")
     replay_result = execute_replay(event) if execute else None
+    recorded_event = _record_replay_event(store, event, replay_result) if record and replay_result is not None else None
     payload = {
         "contract_version": REPLAY_CONTRACT_VERSION,
         "usage_event": event.model_dump(mode="json"),
@@ -349,6 +354,7 @@ def replay_usage_event(
         "exact_replay_metadata_ready": not missing_for_exact_replay,
         "executed": execute,
         "replay_result": replay_result,
+        "recorded_usage_event_id": recorded_event.id if recorded_event else None,
         "warnings": warnings,
         "missing_for_exact_replay": missing_for_exact_replay,
     }
@@ -359,6 +365,8 @@ def replay_usage_event(
     typer.echo(f"Usage event: {event.id}")
     typer.echo(f"Replayable: {payload['replayable']}")
     typer.echo(f"Executed: {payload['executed']}")
+    if payload["recorded_usage_event_id"]:
+        typer.echo(f"Recorded usage event: {payload['recorded_usage_event_id']}")
     typer.echo(f"Project: {event.project_id}")
     typer.echo(f"Capability: {event.capability_id}")
     typer.echo(f"Provider: {event.provider_id}")
@@ -600,6 +608,32 @@ def _missing_replay_fields(event: UsageEvent) -> list[str]:
     if not event.provider_runtime_reference:
         missing.append("provider_runtime_reference")
     return missing
+
+
+def _record_replay_event(store: UsageStore, source_event: UsageEvent, replay_result: dict) -> UsageEvent:
+    result_error = replay_result.get("error") if isinstance(replay_result.get("error"), dict) else {}
+    event = UsageEvent(
+        routing_decision_id=source_event.routing_decision_id,
+        execution_mode="replay",
+        project_id=source_event.project_id,
+        capability_id=source_event.capability_id,
+        provider_id=source_event.provider_id,
+        tool_id=source_event.tool_id,
+        method=source_event.method,
+        path=source_event.path,
+        status_code=replay_result.get("status_code"),
+        success=bool(replay_result.get("ok")),
+        latency_ms=float(replay_result.get("latency_ms") or 0.0),
+        estimated_cost=source_event.estimated_cost,
+        error_type=replay_result.get("error_type") or result_error.get("type"),
+        request_metadata={
+            "replay_source_event_id": source_event.id,
+            "source_request_metadata": source_event.request_metadata,
+        },
+        credential_reference=source_event.credential_reference,
+        provider_runtime_reference=source_event.provider_runtime_reference,
+    )
+    return store.record(event)
 
 
 def _format_tool_details(tool: dict) -> list[str]:

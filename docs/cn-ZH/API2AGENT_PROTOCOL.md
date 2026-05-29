@@ -306,10 +306,13 @@ Usage event 记录 execution attempt。
 - `direct`
 - `proxy`
 - `shadow`
+- `replay`
 
 计划中的 execution modes：
 
 - `race`：并发执行多个 providers，返回符合条件的最佳结果
+
+`replay` events 是 audit/debug records。默认不进入 routing metrics。
 
 ## 12. Ledger Contract
 

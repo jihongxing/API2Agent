@@ -212,6 +212,12 @@ Execute replay when `replayable` is `true`:
 python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --json
 ```
 
+Record the replay execution in the ledger without affecting routing metrics:
+
+```bash
+python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --record --json
+```
+
 ## 8. Generate A Local Capability Package
 
 ```bash

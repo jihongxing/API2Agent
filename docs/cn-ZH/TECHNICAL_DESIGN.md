@@ -343,6 +343,7 @@ Proxy mode：
 - `direct`
 - `proxy`
 - `shadow`
+- `replay`
 
 Proxy mode 仍然是 controllable execution 和未来经济计量的首选路径。
 
@@ -351,6 +352,8 @@ Proxy mode 仍然是 controllable execution 和未来经济计量的首选路径
 - `race`：并发执行多个 providers，返回符合条件的最佳结果
 
 `shadow` 可以让 API2Agent 在不增加用户 routing 风险的前提下采集 provider comparison data。
+
+`replay` 会把 debug executions 记录进 ledger，但不影响默认 routing metrics。
 
 ## 5. 为什么现在仍然适合 Python
 

@@ -77,6 +77,7 @@ Implemented:
 - alpha capability naming validation warnings
 - SDK shadow execution mode
 - exact replay execution for supported SDK and no-credential HTTP events
+- optional replay usage recording with `execution_mode=replay`
 
 Not implemented yet:
 
@@ -367,7 +368,6 @@ Current dogfood result:
 
 Immediate next step:
 
-- decide whether replay executions should optionally record new usage events
 - decide when capability naming moves from warning to hard enforcement
 - decide whether shadow metrics should be included in default routing aggregates
 - keep policy local and explicit: no hidden marketplace-style provider preference
@@ -423,6 +423,7 @@ Current hardening result:
 - see `docs/en-US/SHADOW_MODE_DOGFOOD_REPORT.md`.
 - exact replay execution verified against a real `wttr_in` shadow event.
 - see `docs/en-US/REPLAY_DOGFOOD_REPORT.md`.
+- replay recording verified as a ledger row excluded from routing metrics.
 
 ## 9. Phase 6: Hosted Control Plane
 

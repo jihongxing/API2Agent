@@ -212,6 +212,12 @@ python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failove
 python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --json
 ```
 
+也可以把 replay execution 记录进 ledger，但不影响 routing metrics：
+
+```bash
+python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --record --json
+```
+
 ## 8. 生成本地 Capability Package
 
 ```bash

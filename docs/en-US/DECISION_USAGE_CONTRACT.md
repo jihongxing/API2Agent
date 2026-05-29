@@ -64,6 +64,7 @@ Stable `execution_mode` values:
 - `direct`
 - `proxy`
 - `shadow`
+- `replay`
 
 ## Stable Top-Level Inspection Fields
 
@@ -105,6 +106,9 @@ This allows local reports to distinguish:
 - direct local execution
 - proxy-controlled execution
 - shadow benchmark execution
+- replay debug execution
+
+Replay rows are included in the ledger, but excluded from provider routing metrics by default.
 
 ## Stable Ledger Row Fields
 
