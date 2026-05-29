@@ -264,6 +264,23 @@ Expired credentials 会返回 `credential_expired`。
 
 Lifecycle checks 会在 scope checks 和 secret resolution 之前执行。Redacted metadata 会保留 lifecycle fields，让 usage 和 audit records 可以解释 credential 为什么被接受或拒绝，同时不保存 secret。
 
+### Credential Audit Reporting
+
+Local usage reporting 可以展示 credential audit events：
+
+```bash
+api2agent usage --db api2agent-usage.sqlite --credential-audit
+api2agent usage --db api2agent-usage.sqlite --credential-audit --json
+```
+
+Audit output 包含：
+
+- `credential_reference`
+- selected redacted credential metadata
+- credential-related failure counts
+
+Audit output 使用 allowlist，绝不会打印 `secret_value`。
+
 ### Phase C3：Hosted Credential Store
 
 - encrypted credential storage
@@ -285,11 +302,11 @@ Lifecycle checks 会在 scope checks 和 secret resolution 之前执行。Redact
 下一项工程任务应该是：
 
 ```text
-Credential audit reporting in usage CLI
+Authenticated proxy credential dogfood with a real API
 ```
 
 验收标准：
 
-- usage output 可以展示 credential reference 和 selected audit metadata
-- ledger/reporting 可以 filter 或 group credential-related failures
-- CLI output 必须保持 secret-safe
+- 至少用一个 authenticated real API 跑通 proxy credential config
+- 验证 provider 能收到 auth，同时 usage metadata 保持 redacted
+- 记录 missing、expired 或 scoped credentials 的 failure modes

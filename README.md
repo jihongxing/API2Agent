@@ -218,6 +218,7 @@ Run a local proxy to observe and control generated API calls:
 ```bash
 api2agent proxy --db api2agent-usage.sqlite --port 8765 --quota 1000
 api2agent usage --db api2agent-usage.sqlite --project-id local
+api2agent usage --db api2agent-usage.sqlite --credential-audit
 api2agent ledger --db api2agent-usage.sqlite --project-id local --month 2026-05
 api2agent ledger --db api2agent-usage.sqlite --project-id local --group-by-mode
 api2agent ledger --db api2agent-usage.sqlite --capability-id public_ip_lookup --provider-id ipify

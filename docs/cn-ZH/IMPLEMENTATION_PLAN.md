@@ -266,11 +266,12 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Out-of-scope credentials 会返回 redacted `credential_scope_denied` errors。
 - Credential lifecycle metadata 支持 status、expiry 和 rotation hints。
 - Disabled 和 expired credentials 会返回 redacted machine-readable errors。
+- Usage CLI 可以打印 secret-safe credential audit events 和 failure counts。
 
 下一项工程任务：
 
 ```text
-Credential audit reporting in usage CLI
+Authenticated proxy credential dogfood with a real API
 ```
 
 ## 9. Marketplace 是后面的结果

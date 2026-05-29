@@ -266,6 +266,104 @@ def test_ledger_command_prints_json_rows(tmp_path) -> None:
     assert payload[0]["estimated_cost"] == 0.01
 
 
+def test_usage_command_prints_credential_audit_json(tmp_path) -> None:
+    db = tmp_path / "usage.sqlite"
+    store = UsageStore(db)
+    store.record(
+        UsageEvent(
+            id="event_credential",
+            project_id="local",
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            method="GET",
+            path="/",
+            status_code=401,
+            success=False,
+            error_type="credential_expired",
+            request_metadata={
+                "credential": {
+                    "credential_id": "cred_demo",
+                    "owner_type": "project",
+                    "owner_id": "local",
+                    "provider_id": "demo",
+                    "auth_type": "api_key",
+                    "source": "config",
+                    "secret_ref": "DEMO_TOKEN",
+                    "secret_value": "raw-secret",
+                    "status": "active",
+                    "expires_at": "2026-01-01T00:00:00+00:00",
+                    "rotation_hint": "rotate",
+                }
+            },
+            credential_reference="config:cred_demo",
+        )
+    )
+    store.record(
+        UsageEvent(
+            id="event_plain",
+            project_id="local",
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            method="GET",
+            path="/",
+            status_code=200,
+            success=True,
+        )
+    )
+
+    result = runner.invoke(app, ["usage", "--db", str(db), "--credential-audit", "--json"])
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["contract_version"] == "credential_audit.v0.1"
+    assert payload["count"] == 1
+    assert payload["credential_failure_counts"] == {"credential_expired": 1}
+    assert payload["events"][0]["id"] == "event_credential"
+    assert payload["events"][0]["credential_reference"] == "config:cred_demo"
+    assert payload["events"][0]["credential_metadata"]["credential_id"] == "cred_demo"
+    assert "secret_value" not in payload["events"][0]["credential_metadata"]
+    assert "raw-secret" not in result.output
+
+
+def test_usage_command_prints_credential_audit_text(tmp_path) -> None:
+    db = tmp_path / "usage.sqlite"
+    UsageStore(db).record(
+        UsageEvent(
+            id="event_credential",
+            project_id="local",
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            method="GET",
+            path="/",
+            status_code=401,
+            success=False,
+            error_type="credential_disabled",
+            request_metadata={
+                "credential": {
+                    "credential_id": "cred_demo",
+                    "owner_type": "project",
+                    "owner_id": "local",
+                    "status": "disabled",
+                    "secret_value": "raw-secret",
+                }
+            },
+            credential_reference="config:cred_demo",
+        )
+    )
+
+    result = runner.invoke(app, ["usage", "--db", str(db), "--credential-audit"])
+
+    assert result.exit_code == 0
+    assert "Credential audit events: 1" in result.output
+    assert "credential_disabled: 1" in result.output
+    assert "Reference: config:cred_demo" in result.output
+    assert "Metadata: id=cred_demo, owner=project:local, status=disabled" in result.output
+    assert "raw-secret" not in result.output
+
+
 def test_decision_command_prints_decision_and_usage_events(tmp_path) -> None:
     db = tmp_path / "usage.sqlite"
     store = UsageStore(db)

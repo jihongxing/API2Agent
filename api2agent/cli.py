@@ -25,6 +25,31 @@ app = typer.Typer(help="Turn APIs into verified Agent capability packages.")
 DECISION_USAGE_CONTRACT_VERSION = "decision_usage.v0.1"
 REPLAY_CONTRACT_VERSION = "replay.v0.1"
 GOLDEN_TRACE_CONTRACT_VERSION = "golden_trace.v0.1"
+CREDENTIAL_AUDIT_CONTRACT_VERSION = "credential_audit.v0.1"
+CREDENTIAL_METADATA_AUDIT_FIELDS = {
+    "credential_id",
+    "owner_type",
+    "owner_id",
+    "provider_id",
+    "auth_type",
+    "injection_mode",
+    "injection_name",
+    "source",
+    "secret_ref",
+    "scope",
+    "status",
+    "expires_at",
+    "rotation_hint",
+}
+CREDENTIAL_ERROR_TYPES = {
+    "credential_disabled",
+    "credential_expired",
+    "credential_resolution_failed",
+    "credential_scope_denied",
+    "invalid_credential",
+    "missing_credential",
+    "missing_credential_secret",
+}
 
 
 @app.command()
@@ -225,10 +250,24 @@ def proxy(
 def usage(
     db: Path = typer.Option(Path("api2agent-usage.sqlite"), "--db", help="SQLite database for usage events."),
     project_id: Optional[str] = typer.Option(None, "--project-id", help="Filter usage by project id."),
+    credential_audit: bool = typer.Option(False, "--credential-audit", help="Print credential audit events."),
+    limit: int = typer.Option(50, "--limit", help="Maximum credential audit events to print."),
     json_output: bool = typer.Option(False, "--json", help="Print raw usage summary JSON."),
 ) -> None:
     """Print usage metrics recorded by the local proxy."""
-    summary = UsageStore(db).summarize(project_id)
+    if limit < 1:
+        raise typer.BadParameter("--limit must be greater than 0.")
+
+    store = UsageStore(db)
+    if credential_audit:
+        payload = _credential_audit_payload(store, project_id=project_id, limit=limit)
+        if json_output:
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+            return
+        _print_credential_audit(payload)
+        return
+
+    summary = store.summarize(project_id)
     payload = summary.model_dump(mode="json")
     if json_output:
         typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
@@ -245,6 +284,86 @@ def usage(
         typer.echo("Errors:")
         for error_type, count in payload["error_counts"].items():
             typer.echo(f"  - {error_type}: {count}")
+
+
+def _credential_audit_payload(store: UsageStore, project_id: str | None, limit: int) -> dict:
+    events = [
+        event
+        for event in store.list_usage_events(project_id=project_id, limit=limit)
+        if _is_credential_audit_event(event)
+    ]
+    failure_counts: dict[str, int] = {}
+    for event in events:
+        if event.error_type in CREDENTIAL_ERROR_TYPES:
+            failure_counts[event.error_type] = failure_counts.get(event.error_type, 0) + 1
+
+    return {
+        "contract_version": CREDENTIAL_AUDIT_CONTRACT_VERSION,
+        "project_id": project_id,
+        "count": len(events),
+        "credential_failure_counts": failure_counts,
+        "events": [_credential_audit_event(event) for event in events],
+    }
+
+
+def _is_credential_audit_event(event: UsageEvent) -> bool:
+    return bool(event.credential_reference or event.error_type in CREDENTIAL_ERROR_TYPES)
+
+
+def _credential_audit_event(event: UsageEvent) -> dict:
+    credential_metadata = None
+    if event.request_metadata and isinstance(event.request_metadata.get("credential"), dict):
+        credential_metadata = {
+            key: value
+            for key, value in event.request_metadata["credential"].items()
+            if key in CREDENTIAL_METADATA_AUDIT_FIELDS
+        }
+
+    return {
+        "id": event.id,
+        "created_at": event.created_at.isoformat(),
+        "project_id": event.project_id,
+        "capability_id": event.capability_id,
+        "provider_id": event.provider_id,
+        "tool_id": event.tool_id,
+        "execution_mode": event.execution_mode,
+        "success": event.success,
+        "error_type": event.error_type,
+        "credential_reference": event.credential_reference,
+        "credential_metadata": credential_metadata,
+    }
+
+
+def _print_credential_audit(payload: dict) -> None:
+    typer.echo(f"Credential audit events: {payload['count']}")
+    if payload["credential_failure_counts"]:
+        typer.echo("Credential failures:")
+        for error_type, count in payload["credential_failure_counts"].items():
+            typer.echo(f"  - {error_type}: {count}")
+    if not payload["events"]:
+        return
+    for event in payload["events"]:
+        typer.echo(
+            f"{event['id']} / {event['project_id']} / {event['capability_id']} / "
+            f"{event['provider_id']} / {event['tool_id']}"
+        )
+        typer.echo(f"  Reference: {event['credential_reference'] or '(none)'}")
+        typer.echo(f"  Success: {event['success']}")
+        if event["error_type"]:
+            typer.echo(f"  Error: {event['error_type']}")
+        metadata = event.get("credential_metadata") or {}
+        if metadata:
+            label_parts = []
+            if metadata.get("credential_id"):
+                label_parts.append(f"id={metadata['credential_id']}")
+            if metadata.get("owner_type") or metadata.get("owner_id"):
+                label_parts.append(f"owner={metadata.get('owner_type')}:{metadata.get('owner_id')}")
+            if metadata.get("status"):
+                label_parts.append(f"status={metadata['status']}")
+            if metadata.get("expires_at"):
+                label_parts.append(f"expires_at={metadata['expires_at']}")
+            if label_parts:
+                typer.echo("  Metadata: " + ", ".join(label_parts))
 
 
 @app.command()

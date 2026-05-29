@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Credential audit reporting in usage CLI
+Authenticated proxy credential dogfood with a real API
 ```
 
 当前实现结果：
@@ -501,12 +501,15 @@ Credential audit reporting in usage CLI
 - out-of-scope credentials 会返回 `credential_scope_denied`，且不会 fallback 到低优先级 credential。
 - credential lifecycle metadata 现在包含 status、expiry 和 rotation hints。
 - disabled 和 expired credentials 会在 secret resolution 之前返回 machine-readable errors。
+- usage CLI 现在可以通过 `api2agent usage --credential-audit` 打印 credential audit events。
+- credential audit output 使用 allowlist，并聚合 credential-related failures。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 - proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
 - credential policy dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_POLICY_DOGFOOD_REPORT.md`。
 - credential scope dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_SCOPE_DOGFOOD_REPORT.md`。
 - credential lifecycle dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_LIFECYCLE_DOGFOOD_REPORT.md`。
+- credential audit CLI dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_AUDIT_CLI_DOGFOOD_REPORT.md`。
 
 实施 checklist：
 
@@ -554,6 +557,11 @@ Credential audit reporting in usage CLI
    - disabled credentials 返回 `credential_disabled`
    - expired credentials 返回 `credential_expired`
    - redacted resolver metadata 保留 lifecycle fields
+11. Credential audit reporting in usage CLI - complete
+   - 新增 `api2agent usage --credential-audit`
+   - 新增 JSON 和 text audit output
+   - 包含 `credential_reference`、selected metadata 和 credential failure counts
+   - 省略非 allowlisted metadata，例如 `secret_value`
 
 验收测试集：
 
@@ -575,6 +583,8 @@ Credential audit reporting in usage CLI
 - resolver 会拒绝 out-of-scope credentials，且不暴露 raw secrets
 - resolver 会用 redacted metadata 拒绝 disabled 和 expired credentials
 - resolver 会为 accepted credentials 记录 lifecycle audit metadata
+- usage CLI 可以打印 credential audit JSON，且不暴露 raw secrets
+- usage CLI 可以打印 credential audit text，且不暴露 raw secrets
 
 ## 9. Phase 6：Hosted Control Plane
 

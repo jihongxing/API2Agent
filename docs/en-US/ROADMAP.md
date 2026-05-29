@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Credential audit reporting in usage CLI
+Authenticated proxy credential dogfood with a real API
 ```
 
 Current implementation result:
@@ -501,12 +501,15 @@ Current implementation result:
 - out-of-scope credentials fail with `credential_scope_denied` and do not fall back to lower-precedence credentials.
 - credential lifecycle metadata now includes status, expiry, and rotation hints.
 - disabled and expired credentials fail with machine-readable errors before secret resolution.
+- usage CLI can now print credential audit events through `api2agent usage --credential-audit`.
+- credential audit output uses an allowlist and groups credential-related failures.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
 - credential policy dogfood completed; see `docs/en-US/CREDENTIAL_POLICY_DOGFOOD_REPORT.md`.
 - credential scope dogfood completed; see `docs/en-US/CREDENTIAL_SCOPE_DOGFOOD_REPORT.md`.
 - credential lifecycle dogfood completed; see `docs/en-US/CREDENTIAL_LIFECYCLE_DOGFOOD_REPORT.md`.
+- credential audit CLI dogfood completed; see `docs/en-US/CREDENTIAL_AUDIT_CLI_DOGFOOD_REPORT.md`.
 
 Implementation checklist:
 
@@ -554,6 +557,11 @@ Implementation checklist:
    - return `credential_disabled` for disabled credentials
    - return `credential_expired` for expired credentials
    - preserve lifecycle fields in redacted resolver metadata
+11. Credential audit reporting in usage CLI - complete
+   - add `api2agent usage --credential-audit`
+   - add JSON and text audit output
+   - include `credential_reference`, selected metadata, and credential failure counts
+   - omit non-allowlisted metadata such as `secret_value`
 
 Acceptance test set:
 
@@ -575,6 +583,8 @@ Acceptance test set:
 - resolver rejects out-of-scope credentials without exposing raw secrets
 - resolver rejects disabled and expired credentials with redacted metadata
 - resolver records lifecycle audit metadata for accepted credentials
+- usage CLI prints credential audit JSON without raw secrets
+- usage CLI prints credential audit text without raw secrets
 
 ## 9. Phase 6: Hosted Control Plane
 

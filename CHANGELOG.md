@@ -48,6 +48,7 @@ All notable API2Agent changes will be documented in this file.
 - Deterministic credential precedence and project-owner matching policy.
 - Credential scope matching for provider, capability, tool, and wildcard access.
 - Credential lifecycle metadata for status, expiry, and rotation audit hints.
+- Credential audit reporting in `api2agent usage --credential-audit`.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -73,7 +74,8 @@ All notable API2Agent changes will be documented in this file.
 - Credential policy dogfooded across inline/config/request precedence and owner fallback.
 - Credential scope dogfooded across allow, deny, and no-fallback cases.
 - Credential lifecycle dogfooded across disabled, expired, and active credentials.
-- Full test suite: `130 passed`.
+- Credential audit CLI dogfooded with JSON/text output and allowlisted metadata.
+- Full test suite: `132 passed`.
 
 ### Planned Next
 

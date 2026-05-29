@@ -264,6 +264,23 @@ Expired credentials fail with `credential_expired`.
 
 Lifecycle checks run before scope checks and secret resolution. Redacted metadata preserves lifecycle fields so usage and audit records can explain why a credential was accepted or rejected without storing the secret.
 
+### Credential Audit Reporting
+
+Local usage reporting can surface credential audit events:
+
+```bash
+api2agent usage --db api2agent-usage.sqlite --credential-audit
+api2agent usage --db api2agent-usage.sqlite --credential-audit --json
+```
+
+Audit output includes:
+
+- `credential_reference`
+- selected redacted credential metadata
+- credential-related failure counts
+
+Audit output uses an allowlist and never prints `secret_value`.
+
 ### Phase C3: Hosted Credential Store
 
 - encrypted credential storage
@@ -285,11 +302,11 @@ Lifecycle checks run before scope checks and secret resolution. Redacted metadat
 The next engineering task should be:
 
 ```text
-Credential audit reporting in usage CLI
+Authenticated proxy credential dogfood with a real API
 ```
 
 Acceptance criteria:
 
-- usage output can surface credential reference and selected audit metadata
-- ledger/reporting can filter or group credential-related failures
-- CLI output must remain secret-safe
+- run at least one authenticated real API through proxy credential config
+- verify provider receives auth while usage metadata stays redacted
+- document failure modes for missing, expired, or scoped credentials

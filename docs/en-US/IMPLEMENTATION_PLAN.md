@@ -266,11 +266,12 @@ Current implementation:
 - Out-of-scope credentials fail with redacted `credential_scope_denied` errors.
 - Credential lifecycle metadata supports status, expiry, and rotation hints.
 - Disabled and expired credentials fail with redacted machine-readable errors.
+- Usage CLI can print secret-safe credential audit events and failure counts.
 
 Next engineering task:
 
 ```text
-Credential audit reporting in usage CLI
+Authenticated proxy credential dogfood with a real API
 ```
 
 ## 9. Marketplace Is Later
