@@ -251,6 +251,19 @@ Bare `capability_id` and `tool_id` values are also accepted for local compatibil
 
 If the highest-precedence credential is out of scope, resolution fails with `credential_scope_denied`. The resolver does not silently fall back to a lower-precedence credential, because that would bypass the declared access policy.
 
+### Credential Lifecycle Policy
+
+Credential metadata can express local lifecycle state:
+
+- `status`: `active` or `disabled`
+- `expires_at`: optional ISO timestamp
+- `rotation_hint`: optional human-readable rotation note
+
+Disabled credentials fail with `credential_disabled`.
+Expired credentials fail with `credential_expired`.
+
+Lifecycle checks run before scope checks and secret resolution. Redacted metadata preserves lifecycle fields so usage and audit records can explain why a credential was accepted or rejected without storing the secret.
+
 ### Phase C3: Hosted Credential Store
 
 - encrypted credential storage
@@ -272,11 +285,11 @@ If the highest-precedence credential is out of scope, resolution fails with `cre
 The next engineering task should be:
 
 ```text
-Credential rotation metadata and audit events
+Credential audit reporting in usage CLI
 ```
 
 Acceptance criteria:
 
-- credential metadata can express rotation state and expiry hints
-- usage events can record credential audit metadata without secrets
-- expired or disabled credentials fail with machine-readable errors
+- usage output can surface credential reference and selected audit metadata
+- ledger/reporting can filter or group credential-related failures
+- CLI output must remain secret-safe

@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Credential rotation metadata and audit events
+Credential audit reporting in usage CLI
 ```
 
 当前实现结果：
@@ -499,11 +499,14 @@ Credential rotation metadata and audit events
 - config credential owner matching 会优先选择 exact project owner，然后是 local project owner，最后才按 config order。
 - credential scope matching 现在支持 provider、capability、tool 和 wildcard scope entries。
 - out-of-scope credentials 会返回 `credential_scope_denied`，且不会 fallback 到低优先级 credential。
+- credential lifecycle metadata 现在包含 status、expiry 和 rotation hints。
+- disabled 和 expired credentials 会在 secret resolution 之前返回 machine-readable errors。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 - proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
 - credential policy dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_POLICY_DOGFOOD_REPORT.md`。
 - credential scope dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_SCOPE_DOGFOOD_REPORT.md`。
+- credential lifecycle dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_LIFECYCLE_DOGFOOD_REPORT.md`。
 
 实施 checklist：
 
@@ -546,6 +549,11 @@ Credential rotation metadata and audit events
    - empty scope 对 matching provider 表示 unrestricted
    - out-of-scope credentials 返回 `credential_scope_denied`
    - 高优先级 credential out-of-scope 后，不允许继续 fallback 到低优先级 credential
+10. Credential rotation metadata and audit events - complete
+   - 为 credential definitions 新增 `status`、`expires_at` 和 `rotation_hint`
+   - disabled credentials 返回 `credential_disabled`
+   - expired credentials 返回 `credential_expired`
+   - redacted resolver metadata 保留 lifecycle fields
 
 验收测试集：
 
@@ -565,6 +573,8 @@ Credential rotation metadata and audit events
 - resolver 会先选择 project-owned config credentials，再选择 local fallback
 - resolver 允许 matching capability/tool scopes
 - resolver 会拒绝 out-of-scope credentials，且不暴露 raw secrets
+- resolver 会用 redacted metadata 拒绝 disabled 和 expired credentials
+- resolver 会为 accepted credentials 记录 lifecycle audit metadata
 
 ## 9. Phase 6：Hosted Control Plane
 

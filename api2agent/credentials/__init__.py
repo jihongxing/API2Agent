@@ -3,6 +3,7 @@ from api2agent.credentials.models import (
     CredentialDefinition,
     CredentialInjectionPatch,
     CredentialResolutionRequest,
+    CredentialStatus,
     ResolvedCredential,
 )
 from api2agent.credentials.resolver import (
@@ -17,6 +18,7 @@ __all__ = [
     "CredentialInjectionPatch",
     "CredentialResolutionError",
     "CredentialResolutionRequest",
+    "CredentialStatus",
     "LocalCredentialResolver",
     "ResolvedCredential",
     "load_credential_config",

@@ -264,11 +264,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Config credential ownership 会优先选择 exact project owner，然后是 local owner，最后按 config order。
 - Credential scope 可以按 provider、capability、tool 或 wildcard 限制访问。
 - Out-of-scope credentials 会返回 redacted `credential_scope_denied` errors。
+- Credential lifecycle metadata 支持 status、expiry 和 rotation hints。
+- Disabled 和 expired credentials 会返回 redacted machine-readable errors。
 
 下一项工程任务：
 
 ```text
-Credential rotation metadata and audit events
+Credential audit reporting in usage CLI
 ```
 
 ## 9. Marketplace 是后面的结果

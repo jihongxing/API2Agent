@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Credential rotation metadata and audit events
+Credential audit reporting in usage CLI
 ```
 
 Current implementation result:
@@ -499,11 +499,14 @@ Current implementation result:
 - config credential owner matching now prefers exact project owner, then local project owner, then config order.
 - credential scope matching now supports provider, capability, tool, and wildcard scope entries.
 - out-of-scope credentials fail with `credential_scope_denied` and do not fall back to lower-precedence credentials.
+- credential lifecycle metadata now includes status, expiry, and rotation hints.
+- disabled and expired credentials fail with machine-readable errors before secret resolution.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
 - credential policy dogfood completed; see `docs/en-US/CREDENTIAL_POLICY_DOGFOOD_REPORT.md`.
 - credential scope dogfood completed; see `docs/en-US/CREDENTIAL_SCOPE_DOGFOOD_REPORT.md`.
+- credential lifecycle dogfood completed; see `docs/en-US/CREDENTIAL_LIFECYCLE_DOGFOOD_REPORT.md`.
 
 Implementation checklist:
 
@@ -546,6 +549,11 @@ Implementation checklist:
    - keep empty scope as unrestricted for the matching provider
    - return `credential_scope_denied` for out-of-scope credentials
    - prevent lower-precedence fallback after an out-of-scope higher-precedence credential
+10. Credential rotation metadata and audit events - complete
+   - add `status`, `expires_at`, and `rotation_hint` to credential definitions
+   - return `credential_disabled` for disabled credentials
+   - return `credential_expired` for expired credentials
+   - preserve lifecycle fields in redacted resolver metadata
 
 Acceptance test set:
 
@@ -565,6 +573,8 @@ Acceptance test set:
 - resolver chooses project-owned config credentials before local fallback
 - resolver allows matching capability/tool scopes
 - resolver rejects out-of-scope credentials without exposing raw secrets
+- resolver rejects disabled and expired credentials with redacted metadata
+- resolver records lifecycle audit metadata for accepted credentials
 
 ## 9. Phase 6: Hosted Control Plane
 

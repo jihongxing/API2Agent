@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -7,6 +8,7 @@ OwnerType = Literal["user", "project", "platform", "provider"]
 AuthType = Literal["api_key", "bearer", "basic", "oauth", "none"]
 InjectionMode = Literal["header", "query", "body", "none"]
 CredentialSource = Literal["env", "config", "inline", "none"]
+CredentialStatus = Literal["active", "disabled"]
 
 
 class CredentialDefinition(BaseModel):
@@ -21,6 +23,9 @@ class CredentialDefinition(BaseModel):
     source: CredentialSource = "env"
     secret_ref: str | None = None
     secret_value: str | None = Field(default=None, repr=False, exclude=True)
+    status: CredentialStatus = "active"
+    expires_at: datetime | None = None
+    rotation_hint: str | None = None
 
     @model_validator(mode="after")
     def validate_secret_source(self):

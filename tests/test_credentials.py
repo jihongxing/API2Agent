@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from api2agent.credentials.config import load_credential_config
 from api2agent.credentials.models import CredentialDefinition, CredentialResolutionRequest
 from api2agent.credentials.resolver import CREDENTIAL_PRECEDENCE, LocalCredentialResolver
@@ -401,6 +403,90 @@ def test_out_of_scope_inline_credential_does_not_fall_back_to_config() -> None:
     assert result.resolved is False
     assert result.credential_reference == "inline:cred_inline"
     assert result.error_type == "credential_scope_denied"
+
+
+def test_disabled_credential_returns_redacted_error() -> None:
+    result = LocalCredentialResolver().resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="api_key",
+            injection_mode="header",
+            credential=CredentialDefinition(
+                credential_id="cred_demo",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                source="inline",
+                secret_value="inline-secret",
+                status="disabled",
+            ),
+        )
+    )
+
+    assert result.resolved is False
+    assert result.credential_reference == "inline:cred_demo"
+    assert result.error_type == "credential_disabled"
+    assert result.redacted_metadata["status"] == "disabled"
+    assert "inline-secret" not in str(result.model_dump(mode="json"))
+
+
+def test_expired_credential_returns_redacted_error() -> None:
+    result = LocalCredentialResolver().resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="api_key",
+            injection_mode="header",
+            credential=CredentialDefinition(
+                credential_id="cred_demo",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                source="inline",
+                secret_value="inline-secret",
+                expires_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                rotation_hint="replace-before-expiry",
+            ),
+        )
+    )
+
+    assert result.resolved is False
+    assert result.error_type == "credential_expired"
+    assert result.redacted_metadata["expires_at"] == "2026-01-01T00:00:00+00:00"
+    assert result.redacted_metadata["rotation_hint"] == "replace-before-expiry"
+    assert "inline-secret" not in str(result.model_dump(mode="json"))
+
+
+def test_active_unexpired_credential_records_audit_metadata() -> None:
+    result = LocalCredentialResolver().resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="api_key",
+            injection_mode="header",
+            credential=CredentialDefinition(
+                credential_id="cred_demo",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                injection_name="X-Token",
+                source="inline",
+                secret_value="inline-secret",
+                expires_at=datetime(2099, 1, 1, tzinfo=timezone.utc),
+                rotation_hint="quarterly",
+            ),
+        )
+    )
+
+    assert result.resolved is True
+    assert result.injection_patch.headers == {"X-Token": "inline-secret"}
+    assert result.redacted_metadata["status"] == "active"
+    assert result.redacted_metadata["expires_at"] == "2099-01-01T00:00:00+00:00"
+    assert result.redacted_metadata["rotation_hint"] == "quarterly"
 
 
 def test_auth_type_none_skips_credentials() -> None:

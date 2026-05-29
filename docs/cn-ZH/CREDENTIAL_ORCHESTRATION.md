@@ -251,6 +251,19 @@ Config credential owner matching 也是确定性的：
 
 如果最高优先级 credential out of scope，resolution 会返回 `credential_scope_denied`。Resolver 不会静默 fallback 到低优先级 credential，因为那会绕过声明的访问策略。
 
+### Credential Lifecycle Policy
+
+Credential metadata 可以表达本地 lifecycle state：
+
+- `status`：`active` 或 `disabled`
+- `expires_at`：可选 ISO timestamp
+- `rotation_hint`：可选 human-readable rotation note
+
+Disabled credentials 会返回 `credential_disabled`。
+Expired credentials 会返回 `credential_expired`。
+
+Lifecycle checks 会在 scope checks 和 secret resolution 之前执行。Redacted metadata 会保留 lifecycle fields，让 usage 和 audit records 可以解释 credential 为什么被接受或拒绝，同时不保存 secret。
+
 ### Phase C3：Hosted Credential Store
 
 - encrypted credential storage
@@ -272,11 +285,11 @@ Config credential owner matching 也是确定性的：
 下一项工程任务应该是：
 
 ```text
-Credential rotation metadata and audit events
+Credential audit reporting in usage CLI
 ```
 
 验收标准：
 
-- credential metadata 可以表达 rotation state 和 expiry hints
-- usage events 可以记录 credential audit metadata，且不包含 secrets
-- expired 或 disabled credentials 会返回 machine-readable errors
+- usage output 可以展示 credential reference 和 selected audit metadata
+- ledger/reporting 可以 filter 或 group credential-related failures
+- CLI output 必须保持 secret-safe

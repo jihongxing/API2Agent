@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import os
 from typing import Iterable
 
@@ -38,6 +39,9 @@ class LocalCredentialResolver:
                 continue
             if credential.provider_id != request.provider_id:
                 continue
+            lifecycle_error = self._lifecycle_error(credential)
+            if lifecycle_error is not None:
+                return lifecycle_error
             if not self._scope_allows(credential, request):
                 return self._scope_denied(credential, request)
             secret = self._secret_for(credential)
@@ -135,7 +139,36 @@ class LocalCredentialResolver:
             "source": credential.source,
             "secret_ref": credential.secret_ref,
             "scope": credential.scope,
+            "status": credential.status,
+            "expires_at": credential.expires_at.isoformat() if credential.expires_at else None,
+            "rotation_hint": credential.rotation_hint,
         }
+
+    def _lifecycle_error(self, credential: CredentialDefinition) -> ResolvedCredential | None:
+        if credential.status == "disabled":
+            return ResolvedCredential(
+                resolved=False,
+                credential_reference=self._credential_reference(credential),
+                redacted_metadata=self._redacted_metadata(credential),
+                error_type="credential_disabled",
+                error_message=f"Credential is disabled: {self._credential_reference(credential)}",
+            )
+
+        if credential.expires_at is None:
+            return None
+
+        expires_at = credential.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at <= datetime.now(timezone.utc):
+            return ResolvedCredential(
+                resolved=False,
+                credential_reference=self._credential_reference(credential),
+                redacted_metadata=self._redacted_metadata(credential),
+                error_type="credential_expired",
+                error_message=f"Credential is expired: {self._credential_reference(credential)}",
+            )
+        return None
 
     def _scope_allows(self, credential: CredentialDefinition, request: CredentialResolutionRequest) -> bool:
         if not credential.scope:

@@ -264,11 +264,13 @@ Current implementation:
 - Config credential ownership prefers exact project owner, then local owner, then config order.
 - Credential scope can restrict access by provider, capability, tool, or wildcard.
 - Out-of-scope credentials fail with redacted `credential_scope_denied` errors.
+- Credential lifecycle metadata supports status, expiry, and rotation hints.
+- Disabled and expired credentials fail with redacted machine-readable errors.
 
 Next engineering task:
 
 ```text
-Credential rotation metadata and audit events
+Credential audit reporting in usage CLI
 ```
 
 ## 9. Marketplace Is Later
