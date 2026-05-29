@@ -447,16 +447,17 @@ api2agent generate openapi.yaml --proxy https://api.api2agent.com
 
 Generated runner should be able to call proxy instead of third-party API directly.
 
-### Priority 3: Define Credential Schema And Local Resolver
+### Priority 3: Proxy-Side Credential Injection
 
-Before hosted execution can become economic infrastructure, API2Agent must know:
+Credential Schema v0.1 and the local resolver are implemented for generated package execution. The next design step is moving credential injection toward the proxy path.
 
-- who owns the credential
-- how the credential is resolved
-- how it is injected
-- how usage events reference it safely
+Proxy-side credential injection should define:
 
-Start with env/config/inline sources and no hosted vault.
+- how generated packages send credential intent without raw secrets
+- how proxy resolves credentials
+- how proxy injects provider credentials
+- how proxy records `credential_reference`
+- how replay handles proxy-injected credentials
 
 ### Priority 4: Define Usage Event Schema
 

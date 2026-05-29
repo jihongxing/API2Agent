@@ -451,6 +451,124 @@ def execute_tool(name, params):
     assert payload["replay_result"]["body"] == {"echo": "hello"}
 
 
+def test_replay_command_reports_missing_local_package_credential(tmp_path, monkeypatch) -> None:
+    monkeypatch.delenv("TEST_API_TOKEN", raising=False)
+    package_dir = tmp_path / "package"
+    package_dir.mkdir()
+    (package_dir / "runner.py").write_text(
+        """
+CAPABILITY = {"tools": [{"name": "get", "method": "GET", "path": "/"}]}
+
+def execute_tool(name, params):
+    return {"ok": True, "status_code": 200, "body": {"ok": True}}
+""",
+        encoding="utf-8",
+    )
+    db = tmp_path / "usage.sqlite"
+    UsageStore(db).record(
+        UsageEvent(
+            id="event_credential_replay",
+            execution_mode="direct",
+            project_id="local",
+            capability_id="secure.data.get",
+            provider_id="secure",
+            tool_id="get",
+            method="GET",
+            path="/",
+            status_code=200,
+            success=True,
+            request_metadata={
+                "params": {},
+                "credential": {
+                    "credential_id": "cred_secure",
+                    "owner_type": "project",
+                    "owner_id": "local",
+                    "provider_id": "secure",
+                    "auth_type": "bearer",
+                    "injection_mode": "header",
+                    "injection_name": "Authorization",
+                    "source": "env",
+                    "secret_ref": "TEST_API_TOKEN",
+                },
+            },
+            credential_reference="env:TEST_API_TOKEN",
+            provider_runtime_reference=f"local_package:{package_dir}",
+        )
+    )
+
+    result = runner.invoke(app, ["replay", "event_credential_replay", "--db", str(db), "--execute", "--json"])
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["replayable"] is False
+    assert payload["replay_result"]["error"]["type"] == "missing_credential_secret"
+    assert "credential" in payload["missing_for_exact_replay"]
+    assert "TEST_API_TOKEN" in payload["replay_result"]["error"]["message"]
+
+
+def test_replay_command_executes_local_package_with_resolved_credential(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("TEST_API_TOKEN", "secret-token")
+    package_dir = tmp_path / "package"
+    package_dir.mkdir()
+    (package_dir / "runner.py").write_text(
+        """
+import json
+import os
+
+CAPABILITY = {"tools": [{"name": "get", "method": "GET", "path": "/"}]}
+
+def execute_tool(name, params):
+    headers = json.loads(os.getenv("API2AGENT_CREDENTIAL_HEADERS") or "{}")
+    return {
+        "ok": headers.get("Authorization") == "Bearer secret-token",
+        "status_code": 200,
+        "body": {"authorized": headers.get("Authorization") == "Bearer secret-token"},
+    }
+""",
+        encoding="utf-8",
+    )
+    db = tmp_path / "usage.sqlite"
+    UsageStore(db).record(
+        UsageEvent(
+            id="event_credential_replay",
+            execution_mode="direct",
+            project_id="local",
+            capability_id="secure.data.get",
+            provider_id="secure",
+            tool_id="get",
+            method="GET",
+            path="/",
+            status_code=200,
+            success=True,
+            request_metadata={
+                "params": {},
+                "credential": {
+                    "credential_id": "cred_secure",
+                    "owner_type": "project",
+                    "owner_id": "local",
+                    "provider_id": "secure",
+                    "auth_type": "bearer",
+                    "injection_mode": "header",
+                    "injection_name": "Authorization",
+                    "source": "env",
+                    "secret_ref": "TEST_API_TOKEN",
+                },
+            },
+            credential_reference="env:TEST_API_TOKEN",
+            provider_runtime_reference=f"local_package:{package_dir}",
+        )
+    )
+
+    result = runner.invoke(app, ["replay", "event_credential_replay", "--db", str(db), "--execute", "--json"])
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["replayable"] is True
+    assert payload["replay_result"]["ok"] is True
+    assert payload["replay_result"]["body"] == {"authorized": True}
+    assert "secret-token" not in result.output
+
+
 def test_golden_command_marks_usage_event(tmp_path) -> None:
     db = tmp_path / "usage.sqlite"
     store = UsageStore(db)

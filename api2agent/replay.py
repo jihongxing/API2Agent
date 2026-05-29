@@ -1,4 +1,6 @@
 import importlib.util
+import json
+import os
 from pathlib import Path
 import sys
 from time import perf_counter
@@ -9,6 +11,8 @@ import httpx
 from api2agent.adapters.open_meteo import OpenMeteoWeatherAdapter
 from api2agent.adapters.wttr_in import WttrInWeatherAdapter
 from api2agent.control.models import UsageEvent
+from api2agent.credentials.models import CredentialDefinition, CredentialInjectionPatch, CredentialResolutionRequest
+from api2agent.credentials.resolver import LocalCredentialResolver
 
 
 SDK_ADAPTERS = {
@@ -26,7 +30,7 @@ def can_execute_replay(event: UsageEvent) -> bool:
             or event.provider_runtime_reference == "proxy:http"
             or str(event.provider_runtime_reference).startswith("local_package:")
         )
-        and event.credential_reference is None
+        and _replay_credential_resolvable(event)
     )
 
 
@@ -35,15 +39,19 @@ def execute_replay(event: UsageEvent) -> dict[str, Any]:
         return _error("missing_request_metadata", "Usage event has no request metadata.")
     if not event.provider_runtime_reference:
         return _error("missing_provider_runtime_reference", "Usage event has no provider runtime reference.")
-    if event.credential_reference:
-        return _error("credential_required", "Replay cannot execute because the original call referenced credentials.")
+    resolved_credential = _resolve_replay_credential(event)
+    if not resolved_credential.resolved:
+        return _error(
+            resolved_credential.error_type or "credential_required",
+            resolved_credential.error_message or "Replay cannot execute because the original call referenced credentials.",
+        )
 
     if event.provider_runtime_reference in SDK_ADAPTERS:
         return _execute_sdk_replay(event)
     if event.provider_runtime_reference == "proxy:http":
         return _execute_http_replay(event)
     if str(event.provider_runtime_reference).startswith("local_package:"):
-        return _execute_local_package_replay(event)
+        return _execute_local_package_replay(event, resolved_credential.injection_patch)
     return _error("unsupported_provider_runtime", f"Unsupported replay runtime: {event.provider_runtime_reference}")
 
 
@@ -99,7 +107,7 @@ def _execute_http_replay(event: UsageEvent) -> dict[str, Any]:
     }
 
 
-def _execute_local_package_replay(event: UsageEvent) -> dict[str, Any]:
+def _execute_local_package_replay(event: UsageEvent, credential_patch: CredentialInjectionPatch | None = None) -> dict[str, Any]:
     package_dir = _local_package_dir(event.provider_runtime_reference)
     if package_dir is None:
         return _error("invalid_local_package_runtime", "Local package replay requires local_package:<package_dir>.")
@@ -113,11 +121,17 @@ def _execute_local_package_replay(event: UsageEvent) -> dict[str, Any]:
         return _error("missing_local_package_params", "Local package replay requires request_metadata.params.")
 
     runner = _load_local_runner(runner_path, event.id)
-    start = perf_counter()
-    result = runner.execute_tool(event.tool_id, params)
-    latency_ms = (perf_counter() - start) * 1000
-    if not isinstance(result, dict):
-        return _error("invalid_local_package_result", "Generated runner returned a non-object result.")
+    previous_env = _credential_env_snapshot()
+    try:
+        if credential_patch is not None:
+            _apply_credential_env(credential_patch)
+        start = perf_counter()
+        result = runner.execute_tool(event.tool_id, params)
+        latency_ms = (perf_counter() - start) * 1000
+        if not isinstance(result, dict):
+            return _error("invalid_local_package_result", "Generated runner returned a non-object result.")
+    finally:
+        _restore_credential_env(previous_env)
 
     error = result.get("error") if isinstance(result.get("error"), dict) else {}
     return {
@@ -130,6 +144,95 @@ def _execute_local_package_replay(event: UsageEvent) -> dict[str, Any]:
         "error_type": error.get("type"),
         "error_message": error.get("message"),
     }
+
+
+def _replay_credential_resolvable(event: UsageEvent) -> bool:
+    return _resolve_replay_credential(event).resolved
+
+
+def _resolve_replay_credential(event: UsageEvent):
+    if not event.credential_reference:
+        return LocalCredentialResolver().resolve(
+            CredentialResolutionRequest(
+                capability_id=event.capability_id,
+                provider_id=event.provider_id,
+                tool_id=event.tool_id,
+                auth_type="none",
+                injection_mode="none",
+            )
+        )
+
+    metadata = (event.request_metadata or {}).get("credential")
+    if not isinstance(metadata, dict):
+        return _missing_replay_credential(event, "Replay requires credential metadata to resolve this event.")
+
+    try:
+        credential = CredentialDefinition.model_validate(
+            {
+                "credential_id": metadata.get("credential_id") or str(event.credential_reference),
+                "owner_type": metadata.get("owner_type") or "project",
+                "owner_id": metadata.get("owner_id") or event.project_id,
+                "provider_id": metadata.get("provider_id") or event.provider_id,
+                "auth_type": metadata.get("auth_type") or "api_key",
+                "injection_mode": metadata.get("injection_mode") or "header",
+                "injection_name": metadata.get("injection_name"),
+                "scope": metadata.get("scope") or [],
+                "source": metadata.get("source") or "env",
+                "secret_ref": metadata.get("secret_ref"),
+            }
+        )
+    except ValueError as exc:
+        return _missing_replay_credential(event, f"Replay credential metadata is invalid: {exc}")
+
+    return LocalCredentialResolver().resolve(
+        CredentialResolutionRequest(
+            capability_id=event.capability_id,
+            provider_id=event.provider_id,
+            tool_id=event.tool_id,
+            auth_type=credential.auth_type,
+            injection_mode=credential.injection_mode,
+            injection_name=credential.injection_name,
+            credential=credential,
+        )
+    )
+
+
+def _missing_replay_credential(event: UsageEvent, message: str):
+    return type(
+        "MissingReplayCredential",
+        (),
+        {
+            "resolved": False,
+            "credential_reference": event.credential_reference or "missing",
+            "injection_patch": CredentialInjectionPatch(),
+            "redacted_metadata": {},
+            "error_type": "missing_replay_credential",
+            "error_message": message,
+        },
+    )()
+
+
+def _credential_env_snapshot() -> dict[str, str | None]:
+    keys = [
+        "API2AGENT_CREDENTIAL_HEADERS",
+        "API2AGENT_CREDENTIAL_QUERY",
+        "API2AGENT_CREDENTIAL_BODY",
+    ]
+    return {key: os.environ.get(key) for key in keys}
+
+
+def _apply_credential_env(patch: CredentialInjectionPatch) -> None:
+    os.environ["API2AGENT_CREDENTIAL_HEADERS"] = json.dumps(patch.headers, ensure_ascii=False)
+    os.environ["API2AGENT_CREDENTIAL_QUERY"] = json.dumps(patch.query, ensure_ascii=False)
+    os.environ["API2AGENT_CREDENTIAL_BODY"] = json.dumps(patch.body, ensure_ascii=False)
+
+
+def _restore_credential_env(snapshot: dict[str, str | None]) -> None:
+    for key, value in snapshot.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
 
 
 def _local_package_dir(runtime: str | None) -> Path | None:

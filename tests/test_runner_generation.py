@@ -189,6 +189,39 @@ def test_execute_tool_applies_parameter_defaults(tmp_path, monkeypatch) -> None:
         sys.modules.pop("runner", None)
 
 
+def test_execute_tool_applies_credential_injection_patch(tmp_path, monkeypatch) -> None:
+    capability = parse_curl("curl 'https://api.example.com/items?format=json'")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+
+            def json(self):
+                return {"ok": True}
+
+        def fake_request(method, url, **kwargs):
+            captured["kwargs"] = kwargs
+            return FakeResponse()
+
+        monkeypatch.setenv("API2AGENT_CREDENTIAL_HEADERS", '{"Authorization":"Bearer secret-token"}')
+        monkeypatch.setenv("API2AGENT_CREDENTIAL_QUERY", '{"api_key":"query-secret"}')
+        monkeypatch.setattr(runner.httpx, "request", fake_request)
+
+        result = runner.execute_tool("get_items", {})
+
+        assert result["ok"] is True
+        assert captured["kwargs"]["headers"]["Authorization"] == "Bearer secret-token"
+        assert captured["kwargs"]["params"] == {"format": "json", "api_key": "query-secret"}
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
 def test_execute_tool_can_call_api2agent_proxy(tmp_path, monkeypatch) -> None:
     capability = parse_openapi_file(FIXTURES / "body_query_header.yaml")
     output_dir = generate_package(capability, tmp_path / "api2agent-output")

@@ -84,12 +84,14 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - local generated package replay execution
 - generated package shadow execution mode
 - Credential Orchestration strategy document
+- Credential Schema v0.1 code models
+- local Credential Resolver
+- generated package execution 的 credential injection patches
+- credential-safe usage attribution and replay
 
 尚未实现：
 
 - hard enforcement of capability naming rule
-- Credential Schema v0.1
-- local Credential Resolver
 - endpoint-level auth
 - base URL override
 - manual write tests
@@ -438,7 +440,7 @@ capability registry JSON
 
 ## 8.6 Phase 5.6：Credential Orchestration MVP
 
-状态：计划中的下一步。
+状态：第一版本地实现已完成。
 
 目标：
 
@@ -479,27 +481,36 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Credential Schema v0.1 + Local Resolver Design
+Proxy-side Credential Injection Design
 ```
+
+当前实现结果：
+
+- `api2agent/credentials/models.py` 定义 Credential Schema v0.1 objects。
+- `api2agent/credentials/resolver.py` 支持 env/config/inline/none credentials。
+- generated runners 可以通过 local execution env 消费 credential injection patches。
+- `execute_capability` 会 resolve credentials，并写入 `credential_reference`。
+- local package replay 可以基于 redacted metadata 重新 resolve credentials。
+- credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 
 实施 checklist：
 
-1. Credential data models
+1. Credential data models - complete
    - 新增 `api2agent/credentials/models.py`
    - 定义 `CredentialDefinition`、`CredentialSource`、`CredentialResolutionRequest`、`ResolvedCredential` 和 `CredentialInjectionPatch`
    - 校验 `owner_type`、`auth_type`、`injection_mode` 和 `source`
-2. Local Credential Resolver
+2. Local Credential Resolver - complete
    - 新增 `api2agent/credentials/resolver.py`
    - 按以下顺序 resolve：inline override、project config、environment variable、none
    - 返回 redacted credential reference 和 injection patch
-3. Execution integration
+3. Execution integration - complete
    - 把 resolver 接入 generated package / routing execution path
    - 把 resolved credentials 注入 provider requests
    - 保持 direct local mode 可用
-4. Usage attribution
+4. Usage attribution - complete
    - 把 `credential_reference` 写入 usage events
    - 确保 raw secrets 不进入 usage event metadata、decision output、ledger output 或 logs
-5. Replay and masking behavior
+5. Replay and masking behavior - complete
    - required credentials 无法 resolve 时，replay 必须 warning
    - credentials 可 resolve 时，replay 可以执行
    - replay metadata 保持 redacted

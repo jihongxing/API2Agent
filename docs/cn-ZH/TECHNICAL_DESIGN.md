@@ -447,16 +447,17 @@ api2agent generate openapi.yaml --proxy https://api.api2agent.com
 
 Generated runner 应该能选择调用 proxy，而不是直连 third-party API。
 
-### Priority 3：定义 Credential Schema And Local Resolver
+### Priority 3：Proxy-Side Credential Injection
 
-Hosted execution 成为 economic infrastructure 之前，API2Agent 必须知道：
+Credential Schema v0.1 和 local resolver 已经在 generated package execution 中实现。下一步设计要把 credential injection 推向 proxy path。
 
-- credential 属于谁
-- credential 如何被解析
-- credential 如何被注入
-- usage events 如何安全引用它
+Proxy-side credential injection 应该定义：
 
-先从 env/config/inline sources 开始，不做 hosted vault。
+- generated packages 如何发送 credential intent，且不带 raw secrets
+- proxy 如何 resolve credentials
+- proxy 如何 inject provider credentials
+- proxy 如何记录 `credential_reference`
+- replay 如何处理 proxy-injected credentials
 
 ### Priority 4：定义 Usage Event Schema
 

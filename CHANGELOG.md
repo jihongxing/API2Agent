@@ -39,6 +39,9 @@ All notable API2Agent changes will be documented in this file.
 - Generated package shadow execution mode for `api2agent call`.
 - Local generated package replay execution.
 - Credential Orchestration strategy and MVP-2.5 planning docs.
+- Credential Schema v0.1 code models and local resolver.
+- Credential injection patches for generated package execution.
+- Credential-safe usage attribution and local package replay.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -58,7 +61,8 @@ All notable API2Agent changes will be documented in this file.
 - Golden trace marker dogfooded against a real `wttr_in` shadow event.
 - Generated package shadow/replay paths covered by regression tests.
 - Generated package shadow/replay dogfooded against real no-auth `ipify` and `httpbin` APIs.
-- Full test suite: `103 passed`.
+- Credential resolver dogfooded with env-based bearer injection and replay.
+- Full test suite: `113 passed`.
 
 ### Planned Next
 

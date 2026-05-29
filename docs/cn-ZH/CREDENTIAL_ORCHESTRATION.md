@@ -1,6 +1,6 @@
 # Credential Orchestration Layer
 
-状态：草案
+状态：v0.1 本地实现已启动
 
 ## 为什么需要这一层
 
@@ -186,10 +186,11 @@ Credential orchestration 支撑 billing-ready measurement，但它不是 billing
 
 ### Phase C1：Local Credential Resolver
 
-- 从 env/config/inline 解析 credentials
-- 注入 generated runner 或 proxy request
-- redacts logs 和 request metadata
-- 把 `credential_reference` 写入 usage events
+- 从 env/config/inline 解析 credentials - 已实现
+- 注入 generated runner execution - 已实现
+- redacts request metadata - 已实现
+- 把 `credential_reference` 写入 usage events - 已实现
+- proxy request injection - future work
 
 ### Phase C2：Proxy Credential Injection
 
@@ -218,7 +219,7 @@ Credential orchestration 支撑 billing-ready measurement，但它不是 billing
 下一项工程任务应该是：
 
 ```text
-Credential Schema v0.1 + Local Resolver Design
+Proxy-side Credential Injection Design
 ```
 
 验收标准：

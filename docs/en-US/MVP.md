@@ -46,7 +46,7 @@ Adjacent work already implemented:
 
 These adjacent pieces are not a license to continue beyond the roadmap. Routing execution loop must wait for the roadmap phase to be accepted.
 
-Credential orchestration status: documented, not implemented.
+Credential orchestration status: first local implementation complete for schema, resolver, generated package injection, usage attribution, and replay masking.
 
 ## 3. MVP Promise
 

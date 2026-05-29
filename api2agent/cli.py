@@ -698,6 +698,8 @@ def _missing_replay_fields(event: UsageEvent) -> list[str]:
         missing.append("request_metadata")
     if not event.provider_runtime_reference:
         missing.append("provider_runtime_reference")
+    if event.credential_reference and not can_execute_replay(event):
+        missing.append("credential")
     return missing
 
 

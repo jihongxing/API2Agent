@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import os
 from pathlib import Path
 import sys
@@ -11,6 +12,8 @@ from api2agent.capabilities.normalization import OutputNormalizationError, norma
 from api2agent.capabilities.routing import rank_providers, select_provider
 from api2agent.control.models import UsageEvent
 from api2agent.control.storage import UsageStore
+from api2agent.credentials.models import CredentialDefinition, CredentialInjectionPatch, CredentialResolutionRequest
+from api2agent.credentials.resolver import LocalCredentialResolver
 
 
 def execute_capability(
@@ -151,23 +154,42 @@ def _execute_provider(
         return {"ok": False, "error": {"type": "missing_runner", "message": str(runner_path)}}
 
     runner = _load_runner(runner_path, provider.provider_id)
+    resolved_credential = _resolve_provider_credential(provider, runner, capability_id)
+    if not resolved_credential.resolved:
+        return {
+            "ok": False,
+            "error": {
+                "type": resolved_credential.error_type or "missing_credential",
+                "message": resolved_credential.error_message or "Credential could not be resolved.",
+            },
+            "credential_reference": resolved_credential.credential_reference,
+            "credential_metadata": resolved_credential.redacted_metadata,
+            **_runner_tool_info(runner, provider.tool_id),
+        }
+
     previous_env = {
         "API2AGENT_PROVIDER_ID": os.environ.get("API2AGENT_PROVIDER_ID"),
         "API2AGENT_ESTIMATED_COST": os.environ.get("API2AGENT_ESTIMATED_COST"),
         "API2AGENT_PROXY_URL": os.environ.get("API2AGENT_PROXY_URL"),
         "API2AGENT_ROUTING_DECISION_ID": os.environ.get("API2AGENT_ROUTING_DECISION_ID"),
         "API2AGENT_CAPABILITY_ID": os.environ.get("API2AGENT_CAPABILITY_ID"),
+        "API2AGENT_CREDENTIAL_HEADERS": os.environ.get("API2AGENT_CREDENTIAL_HEADERS"),
+        "API2AGENT_CREDENTIAL_QUERY": os.environ.get("API2AGENT_CREDENTIAL_QUERY"),
+        "API2AGENT_CREDENTIAL_BODY": os.environ.get("API2AGENT_CREDENTIAL_BODY"),
     }
     try:
         os.environ["API2AGENT_CAPABILITY_ID"] = capability_id
         os.environ["API2AGENT_PROVIDER_ID"] = provider.provider_id
         os.environ["API2AGENT_ESTIMATED_COST"] = str(provider.estimated_cost)
         os.environ["API2AGENT_ROUTING_DECISION_ID"] = routing_decision_id
+        _apply_credential_env(resolved_credential.injection_patch)
         if proxy_url:
             os.environ["API2AGENT_PROXY_URL"] = proxy_url
         result = runner.execute_tool(provider.tool_id, params)
         if isinstance(result, dict):
             result.update({key: value for key, value in _runner_tool_info(runner, provider.tool_id).items() if key not in result})
+            result["credential_reference"] = resolved_credential.credential_reference
+            result["credential_metadata"] = resolved_credential.redacted_metadata
         return result
     finally:
         for key, value in previous_env.items():
@@ -196,6 +218,58 @@ def _runner_tool_info(runner: Any, tool_id: str) -> dict[str, str]:
                 "path": str(tool.get("path") or tool_id),
             }
     return {}
+
+
+def _resolve_provider_credential(provider: ProviderCandidate, runner: Any, capability_id: str):
+    credential = _credential_definition(provider, runner)
+    request = CredentialResolutionRequest(
+        capability_id=capability_id,
+        provider_id=provider.provider_id,
+        tool_id=provider.tool_id,
+        auth_type=credential.auth_type if credential else "none",
+        injection_mode=credential.injection_mode if credential else "none",
+        injection_name=credential.injection_name if credential else None,
+        credential=credential,
+    )
+    return LocalCredentialResolver().resolve(request)
+
+
+def _credential_definition(provider: ProviderCandidate, runner: Any) -> CredentialDefinition | None:
+    raw_credential = provider.metadata.get("credential")
+    if isinstance(raw_credential, dict):
+        return CredentialDefinition.model_validate(
+            {
+                "owner_id": "local",
+                "provider_id": provider.provider_id,
+                **raw_credential,
+            }
+        )
+
+    auth = getattr(runner, "CAPABILITY", {}).get("auth") or {}
+    auth_type = auth.get("type") or "none"
+    if auth_type == "none":
+        return None
+
+    env_name = auth.get("env")
+    if not env_name:
+        return None
+
+    injection_name = auth.get("header") or ("Authorization" if auth_type == "bearer" else "X-API-Key")
+    return CredentialDefinition(
+        credential_id=f"{provider.provider_id}_{env_name}",
+        provider_id=provider.provider_id,
+        auth_type="bearer" if auth_type == "bearer" else "api_key",
+        injection_mode="header",
+        injection_name=injection_name,
+        source="env",
+        secret_ref=env_name,
+    )
+
+
+def _apply_credential_env(patch: CredentialInjectionPatch) -> None:
+    os.environ["API2AGENT_CREDENTIAL_HEADERS"] = json.dumps(patch.headers, ensure_ascii=False)
+    os.environ["API2AGENT_CREDENTIAL_QUERY"] = json.dumps(patch.query, ensure_ascii=False)
+    os.environ["API2AGENT_CREDENTIAL_BODY"] = json.dumps(patch.body, ensure_ascii=False)
 
 
 def _record_usage_event(
@@ -229,7 +303,11 @@ def _record_usage_event(
             latency_ms=latency_ms,
             estimated_cost=provider.estimated_cost,
             error_type=error.get("type"),
-            request_metadata={"params": params},
+            request_metadata={
+                "params": params,
+                "credential": result.get("credential_metadata"),
+            },
+            credential_reference=result.get("credential_reference"),
             provider_runtime_reference=f"local_package:{provider.metadata.get('package_dir')}",
         )
     )

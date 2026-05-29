@@ -6,6 +6,7 @@ def render_runner(capability: Capability) -> str:
     return f'''"""Generated API runner."""
 
 import os
+import json
 from urllib.parse import urljoin
 
 import httpx
@@ -49,6 +50,7 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
     request_kwargs = {{"headers": headers, "params": query, "timeout": 20}}
     if tool.get("request_body") and "body" in params:
         request_kwargs["json"] = params["body"]
+    _apply_credential_injection(request_kwargs)
 
     proxy_url = os.getenv("API2AGENT_PROXY_URL")
     if proxy_url and proxy_url.startswith(("http://", "https://")):
@@ -134,6 +136,33 @@ def _estimated_cost() -> float:
         return 0.0
 
 
+def _apply_credential_injection(request_kwargs: dict) -> None:
+    headers = _json_env("API2AGENT_CREDENTIAL_HEADERS")
+    query = _json_env("API2AGENT_CREDENTIAL_QUERY")
+    body = _json_env("API2AGENT_CREDENTIAL_BODY")
+    if headers:
+        request_kwargs.setdefault("headers", {{}}).update(headers)
+    if query:
+        request_kwargs.setdefault("params", {{}}).update(query)
+    if body:
+        existing = request_kwargs.get("json")
+        if isinstance(existing, dict):
+            existing.update(body)
+        else:
+            request_kwargs["json"] = body
+
+
+def _json_env(name: str) -> dict:
+    raw = os.getenv(name)
+    if not raw:
+        return {{}}
+    try:
+        value = json.loads(raw)
+    except ValueError:
+        return {{}}
+    return value if isinstance(value, dict) else {{}}
+
+
 def _find_tool(name: str) -> dict | None:
     for tool in CAPABILITY["tools"]:
         if tool["name"] == name:
@@ -166,6 +195,8 @@ def _auth_headers() -> dict:
     auth = CAPABILITY.get("auth") or {{}}
     if auth.get("type") == "none":
         return {{}}
+    if _has_credential_injection():
+        return {{}}
 
     env_name = auth.get("env")
     token = os.getenv(env_name) if env_name else None
@@ -183,4 +214,12 @@ def _auth_headers() -> dict:
 
     header = auth.get("header") or "X-API-Key"
     return {{header: token}}
+
+
+def _has_credential_injection() -> bool:
+    return bool(
+        os.getenv("API2AGENT_CREDENTIAL_HEADERS")
+        or os.getenv("API2AGENT_CREDENTIAL_QUERY")
+        or os.getenv("API2AGENT_CREDENTIAL_BODY")
+    )
 '''

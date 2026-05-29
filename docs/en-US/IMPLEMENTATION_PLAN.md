@@ -249,10 +249,18 @@ Done when:
 - replay warns when exact replay needs a credential that cannot be resolved
 - ledger can preserve credential attribution without exposing secrets
 
+Current implementation:
+
+- Credential Schema v0.1 code models are implemented.
+- Local resolver supports env/config/inline/none.
+- Generated package execution can inject credentials.
+- Usage events record `credential_reference`.
+- Local package replay can re-resolve credentials from redacted metadata.
+
 Next engineering task:
 
 ```text
-Credential Schema v0.1 + Local Resolver Design
+Proxy-side Credential Injection Design
 ```
 
 ## 9. Marketplace Is Later

@@ -249,10 +249,18 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - exact replay 需要 credential 但无法 resolve 时会 warning
 - ledger 可以保留 credential attribution，且不暴露 secrets
 
+当前实现：
+
+- Credential Schema v0.1 code models 已实现。
+- Local resolver 支持 env/config/inline/none。
+- Generated package execution 可以 inject credentials。
+- Usage events 会记录 `credential_reference`。
+- Local package replay 可以基于 redacted metadata 重新 resolve credentials。
+
 下一项工程任务：
 
 ```text
-Credential Schema v0.1 + Local Resolver Design
+Proxy-side Credential Injection Design
 ```
 
 ## 9. Marketplace 是后面的结果

@@ -1,6 +1,6 @@
 # Credential Orchestration Layer
 
-Status: draft
+Status: v0.1 local implementation started
 
 ## Why This Exists
 
@@ -186,10 +186,11 @@ Virtual cost can be recorded before payment exists:
 
 ### Phase C1: Local Credential Resolver
 
-- resolve credentials from env/config/inline
-- inject into generated runner or proxy request
-- redact logs and request metadata
-- write `credential_reference` into usage events
+- resolve credentials from env/config/inline - implemented
+- inject into generated runner execution - implemented
+- redact request metadata - implemented
+- write `credential_reference` into usage events - implemented
+- proxy request injection - future work
 
 ### Phase C2: Proxy Credential Injection
 
@@ -218,7 +219,7 @@ Virtual cost can be recorded before payment exists:
 The next engineering task should be:
 
 ```text
-Credential Schema v0.1 + Local Resolver Design
+Proxy-side Credential Injection Design
 ```
 
 Acceptance criteria:

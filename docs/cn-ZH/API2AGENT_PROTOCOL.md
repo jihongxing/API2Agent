@@ -511,12 +511,14 @@ usage event
 - SDK failover，并把 attempts 记录到同一个 routing decision 下
 - generated package shadow and replay execution
 - golden trace listing and ledger filtering
+- Credential Schema v0.1 models
+- local credential resolver
+- generated package execution 的 credential reference attribution
 
 尚未实现：
 
 - full identity layer
-- credential schema and resolver
-- credential orchestration
+- proxy-side credential injection
 - credential vault
 - hosted control plane
 - provider onboarding workflow

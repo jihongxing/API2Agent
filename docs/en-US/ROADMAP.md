@@ -84,12 +84,14 @@ Implemented:
 - local generated package replay execution
 - generated package shadow execution mode
 - Credential Orchestration strategy document
+- Credential Schema v0.1 code models
+- local Credential Resolver
+- credential injection patches for generated package execution
+- credential-safe usage attribution and replay
 
 Not implemented yet:
 
 - hard enforcement of capability naming rule
-- Credential Schema v0.1
-- local Credential Resolver
 - endpoint-level auth
 - base URL override
 - manual write tests
@@ -438,7 +440,7 @@ Current hardening result:
 
 ## 8.6 Phase 5.6: Credential Orchestration MVP
 
-Status: planned next.
+Status: first local implementation complete.
 
 Goal:
 
@@ -479,27 +481,36 @@ Do not expand:
 Immediate next task:
 
 ```text
-Credential Schema v0.1 + Local Resolver Design
+Proxy-side Credential Injection Design
 ```
+
+Current implementation result:
+
+- `api2agent/credentials/models.py` defines Credential Schema v0.1 objects.
+- `api2agent/credentials/resolver.py` resolves env/config/inline/none credentials.
+- generated runners can consume credential injection patches through local execution env.
+- `execute_capability` resolves credentials and writes `credential_reference`.
+- local package replay can re-resolve credentials from redacted metadata.
+- credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 
 Implementation checklist:
 
-1. Credential data models
+1. Credential data models - complete
    - add `api2agent/credentials/models.py`
    - define `CredentialDefinition`, `CredentialSource`, `CredentialResolutionRequest`, `ResolvedCredential`, and `CredentialInjectionPatch`
    - validate `owner_type`, `auth_type`, `injection_mode`, and `source`
-2. Local Credential Resolver
+2. Local Credential Resolver - complete
    - add `api2agent/credentials/resolver.py`
    - resolve in this order: inline override, project config, environment variable, none
    - return a redacted credential reference and injection patch
-3. Execution integration
+3. Execution integration - complete
    - connect resolver to generated package / routing execution path
    - inject resolved credentials into provider requests
    - keep direct local mode working
-4. Usage attribution
+4. Usage attribution - complete
    - write `credential_reference` into usage events
    - ensure raw secrets never enter usage event metadata, decision output, ledger output, or logs
-5. Replay and masking behavior
+5. Replay and masking behavior - complete
    - replay warns when required credentials cannot be resolved
    - replay can execute when credentials are resolvable
    - replay metadata remains redacted

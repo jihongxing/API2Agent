@@ -42,6 +42,28 @@ def execute_tool(name, params):
     )
 
 
+def _write_credential_runner(package_dir: Path) -> None:
+    package_dir.mkdir()
+    (package_dir / "runner.py").write_text(
+        """
+import json
+import os
+
+CAPABILITY = {"auth": {"type": "bearer", "env": "TEST_API_TOKEN", "header": "Authorization"}, "tools": [{"name": "get", "method": "GET", "path": "/secure"}]}
+
+def execute_tool(name, params):
+    headers = json.loads(os.getenv("API2AGENT_CREDENTIAL_HEADERS") or "{}")
+    ok = headers.get("Authorization") == "Bearer secret-token"
+    return {
+        "ok": ok,
+        "status_code": 200 if ok else 401,
+        "body": {"authorized": ok},
+    }
+""",
+        encoding="utf-8",
+    )
+
+
 def test_execute_capability_selects_provider_and_normalizes_output(tmp_path) -> None:
     package_dir = tmp_path / "ipify"
     _write_runner(package_dir, {"ip": "108.174.61.76"})
@@ -148,6 +170,65 @@ def test_execute_capability_returns_failed_attempts_before_failover_success(tmp_
     assert result["routing_decision"]["failover_policy"]["max_attempts"] == 2
 
 
+def test_execute_capability_injects_credential_and_records_reference(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("TEST_API_TOKEN", "secret-token")
+    package_dir = tmp_path / "secure"
+    _write_credential_runner(package_dir)
+    provider = ProviderCandidate(
+        id="secure_provider",
+        capability_id="secure.data.get",
+        provider_id="secure",
+        tool_id="get",
+        output_mapping={"authorized": "$.authorized"},
+        metadata={"package_dir": str(package_dir)},
+    )
+    store = UsageStore(tmp_path / "usage.sqlite")
+
+    result = execute_capability(
+        providers=[provider],
+        capability_id="secure.data.get",
+        params={},
+        store=store,
+        policy=RoutingPolicy(strategy="first"),
+    )
+    events = store.usage_for_routing_decision(result["routing_decision"]["id"])
+
+    assert result["ok"] is True
+    assert result["normalized_body"] == {"authorized": True}
+    assert events[0].credential_reference == "env:TEST_API_TOKEN"
+    assert events[0].request_metadata["credential"]["secret_ref"] == "TEST_API_TOKEN"
+    assert "secret-token" not in str(events[0].model_dump(mode="json"))
+
+
+def test_execute_capability_records_missing_credential_without_secret(tmp_path, monkeypatch) -> None:
+    monkeypatch.delenv("TEST_API_TOKEN", raising=False)
+    package_dir = tmp_path / "secure"
+    _write_credential_runner(package_dir)
+    provider = ProviderCandidate(
+        id="secure_provider",
+        capability_id="secure.data.get",
+        provider_id="secure",
+        tool_id="get",
+        output_mapping={"authorized": "$.authorized"},
+        metadata={"package_dir": str(package_dir)},
+    )
+    store = UsageStore(tmp_path / "usage.sqlite")
+
+    result = execute_capability(
+        providers=[provider],
+        capability_id="secure.data.get",
+        params={},
+        store=store,
+        policy=RoutingPolicy(strategy="first"),
+    )
+    events = store.usage_for_routing_decision(result["routing_decision"]["id"])
+
+    assert result["ok"] is False
+    assert result["attempts"][0]["result"]["error"]["type"] == "missing_credential_secret"
+    assert events[0].credential_reference == "env:TEST_API_TOKEN"
+    assert "secret-token" not in str(events[0].model_dump(mode="json"))
+
+
 def test_execute_capability_records_shadow_generated_package_attempt(tmp_path) -> None:
     primary_dir = tmp_path / "primary"
     _write_runner(primary_dir, {"ip": "108.174.61.76"})
@@ -190,7 +271,8 @@ def test_execute_capability_records_shadow_generated_package_attempt(tmp_path) -
         ("primary", "direct"),
         ("shadow", "shadow"),
     ]
-    assert events[1].request_metadata == {"params": {}}
+    assert events[1].request_metadata["params"] == {}
+    assert events[1].request_metadata["credential"]["source"] == "none"
     assert events[1].provider_runtime_reference == f"local_package:{shadow_dir}"
 
 

@@ -511,12 +511,14 @@ Implemented:
 - SDK failover with attempts recorded under one routing decision
 - generated package shadow and replay execution
 - golden trace listing and ledger filtering
+- Credential Schema v0.1 models
+- local credential resolver
+- credential reference attribution for generated package execution
 
 Not yet implemented:
 
 - full identity layer
-- credential schema and resolver
-- credential orchestration
+- proxy-side credential injection
 - credential vault
 - hosted control plane
 - provider onboarding workflow

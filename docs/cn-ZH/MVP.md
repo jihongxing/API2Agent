@@ -46,7 +46,7 @@ MVP-2 状态：第一版本地实现已完成，等待 dogfood。
 
 这些相邻能力不代表可以继续越过路线图。Routing execution loop 必须等对应 roadmap phase 被接受后再实现。
 
-Credential orchestration 状态：已文档化，尚未实现。
+Credential orchestration 状态：schema、resolver、generated package injection、usage attribution 和 replay masking 的第一版本地实现已完成。
 
 ## 3. MVP 承诺
 
