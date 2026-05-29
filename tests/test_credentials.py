@@ -286,6 +286,123 @@ def test_config_credential_falls_back_to_local_owner() -> None:
     assert result.injection_patch.query == {"api_key": "local-secret"}
 
 
+def test_credential_scope_allows_matching_capability() -> None:
+    result = LocalCredentialResolver().resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="api_key",
+            injection_mode="header",
+            credential=CredentialDefinition(
+                credential_id="cred_demo",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                injection_name="X-Token",
+                source="inline",
+                secret_value="inline-secret",
+                scope=["capability:demo.get"],
+            ),
+        )
+    )
+
+    assert result.resolved is True
+    assert result.credential_reference == "inline:cred_demo"
+    assert result.injection_patch.headers == {"X-Token": "inline-secret"}
+
+
+def test_credential_scope_allows_matching_tool() -> None:
+    result = LocalCredentialResolver().resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="api_key",
+            injection_mode="header",
+            credential=CredentialDefinition(
+                credential_id="cred_demo",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                injection_name="X-Token",
+                source="inline",
+                secret_value="inline-secret",
+                scope=["tool:get"],
+            ),
+        )
+    )
+
+    assert result.resolved is True
+    assert result.injection_patch.headers == {"X-Token": "inline-secret"}
+
+
+def test_credential_scope_denies_out_of_scope_credential() -> None:
+    result = LocalCredentialResolver().resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="api_key",
+            injection_mode="header",
+            credential=CredentialDefinition(
+                credential_id="cred_demo",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                source="inline",
+                secret_value="inline-secret",
+                scope=["capability:demo.create"],
+            ),
+        )
+    )
+
+    assert result.resolved is False
+    assert result.credential_reference == "inline:cred_demo"
+    assert result.error_type == "credential_scope_denied"
+    assert result.redacted_metadata["scope"] == ["capability:demo.create"]
+    assert "inline-secret" not in str(result.model_dump(mode="json"))
+
+
+def test_out_of_scope_inline_credential_does_not_fall_back_to_config() -> None:
+    resolver = LocalCredentialResolver(
+        [
+            CredentialDefinition(
+                credential_id="cred_config",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                injection_name="X-Token",
+                source="config",
+                secret_value="config-secret",
+            )
+        ]
+    )
+
+    result = resolver.resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.get",
+            provider_id="demo",
+            tool_id="get",
+            auth_type="api_key",
+            injection_mode="header",
+            inline_credential=CredentialDefinition(
+                credential_id="cred_inline",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                source="inline",
+                secret_value="inline-secret",
+                scope=["capability:demo.create"],
+            ),
+        )
+    )
+
+    assert result.resolved is False
+    assert result.credential_reference == "inline:cred_inline"
+    assert result.error_type == "credential_scope_denied"
+
+
 def test_auth_type_none_skips_credentials() -> None:
     result = LocalCredentialResolver().resolve(
         CredentialResolutionRequest(

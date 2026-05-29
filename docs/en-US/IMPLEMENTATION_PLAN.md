@@ -262,11 +262,13 @@ Current implementation:
 - Config credentials can be used as provider-level fallback when payload credential intent is absent.
 - Credential precedence is deterministic: inline, config, request/env intent, none.
 - Config credential ownership prefers exact project owner, then local owner, then config order.
+- Credential scope can restrict access by provider, capability, tool, or wildcard.
+- Out-of-scope credentials fail with redacted `credential_scope_denied` errors.
 
 Next engineering task:
 
 ```text
-Credential scope matching for capability and tool access
+Credential rotation metadata and audit events
 ```
 
 ## 9. Marketplace Is Later

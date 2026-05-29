@@ -235,6 +235,22 @@ Config credential owner matching 也是确定性的：
 
 这让本地 BYOK 在 hosted identity 和 policy enforcement 出现前保持可预测。
 
+### Credential Scope Policy
+
+`scope` 是可选字段。空 scope 表示对 matching provider 不做额外限制。
+
+支持的 scope entries：
+
+- `provider:<provider_id>`
+- `capability:<capability_id>`
+- `tool:<tool_id>`
+- `*`
+- `*:*`
+
+为了本地兼容，也接受裸 `capability_id` 和 `tool_id`。
+
+如果最高优先级 credential out of scope，resolution 会返回 `credential_scope_denied`。Resolver 不会静默 fallback 到低优先级 credential，因为那会绕过声明的访问策略。
+
 ### Phase C3：Hosted Credential Store
 
 - encrypted credential storage
@@ -256,11 +272,11 @@ Config credential owner matching 也是确定性的：
 下一项工程任务应该是：
 
 ```text
-Credential scope matching for capability and tool access
+Credential rotation metadata and audit events
 ```
 
 验收标准：
 
-- credential `scope` 可以限制 capability 或 tool usage
-- resolver 会用 redacted errors 拒绝 out-of-scope credentials
-- scope checks 通过时，usage events 继续保留 credential attribution
+- credential metadata 可以表达 rotation state 和 expiry hints
+- usage events 可以记录 credential audit metadata，且不包含 secrets
+- expired 或 disabled credentials 会返回 machine-readable errors

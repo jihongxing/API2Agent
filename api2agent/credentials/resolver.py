@@ -38,6 +38,8 @@ class LocalCredentialResolver:
                 continue
             if credential.provider_id != request.provider_id:
                 continue
+            if not self._scope_allows(credential, request):
+                return self._scope_denied(credential, request)
             secret = self._secret_for(credential)
             if secret is None:
                 return self._missing_secret(credential)
@@ -134,6 +136,37 @@ class LocalCredentialResolver:
             "secret_ref": credential.secret_ref,
             "scope": credential.scope,
         }
+
+    def _scope_allows(self, credential: CredentialDefinition, request: CredentialResolutionRequest) -> bool:
+        if not credential.scope:
+            return True
+
+        allowed = set(credential.scope)
+        return bool(
+            "*:*" in allowed
+            or "*" in allowed
+            or f"provider:{request.provider_id}" in allowed
+            or f"capability:{request.capability_id}" in allowed
+            or f"tool:{request.tool_id}" in allowed
+            or request.capability_id in allowed
+            or request.tool_id in allowed
+        )
+
+    def _scope_denied(
+        self,
+        credential: CredentialDefinition,
+        request: CredentialResolutionRequest,
+    ) -> ResolvedCredential:
+        return ResolvedCredential(
+            resolved=False,
+            credential_reference=self._credential_reference(credential),
+            redacted_metadata=self._redacted_metadata(credential),
+            error_type="credential_scope_denied",
+            error_message=(
+                "Credential scope does not allow "
+                f"capability={request.capability_id}, tool={request.tool_id}."
+            ),
+        )
 
     def _missing_secret(self, credential: CredentialDefinition) -> ResolvedCredential:
         return ResolvedCredential(

@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Credential scope matching for capability and tool access
+Credential rotation metadata and audit events
 ```
 
 Current implementation result:
@@ -497,10 +497,13 @@ Current implementation result:
 - config credentials can be used when proxy payloads do not include credential intent.
 - credential resolver precedence is now explicit: inline, config, request/env intent, none.
 - config credential owner matching now prefers exact project owner, then local project owner, then config order.
+- credential scope matching now supports provider, capability, tool, and wildcard scope entries.
+- out-of-scope credentials fail with `credential_scope_denied` and do not fall back to lower-precedence credentials.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
 - credential policy dogfood completed; see `docs/en-US/CREDENTIAL_POLICY_DOGFOOD_REPORT.md`.
+- credential scope dogfood completed; see `docs/en-US/CREDENTIAL_SCOPE_DOGFOOD_REPORT.md`.
 
 Implementation checklist:
 
@@ -538,6 +541,11 @@ Implementation checklist:
    - prefer config credentials owned by the current `project_id`
    - fallback to local owner before raw config order
    - preserve owner metadata in redacted resolver output
+9. Credential scope matching for capability and tool access - complete
+   - support `provider:<id>`, `capability:<id>`, `tool:<id>`, `*`, and `*:*`
+   - keep empty scope as unrestricted for the matching provider
+   - return `credential_scope_denied` for out-of-scope credentials
+   - prevent lower-precedence fallback after an out-of-scope higher-precedence credential
 
 Acceptance test set:
 
@@ -555,6 +563,8 @@ Acceptance test set:
 - proxy loads config credentials and injects them without raw secret metadata
 - resolver chooses inline over config over request credentials
 - resolver chooses project-owned config credentials before local fallback
+- resolver allows matching capability/tool scopes
+- resolver rejects out-of-scope credentials without exposing raw secrets
 
 ## 9. Phase 6: Hosted Control Plane
 

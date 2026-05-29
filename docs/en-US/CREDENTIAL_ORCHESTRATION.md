@@ -235,6 +235,22 @@ Config credential owner matching is also deterministic:
 
 This keeps local BYOK predictable before hosted identity and policy enforcement exist.
 
+### Credential Scope Policy
+
+`scope` is optional. An empty scope means unrestricted use for the matching provider.
+
+Supported scope entries:
+
+- `provider:<provider_id>`
+- `capability:<capability_id>`
+- `tool:<tool_id>`
+- `*`
+- `*:*`
+
+Bare `capability_id` and `tool_id` values are also accepted for local compatibility.
+
+If the highest-precedence credential is out of scope, resolution fails with `credential_scope_denied`. The resolver does not silently fall back to a lower-precedence credential, because that would bypass the declared access policy.
+
 ### Phase C3: Hosted Credential Store
 
 - encrypted credential storage
@@ -256,11 +272,11 @@ This keeps local BYOK predictable before hosted identity and policy enforcement 
 The next engineering task should be:
 
 ```text
-Credential scope matching for capability and tool access
+Credential rotation metadata and audit events
 ```
 
 Acceptance criteria:
 
-- credential `scope` can restrict usage by capability or tool
-- resolver rejects out-of-scope credentials with redacted errors
-- usage events preserve credential attribution when scope checks pass
+- credential metadata can express rotation state and expiry hints
+- usage events can record credential audit metadata without secrets
+- expired or disabled credentials fail with machine-readable errors

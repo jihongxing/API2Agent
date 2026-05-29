@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Credential scope matching for capability and tool access
+Credential rotation metadata and audit events
 ```
 
 当前实现结果：
@@ -497,10 +497,13 @@ Credential scope matching for capability and tool access
 - payload 不携带 credential intent 时，proxy 也可以使用 config credentials。
 - credential resolver precedence 已明确：inline、config、request/env intent、none。
 - config credential owner matching 会优先选择 exact project owner，然后是 local project owner，最后才按 config order。
+- credential scope matching 现在支持 provider、capability、tool 和 wildcard scope entries。
+- out-of-scope credentials 会返回 `credential_scope_denied`，且不会 fallback 到低优先级 credential。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 - proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
 - credential policy dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_POLICY_DOGFOOD_REPORT.md`。
+- credential scope dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_SCOPE_DOGFOOD_REPORT.md`。
 
 实施 checklist：
 
@@ -538,6 +541,11 @@ Credential scope matching for capability and tool access
    - 优先选择当前 `project_id` 拥有的 config credentials
    - fallback 到 local owner，再 fallback 到 config order
    - redacted resolver output 保留 owner metadata
+9. Credential scope matching for capability and tool access - complete
+   - 支持 `provider:<id>`、`capability:<id>`、`tool:<id>`、`*` 和 `*:*`
+   - empty scope 对 matching provider 表示 unrestricted
+   - out-of-scope credentials 返回 `credential_scope_denied`
+   - 高优先级 credential out-of-scope 后，不允许继续 fallback 到低优先级 credential
 
 验收测试集：
 
@@ -555,6 +563,8 @@ Credential scope matching for capability and tool access
 - proxy 可以加载 config credentials 并完成注入，且 metadata 不包含 raw secret
 - resolver 会按 inline、config、request credentials 的顺序选择
 - resolver 会先选择 project-owned config credentials，再选择 local fallback
+- resolver 允许 matching capability/tool scopes
+- resolver 会拒绝 out-of-scope credentials，且不暴露 raw secrets
 
 ## 9. Phase 6：Hosted Control Plane
 

@@ -262,11 +262,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - payload 不携带 credential intent 时，config credentials 可以作为 provider-level fallback。
 - Credential precedence 是确定性的：inline、config、request/env intent、none。
 - Config credential ownership 会优先选择 exact project owner，然后是 local owner，最后按 config order。
+- Credential scope 可以按 provider、capability、tool 或 wildcard 限制访问。
+- Out-of-scope credentials 会返回 redacted `credential_scope_denied` errors。
 
 下一项工程任务：
 
 ```text
-Credential scope matching for capability and tool access
+Credential rotation metadata and audit events
 ```
 
 ## 9. Marketplace 是后面的结果
