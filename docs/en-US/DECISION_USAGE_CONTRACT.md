@@ -63,6 +63,7 @@ Stable `execution_mode` values:
 
 - `direct`
 - `proxy`
+- `shadow`
 
 ## Stable Top-Level Inspection Fields
 
@@ -103,6 +104,7 @@ This allows local reports to distinguish:
 
 - direct local execution
 - proxy-controlled execution
+- shadow benchmark execution
 
 ## Stable Ledger Row Fields
 

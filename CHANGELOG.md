@@ -30,6 +30,7 @@ All notable API2Agent changes will be documented in this file.
 - Replay preflight command for usage event audit.
 - Safe replay metadata capture for SDK, proxy, and local package execution paths.
 - Alpha capability naming validation warnings for `<domain>.<resource>.<action>`.
+- SDK shadow execution mode for benchmark-only provider calls.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -42,6 +43,7 @@ All notable API2Agent changes will be documented in this file.
 - Replay preflight dogfooded against a failed Quickstart usage event.
 - Replay metadata capture dogfooded with `exact_replay_metadata_ready: true`.
 - Registry naming warnings dogfooded against legacy `public_ip_lookup`.
+- Shadow mode dogfooded with `open_meteo` as main provider and `wttr_in` as shadow provider.
 - Full test suite: `87 passed`.
 
 ### Planned Next

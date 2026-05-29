@@ -33,6 +33,8 @@ def call(
     max_attempts: int | None = None,
     retry_on_status_codes: list[int] | None = None,
     retry_on_error_types: list[str] | None = None,
+    shadow: bool = False,
+    shadow_provider_ids: list[str] | None = None,
     db: Path | str = Path("api2agent-usage.sqlite"),
 ) -> dict[str, Any]:
     store = UsageStore(Path(db))
@@ -65,7 +67,7 @@ def call(
     for index, attempted_provider_id in enumerate(attempts):
         adapter = adapter_classes[attempted_provider_id]()
         result = adapter.call(input)
-        event = _record_usage(store, decision, adapter, result, input)
+        event = _record_usage(store, decision, adapter, result, input, execution_mode="direct")
         attempt_results.append(
             {
                 "provider_id": adapter.provider_id,
@@ -84,6 +86,17 @@ def call(
         if index >= len(attempts) - 1 or not _should_failover_adapter_result(result, failover_policy):
             break
 
+    shadow_attempts = _run_shadow_attempts(
+        store=store,
+        decision=decision,
+        adapter_classes=adapter_classes,
+        input=input,
+        attempted_provider_ids=attempts,
+        ranked_provider_ids=ranked_provider_ids,
+        shadow=shadow,
+        shadow_provider_ids=shadow_provider_ids,
+    )
+
     if last_result is None or last_event is None:
         raise RuntimeError(f"No provider attempts were available for capability: {capability}")
 
@@ -94,6 +107,7 @@ def call(
         "routing_decision": decision.model_dump(mode="json"),
         "usage_event_id": last_event.id,
         "attempts": attempt_results,
+        "shadow_attempts": shadow_attempts,
         "output": last_result.output,
         "error_type": last_result.error_type,
         "error_message": last_result.error_message,
@@ -149,10 +163,11 @@ def _record_usage(
     adapter: ProviderAdapter,
     result: AdapterResult,
     input: dict[str, Any],
+    execution_mode: str,
 ) -> UsageEvent:
     event = UsageEvent(
         routing_decision_id=decision.id,
-        execution_mode="direct",
+        execution_mode=execution_mode,
         project_id=decision.project_id,
         capability_id=decision.capability_id,
         provider_id=adapter.provider_id,
@@ -168,6 +183,41 @@ def _record_usage(
         provider_runtime_reference=f"sdk:{adapter.__class__.__name__}",
     )
     return store.record(event)
+
+
+def _run_shadow_attempts(
+    *,
+    store: UsageStore,
+    decision: RoutingDecision,
+    adapter_classes: dict[str, type[ProviderAdapter]],
+    input: dict[str, Any],
+    attempted_provider_ids: list[str],
+    ranked_provider_ids: list[str],
+    shadow: bool,
+    shadow_provider_ids: list[str] | None,
+) -> list[dict[str, Any]]:
+    providers = shadow_provider_ids or (ranked_provider_ids if shadow else [])
+    shadow_attempts: list[dict[str, Any]] = []
+    attempted = set(attempted_provider_ids)
+    for provider_id in providers:
+        if provider_id in attempted:
+            continue
+        if provider_id not in adapter_classes:
+            raise ValueError(f"No provider adapter for shadow provider_id={provider_id}")
+        adapter = adapter_classes[provider_id]()
+        result = adapter.call(input)
+        event = _record_usage(store, decision, adapter, result, input, execution_mode="shadow")
+        shadow_attempts.append(
+            {
+                "provider_id": adapter.provider_id,
+                "ok": result.ok,
+                "usage_event_id": event.id,
+                "status_code": result.status_code,
+                "error_type": result.error_type,
+                "latency_ms": result.latency_ms,
+            }
+        )
+    return shadow_attempts
 
 
 def _build_sdk_failover_policy(

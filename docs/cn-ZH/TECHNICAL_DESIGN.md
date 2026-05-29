@@ -342,15 +342,15 @@ Proxy mode：
 
 - `direct`
 - `proxy`
+- `shadow`
 
 Proxy mode 仍然是 controllable execution 和未来经济计量的首选路径。
 
 计划中的 execution modes：
 
-- `shadow`：额外执行 providers 来采集 benchmark 数据，但不影响主结果
 - `race`：并发执行多个 providers，返回符合条件的最佳结果
 
-`shadow` 是下一种关键模式，因为它可以让 API2Agent 在不增加用户 routing 风险的前提下采集 provider comparison data。
+`shadow` 可以让 API2Agent 在不增加用户 routing 风险的前提下采集 provider comparison data。
 
 ## 5. 为什么现在仍然适合 Python
 

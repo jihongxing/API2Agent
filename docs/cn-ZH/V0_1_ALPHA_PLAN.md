@@ -197,6 +197,6 @@ v0.1-alpha 完成时必须满足：
 2. alpha quickstart
 3. capability naming validation warning
 4. replay design and local command
-5. shadow execution mode
+5. generated package shadow execution mode
 6. golden trace field
 7. SDK and CLI demo cleanup

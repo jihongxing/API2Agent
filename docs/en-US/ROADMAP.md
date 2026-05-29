@@ -75,11 +75,12 @@ Implemented:
 - replay preflight command for usage event audit
 - safe replay metadata capture for SDK, proxy, and local package execution paths
 - alpha capability naming validation warnings
+- SDK shadow execution mode
 
 Not implemented yet:
 
 - exact replay execution
-- shadow execution mode
+- generated package shadow execution mode
 - golden trace marker
 - hard enforcement of capability naming rule
 - endpoint-level auth
@@ -367,7 +368,7 @@ Immediate next step:
 
 - implement exact replay execution from captured metadata
 - decide when capability naming moves from warning to hard enforcement
-- design `shadow` execution mode for benchmark-only provider calls
+- decide whether shadow metrics should be included in default routing aggregates
 - keep policy local and explicit: no hidden marketplace-style provider preference
 
 ## 8. Phase 5.5: v0.1-alpha Product Hook Hardening
@@ -417,6 +418,8 @@ Current hardening result:
 - `api2agent replay` preflight verified against a failed Quickstart usage event.
 - replay metadata capture verified with `exact_replay_metadata_ready: true`.
 - alpha capability naming warnings verified against legacy `public_ip_lookup`.
+- SDK shadow mode verified with real `open_meteo` main result and real `wttr_in` shadow result.
+- see `docs/en-US/SHADOW_MODE_DOGFOOD_REPORT.md`.
 
 ## 9. Phase 6: Hosted Control Plane
 

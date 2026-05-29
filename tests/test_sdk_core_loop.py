@@ -352,6 +352,65 @@ def test_sdk_call_failover_stops_on_non_retriable_error(tmp_path: Path, monkeypa
     assert events[0].error_type == "INVALID_REQUEST"
 
 
+def test_sdk_call_records_shadow_attempt_without_changing_main_result(tmp_path: Path, monkeypatch) -> None:
+    class FakeOpenMeteoAdapter:
+        capability_id = "weather.get"
+        provider_id = "open_meteo"
+        tool_id = "get_current_weather"
+
+        def call(self, input):
+            return AdapterResult(
+                ok=True,
+                capability_id=self.capability_id,
+                provider_id=self.provider_id,
+                output={"city": input["city"], "temperature_2m": 16.0},
+                status_code=200,
+                latency_ms=100,
+            )
+
+        def estimate_cost(self, input):
+            return CostEstimate()
+
+    class FakeWttrAdapter:
+        capability_id = "weather.get"
+        provider_id = "wttr_in"
+        tool_id = "get_current_weather"
+
+        def call(self, input):
+            return AdapterResult(
+                ok=True,
+                capability_id=self.capability_id,
+                provider_id=self.provider_id,
+                output={"city": input["city"], "temperature_2m": 15.0},
+                status_code=200,
+                latency_ms=50,
+            )
+
+        def estimate_cost(self, input):
+            return CostEstimate()
+
+    monkeypatch.setattr("api2agent.sdk.OpenMeteoWeatherAdapter", FakeOpenMeteoAdapter)
+    monkeypatch.setattr("api2agent.sdk.WttrInWeatherAdapter", FakeWttrAdapter)
+    db = tmp_path / "usage.sqlite"
+
+    result = call("weather.get", {"city": "San Francisco"}, strategy="first", shadow=True, db=db)
+    store = UsageStore(db)
+    events = store.usage_for_routing_decision(result["routing_decision"]["id"])
+    ledger = store.ledger(capability_id="weather.get", group_by_mode=True)
+
+    assert result["ok"] is True
+    assert result["provider_id"] == "open_meteo"
+    assert result["shadow_attempts"][0]["provider_id"] == "wttr_in"
+    assert [(event.provider_id, event.execution_mode) for event in events] == [
+        ("open_meteo", "direct"),
+        ("wttr_in", "shadow"),
+    ]
+    assert {(row.provider_id, row.execution_mode, row.total_calls) for row in ledger} == {
+        ("open_meteo", "direct", 1),
+        ("wttr_in", "shadow", 1),
+    }
+
+
 def test_weather_benchmark_returns_provider_latency_stats(tmp_path: Path, monkeypatch) -> None:
     calls = {"open_meteo": 0, "wttr_in": 0}
 

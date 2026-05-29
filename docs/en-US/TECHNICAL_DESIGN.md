@@ -342,15 +342,15 @@ Both modes also write `execution_mode`:
 
 - `direct`
 - `proxy`
+- `shadow`
 
 Proxy mode remains the preferred path for controllable execution and future economic measurement.
 
 Planned execution modes:
 
-- `shadow`: execute additional providers for benchmark data without changing the main result
 - `race`: execute multiple providers concurrently and return the best eligible result
 
-`shadow` is the next important mode because it lets API2Agent collect provider comparison data without making routing risky for the user.
+`shadow` lets API2Agent collect provider comparison data without making routing risky for the user.
 
 ## 5. Why Python Still Makes Sense Now
 

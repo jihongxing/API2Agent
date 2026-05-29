@@ -147,7 +147,32 @@ Expected:
 - first attempt: `open_meteo`, failed, `500`
 - second attempt: `wttr_in`, success, `200`
 
-## 5. Inspect Ledger
+## 5. Shadow Demo
+
+Shadow mode runs additional providers for benchmark data without changing the main result:
+
+```python
+from api2agent import call
+
+result = call(
+    "weather.get",
+    {"city": "San Francisco"},
+    strategy="first",
+    shadow=True,
+    db=".dogfood/quickstart-shadow.sqlite",
+)
+
+print(result["provider_id"])
+print(result["shadow_attempts"])
+```
+
+Expected:
+
+- main result provider: `open_meteo`
+- shadow provider: `wttr_in`
+- ledger includes both `direct` and `shadow` execution modes
+
+## 6. Inspect Ledger
 
 If the `api2agent` console script is installed:
 
@@ -167,7 +192,7 @@ Expected ledger shape:
 - one successful `wttr_in` row
 - both in `direct` execution mode
 
-## 6. Replay Preflight
+## 7. Replay Preflight
 
 `replay` currently works as a preflight and audit view. It finds the usage event and routing decision, then reports whether exact replay is possible.
 
@@ -184,7 +209,7 @@ Current expected result:
 
 Exact replay will require request params and credential references to be captured safely.
 
-## 7. Generate A Local Capability Package
+## 8. Generate A Local Capability Package
 
 ```bash
 api2agent generate examples/openapi/basic.yaml --force
@@ -202,13 +227,14 @@ python -m api2agent.cli test api2agent-output
 
 This proves the compiler path still works alongside the SDK execution loop.
 
-## 8. What This Proves
+## 9. What This Proves
 
 API2Agent v0.1-alpha proves:
 
 - an Agent can call a capability instead of a raw API
 - providers can be compared under one capability
 - provider failure can be recorded and recovered with failover
+- shadow providers can collect benchmark data without changing the main result
 - every attempt can be audited through the ledger
 - failed attempts can be inspected through replay preflight
 

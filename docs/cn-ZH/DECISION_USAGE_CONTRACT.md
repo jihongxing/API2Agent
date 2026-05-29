@@ -63,6 +63,7 @@
 
 - `direct`
 - `proxy`
+- `shadow`
 
 ## 稳定顶层 Inspection 字段
 
@@ -103,6 +104,7 @@ routing decision
 
 - direct local execution
 - proxy-controlled execution
+- shadow benchmark execution
 
 ## 稳定 Ledger Row 字段
 

@@ -147,7 +147,32 @@ print(result["attempts"])
 - 第一次 attempt：`open_meteo`，失败，`500`
 - 第二次 attempt：`wttr_in`，成功，`200`
 
-## 5. Inspect Ledger
+## 5. Shadow Demo
+
+Shadow mode 会额外执行 providers 来采集 benchmark data，但不改变主结果：
+
+```python
+from api2agent import call
+
+result = call(
+    "weather.get",
+    {"city": "San Francisco"},
+    strategy="first",
+    shadow=True,
+    db=".dogfood/quickstart-shadow.sqlite",
+)
+
+print(result["provider_id"])
+print(result["shadow_attempts"])
+```
+
+期望结果：
+
+- main result provider：`open_meteo`
+- shadow provider：`wttr_in`
+- ledger 同时包含 `direct` 和 `shadow` execution modes
+
+## 6. Inspect Ledger
 
 如果已经安装 `api2agent` console script：
 
@@ -167,7 +192,7 @@ python -m api2agent.cli ledger --db .dogfood/quickstart-failover.sqlite --capabi
 - 一条成功的 `wttr_in` row
 - 两条都是 `direct` execution mode
 
-## 6. Replay Preflight
+## 7. Replay Preflight
 
 `replay` 当前是 preflight 和 audit view。它会找到 usage event 和 routing decision，然后报告是否可以 exact replay。
 
@@ -184,7 +209,7 @@ python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failove
 
 Exact replay 需要后续安全捕获 request params 和 credential references。
 
-## 7. 生成本地 Capability Package
+## 8. 生成本地 Capability Package
 
 ```bash
 api2agent generate examples/openapi/basic.yaml --force
@@ -202,13 +227,14 @@ python -m api2agent.cli test api2agent-output
 
 这证明 compiler path 和 SDK execution loop 可以同时工作。
 
-## 8. 证明了什么
+## 9. 证明了什么
 
 API2Agent v0.1-alpha 证明：
 
 - Agent 可以调用 capability，而不是 raw API
 - 多个 providers 可以在同一个 capability 下比较
 - provider 失败可以被记录，并通过 failover 恢复
+- shadow providers 可以在不改变主结果的情况下采集 benchmark data
 - 每个 attempt 都可以通过 ledger 审计
 - 失败 attempt 可以通过 replay preflight 检查
 

@@ -305,10 +305,10 @@ Usage event 记录 execution attempt。
 
 - `direct`
 - `proxy`
+- `shadow`
 
 计划中的 execution modes：
 
-- `shadow`：额外执行 providers 来采集 benchmark 数据，但不影响主结果
 - `race`：并发执行多个 providers，返回符合条件的最佳结果
 
 ## 12. Ledger Contract

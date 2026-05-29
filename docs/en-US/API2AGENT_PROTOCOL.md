@@ -305,10 +305,10 @@ Stable execution modes:
 
 - `direct`
 - `proxy`
+- `shadow`
 
 Planned execution modes:
 
-- `shadow`: execute additional providers for benchmark data without changing the main result
 - `race`: execute multiple providers concurrently and return the best eligible result
 
 ## 12. Ledger Contract
