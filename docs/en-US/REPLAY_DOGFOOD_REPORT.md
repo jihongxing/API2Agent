@@ -74,11 +74,15 @@ API2Agent now has a minimal deterministic replay path for SDK adapter calls when
 
 Replay has moved from audit-only preflight to executable debugging for supported events.
 
+Generated local packages are now also supported when usage events contain:
+
+- `provider_runtime_reference: local_package:<package_dir>`
+- `request_metadata.params`
+
 ## Limits
 
 - SDK adapters supported first
 - HTTP/proxy replay exists only when credentials are not required
-- replay execution does not write a new usage event yet
 - replay execution only writes a new usage event when `--record` is used
 - replay events are excluded from default routing metrics
-- local generated package replay is still future work
+- local generated package replay depends on the generated package directory still existing

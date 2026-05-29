@@ -101,6 +101,42 @@ class UsageStore:
             )
         return self.get_usage_event(event_id)
 
+    def list_usage_events(
+        self,
+        *,
+        project_id: str | None = None,
+        capability_id: str | None = None,
+        provider_id: str | None = None,
+        execution_mode: str | None = None,
+        golden_only: bool = False,
+        limit: int = 50,
+    ) -> list[UsageEvent]:
+        query = "SELECT * FROM usage_events"
+        clauses: list[str] = []
+        params: list[Any] = []
+        if project_id:
+            clauses.append("project_id = ?")
+            params.append(project_id)
+        if capability_id:
+            clauses.append("capability_id = ?")
+            params.append(capability_id)
+        if provider_id:
+            clauses.append("provider_id = ?")
+            params.append(provider_id)
+        if execution_mode:
+            clauses.append("execution_mode = ?")
+            params.append(execution_mode)
+        if golden_only:
+            clauses.append("is_golden = 1")
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+
+        with self._connect() as connection:
+            rows = [dict(row) for row in connection.execute(query, tuple(params)).fetchall()]
+        return [self._usage_event_from_row(row) for row in rows]
+
     def record_routing_decision(self, decision: RoutingDecision) -> RoutingDecision:
         data = decision.model_dump(mode="json")
         with self._connect() as connection:
@@ -213,6 +249,7 @@ class UsageStore:
         provider_id: str | None = None,
         month: str | None = None,
         group_by_mode: bool = False,
+        golden_only: bool = False,
     ) -> list[UsageLedgerRow]:
         group_fields = ["project_id", "capability_id", "provider_id"]
         if group_by_mode:
@@ -244,6 +281,8 @@ class UsageStore:
         if month:
             clauses.append("substr(created_at, 1, 7) = ?")
             params.append(month)
+        if golden_only:
+            clauses.append("is_golden = 1")
         if clauses:
             query += " WHERE " + " AND ".join(clauses)
         query += f" GROUP BY {group_sql} ORDER BY {group_sql}"

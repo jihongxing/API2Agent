@@ -67,6 +67,7 @@ English:
 - [Shadow Mode Dogfood Report](docs/en-US/SHADOW_MODE_DOGFOOD_REPORT.md)
 - [Replay Dogfood Report](docs/en-US/REPLAY_DOGFOOD_REPORT.md)
 - [Golden Trace Dogfood Report](docs/en-US/GOLDEN_TRACE_DOGFOOD_REPORT.md)
+- [Generated Package Shadow + Replay Dogfood Report](docs/en-US/GENERATED_PACKAGE_SHADOW_REPLAY_DOGFOOD_REPORT.md)
 - [Far-Term Economic Strategy](docs/en-US/ECONOMIC_MARKETPLACE_STRATEGY.md)
 - [Dogfood Report](docs/en-US/DOGFOOD_REPORT.md)
 - [Control Layer Dogfood Report](docs/en-US/CONTROL_LAYER_DOGFOOD_REPORT.md)
@@ -99,6 +100,7 @@ English:
 - [Shadow Mode Dogfood 报告](docs/cn-ZH/SHADOW_MODE_DOGFOOD_REPORT.md)
 - [Replay Dogfood 报告](docs/cn-ZH/REPLAY_DOGFOOD_REPORT.md)
 - [Golden Trace Dogfood 报告](docs/cn-ZH/GOLDEN_TRACE_DOGFOOD_REPORT.md)
+- [Generated Package Shadow + Replay Dogfood 报告](docs/cn-ZH/GENERATED_PACKAGE_SHADOW_REPLAY_DOGFOOD_REPORT.md)
 - [远期经济层策略](docs/cn-ZH/ECONOMIC_MARKETPLACE_STRATEGY.md)
 - [Dogfood 报告](docs/cn-ZH/DOGFOOD_REPORT.md)
 - [Control Layer Dogfood 报告](docs/cn-ZH/CONTROL_LAYER_DOGFOOD_REPORT.md)
@@ -215,6 +217,7 @@ api2agent usage --db api2agent-usage.sqlite --project-id local
 api2agent ledger --db api2agent-usage.sqlite --project-id local --month 2026-05
 api2agent ledger --db api2agent-usage.sqlite --project-id local --group-by-mode
 api2agent ledger --db api2agent-usage.sqlite --capability-id public_ip_lookup --provider-id ipify
+api2agent ledger --db api2agent-usage.sqlite --golden-only
 ```
 
 Generated runners use proxy mode when `API2AGENT_PROXY_URL` is set.
@@ -237,6 +240,14 @@ api2agent call capability-registry.json \
   --failover \
   --max-attempts 2 \
   --retry-on-status 500
+```
+
+Run generated package providers in shadow mode without changing the main result:
+
+```bash
+api2agent call capability-registry.json \
+  --capability-id public_ip_lookup \
+  --shadow
 ```
 
 Minimal registry format:
@@ -268,6 +279,14 @@ Inspect one routing decision and its correlated usage events:
 api2agent decision <routing_decision_id> \
   --db api2agent-usage.sqlite \
   --json
+```
+
+Mark, list, and replay known-good usage events:
+
+```bash
+api2agent golden <usage_event_id> --db api2agent-usage.sqlite
+api2agent golden --list --db api2agent-usage.sqlite --capability-id weather.get
+api2agent replay <usage_event_id> --db api2agent-usage.sqlite --execute --record
 ```
 
 ## curl Input

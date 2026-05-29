@@ -35,6 +35,9 @@ All notable API2Agent changes will be documented in this file.
 - Optional replay usage recording with isolated `replay` execution mode.
 - Explicit metrics policy: include `shadow` by default, exclude `replay` by default.
 - Golden trace marker for usage events.
+- Golden trace listing and ledger filtering.
+- Generated package shadow execution mode for `api2agent call`.
+- Local generated package replay execution.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -52,10 +55,10 @@ All notable API2Agent changes will be documented in this file.
 - Replay recording dogfooded and verified as excluded from routing metrics.
 - Shadow metrics policy dogfooded with include/exclude comparison.
 - Golden trace marker dogfooded against a real `wttr_in` shadow event.
-- Full test suite: `87 passed`.
+- Generated package shadow/replay paths covered by regression tests.
+- Full test suite: `103 passed`.
 
 ### Planned Next
 
-- Exact replay execution that re-runs providers from captured metadata.
-- `shadow` execution mode for benchmark-only provider calls.
-- Golden trace marker for known-good executions.
+- Dogfood generated package shadow/replay against a no-auth real API package.
+- Decide when capability naming moves from warning to hard enforcement.

@@ -24,6 +24,8 @@ def execute_capability(
     failover: bool = False,
     failover_policy: FailoverPolicy | None = None,
     include_shadow_metrics: bool = True,
+    shadow: bool = False,
+    shadow_provider_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     candidates = [provider for provider in providers if provider.capability_id == capability_id]
     metrics = store.metrics_for_capability(capability_id, include_shadow=include_shadow_metrics)
@@ -54,18 +56,22 @@ def execute_capability(
 
     attempts = ranked[: effective_failover_policy.max_attempts] if effective_failover_policy.enabled else [selected]
     attempt_results: list[dict[str, Any]] = []
+    attempted_provider_ids: list[str] = []
+    final_result: dict[str, Any] | None = None
     for index, provider in enumerate(attempts):
+        attempted_provider_ids.append(provider.provider_id)
         start = perf_counter()
         result = _execute_provider(provider, capability_id, params, proxy_url, decision.id)
         latency_ms = (perf_counter() - start) * 1000
         if proxy_url is None:
-            _record_direct_usage_event(
+            _record_usage_event(
                 store=store,
                 decision=decision,
                 provider=provider,
                 result=result,
                 params=params,
                 latency_ms=latency_ms,
+                execution_mode="direct",
             )
         if not result.get("ok"):
             attempt_results.append({"provider_id": provider.provider_id, "ok": False, "result": result})
@@ -86,7 +92,7 @@ def execute_capability(
             break
 
         attempt_results.append({"provider_id": provider.provider_id, "ok": True, "result": result})
-        return {
+        final_result = {
             "ok": True,
             "routing_decision": decision.model_dump(mode="json"),
             "attempts": attempt_results,
@@ -94,11 +100,31 @@ def execute_capability(
             "provider_result": result,
             "normalized_body": normalized,
         }
+        break
+
+    shadow_attempts = _run_shadow_attempts(
+        store=store,
+        decision=decision,
+        providers=providers,
+        capability_id=capability_id,
+        params=params,
+        proxy_url=proxy_url,
+        routing_decision_id=decision.id,
+        attempted_provider_ids=attempted_provider_ids,
+        ranked_provider_ids=[provider.provider_id for provider in ranked],
+        shadow=shadow,
+        shadow_provider_ids=shadow_provider_ids,
+    )
+
+    if final_result is not None:
+        final_result["shadow_attempts"] = shadow_attempts
+        return final_result
 
     return {
         "ok": False,
         "routing_decision": decision.model_dump(mode="json"),
         "attempts": attempt_results,
+        "shadow_attempts": shadow_attempts,
         "error": {"type": "all_providers_failed", "message": "No provider returned a normalized result."},
     }
 
@@ -172,7 +198,7 @@ def _runner_tool_info(runner: Any, tool_id: str) -> dict[str, str]:
     return {}
 
 
-def _record_direct_usage_event(
+def _record_usage_event(
     *,
     store: UsageStore,
     decision: RoutingDecision,
@@ -180,6 +206,7 @@ def _record_direct_usage_event(
     result: dict[str, Any],
     params: dict[str, Any],
     latency_ms: float,
+    execution_mode: str,
 ) -> None:
     method = result.get("method")
     path = result.get("path")
@@ -190,7 +217,7 @@ def _record_direct_usage_event(
     store.record(
         UsageEvent(
             routing_decision_id=decision.id,
-            execution_mode="direct",
+            execution_mode=execution_mode,
             project_id=decision.project_id,
             capability_id=decision.capability_id,
             provider_id=provider.provider_id,
@@ -206,3 +233,65 @@ def _record_direct_usage_event(
             provider_runtime_reference=f"local_package:{provider.metadata.get('package_dir')}",
         )
     )
+
+
+def _run_shadow_attempts(
+    *,
+    store: UsageStore,
+    decision: RoutingDecision,
+    providers: list[ProviderCandidate],
+    capability_id: str,
+    params: dict[str, Any],
+    proxy_url: str | None,
+    routing_decision_id: str,
+    attempted_provider_ids: list[str],
+    ranked_provider_ids: list[str],
+    shadow: bool,
+    shadow_provider_ids: list[str] | None,
+) -> list[dict[str, Any]]:
+    if proxy_url is not None:
+        return []
+
+    selected_shadow_ids = shadow_provider_ids or (ranked_provider_ids if shadow else [])
+    if not selected_shadow_ids:
+        return []
+
+    provider_by_id = {provider.provider_id: provider for provider in providers if provider.capability_id == capability_id}
+    attempted = set(attempted_provider_ids)
+    shadow_attempts: list[dict[str, Any]] = []
+    for provider_id in selected_shadow_ids:
+        if provider_id in attempted:
+            continue
+        provider = provider_by_id.get(provider_id)
+        if provider is None:
+            shadow_attempts.append(
+                {
+                    "provider_id": provider_id,
+                    "ok": False,
+                    "error": {"type": "unknown_shadow_provider", "message": f"No provider: {provider_id}"},
+                }
+            )
+            continue
+
+        start = perf_counter()
+        result = _execute_provider(provider, capability_id, params, proxy_url, routing_decision_id)
+        latency_ms = (perf_counter() - start) * 1000
+        _record_usage_event(
+            store=store,
+            decision=decision,
+            provider=provider,
+            result=result,
+            params=params,
+            latency_ms=latency_ms,
+            execution_mode="shadow",
+        )
+        shadow_attempts.append(
+            {
+                "provider_id": provider.provider_id,
+                "ok": bool(result.get("ok")),
+                "status_code": result.get("status_code"),
+                "error_type": (result.get("error") or {}).get("type") if isinstance(result.get("error"), dict) else None,
+                "latency_ms": latency_ms,
+            }
+        )
+    return shadow_attempts

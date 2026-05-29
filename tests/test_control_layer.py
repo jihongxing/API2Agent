@@ -174,6 +174,43 @@ def test_usage_store_marks_golden_event(tmp_path: Path) -> None:
     assert unmarked.is_golden is False
 
 
+def test_usage_store_lists_golden_events_with_filters(tmp_path: Path) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    store.record(
+        UsageEvent(
+            id="golden_weather",
+            execution_mode="shadow",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="wttr_in",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+            is_golden=True,
+        )
+    )
+    store.record(
+        UsageEvent(
+            id="ordinary_weather",
+            execution_mode="direct",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="open_meteo",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+        )
+    )
+
+    events = store.list_usage_events(capability_id="weather.get", execution_mode="shadow", golden_only=True)
+
+    assert [event.id for event in events] == ["golden_weather"]
+
+
 def test_usage_store_returns_local_ledger_rows(tmp_path: Path) -> None:
     store = UsageStore(tmp_path / "usage.sqlite")
     store.record(
@@ -304,6 +341,43 @@ def test_usage_store_filters_ledger_by_capability_and_provider(tmp_path: Path) -
 
     assert len(rows) == 1
     assert rows[0].provider_id == "ipify"
+    assert rows[0].estimated_cost == 0.01
+
+
+def test_usage_store_can_filter_ledger_to_golden_events(tmp_path: Path) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    store.record(
+        UsageEvent(
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="open_meteo",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+            estimated_cost=0.01,
+            is_golden=True,
+        )
+    )
+    store.record(
+        UsageEvent(
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="wttr_in",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+            estimated_cost=0.02,
+        )
+    )
+
+    rows = store.ledger(project_id="local", capability_id="weather.get", golden_only=True)
+
+    assert len(rows) == 1
+    assert rows[0].provider_id == "open_meteo"
     assert rows[0].estimated_cost == 0.01
 
 

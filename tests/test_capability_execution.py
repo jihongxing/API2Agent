@@ -148,6 +148,52 @@ def test_execute_capability_returns_failed_attempts_before_failover_success(tmp_
     assert result["routing_decision"]["failover_policy"]["max_attempts"] == 2
 
 
+def test_execute_capability_records_shadow_generated_package_attempt(tmp_path) -> None:
+    primary_dir = tmp_path / "primary"
+    _write_runner(primary_dir, {"ip": "108.174.61.76"})
+    shadow_dir = tmp_path / "shadow"
+    _write_runner(shadow_dir, {"ip": "108.174.61.77"})
+    providers = [
+        ProviderCandidate(
+            id="primary_public_ip",
+            capability_id="public_ip_lookup",
+            provider_id="primary",
+            tool_id="get",
+            output_mapping={"ip": "$.ip"},
+            metadata={"package_dir": str(primary_dir)},
+        ),
+        ProviderCandidate(
+            id="shadow_public_ip",
+            capability_id="public_ip_lookup",
+            provider_id="shadow",
+            tool_id="get",
+            output_mapping={"ip": "$.ip"},
+            metadata={"package_dir": str(shadow_dir)},
+        ),
+    ]
+
+    store = UsageStore(tmp_path / "usage.sqlite")
+    result = execute_capability(
+        providers=providers,
+        capability_id="public_ip_lookup",
+        params={},
+        store=store,
+        policy=RoutingPolicy(strategy="first"),
+        shadow=True,
+    )
+    events = store.usage_for_routing_decision(result["routing_decision"]["id"])
+
+    assert result["ok"] is True
+    assert result["provider_id"] == "primary"
+    assert result["shadow_attempts"][0]["provider_id"] == "shadow"
+    assert [(event.provider_id, event.execution_mode) for event in events] == [
+        ("primary", "direct"),
+        ("shadow", "shadow"),
+    ]
+    assert events[1].request_metadata == {"params": {}}
+    assert events[1].provider_runtime_reference == f"local_package:{shadow_dir}"
+
+
 def test_execute_capability_stops_on_non_retriable_failover_status(tmp_path) -> None:
     failing_dir = tmp_path / "failing"
     _write_status_runner(failing_dir, 400)
@@ -231,6 +277,61 @@ def test_call_command_executes_and_prints_normalized_json(tmp_path) -> None:
     assert payload["registry_contract_version"] == "provider_registry.v0.1"
     assert payload["ok"] is True
     assert payload["normalized_body"] == {"ip": "108.174.61.76"}
+
+
+def test_call_command_supports_generated_package_shadow_mode(tmp_path) -> None:
+    primary_dir = tmp_path / "primary"
+    _write_runner(primary_dir, {"ip": "108.174.61.76"})
+    shadow_dir = tmp_path / "shadow"
+    _write_runner(shadow_dir, {"ip": "108.174.61.77"})
+    registry = tmp_path / "registry.json"
+    registry.write_text(
+        json.dumps(
+            {
+                "providers": [
+                    {
+                        "id": "primary_public_ip",
+                        "capability_id": "public_ip_lookup",
+                        "provider_id": "primary",
+                        "tool_id": "get",
+                        "output_mapping": {"ip": "$.ip"},
+                        "metadata": {"package_dir": str(primary_dir)},
+                    },
+                    {
+                        "id": "shadow_public_ip",
+                        "capability_id": "public_ip_lookup",
+                        "provider_id": "shadow",
+                        "tool_id": "get",
+                        "output_mapping": {"ip": "$.ip"},
+                        "metadata": {"package_dir": str(shadow_dir)},
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "call",
+            str(registry),
+            "--capability-id",
+            "public_ip_lookup",
+            "--db",
+            str(tmp_path / "usage.sqlite"),
+            "--strategy",
+            "first",
+            "--shadow",
+            "--json",
+        ],
+    )
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["ok"] is True
+    assert payload["provider_id"] == "primary"
+    assert payload["shadow_attempts"][0]["provider_id"] == "shadow"
 
 
 def test_call_command_rejects_missing_provider_package(tmp_path) -> None:

@@ -74,10 +74,15 @@ wttr_in 1 1.0 1786.19
 
 Replay 已经从 audit-only preflight 进入 supported events 的 executable debugging。
 
+当 usage events 包含以下字段时，generated local packages 现在也支持 replay：
+
+- `provider_runtime_reference: local_package:<package_dir>`
+- `request_metadata.params`
+
 ## 当前限制
 
 - 先支持 SDK adapters
 - HTTP/proxy replay 只在不需要 credentials 时可用
 - replay execution 只有在使用 `--record` 时才写入新的 usage event
 - replay events 默认不进入 routing metrics
-- local generated package replay 仍是后续工作
+- local generated package replay 依赖 generated package directory 仍然存在

@@ -27,7 +27,7 @@ pytest
 期望结果：
 
 ```text
-87 passed
+103 passed
 ```
 
 ## 2. 第一次 SDK 调用
@@ -232,7 +232,14 @@ python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failove
 python -m api2agent.cli golden <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
 ```
 
-Golden traces 是未来 replay、benchmark、scoring 和 regression tests 的基准。
+列出 golden traces，并把 ledger 过滤到 golden baselines：
+
+```bash
+python -m api2agent.cli golden --list --db .dogfood/quickstart-failover.sqlite --capability-id weather.get --json
+python -m api2agent.cli ledger --db .dogfood/quickstart-failover.sqlite --golden-only --json
+```
+
+Golden traces 是 replay、benchmark、scoring 和 regression tests 的基准。
 
 ## 9. 生成本地 Capability Package
 
@@ -250,7 +257,21 @@ python -m api2agent.cli inspect api2agent-output
 python -m api2agent.cli test api2agent-output
 ```
 
-这证明 compiler path 和 SDK execution loop 可以同时工作。
+当 generated packages 被注册为 providers 后，也支持本地 reliability loop：
+
+```bash
+python -m api2agent.cli call capability-registry.json \
+  --capability-id public_ip_lookup \
+  --shadow \
+  --json
+
+python -m api2agent.cli replay <generated_package_usage_event_id> \
+  --db api2agent-usage.sqlite \
+  --execute \
+  --json
+```
+
+这证明 compiler path 和 SDK execution loop 可以同时工作，包括 shadow observations 和 local package replay。
 
 ## 10. 证明了什么
 
@@ -262,6 +283,7 @@ API2Agent v0.1-alpha 证明：
 - shadow providers 可以在不改变主结果的情况下采集 benchmark data
 - 每个 attempt 都可以通过 ledger 审计
 - 失败 attempt 可以通过 replay preflight 检查
-- known-good attempts 可以被标记为 golden traces
+- generated package attempts 可以本地 shadow 和 replay
+- known-good attempts 可以被标记、列出，并作为 golden traces 过滤
 
 Marketplace、hosted SaaS 和 payment 都刻意不在当前范围内。

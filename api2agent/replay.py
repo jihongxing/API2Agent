@@ -1,3 +1,6 @@
+import importlib.util
+from pathlib import Path
+import sys
 from time import perf_counter
 from typing import Any
 
@@ -21,6 +24,7 @@ def can_execute_replay(event: UsageEvent) -> bool:
         and (
             event.provider_runtime_reference in SDK_ADAPTERS
             or event.provider_runtime_reference == "proxy:http"
+            or str(event.provider_runtime_reference).startswith("local_package:")
         )
         and event.credential_reference is None
     )
@@ -38,6 +42,8 @@ def execute_replay(event: UsageEvent) -> dict[str, Any]:
         return _execute_sdk_replay(event)
     if event.provider_runtime_reference == "proxy:http":
         return _execute_http_replay(event)
+    if str(event.provider_runtime_reference).startswith("local_package:"):
+        return _execute_local_package_replay(event)
     return _error("unsupported_provider_runtime", f"Unsupported replay runtime: {event.provider_runtime_reference}")
 
 
@@ -91,6 +97,59 @@ def _execute_http_replay(event: UsageEvent) -> dict[str, Any]:
         "body": body,
         "error_type": None if response.is_success else "http_status",
     }
+
+
+def _execute_local_package_replay(event: UsageEvent) -> dict[str, Any]:
+    package_dir = _local_package_dir(event.provider_runtime_reference)
+    if package_dir is None:
+        return _error("invalid_local_package_runtime", "Local package replay requires local_package:<package_dir>.")
+    runner_path = package_dir / "runner.py"
+    if not runner_path.exists():
+        return _error("missing_local_package_runner", f"Generated runner not found: {runner_path}")
+
+    metadata = event.request_metadata or {}
+    params = metadata.get("params")
+    if not isinstance(params, dict):
+        return _error("missing_local_package_params", "Local package replay requires request_metadata.params.")
+
+    runner = _load_local_runner(runner_path, event.id)
+    start = perf_counter()
+    result = runner.execute_tool(event.tool_id, params)
+    latency_ms = (perf_counter() - start) * 1000
+    if not isinstance(result, dict):
+        return _error("invalid_local_package_result", "Generated runner returned a non-object result.")
+
+    error = result.get("error") if isinstance(result.get("error"), dict) else {}
+    return {
+        "ok": bool(result.get("ok")),
+        "runtime": event.provider_runtime_reference,
+        "provider_id": event.provider_id,
+        "status_code": result.get("status_code"),
+        "latency_ms": latency_ms,
+        "body": result.get("body"),
+        "error_type": error.get("type"),
+        "error_message": error.get("message"),
+    }
+
+
+def _local_package_dir(runtime: str | None) -> Path | None:
+    if not runtime or not runtime.startswith("local_package:"):
+        return None
+    raw_path = runtime.removeprefix("local_package:")
+    if not raw_path:
+        return None
+    return Path(raw_path)
+
+
+def _load_local_runner(runner_path: Path, event_id: str):
+    module_name = f"api2agent_replay_runner_{event_id.replace('-', '_')}"
+    sys.modules.pop(module_name, None)
+    spec = importlib.util.spec_from_file_location(module_name, runner_path)
+    module = importlib.util.module_from_spec(spec)
+    if spec.loader is None:
+        raise RuntimeError(f"Could not load runner: {runner_path}")
+    spec.loader.exec_module(module)
+    return module
 
 
 def _replay_headers(headers: dict[str, Any]) -> dict[str, str]:

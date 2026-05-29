@@ -24,6 +24,7 @@ from api2agent.replay import can_execute_replay, execute_replay
 app = typer.Typer(help="Turn APIs into verified Agent capability packages.")
 DECISION_USAGE_CONTRACT_VERSION = "decision_usage.v0.1"
 REPLAY_CONTRACT_VERSION = "replay.v0.1"
+GOLDEN_TRACE_CONTRACT_VERSION = "golden_trace.v0.1"
 
 
 @app.command()
@@ -240,6 +241,7 @@ def ledger(
     provider_id: Optional[str] = typer.Option(None, "--provider-id", help="Filter ledger by provider id."),
     month: Optional[str] = typer.Option(None, "--month", help="Filter ledger by YYYY-MM month."),
     group_by_mode: bool = typer.Option(False, "--group-by-mode", help="Group ledger rows by execution mode."),
+    golden_only: bool = typer.Option(False, "--golden-only", help="Only include usage events marked as golden traces."),
     json_output: bool = typer.Option(False, "--json", help="Print raw ledger JSON."),
 ) -> None:
     """Print a billing-ready local usage ledger without charging money."""
@@ -254,6 +256,7 @@ def ledger(
         provider_id=provider_id,
         month=month,
         group_by_mode=group_by_mode,
+        golden_only=golden_only,
     )
     payload = [row.model_dump(mode="json") for row in rows]
     if json_output:
@@ -387,18 +390,62 @@ def replay_usage_event(
 
 @app.command("golden")
 def mark_golden_event(
-    usage_event_id: str = typer.Argument(..., help="Usage event id to mark as a golden trace."),
+    usage_event_id: Optional[str] = typer.Argument(None, help="Usage event id to mark as a golden trace."),
     db: Path = typer.Option(Path("api2agent-usage.sqlite"), "--db", help="SQLite database for usage events."),
     unset: bool = typer.Option(False, "--unset", help="Remove the golden marker from this usage event."),
+    list_traces: bool = typer.Option(False, "--list", help="List golden traces instead of marking one event."),
+    project_id: Optional[str] = typer.Option(None, "--project-id", help="Filter golden traces by project id."),
+    capability_id: Optional[str] = typer.Option(None, "--capability-id", help="Filter golden traces by capability id."),
+    provider_id: Optional[str] = typer.Option(None, "--provider-id", help="Filter golden traces by provider id."),
+    execution_mode: Optional[str] = typer.Option(None, "--execution-mode", help="Filter golden traces by execution mode."),
+    limit: int = typer.Option(50, "--limit", help="Maximum golden traces to return."),
     json_output: bool = typer.Option(False, "--json", help="Print raw golden trace JSON."),
 ) -> None:
     """Mark or unmark a usage event as a golden trace."""
     store = UsageStore(db)
+    if limit < 1:
+        raise typer.BadParameter("--limit must be greater than 0.")
+    if list_traces:
+        if usage_event_id is not None:
+            raise typer.BadParameter("Do not pass a usage event id with --list.")
+        if unset:
+            raise typer.BadParameter("--unset cannot be used with --list.")
+        events = store.list_usage_events(
+            project_id=project_id,
+            capability_id=capability_id,
+            provider_id=provider_id,
+            execution_mode=execution_mode,
+            golden_only=True,
+            limit=limit,
+        )
+        payload = {
+            "contract_version": GOLDEN_TRACE_CONTRACT_VERSION,
+            "count": len(events),
+            "golden_traces": [event.model_dump(mode="json") for event in events],
+        }
+        if json_output:
+            typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+            return
+
+        if not events:
+            typer.echo("No golden traces.")
+            return
+        for event in events:
+            typer.echo(f"{event.id} / {event.project_id} / {event.capability_id} / {event.provider_id}")
+            typer.echo(f"  Mode: {event.execution_mode}")
+            typer.echo(f"  Success: {event.success}")
+            typer.echo(f"  Created: {event.created_at.isoformat()}")
+        return
+
+    if usage_event_id is None:
+        raise typer.BadParameter("Provide a usage event id, or use --list.")
+
     event = store.mark_golden(usage_event_id, is_golden=not unset)
     if event is None:
         raise typer.BadParameter(f"Usage event not found: {usage_event_id}")
 
     payload = {
+        "contract_version": GOLDEN_TRACE_CONTRACT_VERSION,
         "usage_event": event.model_dump(mode="json"),
         "is_golden": event.is_golden,
     }
@@ -546,6 +593,12 @@ def call(
     ),
     proxy_url: Optional[str] = typer.Option(None, "--proxy-url", help="Proxy URL to use during provider execution."),
     failover: bool = typer.Option(False, "--failover", help="Try ranked fallback providers after a failed attempt."),
+    shadow: bool = typer.Option(False, "--shadow", help="Run non-selected providers as shadow benchmark attempts."),
+    shadow_provider: list[str] = typer.Option(
+        [],
+        "--shadow-provider",
+        help="Provider id to run in shadow mode. Can be used multiple times.",
+    ),
     max_attempts: Optional[int] = typer.Option(
         None,
         "--max-attempts",
@@ -600,6 +653,8 @@ def call(
         preset=preset,
         proxy_url=proxy_url,
         failover=failover,
+        shadow=shadow,
+        shadow_provider_ids=shadow_provider or None,
         include_shadow_metrics=not exclude_shadow_metrics,
         failover_policy=build_failover_policy(
             enabled=failover,

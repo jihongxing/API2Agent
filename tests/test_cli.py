@@ -410,6 +410,47 @@ def test_replay_command_can_record_replay_usage_event(tmp_path, monkeypatch) -> 
     assert replay_event.request_metadata["replay_source_event_id"] == "event_replay"
 
 
+def test_replay_command_executes_local_generated_package_replay(tmp_path) -> None:
+    package_dir = tmp_path / "package"
+    package_dir.mkdir()
+    (package_dir / "runner.py").write_text(
+        """
+CAPABILITY = {"tools": [{"name": "get", "method": "GET", "path": "/"}]}
+
+def execute_tool(name, params):
+    return {"ok": True, "status_code": 200, "body": {"echo": params["q"]}}
+""",
+        encoding="utf-8",
+    )
+    db = tmp_path / "usage.sqlite"
+    store = UsageStore(db)
+    store.record(
+        UsageEvent(
+            id="event_local_package",
+            execution_mode="direct",
+            project_id="local",
+            capability_id="echo.get",
+            provider_id="echo_provider",
+            tool_id="get",
+            method="GET",
+            path="/",
+            status_code=200,
+            success=True,
+            request_metadata={"params": {"q": "hello"}},
+            provider_runtime_reference=f"local_package:{package_dir}",
+        )
+    )
+
+    result = runner.invoke(app, ["replay", "event_local_package", "--db", str(db), "--execute", "--json"])
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["replayable"] is True
+    assert payload["executed"] is True
+    assert payload["replay_result"]["ok"] is True
+    assert payload["replay_result"]["body"] == {"echo": "hello"}
+
+
 def test_golden_command_marks_usage_event(tmp_path) -> None:
     db = tmp_path / "usage.sqlite"
     store = UsageStore(db)
@@ -434,6 +475,64 @@ def test_golden_command_marks_usage_event(tmp_path) -> None:
     assert result.exit_code == 0
     assert payload["is_golden"] is True
     assert payload["usage_event"]["is_golden"] is True
+
+
+def test_golden_command_lists_filtered_golden_traces(tmp_path) -> None:
+    db = tmp_path / "usage.sqlite"
+    store = UsageStore(db)
+    store.record(
+        UsageEvent(
+            id="golden_shadow",
+            execution_mode="shadow",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="wttr_in",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+            is_golden=True,
+        )
+    )
+    store.record(
+        UsageEvent(
+            id="golden_other",
+            execution_mode="direct",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="open_meteo",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+            is_golden=True,
+        )
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "golden",
+            "--list",
+            "--db",
+            str(db),
+            "--capability-id",
+            "weather.get",
+            "--provider-id",
+            "wttr_in",
+            "--execution-mode",
+            "shadow",
+            "--json",
+        ],
+    )
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["contract_version"] == "golden_trace.v0.1"
+    assert payload["count"] == 1
+    assert payload["golden_traces"][0]["id"] == "golden_shadow"
 
 
 def test_decision_command_preserves_stable_contract_fields(tmp_path) -> None:
@@ -570,3 +669,42 @@ def test_ledger_command_filters_by_provider(tmp_path) -> None:
     assert len(payload) == 1
     assert payload[0]["provider_id"] == "ipify"
     assert payload[0]["total_calls"] == 2
+
+
+def test_ledger_command_can_filter_golden_rows(tmp_path) -> None:
+    db = tmp_path / "usage.sqlite"
+    store = UsageStore(db)
+    store.record(
+        UsageEvent(
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="open_meteo",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+            estimated_cost=0.01,
+            is_golden=True,
+        )
+    )
+    store.record(
+        UsageEvent(
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="wttr_in",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=200,
+            success=True,
+            estimated_cost=0.02,
+        )
+    )
+
+    result = runner.invoke(app, ["ledger", "--db", str(db), "--golden-only", "--json"])
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert len(payload) == 1
+    assert payload[0]["provider_id"] == "open_meteo"

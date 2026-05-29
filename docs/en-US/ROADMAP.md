@@ -80,12 +80,12 @@ Implemented:
 - optional replay usage recording with `execution_mode=replay`
 - explicit routing metrics policy for `shadow` and `replay`
 - golden trace marker for usage events
+- golden trace filtering command
+- local generated package replay execution
+- generated package shadow execution mode
 
 Not implemented yet:
 
-- local generated package replay execution
-- generated package shadow execution mode
-- golden trace filtering command
 - hard enforcement of capability naming rule
 - endpoint-level auth
 - base URL override
@@ -428,6 +428,10 @@ Current hardening result:
 - shadow metrics policy verified: included by default, removable with explicit option.
 - golden trace marker verified against a real `wttr_in` shadow event.
 - see `docs/en-US/GOLDEN_TRACE_DOGFOOD_REPORT.md`.
+- golden trace listing and `ledger --golden-only` filtering are implemented.
+- generated package shadow execution mode is implemented for `api2agent call`.
+- local generated package replay execution is implemented for `local_package:<package_dir>` events.
+- generated package shadow + replay dogfood completed; see `docs/en-US/GENERATED_PACKAGE_SHADOW_REPLAY_DOGFOOD_REPORT.md`.
 
 ## 9. Phase 6: Hosted Control Plane
 

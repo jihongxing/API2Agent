@@ -27,7 +27,7 @@ pytest
 Expected:
 
 ```text
-87 passed
+103 passed
 ```
 
 ## 2. First SDK Call
@@ -232,7 +232,14 @@ Mark a known-good usage event as a golden trace:
 python -m api2agent.cli golden <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
 ```
 
-Golden traces are future baselines for replay, benchmarks, scoring, and regression tests.
+List golden traces and filter ledger rows to golden baselines:
+
+```bash
+python -m api2agent.cli golden --list --db .dogfood/quickstart-failover.sqlite --capability-id weather.get --json
+python -m api2agent.cli ledger --db .dogfood/quickstart-failover.sqlite --golden-only --json
+```
+
+Golden traces are baselines for replay, benchmarks, scoring, and regression tests.
 
 ## 9. Generate A Local Capability Package
 
@@ -250,7 +257,21 @@ python -m api2agent.cli inspect api2agent-output
 python -m api2agent.cli test api2agent-output
 ```
 
-This proves the compiler path still works alongside the SDK execution loop.
+Generated packages also support the local reliability loop when they are registered as providers:
+
+```bash
+python -m api2agent.cli call capability-registry.json \
+  --capability-id public_ip_lookup \
+  --shadow \
+  --json
+
+python -m api2agent.cli replay <generated_package_usage_event_id> \
+  --db api2agent-usage.sqlite \
+  --execute \
+  --json
+```
+
+This proves the compiler path still works alongside the SDK execution loop, including shadow observations and local package replay.
 
 ## 10. What This Proves
 
@@ -262,6 +283,7 @@ API2Agent v0.1-alpha proves:
 - shadow providers can collect benchmark data without changing the main result
 - every attempt can be audited through the ledger
 - failed attempts can be inspected through replay preflight
-- known-good attempts can be marked as golden traces
+- generated package attempts can be shadowed and replayed locally
+- known-good attempts can be marked, listed, and filtered as golden traces
 
 Marketplace, hosted SaaS, and payment are intentionally out of scope.
