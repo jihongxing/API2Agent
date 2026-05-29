@@ -194,7 +194,7 @@ Expected ledger shape:
 
 ## 7. Replay Preflight
 
-`replay` currently works as a preflight and audit view. It finds the usage event and routing decision, then reports whether exact replay is possible.
+`replay` works as a preflight and audit view by default. Add `--execute` to re-run supported SDK or no-credential HTTP events.
 
 ```bash
 python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
@@ -202,12 +202,15 @@ python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failove
 
 Current expected result:
 
-- `replayable`: `false`
 - usage event is returned
 - routing decision is returned
 - missing exact replay fields are listed
 
-Exact replay will require request params and credential references to be captured safely.
+Execute replay when `replayable` is `true`:
+
+```bash
+python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --json
+```
 
 ## 8. Generate A Local Capability Package
 

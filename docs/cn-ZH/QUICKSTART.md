@@ -194,7 +194,7 @@ python -m api2agent.cli ledger --db .dogfood/quickstart-failover.sqlite --capabi
 
 ## 7. Replay Preflight
 
-`replay` 当前是 preflight 和 audit view。它会找到 usage event 和 routing decision，然后报告是否可以 exact replay。
+`replay` 默认是 preflight 和 audit view。加上 `--execute` 后，可以重新执行 supported SDK 或 no-credential HTTP events。
 
 ```bash
 python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
@@ -202,12 +202,15 @@ python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failove
 
 当前期望结果：
 
-- `replayable`: `false`
 - 返回 usage event
 - 返回 routing decision
 - 列出 exact replay 缺失字段
 
-Exact replay 需要后续安全捕获 request params 和 credential references。
+当 `replayable` 为 `true` 时，可以执行 replay：
+
+```bash
+python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --json
+```
 
 ## 8. 生成本地 Capability Package
 

@@ -19,6 +19,7 @@ from api2agent.filters import ToolFilter, filter_capability
 from api2agent.generators.package import generate_package
 from api2agent.parsers.curl import parse_curl
 from api2agent.parsers.openapi import parse_openapi_file
+from api2agent.replay import can_execute_replay, execute_replay
 
 app = typer.Typer(help="Turn APIs into verified Agent capability packages.")
 DECISION_USAGE_CONTRACT_VERSION = "decision_usage.v0.1"
@@ -322,6 +323,7 @@ def inspect_decision(
 def replay_usage_event(
     usage_event_id: str = typer.Argument(..., help="Usage event id to prepare for replay."),
     db: Path = typer.Option(Path("api2agent-usage.sqlite"), "--db", help="SQLite database for usage events."),
+    execute: bool = typer.Option(False, "--execute", help="Re-run the provider call when exact replay is supported."),
     json_output: bool = typer.Option(False, "--json", help="Print raw replay preflight JSON."),
 ) -> None:
     """Inspect a usage event and report whether it can be deterministically replayed."""
@@ -332,15 +334,21 @@ def replay_usage_event(
 
     decision = store.get_routing_decision(event.routing_decision_id) if event.routing_decision_id else None
     missing_for_exact_replay = _missing_replay_fields(event)
-    warnings = ["Replay execution is not wired to re-run providers yet; this command is a preflight and audit view."]
+    replayable = can_execute_replay(event)
+    warnings = []
     if missing_for_exact_replay:
         warnings.append("Exact replay metadata is incomplete for this usage event.")
+    if not replayable:
+        warnings.append("Replay execution is not available for this usage event.")
+    replay_result = execute_replay(event) if execute else None
     payload = {
         "contract_version": REPLAY_CONTRACT_VERSION,
         "usage_event": event.model_dump(mode="json"),
         "routing_decision": decision.model_dump(mode="json") if decision else None,
-        "replayable": False,
+        "replayable": replayable,
         "exact_replay_metadata_ready": not missing_for_exact_replay,
+        "executed": execute,
+        "replay_result": replay_result,
         "warnings": warnings,
         "missing_for_exact_replay": missing_for_exact_replay,
     }
@@ -350,6 +358,7 @@ def replay_usage_event(
 
     typer.echo(f"Usage event: {event.id}")
     typer.echo(f"Replayable: {payload['replayable']}")
+    typer.echo(f"Executed: {payload['executed']}")
     typer.echo(f"Project: {event.project_id}")
     typer.echo(f"Capability: {event.capability_id}")
     typer.echo(f"Provider: {event.provider_id}")
@@ -363,6 +372,9 @@ def replay_usage_event(
     typer.echo("Warnings:")
     for warning in warnings:
         typer.echo(f"  - {warning}")
+    if replay_result is not None:
+        typer.echo("Replay result:")
+        typer.echo(json.dumps(replay_result, indent=2, ensure_ascii=False))
 
 
 @app.command("registry")

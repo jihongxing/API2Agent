@@ -76,10 +76,11 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - SDK、proxy 和 local package execution paths 已安全捕获 replay metadata
 - alpha capability naming validation warnings
 - SDK shadow execution mode
+- supported SDK 和 no-credential HTTP events 的 exact replay execution
 
 尚未实现：
 
-- exact replay execution
+- local generated package replay execution
 - generated package shadow execution mode
 - golden trace marker
 - hard enforcement of capability naming rule
@@ -366,7 +367,7 @@ capability registry JSON
 
 立即下一步：
 
-- 基于已捕获 metadata 实现 exact replay execution
+- 决定 replay execution 是否可以可选写入新的 usage events
 - 决定 capability naming 何时从 warning 升级为 hard enforcement
 - 决定 shadow metrics 是否进入默认 routing aggregates
 - 保持 policy 本地、显式，不引入隐藏的 marketplace-style provider preference
@@ -420,6 +421,8 @@ capability registry JSON
 - alpha capability naming warnings 已用 legacy `public_ip_lookup` 验证。
 - SDK shadow mode 已用真实 `open_meteo` main result 和真实 `wttr_in` shadow result 验证。
 - 详见 `docs/cn-ZH/SHADOW_MODE_DOGFOOD_REPORT.md`。
+- exact replay execution 已用真实 `wttr_in` shadow event 验证。
+- 详见 `docs/cn-ZH/REPLAY_DOGFOOD_REPORT.md`。
 
 ## 9. Phase 6：Hosted Control Plane
 

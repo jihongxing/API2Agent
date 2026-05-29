@@ -4,11 +4,13 @@ import json
 
 from typer.testing import CliRunner
 
+from api2agent.adapters.models import AdapterResult
 from api2agent.control.models import UsageEvent
 from api2agent.control.storage import UsageStore
 from api2agent.capabilities.models import RoutingDecision
 from api2agent.generators.package import generate_package
 from api2agent.cli import app
+from api2agent import replay as replay_module
 from api2agent.parsers.curl import parse_curl
 from api2agent.parsers.openapi import parse_openapi_file
 
@@ -315,6 +317,51 @@ def test_replay_command_returns_preflight_audit(tmp_path) -> None:
     assert payload["usage_event"]["id"] == "event_123"
     assert payload["routing_decision"]["id"] == "decision_123"
     assert "request_metadata" in payload["missing_for_exact_replay"]
+
+
+def test_replay_command_executes_supported_sdk_replay(tmp_path, monkeypatch) -> None:
+    class FakeReplayAdapter:
+        provider_id = "fake_weather"
+        capability_id = "weather.get"
+
+        def call(self, input):
+            return AdapterResult(
+                ok=True,
+                capability_id=self.capability_id,
+                provider_id=self.provider_id,
+                output={"city": input["city"], "temperature_2m": 17.0},
+                status_code=200,
+                latency_ms=5,
+            )
+
+    monkeypatch.setitem(replay_module.SDK_ADAPTERS, "sdk:FakeReplayAdapter", FakeReplayAdapter)
+    db = tmp_path / "usage.sqlite"
+    store = UsageStore(db)
+    store.record(
+        UsageEvent(
+            id="event_replay",
+            execution_mode="direct",
+            project_id="local",
+            capability_id="weather.get",
+            provider_id="fake_weather",
+            tool_id="get_current_weather",
+            method="GET",
+            path="weather.get",
+            status_code=500,
+            success=False,
+            request_metadata={"input": {"city": "San Francisco"}},
+            provider_runtime_reference="sdk:FakeReplayAdapter",
+        )
+    )
+
+    result = runner.invoke(app, ["replay", "event_replay", "--db", str(db), "--execute", "--json"])
+    payload = json.loads(result.output)
+
+    assert result.exit_code == 0
+    assert payload["replayable"] is True
+    assert payload["executed"] is True
+    assert payload["replay_result"]["ok"] is True
+    assert payload["replay_result"]["output"]["temperature_2m"] == 17.0
 
 
 def test_decision_command_preserves_stable_contract_fields(tmp_path) -> None:

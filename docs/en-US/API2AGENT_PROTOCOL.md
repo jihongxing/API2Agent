@@ -343,8 +343,7 @@ api2agent replay <usage_event_id>
 Current implementation status:
 
 - replay preflight is implemented
-- exact replay is not implemented yet
-- the command returns `replayable: false` until provider re-run execution is implemented
+- exact replay execution is implemented for supported SDK adapters and no-credential HTTP events
 - the command returns `exact_replay_metadata_ready: true` when safe request metadata and provider runtime references exist
 
 Minimum replay data:

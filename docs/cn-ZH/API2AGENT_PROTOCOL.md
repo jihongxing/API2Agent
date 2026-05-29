@@ -343,8 +343,7 @@ api2agent replay <usage_event_id>
 当前实现状态：
 
 - replay preflight 已实现
-- exact replay 尚未实现
-- 在 provider re-run execution 实现前，命令会返回 `replayable: false`
+- supported SDK adapters 和 no-credential HTTP events 已支持 exact replay execution
 - 当 safe request metadata 和 provider runtime references 存在时，命令会返回 `exact_replay_metadata_ready: true`
 
 最小 replay 数据：

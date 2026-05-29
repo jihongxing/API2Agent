@@ -76,10 +76,11 @@ Implemented:
 - safe replay metadata capture for SDK, proxy, and local package execution paths
 - alpha capability naming validation warnings
 - SDK shadow execution mode
+- exact replay execution for supported SDK and no-credential HTTP events
 
 Not implemented yet:
 
-- exact replay execution
+- local generated package replay execution
 - generated package shadow execution mode
 - golden trace marker
 - hard enforcement of capability naming rule
@@ -366,7 +367,7 @@ Current dogfood result:
 
 Immediate next step:
 
-- implement exact replay execution from captured metadata
+- decide whether replay executions should optionally record new usage events
 - decide when capability naming moves from warning to hard enforcement
 - decide whether shadow metrics should be included in default routing aggregates
 - keep policy local and explicit: no hidden marketplace-style provider preference
@@ -420,6 +421,8 @@ Current hardening result:
 - alpha capability naming warnings verified against legacy `public_ip_lookup`.
 - SDK shadow mode verified with real `open_meteo` main result and real `wttr_in` shadow result.
 - see `docs/en-US/SHADOW_MODE_DOGFOOD_REPORT.md`.
+- exact replay execution verified against a real `wttr_in` shadow event.
+- see `docs/en-US/REPLAY_DOGFOOD_REPORT.md`.
 
 ## 9. Phase 6: Hosted Control Plane
 
