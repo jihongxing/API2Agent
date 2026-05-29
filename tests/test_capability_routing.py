@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 from api2agent.capabilities.models import MetricsSnapshot, ProviderCandidate, RoutingPolicy
 from api2agent.capabilities.policies import routing_policy_preset
+from api2agent.capabilities.naming import is_alpha_capability_id
 from api2agent.capabilities.registry import PROVIDER_REGISTRY_CONTRACT_VERSION, load_provider_registry
 from api2agent.capabilities.routing import rank_providers, select_provider
 from api2agent.cli import app
@@ -301,7 +302,15 @@ def test_registry_command_inspects_provider_registry_fixture() -> None:
     assert payload["provider_count"] == 2
     assert payload["capability_counts"] == {"public_ip_lookup": 2}
     assert "warnings" in payload
+    assert payload["naming_warnings"][0]["code"] == "non_alpha_capability_id"
     assert [provider["provider_id"] for provider in payload["providers"]] == ["ipify", "httpbin"]
+
+
+def test_alpha_capability_id_rule() -> None:
+    assert is_alpha_capability_id("weather.current.get") is True
+    assert is_alpha_capability_id("github.repo.list") is True
+    assert is_alpha_capability_id("weather.get") is False
+    assert is_alpha_capability_id("public_ip_lookup") is False
 
 
 def test_registry_command_warns_about_missing_package_dir(tmp_path) -> None:

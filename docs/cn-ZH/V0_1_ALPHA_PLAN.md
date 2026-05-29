@@ -195,7 +195,7 @@ v0.1-alpha 完成时必须满足：
 
 1. repo baseline and CHANGELOG
 2. alpha quickstart
-3. capability naming rule
+3. capability naming validation warning
 4. replay design and local command
 5. shadow execution mode
 6. golden trace field

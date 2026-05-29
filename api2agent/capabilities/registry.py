@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ValidationError, field_validator
 
+from api2agent.capabilities.naming import capability_id_rule_message, is_alpha_capability_id
 from api2agent.capabilities.models import ProviderCandidate
 
 
@@ -74,6 +75,26 @@ def provider_package_warnings(providers: list[ProviderCandidate]) -> list[Regist
                     code="missing_runner",
                     provider_id=provider.provider_id,
                     message=f"runner not found at {runner_path}",
+                )
+            )
+    return warnings
+
+
+def capability_naming_warnings(providers: list[ProviderCandidate]) -> list[RegistryWarning]:
+    warnings: list[RegistryWarning] = []
+    seen: set[tuple[str, str]] = set()
+    for provider in providers:
+        key = (provider.provider_id, provider.capability_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        if not is_alpha_capability_id(provider.capability_id):
+            warnings.append(
+                RegistryWarning(
+                    severity="warning",
+                    code="non_alpha_capability_id",
+                    provider_id=provider.provider_id,
+                    message=capability_id_rule_message(provider.capability_id),
                 )
             )
     return warnings

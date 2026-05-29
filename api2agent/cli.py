@@ -10,7 +10,7 @@ from api2agent.capabilities.models import ProviderCandidate, RoutingDecision, Ro
 from api2agent.capabilities.failover import build_failover_policy
 from api2agent.capabilities.execution import execute_capability
 from api2agent.capabilities.policies import routing_policy_preset
-from api2agent.capabilities.registry import load_provider_registry, provider_package_warnings
+from api2agent.capabilities.registry import capability_naming_warnings, load_provider_registry, provider_package_warnings
 from api2agent.capabilities.routing import rank_providers, select_provider
 from api2agent.control.proxy import run_proxy_server
 from api2agent.control.storage import UsageStore
@@ -388,6 +388,9 @@ def inspect_registry(
         "provider_count": len(provider_registry.providers),
         "capability_counts": capability_counts,
         "warnings": [warning.model_dump(mode="json") for warning in provider_package_warnings(provider_registry.providers)],
+        "naming_warnings": [
+            warning.model_dump(mode="json") for warning in capability_naming_warnings(provider_registry.providers)
+        ],
         "providers": [provider.model_dump(mode="json") for provider in provider_registry.providers],
     }
     if json_output:
@@ -403,6 +406,10 @@ def inspect_registry(
     if payload["warnings"]:
         typer.echo("Warnings:")
         for warning in payload["warnings"]:
+            typer.echo(f"  - [{warning['severity']}] {warning['provider_id']}: {warning['message']}")
+    if payload["naming_warnings"]:
+        typer.echo("Naming warnings:")
+        for warning in payload["naming_warnings"]:
             typer.echo(f"  - [{warning['severity']}] {warning['provider_id']}: {warning['message']}")
 
 

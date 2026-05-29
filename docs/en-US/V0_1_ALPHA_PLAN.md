@@ -195,7 +195,7 @@ v0.1-alpha is complete when:
 
 1. repo baseline and CHANGELOG
 2. alpha quickstart
-3. capability naming rule
+3. capability naming validation warning
 4. replay design and local command
 5. shadow execution mode
 6. golden trace field

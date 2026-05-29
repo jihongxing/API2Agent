@@ -89,9 +89,18 @@ api2agent registry capability-registry.json --json
 - `provider_count`
 - `capability_counts`
 - `warnings`
+- `naming_warnings`
 - `providers`
 
 Warnings 对 `api2agent registry` 是提示信息。
+
+`naming_warnings` 在 v0.1-alpha 阶段也是提示信息。它会报告不符合以下规则的 capability IDs：
+
+```text
+<domain>.<resource>.<action>
+```
+
+在 alpha naming rule 逐步采用期间，legacy capability IDs 仍然可以执行。
 
 对于 `api2agent call`，如果请求的 capability 对应 provider 缺少 local package directory 或 `runner.py`，会在 execution 前失败。
 

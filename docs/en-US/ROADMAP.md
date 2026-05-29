@@ -73,13 +73,14 @@ Implemented:
 - alpha Quickstart with SDK call, benchmark, failover, ledger, and compiler path
 - clean baseline commit: `7157226`
 - replay preflight command for usage event audit
+- alpha capability naming validation warnings
 
 Not implemented yet:
 
 - exact replay metadata capture
 - shadow execution mode
 - golden trace marker
-- enforced capability naming rule
+- hard enforcement of capability naming rule
 - endpoint-level auth
 - base URL override
 - manual write tests
@@ -364,7 +365,7 @@ Current dogfood result:
 Immediate next step:
 
 - capture safe request metadata for exact replay
-- add the capability naming rule to validation/docs
+- decide when capability naming moves from warning to hard enforcement
 - design `shadow` execution mode for benchmark-only provider calls
 - keep policy local and explicit: no hidden marketplace-style provider preference
 
@@ -413,6 +414,7 @@ Current hardening result:
 - Quickstart failover path verified with controlled `open_meteo` failure and real `wttr_in` fallback.
 - clean baseline commit created: `7157226`.
 - `api2agent replay` preflight verified against a failed Quickstart usage event.
+- alpha capability naming warnings verified against legacy `public_ip_lookup`.
 
 ## 9. Phase 6: Hosted Control Plane
 

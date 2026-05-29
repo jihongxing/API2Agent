@@ -89,9 +89,18 @@ Stable inspection fields:
 - `provider_count`
 - `capability_counts`
 - `warnings`
+- `naming_warnings`
 - `providers`
 
 Warnings are advisory for `api2agent registry`.
+
+`naming_warnings` are also advisory during v0.1-alpha. They report capability IDs that do not match:
+
+```text
+<domain>.<resource>.<action>
+```
+
+Legacy capability IDs remain executable while the alpha naming rule is adopted.
 
 For `api2agent call`, missing local package directories or missing `runner.py` files for the requested capability fail before execution.
 
