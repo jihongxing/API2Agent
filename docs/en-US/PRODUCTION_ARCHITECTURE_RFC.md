@@ -159,6 +159,28 @@ Control Plane technology:
 - analytics export: object storage first, warehouse later
 - dashboard: future TypeScript app
 
+### 4.3 Snapshot Distribution
+
+Routing and credential policy must be distributed as versioned snapshots.
+
+Minimum snapshot metadata:
+
+- `snapshot_version`
+- `snapshot_fetched_at`
+- `snapshot_ttl`
+- `snapshot_source`
+
+Stable `snapshot_source` values:
+
+- `push`
+- `pull`
+
+Rules:
+
+- Data Plane must record `snapshot_version` in routing decisions.
+- Control Plane may push snapshots or allow Data Plane to pull them.
+- A routing decision without a snapshot reference is not explainable enough for production auditing.
+
 ## 5. Core Components
 
 ### 5.1 Agent SDK / Generated Runtime
@@ -184,6 +206,12 @@ Purpose:
 - bind request, routing, usage, and decision records
 - protect provider credentials
 
+Edge runtime requirements:
+
+- propagate a total timeout budget through to attempts
+- maintain keepalive and connection reuse for provider calls
+- enforce per-attempt timeout policy
+
 Minimum endpoint:
 
 ```http
@@ -201,6 +229,16 @@ Purpose:
 - choose provider candidates based on policy and observed metrics
 - produce `RoutingDecision` as a pre-execution plan
 
+Routing determinism:
+
+- `routing_mode`: `deterministic` or `stochastic`
+- `routing_seed`: optional stable seed for reproducible selection
+
+Rules:
+
+- deterministic routing must be reproducible for replay and audit when the same request context and snapshot version are used
+- stochastic routing may be used for exploration, but the routing mode must be recorded
+
 Initial policies:
 
 - `first`
@@ -217,6 +255,7 @@ Routing must read from immutable or versioned snapshots:
 - routing policy
 - metrics window
 - credential availability
+- snapshot metadata
 
 ### 5.4 Provider Adapter Layer
 
@@ -233,6 +272,14 @@ Adapter rules:
 - adapters should avoid storing raw request/response payloads by default
 - adapters must emit enough safe metadata for replay diagnostics
 
+Adapter capabilities:
+
+- `streaming`
+- `idempotent`
+- `timeout_control`
+- `partial_failure`
+- `region_routing`
+
 ### 5.5 Credential Vault
 
 Purpose:
@@ -240,6 +287,12 @@ Purpose:
 - store or reference provider credentials
 - support BYOK and future platform credentials
 - return injection patches to Data Plane without leaking raw secrets to logs
+
+Credential scope and lifecycle:
+
+- scope: project, user, session
+- credential version must be tracked
+- resolved timestamp must be captured
 
 Initial model:
 
@@ -255,6 +308,16 @@ Purpose:
 - usage events capture attempts
 - ledger rows aggregate measurement
 - decision logs create the future routing dataset
+
+Event ordering:
+
+- `event_sequence_id`
+- `parent_attempt_id`
+
+Cost and attribution:
+
+- cost source must remain explicit
+- usage rows should preserve whether cost was estimated, provider reported, or overridden
 
 Protocol chain:
 
@@ -345,6 +408,8 @@ Outputs:
 - `/v1/execute`
 - request context creation
 - routing decision stub
+- snapshot version propagation
+- timeout budget propagation
 - usage event append
 - one provider adapter
 - golden path integration test
@@ -359,6 +424,8 @@ Outputs:
 - provider registry
 - credential metadata
 - routing policy snapshots
+- snapshot distribution metadata
+- protocol versioning policy
 
 ### Phase D: Dual-Run Dogfood
 
@@ -367,6 +434,7 @@ Outputs:
 - Python MVP and Go Data Plane execute same dogfood capability
 - usage events compare cleanly against v0.2 schema
 - replay metadata remains compatible
+- deterministic replay can be reproduced from request context and snapshot version
 
 ### Phase E: Hosted Alpha
 
@@ -408,6 +476,14 @@ Mitigation:
 - Control Plane owns policy authoring
 - analytics stays outside the hot path
 
+### Risk: Snapshot Drift
+
+Mitigation:
+
+- record `snapshot_version` in routing decisions
+- record fetch time and TTL
+- fail closed when snapshots expire beyond policy
+
 ### Risk: Credential Leakage
 
 Mitigation:
@@ -435,6 +511,9 @@ The RFC intentionally leaves these for v0.3:
 - side-effect levels
 - standardized version formats
 - retryable error semantics
+- protocol governance policy
+- snapshot distribution policy
+- event ordering semantics
 
 These are not required before the first production architecture build, but they must be resolved before a long-term external standard claim.
 

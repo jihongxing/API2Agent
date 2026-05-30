@@ -159,6 +159,28 @@ Control Plane 技术：
 - analytics export：先 object storage，之后再 warehouse
 - dashboard：未来 TypeScript app
 
+### 4.3 Snapshot Distribution
+
+Routing 和 credential policy 必须通过 versioned snapshots 分发。
+
+最小 snapshot metadata：
+
+- `snapshot_version`
+- `snapshot_fetched_at`
+- `snapshot_ttl`
+- `snapshot_source`
+
+稳定 `snapshot_source` 值：
+
+- `push`
+- `pull`
+
+规则：
+
+- Data Plane 必须在 routing decisions 中记录 `snapshot_version`。
+- Control Plane 可以 push snapshots，也可以让 Data Plane pull snapshots。
+- 如果 routing decision 没有 snapshot reference，就不足以支撑 production auditing。
+
 ## 5. 核心组件
 
 ### 5.1 Agent SDK / Generated Runtime
@@ -184,6 +206,12 @@ Production requirement：
 - 绑定 request、routing、usage 和 decision records
 - 保护 provider credentials
 
+Edge runtime requirements：
+
+- 将 total timeout budget 传递给 attempts
+- 为 provider calls 保持 keepalive 和 connection reuse
+- enforce per-attempt timeout policy
+
 最小 endpoint：
 
 ```http
@@ -201,6 +229,16 @@ Input 应映射到 `RequestContext` 和 execution parameters。
 - 根据 policy 和 observed metrics 选择 provider candidates
 - 生成作为 pre-execution plan 的 `RoutingDecision`
 
+Routing determinism：
+
+- `routing_mode`：`deterministic` 或 `stochastic`
+- `routing_seed`：用于可重现 selection 的可选稳定 seed
+
+规则：
+
+- 当使用相同 request context 和 snapshot version 时，deterministic routing 必须可以被 replay 和 audit 重现
+- stochastic routing 可以用于 exploration，但必须记录 routing mode
+
 初始 policies：
 
 - `first`
@@ -217,6 +255,7 @@ Routing 必须读取 immutable 或 versioned snapshots：
 - routing policy
 - metrics window
 - credential availability
+- snapshot metadata
 
 ### 5.4 Provider Adapter Layer
 
@@ -233,6 +272,14 @@ Adapter 规则：
 - adapters 默认应避免存储 raw request/response payloads
 - adapters 必须输出足够安全的 metadata，用于 replay diagnostics
 
+Adapter capabilities：
+
+- `streaming`
+- `idempotent`
+- `timeout_control`
+- `partial_failure`
+- `region_routing`
+
 ### 5.5 Credential Vault
 
 目标：
@@ -240,6 +287,12 @@ Adapter 规则：
 - 存储或引用 provider credentials
 - 支持 BYOK 和未来 platform credentials
 - 向 Data Plane 返回 injection patches，但不把 raw secrets 泄露到 logs
+
+Credential scope 和 lifecycle：
+
+- scope：project、user、session
+- credential version 必须被追踪
+- resolved timestamp 必须被记录
 
 初始模型：
 
@@ -255,6 +308,16 @@ Adapter 规则：
 - usage events 捕获 attempts
 - ledger rows 聚合 measurement
 - decision logs 生成未来 routing dataset
+
+Event ordering：
+
+- `event_sequence_id`
+- `parent_attempt_id`
+
+Cost and attribution：
+
+- cost source 必须保持显式
+- usage rows 应保留 cost 是 estimated、provider reported 还是 overridden
 
 Protocol chain：
 
@@ -345,6 +408,8 @@ System of record：
 - `/v1/execute`
 - request context creation
 - routing decision stub
+- snapshot version propagation
+- timeout budget propagation
 - usage event append
 - one provider adapter
 - golden path integration test
@@ -359,6 +424,8 @@ System of record：
 - provider registry
 - credential metadata
 - routing policy snapshots
+- snapshot distribution metadata
+- protocol versioning policy
 
 ### Phase D：Dual-Run Dogfood
 
@@ -367,6 +434,7 @@ System of record：
 - Python MVP 和 Go Data Plane 执行同一个 dogfood capability
 - usage events 可以干净对齐 v0.2 schema
 - replay metadata 保持兼容
+- deterministic replay 可以由 request context 和 snapshot version 重现
 
 ### Phase E：Hosted Alpha
 
@@ -408,6 +476,14 @@ Architecture phase 不做：
 - Control Plane 负责 policy authoring
 - analytics 不进入 hot path
 
+### Risk：Snapshot Drift
+
+缓解：
+
+- 在 routing decisions 中记录 `snapshot_version`
+- 记录 fetch time 和 TTL
+- 当 snapshot 超过 policy 时 fail closed
+
 ### Risk：Credential Leakage
 
 缓解：
@@ -435,6 +511,9 @@ RFC 有意把这些留到 v0.3：
 - side-effect levels
 - standardized version formats
 - retryable error semantics
+- protocol governance policy
+- snapshot distribution policy
+- event ordering semantics
 
 这些不是第一个 production architecture build 的前置条件，但在长期 external standard claim 前必须解决。
 
