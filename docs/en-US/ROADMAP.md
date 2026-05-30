@@ -732,12 +732,13 @@ Control Plane Snapshot Artifact Content Digest Guard v0 - complete
 Control Plane Snapshot Artifact Path Safety Guard v0 - complete
 Control Plane Snapshot Distribution Atomic Publish Guard v0 - complete
 Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
-Next: Go Control Plane Service API Skeleton v0
+Go Control Plane Service API Skeleton v0 - complete
+Next: Go Control Plane Service Snapshot Publish Endpoint v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: active. Local Go Control Plane minimum and snapshot distribution are complete; next scope is the local service API boundary.
+Status: active. Local Go Control Plane minimum, snapshot distribution, and the first local service API skeleton are complete.
 
 Goal:
 
@@ -756,29 +757,28 @@ Completed local entry slices:
 ```text
 Go Control Plane Minimum v0
 Go Control Plane Snapshot Distribution Closeout + Phase Review
+Go Control Plane Service API Skeleton v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Service API Skeleton v0
+Go Control Plane Service Snapshot Publish Endpoint v0
 ```
 
 Scope:
 
-1. Local Control Plane HTTP process.
-2. `GET /healthz` with service, protocol, and registry source metadata.
-3. Read-only registry validation endpoint.
-4. Snapshot artifact export endpoint backed by the existing exporter.
-5. Distribution status endpoint that reads `current.json`.
-6. Admin bearer token guard for non-health endpoints.
+1. HTTP endpoint to publish an existing artifact into the configured local distribution.
+2. Reuse existing duplicate-version and atomic publish guards.
+3. Return the new distribution pointer on success.
+4. Preserve admin bearer token enforcement.
+5. Dogfood service-driven export -> publish -> current pointer.
 
 Exit criteria:
 
-- Control Plane can start as a local service against the existing file registry.
-- Control Plane can validate the registry through HTTP.
-- Control Plane can export a snapshot artifact through HTTP.
-- Control Plane can report local distribution pointer state through HTTP.
+- Control Plane service can publish an artifact through HTTP.
+- Duplicate publish through HTTP is rejected before advancing `current.json`.
+- Distribution current endpoint reports the new pointer after publish.
 - Existing CLI commands and cross-plane dogfoods continue to pass.
 - No hosted deployment, database, vault, billing, or marketplace work is included.
 

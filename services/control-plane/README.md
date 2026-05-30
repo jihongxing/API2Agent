@@ -59,3 +59,22 @@ The distribution contains:
 - `artifacts/<snapshot_version>/manifest.json`
 
 The Go Data Plane can load the distribution by setting `API2AGENT_SNAPSHOT` to the distribution directory.
+
+Run the local Control Plane service:
+
+```bash
+go run ./cmd/api2agent-controlplane serve \
+  --registry testdata/registry/network.public_ip.get.json \
+  --admin-token local-dev-token \
+  --distribution-dir distribution \
+  --addr 127.0.0.1:8081
+```
+
+Service endpoints:
+
+- `GET /healthz` is public and reports service, protocol, registry source, and distribution metadata.
+- `POST /v1/admin/registry/validate` validates the configured registry and returns a registry fingerprint.
+- `POST /v1/admin/snapshots/export-artifact` writes a snapshot artifact to `output_dir`.
+- `GET /v1/admin/distribution/current` reads the configured distribution `current.json`.
+
+All `/v1/admin/*` endpoints require `Authorization: Bearer <admin-token>`.

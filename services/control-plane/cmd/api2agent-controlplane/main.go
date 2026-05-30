@@ -5,9 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
+	"api2agent/services/control-plane/internal/httpapi"
 	"api2agent/services/control-plane/internal/registry"
 )
 
@@ -28,6 +30,10 @@ func main() {
 	case "publish-artifact":
 		if err := publishArtifact(os.Args[2:]); err != nil {
 			log.Fatalf("publish artifact: %v", err)
+		}
+	case "serve":
+		if err := serve(os.Args[2:]); err != nil {
+			log.Fatalf("serve: %v", err)
 		}
 	default:
 		usage()
@@ -102,9 +108,38 @@ func publishArtifact(args []string) error {
 	return err
 }
 
+func serve(args []string) error {
+	flags := flag.NewFlagSet("serve", flag.ExitOnError)
+	registryPath := flags.String("registry", "", "path to control plane registry json")
+	addr := flags.String("addr", "127.0.0.1:8081", "address for the local control plane service")
+	adminToken := flags.String("admin-token", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_TOKEN"), "admin bearer token for non-health endpoints")
+	distributionDir := flags.String("distribution-dir", "", "optional local snapshot distribution directory")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if *registryPath == "" {
+		return fmt.Errorf("--registry is required")
+	}
+	if *adminToken == "" {
+		return fmt.Errorf("--admin-token is required or API2AGENT_CONTROL_PLANE_ADMIN_TOKEN must be set")
+	}
+	mux := http.NewServeMux()
+	handler := httpapi.Handler{
+		Store:           registry.NewFileStore(*registryPath),
+		RegistryStore:   "file",
+		RegistrySource:  *registryPath,
+		DistributionDir: *distributionDir,
+		AdminToken:      *adminToken,
+	}
+	handler.Register(mux)
+	log.Printf("api2agent control plane listening on %s", *addr)
+	return http.ListenAndServe(*addr, mux)
+}
+
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage:")
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane export-snapshot --registry <registry.json> --output <snapshot.json>")
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane export-artifact --registry <registry.json> --output-dir <artifact-dir>")
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane publish-artifact --artifact-dir <artifact-dir> --distribution-dir <distribution-dir>")
+	fmt.Fprintln(os.Stderr, "  api2agent-controlplane serve --registry <registry.json> --admin-token <token> [--addr <addr>] [--distribution-dir <dir>]")
 }

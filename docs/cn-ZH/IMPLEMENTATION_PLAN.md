@@ -516,11 +516,17 @@ Go Control Plane Minimum v0
   - 剩余缺口明确推迟到 service API、remote storage、hosted persistence、vault、billing 或 marketplace 阶段。
   - 下一项 implementation slice 收窄为 local Control Plane service API skeleton。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SNAPSHOT_DISTRIBUTION_CLOSEOUT.md`。
+- Go Control Plane Service API Skeleton v0 已完成：
+  - `api2agent-controlplane serve` 会在现有 file registry 上启动 local HTTP service。
+  - `/healthz` 是 public endpoint，会报告 service/protocol metadata。
+  - `/v1/admin/registry/validate`、`/v1/admin/snapshots/export-artifact` 和 `/v1/admin/distribution/current` 需要 admin bearer auth。
+  - service dogfood 验证 auth guard、registry validation、HTTP artifact export 和 distribution pointer read。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SERVICE_API_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Service API Skeleton v0
+Go Control Plane Service Snapshot Publish Endpoint v0
 ```
 
 ## 9. Marketplace 是后面的结果

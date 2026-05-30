@@ -732,12 +732,13 @@ Control Plane Snapshot Artifact Content Digest Guard v0 - complete
 Control Plane Snapshot Artifact Path Safety Guard v0 - complete
 Control Plane Snapshot Distribution Atomic Publish Guard v0 - complete
 Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
-Next: Go Control Plane Service API Skeleton v0
+Go Control Plane Service API Skeleton v0 - complete
+Next: Go Control Plane Service Snapshot Publish Endpoint v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：active。Local Go Control Plane minimum 和 snapshot distribution 已完成；下一步进入 local service API boundary。
+状态：active。Local Go Control Plane minimum、snapshot distribution 和第一版 local service API skeleton 已完成。
 
 目标：
 
@@ -756,29 +757,28 @@ Next: Go Control Plane Service API Skeleton v0
 ```text
 Go Control Plane Minimum v0
 Go Control Plane Snapshot Distribution Closeout + Phase Review
+Go Control Plane Service API Skeleton v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Service API Skeleton v0
+Go Control Plane Service Snapshot Publish Endpoint v0
 ```
 
 范围：
 
-1. Local Control Plane HTTP process。
-2. `GET /healthz` 返回 service、protocol 和 registry source metadata。
-3. Read-only registry validation endpoint。
-4. 基于现有 exporter 的 snapshot artifact export endpoint。
-5. Distribution status endpoint，读取 `current.json`。
-6. 非 health endpoints 使用 admin bearer token guard。
+1. 通过 HTTP endpoint 把已有 artifact publish 到配置的 local distribution。
+2. 复用现有 duplicate-version 和 atomic publish guards。
+3. 成功时返回新的 distribution pointer。
+4. 保留 admin bearer token enforcement。
+5. Dogfood service-driven export -> publish -> current pointer。
 
 退出标准：
 
-- Control Plane 可以基于现有 file registry 作为 local service 启动。
-- Control Plane 可以通过 HTTP validate registry。
-- Control Plane 可以通过 HTTP export snapshot artifact。
-- Control Plane 可以通过 HTTP report local distribution pointer state。
+- Control Plane service 可以通过 HTTP publish artifact。
+- 通过 HTTP duplicate publish 会在推进 `current.json` 前被拒绝。
+- Distribution current endpoint 可以在 publish 后报告新的 pointer。
 - 现有 CLI commands 和 cross-plane dogfoods 继续通过。
 - 不包含 hosted deployment、database、vault、billing 或 marketplace 工作。
 
