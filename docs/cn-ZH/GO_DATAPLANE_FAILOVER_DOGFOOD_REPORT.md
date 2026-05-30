@@ -37,9 +37,12 @@ python scripts/go_dataplane_failover_dogfood.py --output .dogfood/go-dataplane-f
     "first_attempt_failed": true,
     "first_attempt_provider_error": true,
     "second_attempt_succeeded": true,
+    "first_attempt_has_no_parent": true,
+    "second_attempt_parent_is_first": true,
     "decision_log_success": true,
     "decision_log_references_both_attempts": true,
-    "selected_fallback_provider": true
+    "selected_fallback_provider": true,
+    "decision_log_has_attempt_chain": true
   }
 }
 ```
@@ -49,7 +52,10 @@ python scripts/go_dataplane_failover_dogfood.py --output .dogfood/go-dataplane-f
 - Go Data Plane 可以在同一个 `RoutingDecision` 下尝试多个 ranked providers。
 - 失败 provider attempt 会写入 `UsageEvent`。
 - 成功 fallback attempt 会写入独立的 `UsageEvent`。
+- 第一次 attempt 没有 `parent_attempt_id`。
+- fallback attempt 会把 `parent_attempt_id` 设置为失败 attempt 的 id。
 - `DecisionLog` 会记录最终 outcome，并引用两个 attempts。
+- `DecisionLog.routing_context.attempt_chain` 会记录有序的 attempt correlation。
 - failover 成功时，最终 observation 中的 selected provider 可以不同于 pre-execution primary plan。
 
 ## 备注

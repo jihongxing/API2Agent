@@ -156,6 +156,8 @@ def build_report(response: dict, events: list[dict], conformance_report: dict) -
             "success": usage.get("success"),
             "error_type": ((usage.get("error") or {}).get("error_type")),
             "attempt_index": (usage.get("request_metadata") or {}).get("attempt_index"),
+            "attempt_id": (usage.get("request_metadata") or {}).get("attempt_id"),
+            "parent_attempt_id": usage.get("parent_attempt_id"),
         }
         for index, usage in enumerate(usage_events)
     ]
@@ -168,6 +170,9 @@ def build_report(response: dict, events: list[dict], conformance_report: dict) -
         "second_attempt_succeeded": attempts[1]["success"] is True if len(attempts) > 1 else False,
         "decision_log_success": decision_log.get("outcome") == "success",
         "decision_log_references_both_attempts": len(decision_log.get("usage_event_ids") or []) == 2,
+        "first_attempt_has_no_parent": attempts[0]["parent_attempt_id"] is None if len(attempts) > 0 else False,
+        "second_attempt_parent_is_first": attempts[1]["parent_attempt_id"] == attempts[0]["id"] if len(attempts) > 1 else False,
+        "decision_log_has_attempt_chain": len((decision_log.get("routing_context") or {}).get("attempt_chain") or []) == 2,
         "selected_fallback_provider": decision_log.get("selected_provider_id") == "httpbin_ip_real_v1",
         "protocol_conformance": conformance_report.get("passed") is True,
         "event_order_is_graph": [event["event_type"] for event in events] == [

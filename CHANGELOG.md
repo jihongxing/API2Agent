@@ -93,6 +93,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane local JSON credential config loading via `API2AGENT_CREDENTIAL_CONFIG`.
 - Go Data Plane config credential injection, redacted attribution, and scope checks.
 - Go Data Plane credential audit metadata for local `credential_version`, `rotation_hint`, lifecycle status, and `resolved_at`.
+- Go Data Plane attempt correlation metadata with `parent_attempt_id` and ordered `attempt_chain` for retry/failover execution graphs.
 - Go Data Plane credential config dogfood script and bilingual report.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
@@ -137,6 +138,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane snapshot freshness dogfood passed for active snapshot execution and expired snapshot fail-closed behavior.
 - Go Data Plane project quota dogfood passed with first request success and second request blocked before provider forwarding.
 - Go Data Plane credential config dogfood passed with config-sourced provider credential injection, audit metadata, and no raw secret event leakage.
+- Go Data Plane failover and real external retry dogfoods passed with ordered attempt correlation.
 - Go Data Plane tests: `go test ./...`.
 - Full test suite: `143 passed`.
 

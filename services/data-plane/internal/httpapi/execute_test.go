@@ -883,12 +883,24 @@ func TestExecuteFailoverWritesFailedAndFallbackUsage(t *testing.T) {
 	if firstUsage.Error == nil || firstUsage.Error.ErrorType == nil || *firstUsage.Error.ErrorType != "PROVIDER_ERROR" {
 		t.Fatalf("expected provider error on first usage, got %#v", firstUsage.Error)
 	}
+	if firstUsage.ParentAttemptID != nil {
+		t.Fatalf("first attempt should not have parent attempt id, got %#v", firstUsage.ParentAttemptID)
+	}
+	if firstUsage.RequestMetadata["attempt_id"] != firstUsage.ID {
+		t.Fatalf("expected first attempt metadata to include attempt id, got %#v", firstUsage.RequestMetadata)
+	}
 	secondUsage, ok := writer.Events[3].Record.(*protocol.UsageEvent)
 	if !ok {
 		t.Fatalf("expected second usage event, got %T", writer.Events[3].Record)
 	}
 	if !secondUsage.Success {
 		t.Fatalf("expected fallback usage to succeed")
+	}
+	if secondUsage.ParentAttemptID == nil || *secondUsage.ParentAttemptID != firstUsage.ID {
+		t.Fatalf("expected second attempt parent id %q, got %#v", firstUsage.ID, secondUsage.ParentAttemptID)
+	}
+	if secondUsage.RequestMetadata["parent_attempt_id"] != firstUsage.ID {
+		t.Fatalf("expected second attempt metadata to include parent id, got %#v", secondUsage.RequestMetadata)
 	}
 	decisionLog, ok := writer.Events[4].Record.(*protocol.DecisionLog)
 	if !ok {
@@ -902,6 +914,13 @@ func TestExecuteFailoverWritesFailedAndFallbackUsage(t *testing.T) {
 	}
 	if decisionLog.SelectedProviderID == nil || *decisionLog.SelectedProviderID != "ipify_fallback_v1" {
 		t.Fatalf("expected fallback provider selected in decision log, got %#v", decisionLog.SelectedProviderID)
+	}
+	chain, ok := decisionLog.RoutingContext["attempt_chain"].([]map[string]any)
+	if !ok || len(chain) != 2 {
+		t.Fatalf("expected attempt chain in decision log, got %#v", decisionLog.RoutingContext["attempt_chain"])
+	}
+	if chain[0]["attempt_id"] != firstUsage.ID || chain[1]["attempt_id"] != secondUsage.ID || chain[1]["parent_attempt_id"] != firstUsage.ID {
+		t.Fatalf("unexpected attempt chain: %#v", chain)
 	}
 }
 

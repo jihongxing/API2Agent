@@ -380,6 +380,12 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - rotation hints 和 lifecycle status 会保留在 redacted usage metadata 中。
   - Protocol v0.2 `CredentialReference` 保持不变；audit extensions 放在 `UsageEvent.request_metadata.credential` 下。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
+- Execution Event Ordering / Attempt Correlation v0 已完成：
+  - 每次 provider attempt 使用自己的 `UsageEvent.id` 作为 attempt id。
+  - fallback attempts 会把 `UsageEvent.parent_attempt_id` 设置为前一次 attempt id。
+  - attempt id 和 parent id 也会进入 safe request metadata。
+  - `DecisionLog.routing_context.attempt_chain` 会记录有序的 attempt correlation。
+  - controlled 和 real external retry dogfoods 都会校验 attempt chain。
 
 下一项工程任务：
 

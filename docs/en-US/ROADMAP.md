@@ -713,6 +713,7 @@ Snapshot Freshness Gate v0 - complete
 Project Quota Gate v0 - complete
 Go Data Plane Credential Config v0 - complete
 Go Data Plane Credential Audit Metadata v0 - complete
+Execution Event Ordering / Attempt Correlation v0 - complete
 Next: choose the next Go Data Plane production hardening slice
 ```
 

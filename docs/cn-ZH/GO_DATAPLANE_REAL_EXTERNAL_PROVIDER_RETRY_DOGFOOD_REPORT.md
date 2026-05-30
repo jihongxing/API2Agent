@@ -43,6 +43,9 @@ python scripts/go_dataplane_real_external_provider_retry_dogfood.py --output .do
     "second_attempt_succeeded": true,
     "decision_log_success": true,
     "decision_log_references_both_attempts": true,
+    "first_attempt_has_no_parent": true,
+    "second_attempt_parent_is_first": true,
+    "decision_log_has_attempt_chain": true,
     "selected_fallback_provider": true,
     "protocol_conformance": true,
     "event_order_is_graph": true
@@ -59,14 +62,16 @@ Attempt summary：
     "provider_id": "httpbin",
     "status_code": 500,
     "success": false,
-    "error_type": "PROVIDER_ERROR"
+    "error_type": "PROVIDER_ERROR",
+    "parent_attempt_id": null
   },
   {
     "candidate_id": "httpbin_ip_real_v1",
     "provider_id": "httpbin",
     "status_code": 200,
     "success": true,
-    "error_type": null
+    "error_type": null,
+    "parent_attempt_id": "<first_usage_event_id>"
   }
 ]
 ```
@@ -76,7 +81,9 @@ Attempt summary：
 - Go Data Plane 可以在真实外部 provider endpoints 之间完成 failover。
 - 第一次 provider attempt 会被记录成失败的 `UsageEvent`。
 - fallback provider attempt 会被记录成第二条 `UsageEvent`。
+- fallback `UsageEvent.parent_attempt_id` 会指向失败 attempt。
 - 最终 `DecisionLog` 会引用这两个 attempt。
+- 最终 `DecisionLog.routing_context.attempt_chain` 会保留有序的 attempt correlation。
 - 最终输出仍然保持标准化的 `{"ip": ...}` 形态。
 - 每条 emitted event record 都可以通过 Protocol v0.2 schema snapshot 校验。
 

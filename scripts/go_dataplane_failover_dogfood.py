@@ -170,9 +170,12 @@ def build_report(response: dict, events: list[dict]) -> dict:
         "first_attempt_failed": first_usage.get("success") is False,
         "first_attempt_provider_error": ((first_usage.get("error") or {}).get("error_type") == "PROVIDER_ERROR"),
         "second_attempt_succeeded": second_usage.get("success") is True,
+        "first_attempt_has_no_parent": first_usage.get("parent_attempt_id") is None,
+        "second_attempt_parent_is_first": second_usage.get("parent_attempt_id") == first_usage.get("id"),
         "decision_log_success": decision_log.get("outcome") == "success",
         "decision_log_references_both_attempts": len(decision_log.get("usage_event_ids") or []) == 2,
         "selected_fallback_provider": decision_log.get("selected_provider_id") == "ipify_fallback_v1",
+        "decision_log_has_attempt_chain": len((decision_log.get("routing_context") or {}).get("attempt_chain") or []) == 2,
     }
     return {
         "dogfood": "go_dataplane_failover",
@@ -187,6 +190,8 @@ def build_report(response: dict, events: list[dict]) -> dict:
                 "status_code": usage.get("status_code"),
                 "error": usage.get("error"),
                 "attempt_index": (usage.get("request_metadata") or {}).get("attempt_index"),
+                "attempt_id": (usage.get("request_metadata") or {}).get("attempt_id"),
+                "parent_attempt_id": usage.get("parent_attempt_id"),
             }
             for usage in usage_events
         ],

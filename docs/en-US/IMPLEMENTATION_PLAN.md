@@ -380,6 +380,12 @@ Current implementation:
   - rotation hints and lifecycle status are preserved in redacted usage metadata.
   - Protocol v0.2 `CredentialReference` remains unchanged; audit extensions stay under `UsageEvent.request_metadata.credential`.
   - see `docs/en-US/GO_DATAPLANE_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
+- Execution Event Ordering / Attempt Correlation v0 is complete:
+  - each provider attempt uses its `UsageEvent.id` as the attempt id.
+  - fallback attempts set `UsageEvent.parent_attempt_id` to the previous attempt id.
+  - attempt ids and parent ids are also present in safe request metadata.
+  - `DecisionLog.routing_context.attempt_chain` records ordered attempt correlation.
+  - controlled and real external retry dogfoods validate the attempt chain.
 
 Next engineering task:
 

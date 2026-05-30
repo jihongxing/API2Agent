@@ -267,6 +267,11 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		}
 
 		usageID := routing.NewID("usage")
+		var parentAttemptID *string
+		if len(usageIDs) > 0 {
+			previousUsageID := usageIDs[len(usageIDs)-1]
+			parentAttemptID = &previousUsageID
+		}
 		finalUsageID = usageID
 		usageIDs = append(usageIDs, usageID)
 		method := result.Method
@@ -285,6 +290,10 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 			"attempt_timeout_policy":      attemptTimeoutPolicy(decisionResult.Decision.FailoverPolicy),
 			"attempt_index":               attemptIndex + 1,
 			"max_attempts":                maxAttempts,
+			"attempt_id":                  usageID,
+		}
+		if parentAttemptID != nil {
+			requestMetadata["parent_attempt_id"] = *parentAttemptID
 		}
 		if req.Credential != nil || resolvedCredential.CredentialReference != "none" {
 			requestMetadata["credential"] = resolvedCredential.RedactedMetadata
@@ -316,6 +325,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 			Error:               errRecord,
 			RequestMetadata:     requestMetadata,
 			CredentialReference: protocolCredentialReference(req.Credential, resolvedCredential),
+			ParentAttemptID:     parentAttemptID,
 			CreatedAt:           time.Now().UTC(),
 		}
 		if !h.writeEvent(w, r.Context(), "usage_event", &usage) {
@@ -362,6 +372,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 			"remaining_timeout_budget_ms": durationMillisecondsCeil(time.Until(requestDeadline)),
 			"attempt_timeout_policy":      attemptTimeoutPolicy(decisionResult.Decision.FailoverPolicy),
 			"execution_timeout_budget_ms": req.TimeoutBudgetMS,
+			"attempt_chain":               attemptChain(usageIDs),
 		},
 		SelectedProviderID:     selectedProviderID,
 		SelectedProviderRegion: selectedProviderRegion,
@@ -583,6 +594,21 @@ func attemptTimeoutPolicy(policy *protocol.FailoverPolicy) string {
 		return "fixed"
 	}
 	return policy.AttemptTimeoutPolicy
+}
+
+func attemptChain(usageIDs []string) []map[string]any {
+	chain := make([]map[string]any, 0, len(usageIDs))
+	for index, usageID := range usageIDs {
+		item := map[string]any{
+			"attempt_index": index + 1,
+			"attempt_id":    usageID,
+		}
+		if index > 0 {
+			item["parent_attempt_id"] = usageIDs[index-1]
+		}
+		chain = append(chain, item)
+	}
+	return chain
 }
 
 func shouldFailover(policy *protocol.FailoverPolicy, record *protocol.ErrorRecord, statusCode int) bool {

@@ -37,9 +37,12 @@ python scripts/go_dataplane_failover_dogfood.py --output .dogfood/go-dataplane-f
     "first_attempt_failed": true,
     "first_attempt_provider_error": true,
     "second_attempt_succeeded": true,
+    "first_attempt_has_no_parent": true,
+    "second_attempt_parent_is_first": true,
     "decision_log_success": true,
     "decision_log_references_both_attempts": true,
-    "selected_fallback_provider": true
+    "selected_fallback_provider": true,
+    "decision_log_has_attempt_chain": true
   }
 }
 ```
@@ -49,7 +52,10 @@ python scripts/go_dataplane_failover_dogfood.py --output .dogfood/go-dataplane-f
 - Go Data Plane can attempt multiple ranked providers under one `RoutingDecision`.
 - Failed provider attempts are written as `UsageEvent` records.
 - Successful fallback attempts are written as separate `UsageEvent` records.
+- The first attempt has no `parent_attempt_id`.
+- The fallback attempt sets `parent_attempt_id` to the failed attempt id.
 - `DecisionLog` records the final outcome and references both attempts.
+- `DecisionLog.routing_context.attempt_chain` records ordered attempt correlation.
 - The selected provider in the final observation can differ from the pre-execution primary plan when failover succeeds.
 
 ## Notes
