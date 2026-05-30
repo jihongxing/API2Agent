@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 
+	"api2agent/services/data-plane/internal/credentials"
 	"api2agent/services/data-plane/internal/snapshots"
 )
 
@@ -15,7 +16,7 @@ type Result struct {
 }
 
 type Adapter interface {
-	Call(ctx context.Context, provider snapshots.ProviderCandidate, input map[string]any) (Result, error)
+	Call(ctx context.Context, provider snapshots.ProviderCandidate, input map[string]any, credentialPatch credentials.CredentialPatch) (Result, error)
 }
 
 type Registry struct {

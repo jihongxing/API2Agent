@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"api2agent/services/data-plane/internal/adapters"
+	"api2agent/services/data-plane/internal/credentials"
 	"api2agent/services/data-plane/internal/events"
 	"api2agent/services/data-plane/internal/protocol"
 	"api2agent/services/data-plane/internal/routing"
@@ -24,13 +24,14 @@ type Handler struct {
 }
 
 type ExecuteRequest struct {
-	ProjectID         string         `json:"project_id"`
-	CapabilityID      string         `json:"capability_id"`
-	CapabilityVersion string         `json:"capability_version"`
-	Input             map[string]any `json:"input"`
-	ExecutionMode     string         `json:"execution_mode"`
-	ClientRegion      *string        `json:"client_region"`
-	TimeoutBudgetMS   int            `json:"timeout_budget_ms"`
+	ProjectID         string                            `json:"project_id"`
+	CapabilityID      string                            `json:"capability_id"`
+	CapabilityVersion string                            `json:"capability_version"`
+	Input             map[string]any                    `json:"input"`
+	ExecutionMode     string                            `json:"execution_mode"`
+	ClientRegion      *string                           `json:"client_region"`
+	TimeoutBudgetMS   int                               `json:"timeout_budget_ms"`
+	Credential        *credentials.CredentialDefinition `json:"credential"`
 }
 
 type ExecuteResponse struct {
@@ -166,15 +167,24 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 
 	for attemptIndex, provider := range attempts[:maxAttempts] {
 		providerRegion := selectedRegionForProvider(req.ClientRegion, provider)
+		resolvedCredential := credentials.NewLocalResolver().Resolve(credentials.CredentialResolutionRequest{
+			ProjectID:    req.ProjectID,
+			CapabilityID: req.CapabilityID,
+			ProviderID:   provider.ProviderID,
+			ToolID:       provider.ToolID,
+			Credential:   req.Credential,
+		})
 		adapter, ok := h.Adapters.Get(provider.ProviderID)
 		var result adapters.Result
 		var callErr error
-		if !ok {
-			callErr = fmt.Errorf("adapter not registered")
+		if !resolvedCredential.Resolved {
+			callErr = errors.New(resolvedCredential.ErrorMessage)
+		} else if !ok {
+			callErr = errors.New("adapter not registered")
 		} else {
 			execCtx, cancel := context.WithTimeout(r.Context(), time.Duration(req.TimeoutBudgetMS)*time.Millisecond)
 			start := time.Now()
-			result, callErr = adapter.Call(execCtx, provider, req.Input)
+			result, callErr = adapter.Call(execCtx, provider, req.Input, resolvedCredential.InjectionPatch)
 			cancel()
 			result.LatencyMS = float64(time.Since(start).Microseconds()) / 1000
 		}
@@ -186,7 +196,9 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		attemptSuccess := callErr == nil
 		var errRecord *protocol.ErrorRecord
 		if callErr != nil {
-			if !ok {
+			if !resolvedCredential.Resolved {
+				errRecord = errorRecord(resolvedCredential.ErrorType, "platform", resolvedCredential.ErrorMessage, false)
+			} else if !ok {
 				errRecord = errorRecord("NO_PROVIDER", "platform", callErr.Error(), false)
 			} else {
 				errRecord = mapAdapterError(callErr)
@@ -202,6 +214,16 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		estimatedCost := provider.EstimatedCost
 		latencyMS := result.LatencyMS
 		latency := protocol.LatencyProfile{LatencyMS: &latencyMS, LatencyRegion: req.ClientRegion}
+		requestMetadata := map[string]any{
+			"snapshot_version":            snapshotVersion(h.Snapshot),
+			"execution_timeout_budget_ms": req.TimeoutBudgetMS,
+			"attempt_timeout_policy":      attemptTimeoutPolicy(decisionResult.Decision.FailoverPolicy),
+			"attempt_index":               attemptIndex + 1,
+			"max_attempts":                maxAttempts,
+		}
+		if req.Credential != nil || resolvedCredential.CredentialReference != "none" {
+			requestMetadata["credential"] = resolvedCredential.RedactedMetadata
+		}
 		usage := protocol.UsageEvent{
 			ID:                usageID,
 			SchemaVersion:     protocol.SchemaVersion,
@@ -225,16 +247,10 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 				SelectedProviderRegion: decisionResult.Decision.SelectedProviderRegion,
 				ProviderRegion:         providerRegion,
 			},
-			Cost:  protocol.CostProfile{EstimatedCost: &estimatedCost, CostSource: &costSource},
-			Error: errRecord,
-			RequestMetadata: map[string]any{
-				"snapshot_version":            snapshotVersion(h.Snapshot),
-				"execution_timeout_budget_ms": req.TimeoutBudgetMS,
-				"attempt_timeout_policy":      attemptTimeoutPolicy(decisionResult.Decision.FailoverPolicy),
-				"attempt_index":               attemptIndex + 1,
-				"max_attempts":                maxAttempts,
-			},
-			CredentialReference: &protocol.CredentialReference{},
+			Cost:                protocol.CostProfile{EstimatedCost: &estimatedCost, CostSource: &costSource},
+			Error:               errRecord,
+			RequestMetadata:     requestMetadata,
+			CredentialReference: protocolCredentialReference(req.Credential, resolvedCredential),
 			CreatedAt:           time.Now().UTC(),
 		}
 		_, _ = h.Events.Write(r.Context(), "usage_event", &usage)
@@ -339,6 +355,54 @@ func snapshotVersion(snapshot *snapshots.Snapshot) string {
 		return ""
 	}
 	return snapshot.SnapshotVersion
+}
+
+func protocolCredentialReference(credential *credentials.CredentialDefinition, resolved credentials.ResolvedCredential) *protocol.CredentialReference {
+	if credential == nil && resolved.CredentialReference == "none" {
+		return nil
+	}
+	reference := resolved.CredentialReference
+	credentialID := ""
+	ownerType := ""
+	ownerID := ""
+	providerID := ""
+	authType := ""
+	injectionMode := ""
+	source := ""
+	status := ""
+	if credential != nil {
+		credentialID = credential.CredentialID
+		ownerType = credential.OwnerType
+		ownerID = credential.OwnerID
+		providerID = credential.ProviderID
+		authType = credential.AuthType
+		injectionMode = credential.InjectionMode
+		source = credential.Source
+		status = credential.Status
+	}
+	return &protocol.CredentialReference{
+		CredentialReference: stringPtr(reference),
+		CredentialID:        optionalStringPtr(credentialID),
+		OwnerType:           optionalStringPtr(ownerType),
+		OwnerID:             optionalStringPtr(ownerID),
+		ProviderID:          optionalStringPtr(providerID),
+		AuthType:            optionalStringPtr(authType),
+		InjectionMode:       optionalStringPtr(injectionMode),
+		Source:              optionalStringPtr(source),
+		ResolutionStrategy:  stringPtr("per_request"),
+		Status:              optionalStringPtr(status),
+	}
+}
+
+func stringPtr(value string) *string {
+	return &value
+}
+
+func optionalStringPtr(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
 }
 
 func providersForAttempts(result routing.DecisionResult) []snapshots.ProviderCandidate {

@@ -113,6 +113,7 @@ Implemented:
 - Go Data Plane Skeleton hardening with health, auth, timeout, snapshot TTL, and failure-event tests
 - Go Data Plane protocol conformance checks against the v0.2 schema snapshot
 - Go Data Plane retry/failover execution and controlled failover dogfood
+- Go Data Plane env credential resolution skeleton and controlled credential dogfood
 
 Not implemented yet:
 
@@ -650,8 +651,8 @@ Acceptance test set:
 
 Next strategic design requirements:
 
-- add protocol conformance checks for Go Data Plane v0.2 records
-- dogfood Go retry/failover behavior with controlled provider failures
+- promote Go protocol conformance helper into a reusable validator
+- choose between durable event ingestion and real external provider retry dogfood
 
 ## 8.7 Phase 5.7: Architecture Definition Phase
 
@@ -696,7 +697,8 @@ Current implementation gate:
 ```text
 Go Data Plane Skeleton hardening - complete
 Go Data Plane protocol conformance + retry/failover dogfood - complete
-Next: choose the next Go Data Plane migration slice
+Go Data Plane env credential resolution skeleton - complete
+Next: choose durable event ingestion or real external provider retry dogfood
 ```
 
 ## 9. Phase 6: Hosted Control Plane

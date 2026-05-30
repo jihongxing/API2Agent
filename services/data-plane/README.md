@@ -50,4 +50,5 @@ Dogfood:
 
 ```bash
 python ../../scripts/go_dataplane_failover_dogfood.py
+python ../../scripts/go_dataplane_credential_dogfood.py
 ```

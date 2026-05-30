@@ -72,6 +72,8 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane protocol conformance checks for emitted RequestContext, RoutingDecision, UsageEvent, and DecisionLog records against the v0.2 schema snapshot.
 - Go Data Plane retry/failover execution with per-attempt UsageEvents and final DecisionLog attempt aggregation.
 - Go Data Plane failover dogfood script and bilingual report for controlled HTTP 500 primary failure followed by fallback success.
+- Go Data Plane env credential resolution skeleton with request-level credential intent, header/query injection patches, redacted usage attribution, and missing-secret failure behavior.
+- Go Data Plane credential dogfood script and bilingual report for env-backed bearer injection without raw secret leakage.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -105,9 +107,10 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane hardening tests for health metadata, project-key auth, timeout usage errors, and failed decision logging.
 - Go Data Plane protocol conformance tests passed for v0.2 execution graph records.
 - Go Data Plane failover dogfood passed with two usage attempts and fallback provider selection.
+- Go Data Plane credential dogfood passed with env-backed bearer injection and redacted credential metadata.
 - Full test suite: `143 passed`.
 
 ### Planned Next
 
 - Go Data Plane schema conformance should be promoted from test helper to reusable validator.
-- Decide the next data-plane migration task: credential resolution, persistent event ingestion, or real external provider retry dogfood.
+- Choose the next data-plane migration task: durable event ingestion or real external provider retry dogfood.

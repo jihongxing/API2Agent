@@ -113,6 +113,7 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - Go Data Plane Skeleton hardening，覆盖 health、auth、timeout、snapshot TTL 和 failure-event tests
 - Go Data Plane protocol conformance checks，基于 v0.2 schema snapshot
 - Go Data Plane retry/failover execution 和 controlled failover dogfood
+- Go Data Plane env credential resolution skeleton 和 controlled credential dogfood
 
 尚未实现：
 
@@ -650,8 +651,8 @@ Choose the next Go Data Plane migration slice: credential resolution, durable ev
 
 下一步战略设计要求：
 
-- 为 Go Data Plane v0.2 records 增加 protocol conformance checks
-- 用 controlled provider failures dogfood Go retry/failover behavior
+- 把 Go protocol conformance helper 提升为 reusable validator
+- 在 durable event ingestion 和 real external provider retry dogfood 之间选择下一步
 
 ## 8.7 Phase 5.7：Architecture Definition Phase
 
@@ -696,7 +697,8 @@ Choose the next Go Data Plane migration slice: credential resolution, durable ev
 ```text
 Go Data Plane Skeleton hardening - complete
 Go Data Plane protocol conformance + retry/failover dogfood - complete
-Next: choose the next Go Data Plane migration slice
+Go Data Plane env credential resolution skeleton - complete
+Next: choose durable event ingestion or real external provider retry dogfood
 ```
 
 ## 9. Phase 6：Hosted Control Plane

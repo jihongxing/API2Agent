@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"api2agent/services/data-plane/internal/credentials"
 	"api2agent/services/data-plane/internal/snapshots"
 )
 
@@ -15,7 +16,7 @@ type IpifyAdapter struct {
 	Client *http.Client
 }
 
-func (a IpifyAdapter) Call(ctx context.Context, provider snapshots.ProviderCandidate, input map[string]any) (Result, error) {
+func (a IpifyAdapter) Call(ctx context.Context, provider snapshots.ProviderCandidate, input map[string]any, credentialPatch credentials.CredentialPatch) (Result, error) {
 	client := a.Client
 	if client == nil {
 		client = http.DefaultClient
@@ -30,11 +31,17 @@ func (a IpifyAdapter) Call(ctx context.Context, provider snapshots.ProviderCandi
 	}
 	query := endpoint.Query()
 	query.Set("format", "json")
+	for key, value := range credentialPatch.Query {
+		query.Set(key, value)
+	}
 	endpoint.RawQuery = query.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
 	if err != nil {
 		return Result{}, err
+	}
+	for key, value := range credentialPatch.Headers {
+		req.Header.Set(key, value)
 	}
 	resp, err := client.Do(req)
 	if err != nil {

@@ -317,11 +317,17 @@ Current implementation:
   - failover policy can retry a controlled HTTP 500 primary provider and succeed on a fallback provider.
   - each attempt writes a UsageEvent, and DecisionLog aggregates both attempt IDs.
   - see `docs/en-US/GO_DATAPLANE_FAILOVER_DOGFOOD_REPORT.md`.
+- Go Data Plane env credential resolution skeleton is complete:
+  - `/v1/execute` accepts a request-level credential intent.
+  - local env-backed secrets can be resolved and injected into provider requests.
+  - usage events record `credential_reference` and redacted credential metadata only.
+  - missing env secrets fail before provider forwarding and still write a failed UsageEvent.
+  - see `docs/en-US/GO_DATAPLANE_CREDENTIAL_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Choose the next Go Data Plane migration slice: credential resolution, durable event ingestion, or real external provider retry dogfood
+Choose the next Go Data Plane migration slice: durable event ingestion or real external provider retry dogfood
 ```
 
 ## 9. Marketplace Is Later

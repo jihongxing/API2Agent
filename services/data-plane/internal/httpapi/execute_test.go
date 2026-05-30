@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -360,6 +361,133 @@ func TestExecuteTimeoutWritesUsageError(t *testing.T) {
 	}
 	if usage.RequestMetadata["execution_timeout_budget_ms"] != 1 {
 		t.Fatalf("expected timeout metadata, got %#v", usage.RequestMetadata)
+	}
+}
+
+func TestExecuteResolvesEnvCredentialAndRecordsRedactedMetadata(t *testing.T) {
+	t.Setenv("API2AGENT_TEST_BEARER", "local-secret")
+	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "Bearer local-secret" {
+			t.Fatalf("expected injected bearer credential, got %q", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.77"}`))
+	}))
+	defer providerServer.Close()
+
+	handler, writer := newTestHandler(newTestSnapshot(providerServer.URL), providerServer.Client())
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	body := []byte(`{
+		"project_id":"local",
+		"capability_id":"network.public_ip.get",
+		"capability_version":"0.1-migrated",
+		"input":{},
+		"execution_mode":"proxy",
+		"timeout_budget_ms":5000,
+		"credential":{
+			"credential_id":"cred_test_bearer",
+			"owner_type":"project",
+			"owner_id":"local",
+			"provider_id":"ipify",
+			"auth_type":"bearer",
+			"injection_mode":"header",
+			"injection_name":"Authorization",
+			"source":"env",
+			"secret_ref":"API2AGENT_TEST_BEARER",
+			"status":"active"
+		}
+	}`)
+	req := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if len(writer.Events) != 4 {
+		t.Fatalf("expected 4 events, got %d", len(writer.Events))
+	}
+	usage, ok := writer.Events[2].Record.(*protocol.UsageEvent)
+	if !ok {
+		t.Fatalf("expected usage event, got %T", writer.Events[2].Record)
+	}
+	if usage.CredentialReference == nil || usage.CredentialReference.CredentialReference == nil {
+		t.Fatalf("expected credential reference, got %#v", usage.CredentialReference)
+	}
+	if got := *usage.CredentialReference.CredentialReference; got != "env:API2AGENT_TEST_BEARER" {
+		t.Fatalf("expected env credential reference, got %q", got)
+	}
+	metadata, ok := usage.RequestMetadata["credential"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected redacted credential metadata, got %#v", usage.RequestMetadata)
+	}
+	if metadata["secret_ref"] != "API2AGENT_TEST_BEARER" {
+		t.Fatalf("expected secret_ref metadata, got %#v", metadata)
+	}
+	encodedMetadata, err := json.Marshal(metadata)
+	if err != nil {
+		t.Fatalf("marshal credential metadata: %v", err)
+	}
+	if strings.Contains(string(encodedMetadata), "local-secret") {
+		t.Fatalf("credential metadata leaked raw secret: %s", string(encodedMetadata))
+	}
+}
+
+func TestExecuteMissingEnvCredentialRecordsFailureWithoutCallingProvider(t *testing.T) {
+	called := false
+	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.88"}`))
+	}))
+	defer providerServer.Close()
+
+	handler, writer := newTestHandler(newTestSnapshot(providerServer.URL), providerServer.Client())
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	body := []byte(`{
+		"project_id":"local",
+		"capability_id":"network.public_ip.get",
+		"capability_version":"0.1-migrated",
+		"input":{},
+		"execution_mode":"proxy",
+		"timeout_budget_ms":5000,
+		"credential":{
+			"credential_id":"cred_missing",
+			"owner_type":"project",
+			"owner_id":"local",
+			"provider_id":"ipify",
+			"auth_type":"bearer",
+			"injection_mode":"header",
+			"source":"env",
+			"secret_ref":"API2AGENT_MISSING_BEARER",
+			"status":"active"
+		}
+	}`)
+	req := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Fatalf("expected 502, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if called {
+		t.Fatalf("provider should not be called when credential secret is missing")
+	}
+	usage, ok := writer.Events[2].Record.(*protocol.UsageEvent)
+	if !ok {
+		t.Fatalf("expected usage event, got %T", writer.Events[2].Record)
+	}
+	if usage.Success {
+		t.Fatalf("expected failed usage event")
+	}
+	if usage.Error == nil || usage.Error.ErrorType == nil || *usage.Error.ErrorType != "missing_credential_secret" {
+		t.Fatalf("expected missing credential error, got %#v", usage.Error)
 	}
 }
 

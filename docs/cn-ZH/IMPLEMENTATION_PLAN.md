@@ -317,11 +317,17 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - failover policy 可以在 controlled HTTP 500 primary provider 失败后切到 fallback provider 成功。
   - 每个 attempt 都会写 UsageEvent，DecisionLog 会聚合两个 attempt IDs。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_FAILOVER_DOGFOOD_REPORT.md`。
+- Go Data Plane env credential resolution skeleton 已完成：
+  - `/v1/execute` 接受 request-level credential intent。
+  - local env-backed secrets 可以被 resolve，并注入 provider requests。
+  - usage events 只记录 `credential_reference` 和 redacted credential metadata。
+  - env secret 缺失会在 provider forwarding 前失败，并写入 failed UsageEvent。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_CREDENTIAL_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Choose the next Go Data Plane migration slice: credential resolution, durable event ingestion, or real external provider retry dogfood
+Choose the next Go Data Plane migration slice: durable event ingestion or real external provider retry dogfood
 ```
 
 ## 9. Marketplace 是后面的结果
