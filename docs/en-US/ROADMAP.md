@@ -107,6 +107,7 @@ Implemented:
 - API2Agent Protocol v0.2 hardening constraints for request context, versions, metrics windows, and plan/observation split
 - Production Architecture RFC with Go Data Plane and Go Control Plane backend direction
 - Python reference migration plan
+- Go Data Plane Skeleton plan
 
 Not implemented yet:
 
@@ -514,7 +515,7 @@ Production Architecture RFC
 Immediate next task:
 
 ```text
-Go Data Plane Skeleton plan
+Go Data Plane Skeleton implementation
 ```
 
 Current implementation result:
@@ -680,6 +681,7 @@ Exit criteria:
 - `docs/en-US/ARCHITECTURE_DEFINITION_PHASE.md` is complete
 - `docs/en-US/PRODUCTION_ARCHITECTURE_RFC.md` is complete
 - `docs/en-US/PYTHON_REFERENCE_MIGRATION_PLAN.md` is complete
+- `docs/en-US/GO_DATA_PLANE_SKELETON_PLAN.md` is complete
 - production architecture responsibilities are explicit
 - Data Plane technology direction is chosen
 - Control Plane technology direction is chosen

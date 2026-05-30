@@ -114,6 +114,7 @@ Architecture Definition Phase exits when:
 - Protocol v0.2 plan is complete
 - Production Architecture RFC is complete
 - Python reference implementation migration plan is complete
+- Go Data Plane Skeleton plan is complete
 - Control Plane and Data Plane responsibilities are explicit
 - long-term language/runtime choices are documented
 - Python reference implementation migration path is defined

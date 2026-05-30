@@ -21,6 +21,8 @@ Python 现在是 reference implementation 和 local dogfood harness。它不应�
 - `docs/cn-ZH/API2AGENT_PROTOCOL_V0_2_PLAN.md`
 - `docs/cn-ZH/API2AGENT_PROTOCOL_V0_2.md`
 - `docs/cn-ZH/PRODUCTION_ARCHITECTURE_RFC.md`
+- `docs/cn-ZH/PYTHON_REFERENCE_MIGRATION_PLAN.md`
+- `docs/cn-ZH/GO_DATA_PLANE_SKELETON_PLAN.md`
 - `schemas/api2agent/v0.2/protocol.schema.json`
 
 ## 2. 更新后的架构方向

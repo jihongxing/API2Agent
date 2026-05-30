@@ -303,12 +303,14 @@ Current implementation:
 - Protocol v0.2 machine-readable schema snapshot is available.
 - Production Architecture RFC is documented.
 - Data Plane and Control Plane backend direction is Go.
+- Python reference migration plan is documented.
+- Go Data Plane Skeleton plan is documented.
 - Python is frozen as a reference implementation and local dogfood harness, not the production data plane.
 
 Next engineering task:
 
 ```text
-Go Data Plane Skeleton plan
+Go Data Plane Skeleton implementation
 ```
 
 ## 9. Marketplace Is Later

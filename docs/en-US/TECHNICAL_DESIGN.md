@@ -21,6 +21,8 @@ See:
 - `docs/en-US/API2AGENT_PROTOCOL_V0_2_PLAN.md`
 - `docs/en-US/API2AGENT_PROTOCOL_V0_2.md`
 - `docs/en-US/PRODUCTION_ARCHITECTURE_RFC.md`
+- `docs/en-US/PYTHON_REFERENCE_MIGRATION_PLAN.md`
+- `docs/en-US/GO_DATA_PLANE_SKELETON_PLAN.md`
 - `schemas/api2agent/v0.2/protocol.schema.json`
 
 ## 2. Updated Architecture Direction

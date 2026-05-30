@@ -114,6 +114,7 @@ Architecture Definition Phase 退出条件：
 - Protocol v0.2 plan 完成
 - Production Architecture RFC 完成
 - Python reference implementation migration plan 完成
+- Go Data Plane Skeleton plan 完成
 - Control Plane 和 Data Plane responsibilities 明确
 - long-term language/runtime choices 已文档化
 - Python reference implementation migration path 已定义
