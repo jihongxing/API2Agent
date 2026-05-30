@@ -102,6 +102,8 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - MVP exit review
 - Architecture Definition Phase document
 - API2Agent Protocol v0.2 plan
+- API2Agent Protocol v0.2 frozen contract
+- API2Agent Protocol v0.2 schema snapshot
 
 尚未实现：
 
@@ -499,10 +501,16 @@ capability registry JSON
 - 不做 provider settlement
 - 不做 marketplace credential onboarding
 
-立即下一步任务：
+已完成 architecture definition task：
 
 ```text
 Protocol v0.2 contract freeze
+```
+
+立即下一步任务：
+
+```text
+Production Architecture RFC
 ```
 
 当前实现结果：
@@ -666,6 +674,8 @@ Protocol v0.2 contract freeze
 退出标准：
 
 - `docs/cn-ZH/API2AGENT_PROTOCOL_V0_2_PLAN.md` 完成
+- `docs/cn-ZH/API2AGENT_PROTOCOL_V0_2.md` 完成
+- `schemas/api2agent/v0.2/protocol.schema.json` 完成
 - `docs/cn-ZH/ARCHITECTURE_DEFINITION_PHASE.md` 完成
 - production architecture responsibilities 明确
 - Data Plane technology direction 已选择

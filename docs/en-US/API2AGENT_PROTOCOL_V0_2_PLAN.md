@@ -1,5 +1,11 @@
 # API2Agent Protocol v0.2 Plan
 
+Status: superseded by the frozen contract draft.
+
+Frozen contract: `docs/en-US/API2AGENT_PROTOCOL_V0_2.md`
+
+Schema snapshot: `schemas/api2agent/v0.2/protocol.schema.json`
+
 ## Purpose
 
 Protocol v0.2 should turn the current working MVP contracts into industrial-grade infrastructure contracts.

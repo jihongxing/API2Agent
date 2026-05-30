@@ -19,6 +19,8 @@ See:
 - `docs/en-US/MVP_EXIT_REVIEW.md`
 - `docs/en-US/ARCHITECTURE_DEFINITION_PHASE.md`
 - `docs/en-US/API2AGENT_PROTOCOL_V0_2_PLAN.md`
+- `docs/en-US/API2AGENT_PROTOCOL_V0_2.md`
+- `schemas/api2agent/v0.2/protocol.schema.json`
 
 ## 2. Updated Architecture Direction
 

@@ -299,12 +299,14 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Python MVP 已达到文档化退出标准。
 - Architecture Definition Phase 已启动。
 - Protocol v0.2 freeze planning 已文档化。
+- Protocol v0.2 frozen contract 已文档化。
+- Protocol v0.2 machine-readable schema snapshot 已提供。
 - Python 冻结为 reference implementation 和 local dogfood harness，不作为 production data plane。
 
 下一项工程任务：
 
 ```text
-Protocol v0.2 contract freeze
+Production Architecture RFC
 ```
 
 ## 9. Marketplace 是后面的结果

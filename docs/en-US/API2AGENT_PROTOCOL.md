@@ -7,6 +7,7 @@ Current phase note:
 - Python MVP exit review: `docs/en-US/MVP_EXIT_REVIEW.md`
 - Architecture Definition Phase: `docs/en-US/ARCHITECTURE_DEFINITION_PHASE.md`
 - Protocol v0.2 freeze plan: `docs/en-US/API2AGENT_PROTOCOL_V0_2_PLAN.md`
+- Protocol v0.2 frozen contract: `docs/en-US/API2AGENT_PROTOCOL_V0_2.md`
 
 This v0.1 document describes the working protocol baseline. v0.2 will freeze the production-facing contract before any production data plane reimplementation.
 

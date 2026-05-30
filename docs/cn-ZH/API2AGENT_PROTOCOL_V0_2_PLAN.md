@@ -1,5 +1,11 @@
 # API2Agent Protocol v0.2 Plan
 
+状态：已被 frozen contract draft 取代。
+
+Frozen contract：`docs/cn-ZH/API2AGENT_PROTOCOL_V0_2.md`
+
+Schema snapshot：`schemas/api2agent/v0.2/protocol.schema.json`
+
 ## 目的
 
 Protocol v0.2 要把当前可运行的 MVP contracts 升级为工业级基础设施 contracts。

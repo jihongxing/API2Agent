@@ -299,12 +299,14 @@ Current implementation:
 - Python MVP has reached its documented exit criteria.
 - Architecture Definition Phase is active.
 - Protocol v0.2 freeze planning is documented.
+- Protocol v0.2 frozen contract is documented.
+- Protocol v0.2 machine-readable schema snapshot is available.
 - Python is frozen as a reference implementation and local dogfood harness, not the production data plane.
 
 Next engineering task:
 
 ```text
-Protocol v0.2 contract freeze
+Production Architecture RFC
 ```
 
 ## 9. Marketplace Is Later

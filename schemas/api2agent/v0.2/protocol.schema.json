@@ -1,0 +1,459 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api2agent.dev/schemas/api2agent/v0.2/protocol.schema.json",
+  "title": "API2Agent Protocol v0.2",
+  "description": "Frozen contract draft for API2Agent protocol v0.2 objects.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/CapabilityDefinition" },
+    { "$ref": "#/$defs/CapabilitySource" },
+    { "$ref": "#/$defs/ProviderCandidate" },
+    { "$ref": "#/$defs/RoutingDecision" },
+    { "$ref": "#/$defs/UsageEvent" },
+    { "$ref": "#/$defs/DecisionLog" },
+    { "$ref": "#/$defs/LedgerRow" }
+  ],
+  "$defs": {
+    "SchemaVersion": {
+      "const": "api2agent.protocol.v0.2"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "IdentityRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id"],
+      "properties": {
+        "project_id": { "type": "string", "minLength": 1 },
+        "user_id": { "type": ["string", "null"] },
+        "api_key_id": { "type": ["string", "null"] },
+        "agent_id": { "type": ["string", "null"] }
+      }
+    },
+    "ExecutionClass": {
+      "enum": ["api", "workflow", "tool", "model", "human", "async_job"]
+    },
+    "Safety": {
+      "enum": ["read", "write", "delete", "unknown"]
+    },
+    "JsonSchemaObject": {
+      "type": "object"
+    },
+    "CapabilityDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "id",
+        "name",
+        "execution_class",
+        "input_schema",
+        "output_schema",
+        "safety"
+      ],
+      "properties": {
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "execution_class": { "$ref": "#/$defs/ExecutionClass" },
+        "input_schema": { "$ref": "#/$defs/JsonSchemaObject" },
+        "output_schema": { "$ref": "#/$defs/JsonSchemaObject" },
+        "safety": { "$ref": "#/$defs/Safety" },
+        "taxonomy": {
+          "type": ["object", "null"],
+          "additionalProperties": true
+        }
+      }
+    },
+    "CapabilitySource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "source_id",
+        "source_type",
+        "execution_class",
+        "executor_ref",
+        "input_schema",
+        "output_schema"
+      ],
+      "properties": {
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "source_id": { "type": "string", "minLength": 1 },
+        "source_type": {
+          "enum": [
+            "openapi",
+            "curl",
+            "http_endpoint",
+            "workflow_endpoint",
+            "local_function",
+            "model_endpoint",
+            "human_queue",
+            "manual"
+          ]
+        },
+        "execution_class": { "$ref": "#/$defs/ExecutionClass" },
+        "executor_ref": { "type": "string", "minLength": 1 },
+        "input_schema": { "$ref": "#/$defs/JsonSchemaObject" },
+        "output_schema": { "$ref": "#/$defs/JsonSchemaObject" },
+        "auth": {
+          "type": ["object", "null"],
+          "additionalProperties": true
+        },
+        "region_metadata": {
+          "type": ["object", "null"],
+          "additionalProperties": true
+        }
+      }
+    },
+    "GeoAffinity": {
+      "enum": ["global", "regional", "cn-only", "unknown"]
+    },
+    "CostProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "estimated_cost": { "type": "number", "minimum": 0 },
+        "observed_cost": { "type": ["number", "null"], "minimum": 0 },
+        "currency": { "type": ["string", "null"] },
+        "unit": { "type": ["string", "null"] },
+        "cost_source": {
+          "enum": ["estimated", "provider_declared", "observed", "contracted"]
+        }
+      }
+    },
+    "ProviderCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "id",
+        "capability_id",
+        "provider_id",
+        "tool_id",
+        "execution_class"
+      ],
+      "properties": {
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "id": { "type": "string", "minLength": 1 },
+        "capability_id": { "type": "string", "minLength": 1 },
+        "provider_id": { "type": "string", "minLength": 1 },
+        "tool_id": { "type": "string", "minLength": 1 },
+        "source_id": { "type": ["string", "null"] },
+        "execution_class": { "$ref": "#/$defs/ExecutionClass" },
+        "estimated_cost": { "type": "number", "minimum": 0 },
+        "cost_profile": { "$ref": "#/$defs/CostProfile" },
+        "regions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "geo_affinity": { "$ref": "#/$defs/GeoAffinity" },
+        "output_mapping": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "CredentialReference": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "credential_reference": { "type": "string" },
+        "credential_id": { "type": ["string", "null"] },
+        "owner_type": {
+          "enum": ["user", "project", "platform", "provider", null]
+        },
+        "owner_id": { "type": ["string", "null"] },
+        "provider_id": { "type": ["string", "null"] },
+        "auth_type": {
+          "enum": ["api_key", "bearer", "basic", "oauth", "none", null]
+        },
+        "injection_mode": {
+          "enum": ["header", "query", "body", "none", null]
+        },
+        "source": {
+          "enum": ["env", "config", "inline", "vault", "none", null]
+        },
+        "scope": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "status": {
+          "enum": ["active", "disabled", "expired", "unknown", null]
+        }
+      }
+    },
+    "LatencyProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "latency_ms": { "type": ["number", "null"], "minimum": 0 },
+        "latency_p50_ms": { "type": ["number", "null"], "minimum": 0 },
+        "latency_p95_ms": { "type": ["number", "null"], "minimum": 0 },
+        "latency_p99_ms": { "type": ["number", "null"], "minimum": 0 },
+        "latency_cold_start_ms": { "type": ["number", "null"], "minimum": 0 },
+        "latency_network_ms": { "type": ["number", "null"], "minimum": 0 },
+        "latency_provider_ms": { "type": ["number", "null"], "minimum": 0 },
+        "latency_overhead_ms": { "type": ["number", "null"], "minimum": 0 },
+        "latency_region": { "type": ["string", "null"] }
+      }
+    },
+    "NetworkTopology": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "client_region": { "type": ["string", "null"] },
+        "edge_region": { "type": ["string", "null"] },
+        "api2agent_region": { "type": ["string", "null"] },
+        "provider_region": { "type": ["string", "null"] },
+        "selected_provider_region": { "type": ["string", "null"] },
+        "route_path": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "ReliabilityProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reliability_score": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "success_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "timeout_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "error_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "retry_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "failover_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "sla_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+      }
+    },
+    "FailoverPolicy": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "max_attempts": { "type": "integer", "minimum": 1 },
+        "retry_on_error_types": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "retry_on_status_codes": {
+          "type": "array",
+          "items": { "type": "integer" }
+        }
+      }
+    },
+    "RoutingDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "schema_version",
+        "identity",
+        "capability_id",
+        "strategy",
+        "candidate_provider_ids",
+        "ranked_provider_ids",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "identity": { "$ref": "#/$defs/IdentityRef" },
+        "capability_id": { "type": "string", "minLength": 1 },
+        "strategy": {
+          "enum": [
+            "first",
+            "random",
+            "lowest_cost",
+            "lowest_latency",
+            "region_aware_latency",
+            "highest_success_rate",
+            "balanced"
+          ]
+        },
+        "preset": { "type": ["string", "null"] },
+        "topology": { "$ref": "#/$defs/NetworkTopology" },
+        "candidate_provider_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "ranked_provider_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "selected_provider_id": { "type": ["string", "null"] },
+        "selected_provider_region": { "type": ["string", "null"] },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "cost_estimate": { "$ref": "#/$defs/CostProfile" },
+        "latency_estimate": { "$ref": "#/$defs/LatencyProfile" },
+        "reliability_estimate": { "$ref": "#/$defs/ReliabilityProfile" },
+        "failover_policy": { "$ref": "#/$defs/FailoverPolicy" },
+        "created_at": { "$ref": "#/$defs/Timestamp" }
+      }
+    },
+    "UsageEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "schema_version",
+        "execution_mode",
+        "identity",
+        "capability_id",
+        "provider_id",
+        "tool_id",
+        "success",
+        "latency",
+        "cost",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "routing_decision_id": { "type": ["string", "null"] },
+        "execution_mode": {
+          "enum": ["direct", "proxy", "shadow", "replay", "race"]
+        },
+        "identity": { "$ref": "#/$defs/IdentityRef" },
+        "capability_id": { "type": "string", "minLength": 1 },
+        "provider_id": { "type": "string", "minLength": 1 },
+        "tool_id": { "type": "string", "minLength": 1 },
+        "method": { "type": ["string", "null"] },
+        "path": { "type": ["string", "null"] },
+        "status_code": { "type": ["integer", "null"] },
+        "success": { "type": "boolean" },
+        "latency": { "$ref": "#/$defs/LatencyProfile" },
+        "topology": { "$ref": "#/$defs/NetworkTopology" },
+        "cost": { "$ref": "#/$defs/CostProfile" },
+        "error_type": {
+          "enum": [
+            "RATE_LIMIT",
+            "TIMEOUT",
+            "AUTH_ERROR",
+            "INVALID_REQUEST",
+            "NOT_FOUND",
+            "PROVIDER_ERROR",
+            "NORMALIZATION_ERROR",
+            "QUOTA_EXCEEDED",
+            "MISSING_AUTH",
+            "NO_PROVIDER",
+            "ALL_PROVIDERS_FAILED",
+            "UNKNOWN",
+            null
+          ]
+        },
+        "request_metadata": {
+          "type": ["object", "null"],
+          "additionalProperties": true
+        },
+        "credential_reference": { "$ref": "#/$defs/CredentialReference" },
+        "provider_runtime_reference": { "type": ["string", "null"] },
+        "is_golden": { "type": "boolean" },
+        "created_at": { "$ref": "#/$defs/Timestamp" }
+      }
+    },
+    "DecisionLog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "schema_version",
+        "request_id",
+        "identity",
+        "capability_id",
+        "candidate_provider_ids",
+        "routing_strategy",
+        "outcome",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "request_id": { "type": "string", "minLength": 1 },
+        "routing_decision_id": { "type": ["string", "null"] },
+        "identity": { "$ref": "#/$defs/IdentityRef" },
+        "capability_id": { "type": "string", "minLength": 1 },
+        "input_fingerprint": { "type": ["string", "null"] },
+        "candidate_provider_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "candidate_regions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "routing_strategy": { "type": "string", "minLength": 1 },
+        "routing_context": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "selected_provider_id": { "type": ["string", "null"] },
+        "selected_provider_region": { "type": ["string", "null"] },
+        "cost_estimate": { "$ref": "#/$defs/CostProfile" },
+        "latency_estimate": { "$ref": "#/$defs/LatencyProfile" },
+        "reliability_estimate": { "$ref": "#/$defs/ReliabilityProfile" },
+        "outcome": {
+          "enum": ["success", "failure", "partial", "not_executed"]
+        },
+        "usage_event_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "created_at": { "$ref": "#/$defs/Timestamp" }
+      }
+    },
+    "LedgerRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "identity",
+        "capability_id",
+        "provider_id",
+        "total_calls",
+        "successful_calls",
+        "failed_calls",
+        "success_rate"
+      ],
+      "properties": {
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "identity": { "$ref": "#/$defs/IdentityRef" },
+        "capability_id": { "type": "string", "minLength": 1 },
+        "provider_id": { "type": "string", "minLength": 1 },
+        "execution_mode": {
+          "enum": ["direct", "proxy", "shadow", "replay", "race", null]
+        },
+        "region": { "type": ["string", "null"] },
+        "total_calls": { "type": "integer", "minimum": 0 },
+        "successful_calls": { "type": "integer", "minimum": 0 },
+        "failed_calls": { "type": "integer", "minimum": 0 },
+        "success_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "average_latency_ms": { "type": "number", "minimum": 0 },
+        "estimated_cost": { "type": "number", "minimum": 0 },
+        "observed_cost": { "type": ["number", "null"], "minimum": 0 },
+        "error_counts": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "period_start": { "type": ["string", "null"], "format": "date-time" },
+        "period_end": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  }
+}

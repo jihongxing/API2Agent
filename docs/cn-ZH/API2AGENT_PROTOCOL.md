@@ -7,6 +7,7 @@
 - Python MVP exit review：`docs/cn-ZH/MVP_EXIT_REVIEW.md`
 - Architecture Definition Phase：`docs/cn-ZH/ARCHITECTURE_DEFINITION_PHASE.md`
 - Protocol v0.2 freeze plan：`docs/cn-ZH/API2AGENT_PROTOCOL_V0_2_PLAN.md`
+- Protocol v0.2 frozen contract：`docs/cn-ZH/API2AGENT_PROTOCOL_V0_2.md`
 
 本文档描述当前可运行的 v0.1 protocol baseline。v0.2 会先冻结 production-facing contract，再进入 production data plane reimplementation。
 

@@ -102,6 +102,8 @@ Implemented:
 - MVP exit review
 - Architecture Definition Phase document
 - API2Agent Protocol v0.2 plan
+- API2Agent Protocol v0.2 frozen contract
+- API2Agent Protocol v0.2 schema snapshot
 
 Not implemented yet:
 
@@ -499,10 +501,16 @@ Do not expand:
 - no provider settlement
 - no marketplace credential onboarding
 
-Immediate next task:
+Completed architecture definition task:
 
 ```text
 Protocol v0.2 contract freeze
+```
+
+Immediate next task:
+
+```text
+Production Architecture RFC
 ```
 
 Current implementation result:
@@ -666,6 +674,8 @@ Do not expand:
 Exit criteria:
 
 - `docs/en-US/API2AGENT_PROTOCOL_V0_2_PLAN.md` is complete
+- `docs/en-US/API2AGENT_PROTOCOL_V0_2.md` is complete
+- `schemas/api2agent/v0.2/protocol.schema.json` is complete
 - `docs/en-US/ARCHITECTURE_DEFINITION_PHASE.md` is complete
 - production architecture responsibilities are explicit
 - Data Plane technology direction is chosen
