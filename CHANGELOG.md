@@ -66,6 +66,7 @@ All notable API2Agent changes will be documented in this file.
 - Production Architecture RFC with Go Data Plane, Go Control Plane backend, Python reference boundaries, storage ownership, deployment phases, and v0.3 architecture inputs.
 - Python reference migration plan documenting the hot-path to reference-path transition.
 - Go Data Plane Skeleton plan covering `/v1/execute`, local snapshots, deterministic routing, ipify adapter, event writer, timeout budgets, and dual-run compatibility.
+- Go Data Plane Skeleton implementation with `/v1/execute`, static snapshot loading, deterministic routing, ipify adapter, JSONL event writer, and golden path Go tests.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 

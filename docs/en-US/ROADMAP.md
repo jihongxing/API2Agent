@@ -108,6 +108,7 @@ Implemented:
 - Production Architecture RFC with Go Data Plane and Go Control Plane backend direction
 - Python reference migration plan
 - Go Data Plane Skeleton plan
+- Go Data Plane Skeleton implementation under `services/data-plane`
 
 Not implemented yet:
 
@@ -515,7 +516,7 @@ Production Architecture RFC
 Immediate next task:
 
 ```text
-Go Data Plane Skeleton implementation
+Go/Python dual-run dogfood
 ```
 
 Current implementation result:

@@ -1,0 +1,35 @@
+{
+  "snapshot_version": "snapshot_local_public_ip_v1",
+  "snapshot_fetched_at": "2026-05-30T00:00:00Z",
+  "snapshot_ttl": "24h",
+  "snapshot_source": "pull",
+  "capabilities": [
+    {
+      "id": "network.public_ip.get",
+      "version": "0.1-migrated",
+      "name": "Public IP Lookup"
+    }
+  ],
+  "providers": [
+    {
+      "id": "ipify_public_ip_v1",
+      "capability_id": "network.public_ip.get",
+      "capability_version": "0.1-migrated",
+      "provider_id": "ipify",
+      "provider_version": "1.0.0",
+      "mapping_version": "1.0.0",
+      "tool_id": "get_public_ip",
+      "regions": ["global"],
+      "geo_affinity": "global",
+      "estimated_cost": 0,
+      "metadata": {
+        "base_url": "https://api.ipify.org"
+      }
+    }
+  ],
+  "routing_policy": {
+    "strategy": "first",
+    "routing_mode": "deterministic",
+    "routing_seed": "local-public-ip-v1"
+  }
+}

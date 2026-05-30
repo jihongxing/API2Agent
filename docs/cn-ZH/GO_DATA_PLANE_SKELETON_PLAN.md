@@ -1,6 +1,6 @@
 # Go Data Plane Skeleton Plan
 
-状态：planned
+状态：first skeleton implemented
 
 日期：2026-05-30
 

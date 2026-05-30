@@ -1,6 +1,6 @@
 # Go Data Plane Skeleton Plan
 
-Status: planned
+Status: first skeleton implemented
 
 Date: 2026-05-30
 

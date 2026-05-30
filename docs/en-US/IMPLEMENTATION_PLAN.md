@@ -305,12 +305,13 @@ Current implementation:
 - Data Plane and Control Plane backend direction is Go.
 - Python reference migration plan is documented.
 - Go Data Plane Skeleton plan is documented.
+- Go Data Plane Skeleton implementation is present under `services/data-plane`.
 - Python is frozen as a reference implementation and local dogfood harness, not the production data plane.
 
 Next engineering task:
 
 ```text
-Go Data Plane Skeleton implementation
+Go/Python dual-run dogfood
 ```
 
 ## 9. Marketplace Is Later
