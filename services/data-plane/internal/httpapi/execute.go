@@ -197,13 +197,15 @@ func (h Handler) Healthz(w http.ResponseWriter, r *http.Request) {
 }
 
 type ReloadSnapshotResponse struct {
-	Reloaded                bool       `json:"reloaded"`
-	PreviousSnapshotVersion string     `json:"previous_snapshot_version,omitempty"`
-	SnapshotVersion         string     `json:"snapshot_version,omitempty"`
-	SnapshotLoadedAt        *time.Time `json:"snapshot_loaded_at,omitempty"`
-	SnapshotPath            string     `json:"snapshot_path,omitempty"`
-	SnapshotResolvedTo      string     `json:"snapshot_resolved_to,omitempty"`
-	SnapshotReloadPolicy    string     `json:"snapshot_reload_policy"`
+	Reloaded                bool                  `json:"reloaded"`
+	PreviousSnapshotVersion string                `json:"previous_snapshot_version,omitempty"`
+	KeptSnapshotVersion     string                `json:"kept_snapshot_version,omitempty"`
+	SnapshotVersion         string                `json:"snapshot_version,omitempty"`
+	SnapshotLoadedAt        *time.Time            `json:"snapshot_loaded_at,omitempty"`
+	SnapshotPath            string                `json:"snapshot_path,omitempty"`
+	SnapshotResolvedTo      string                `json:"snapshot_resolved_to,omitempty"`
+	SnapshotReloadPolicy    string                `json:"snapshot_reload_policy"`
+	Error                   *protocol.ErrorRecord `json:"error,omitempty"`
 }
 
 func (h Handler) currentSnapshot() *snapshots.Snapshot {
@@ -237,7 +239,18 @@ func (h Handler) ReloadSnapshot(w http.ResponseWriter, r *http.Request) {
 	loadedAt := time.Now().UTC()
 	snapshot, resolvedTo, err := h.SnapshotStore.Reload(loadedAt)
 	if err != nil {
-		writeError(w, http.StatusServiceUnavailable, "SNAPSHOT_RELOAD_FAILED", "platform", err.Error())
+		currentLoadedAt, currentResolvedTo := h.SnapshotStore.Metadata()
+		record := errorRecord("SNAPSHOT_RELOAD_FAILED", "platform", err.Error(), true)
+		writeJSON(w, http.StatusServiceUnavailable, ReloadSnapshotResponse{
+			Reloaded:                false,
+			PreviousSnapshotVersion: previousVersion,
+			KeptSnapshotVersion:     previousVersion,
+			SnapshotLoadedAt:        optionalTimePtr(currentLoadedAt),
+			SnapshotPath:            h.SnapshotStore.Path,
+			SnapshotResolvedTo:      currentResolvedTo,
+			SnapshotReloadPolicy:    h.reloadPolicy(),
+			Error:                   record,
+		})
 		return
 	}
 	writeJSON(w, http.StatusOK, ReloadSnapshotResponse{
@@ -693,6 +706,13 @@ func stringPtr(value string) *string {
 
 func optionalStringPtr(value string) *string {
 	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func optionalTimePtr(value time.Time) *time.Time {
+	if value.IsZero() {
 		return nil
 	}
 	return &value

@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.error import HTTPError
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -117,6 +118,19 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
         try:
             wait_for_port(port)
             health_before_reload = get_json(f"http://127.0.0.1:{port}/healthz")
+            (distribution_dir / "current.json").write_text(
+                json.dumps(
+                    {
+                        "distribution_version": "api2agent.snapshot_distribution.v0",
+                        "snapshot_version": "snapshot_broken_missing_file",
+                        "snapshot_file": "artifacts/snapshot_broken_missing_file/snapshot.json",
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            failed_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
+            health_after_failed_reload = get_json(f"http://127.0.0.1:{port}/healthz")
             registry_v2 = write_registry(
                 scenario_dir / "registry-v2.json",
                 f"http://127.0.0.1:{provider_server.server_port}",
@@ -174,6 +188,12 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             ).exists(),
             "health_before_reload_snapshot_version_matches": health_before_reload.get("snapshot_version")
             == "snapshot_control_plane_public_ip_v1",
+            "failed_reload_rejected": failed_reload.get("status_code") == 503
+            and failed_reload.get("reloaded") is False,
+            "failed_reload_kept_previous_snapshot": failed_reload.get("kept_snapshot_version")
+            == "snapshot_control_plane_public_ip_v1",
+            "health_after_failed_reload_still_v1": health_after_failed_reload.get("snapshot_version")
+            == "snapshot_control_plane_public_ip_v1",
             "reload_response_success": reload_response.get("reloaded") is True,
             "reload_previous_snapshot_version_matches": reload_response.get("previous_snapshot_version")
             == "snapshot_control_plane_public_ip_v1",
@@ -216,6 +236,8 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "current_pointer": current_pointer,
             "current_pointer_after_reload": current_pointer_after_reload,
             "health_before_reload": health_before_reload,
+            "failed_reload": failed_reload,
+            "health_after_failed_reload": health_after_failed_reload,
             "reload_response": reload_response,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
@@ -320,6 +342,20 @@ def post_json(url: str, payload: dict) -> dict:
     request = Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
     with urlopen(request, timeout=10) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def post_json_allow_error(url: str, payload: dict) -> dict:
+    data = json.dumps(payload).encode("utf-8")
+    request = Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urlopen(request, timeout=10) as response:
+            body = json.loads(response.read().decode("utf-8"))
+            body["status_code"] = response.status
+            return body
+    except HTTPError as exc:
+        body = json.loads(exc.read().decode("utf-8"))
+        body["status_code"] = exc.code
+        return body
 
 
 def get_json(url: str) -> dict:

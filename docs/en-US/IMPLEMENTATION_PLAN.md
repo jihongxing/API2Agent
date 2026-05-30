@@ -462,6 +462,11 @@ Current Phase 6 progress:
   - if `API2AGENT_PROJECT_KEY` is set, the reload endpoint requires the same bearer token as `/v1/execute`.
   - cross-plane dogfood proves v1 startup, v2 distribution publish, manual reload, and v2 execution event attribution.
   - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_RELOAD_DOGFOOD_REPORT.md`.
+- Control Plane Snapshot Reload Failure Semantics v0 is complete:
+  - reload is atomic from the serving snapshot point of view: failed reload does not replace the active snapshot.
+  - failed reload returns `SNAPSHOT_RELOAD_FAILED`, `reloaded=false`, `kept_snapshot_version`, current `snapshot_resolved_to`, and retryable error metadata.
+  - `/healthz` remains on the previous snapshot after a failed reload.
+  - cross-plane dogfood proves broken `current.json` failure keeps v1 active, then valid v2 publish and reload succeeds.
 
 ## 9. Marketplace Is Later
 

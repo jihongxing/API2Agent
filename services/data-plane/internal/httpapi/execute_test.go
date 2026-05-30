@@ -237,6 +237,48 @@ func TestReloadSnapshotUpdatesCurrentSnapshot(t *testing.T) {
 	}
 }
 
+func TestReloadSnapshotFailureKeepsPreviousSnapshot(t *testing.T) {
+	dir := t.TempDir()
+	snapshotPath := filepath.Join(dir, "snapshot.json")
+	snapshotV1 := newTestSnapshot("https://example.test")
+	snapshotV1.SnapshotVersion = "snapshot_test_v1"
+	writeSnapshotFile(t, snapshotPath, snapshotV1)
+
+	handler, _ := newTestHandler(snapshotV1, http.DefaultClient)
+	handler.SnapshotStore = NewSnapshotStore(snapshotPath, snapshotV1)
+	handler.SnapshotReloadPolicy = "manual"
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	if err := os.WriteFile(snapshotPath, []byte(`{"snapshot_version":""}`), 0o644); err != nil {
+		t.Fatalf("write invalid snapshot: %v", err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/reload-snapshot", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected reload failure, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var reload ReloadSnapshotResponse
+	if err := json.NewDecoder(rec.Body).Decode(&reload); err != nil {
+		t.Fatalf("decode reload response: %v", err)
+	}
+	if reload.Reloaded || reload.KeptSnapshotVersion != "snapshot_test_v1" || reload.Error == nil {
+		t.Fatalf("unexpected reload failure response: %#v", reload)
+	}
+
+	healthReq := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	healthRec := httptest.NewRecorder()
+	mux.ServeHTTP(healthRec, healthReq)
+	var health HealthResponse
+	if err := json.NewDecoder(healthRec.Body).Decode(&health); err != nil {
+		t.Fatalf("decode health response: %v", err)
+	}
+	if health.SnapshotVersion != "snapshot_test_v1" {
+		t.Fatalf("expected previous snapshot to remain active, got %#v", health)
+	}
+}
+
 func TestReloadSnapshotDisabledByDefault(t *testing.T) {
 	handler, _ := newTestHandler(newTestSnapshot("https://example.test"), http.DefaultClient)
 	mux := http.NewServeMux()

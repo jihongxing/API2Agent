@@ -462,6 +462,11 @@ Go Control Plane Minimum v0
   - 如果设置了 `API2AGENT_PROJECT_KEY`，reload endpoint 需要和 `/v1/execute` 相同的 bearer token。
   - cross-plane dogfood 证明 v1 startup、v2 distribution publish、manual reload 和 v2 execution event attribution。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_RELOAD_DOGFOOD_REPORT.md`。
+- Control Plane Snapshot Reload Failure Semantics v0 已完成：
+  - 从 serving snapshot 视角看，reload 是 atomic 的：失败 reload 不会替换 active snapshot。
+  - 失败 reload 返回 `SNAPSHOT_RELOAD_FAILED`、`reloaded=false`、`kept_snapshot_version`、当前 `snapshot_resolved_to` 和 retryable error metadata。
+  - 失败 reload 后 `/healthz` 仍然停留在 previous snapshot。
+  - cross-plane dogfood 证明损坏的 `current.json` 失败后保持 v1 active，随后 valid v2 publish 和 reload 可以成功。
 
 ## 9. Marketplace 是后面的结果
 

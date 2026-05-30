@@ -37,17 +37,23 @@ cross-plane dogfood 现在会验证：
 1. Control Plane 导出并发布 snapshot v1 到 local distribution 目录。
 2. Data Plane 使用 `API2AGENT_SNAPSHOT=<distribution_dir>` 启动。
 3. `/healthz` 返回 `snapshot_control_plane_public_ip_v1`。
-4. Control Plane 导出并发布 snapshot v2 到同一个 distribution 目录。
-5. Data Plane 接收 `POST /v1/admin/reload-snapshot`。
-6. `/healthz` 返回 `snapshot_control_plane_public_ip_v2`。
-7. `/v1/execute` 成功。
-8. RoutingDecision 和 UsageEvent 记录 `snapshot_control_plane_public_ip_v2`。
+4. dogfood 会先把 `current.json` 指向缺失的 snapshot，并调用 `POST /v1/admin/reload-snapshot`。
+5. 失败 reload 返回 `SNAPSHOT_RELOAD_FAILED`、`reloaded=false` 和 `kept_snapshot_version=snapshot_control_plane_public_ip_v1`。
+6. `/healthz` 仍然返回 `snapshot_control_plane_public_ip_v1`。
+7. Control Plane 导出并发布 snapshot v2 到同一个 distribution 目录。
+8. Data Plane 接收 `POST /v1/admin/reload-snapshot`。
+9. `/healthz` 返回 `snapshot_control_plane_public_ip_v2`。
+10. `/v1/execute` 成功。
+11. RoutingDecision 和 UsageEvent 记录 `snapshot_control_plane_public_ip_v2`。
 
 ## 检查项
 
 ```json
 {
   "health_before_reload_snapshot_version_matches": true,
+  "failed_reload_rejected": true,
+  "failed_reload_kept_previous_snapshot": true,
+  "health_after_failed_reload_still_v1": true,
   "reload_response_success": true,
   "reload_previous_snapshot_version_matches": true,
   "reload_snapshot_version_matches": true,
@@ -62,3 +68,5 @@ cross-plane dogfood 现在会验证：
 Snapshot Refresh / Reload Policy v0 通过。
 
 这让生产默认行为保持保守，同时为 local Control Plane / Data Plane dogfood 提供了明确的 reload 机制。
+
+Reload Failure Semantics v0 也通过：失败 reload 不会替换 active snapshot，并且失败响应是机器可读、可重试的。
