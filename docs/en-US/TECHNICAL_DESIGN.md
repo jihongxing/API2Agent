@@ -20,11 +20,19 @@ See:
 - `docs/en-US/ARCHITECTURE_DEFINITION_PHASE.md`
 - `docs/en-US/API2AGENT_PROTOCOL_V0_2_PLAN.md`
 - `docs/en-US/API2AGENT_PROTOCOL_V0_2.md`
+- `docs/en-US/PRODUCTION_ARCHITECTURE_RFC.md`
 - `schemas/api2agent/v0.2/protocol.schema.json`
 
 ## 2. Updated Architecture Direction
 
 The architecture now has two major planes.
+
+Production architecture direction:
+
+- Data Plane: Go
+- Control Plane backend: Go
+- Local compiler and reference implementation: Python
+- Future web dashboard: TypeScript
 
 Capability source boundary:
 

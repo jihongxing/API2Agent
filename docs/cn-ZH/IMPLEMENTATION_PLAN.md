@@ -301,12 +301,14 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Protocol v0.2 freeze planning 已文档化。
 - Protocol v0.2 frozen contract 已文档化。
 - Protocol v0.2 machine-readable schema snapshot 已提供。
+- Production Architecture RFC 已文档化。
+- Data Plane 和 Control Plane backend 方向是 Go。
 - Python 冻结为 reference implementation 和 local dogfood harness，不作为 production data plane。
 
 下一项工程任务：
 
 ```text
-Production Architecture RFC
+Python reference migration plan
 ```
 
 ## 9. Marketplace 是后面的结果

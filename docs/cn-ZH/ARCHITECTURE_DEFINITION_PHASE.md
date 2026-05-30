@@ -24,6 +24,8 @@ API2Agent 已经退出 Python MVP validation，进入 Architecture Definition Ph
 输出：
 
 - API2Agent Protocol v0.2 plan
+- API2Agent Protocol v0.2 frozen contract
+- API2Agent Protocol v0.2 schema snapshot
 - v0.1 compatibility story
 - stable schema ownership
 
@@ -39,7 +41,7 @@ Data Plane responsibilities：
 
 建议技术：
 
-- Go 或 Rust
+- Go
 
 Control Plane responsibilities：
 
@@ -52,7 +54,8 @@ Control Plane responsibilities：
 
 建议技术：
 
-- TypeScript 或 Go
+- Go for backend
+- TypeScript for future dashboard
 
 Python role：
 

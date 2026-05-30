@@ -20,11 +20,19 @@ Python 现在是 reference implementation 和 local dogfood harness。它不应�
 - `docs/cn-ZH/ARCHITECTURE_DEFINITION_PHASE.md`
 - `docs/cn-ZH/API2AGENT_PROTOCOL_V0_2_PLAN.md`
 - `docs/cn-ZH/API2AGENT_PROTOCOL_V0_2.md`
+- `docs/cn-ZH/PRODUCTION_ARCHITECTURE_RFC.md`
 - `schemas/api2agent/v0.2/protocol.schema.json`
 
 ## 2. 更新后的架构方向
 
 架构现在分成两个主要平面。
+
+Production architecture direction：
+
+- Data Plane：Go
+- Control Plane backend：Go
+- Local compiler 和 reference implementation：Python
+- Future web dashboard：TypeScript
 
 Capability source 边界：
 

@@ -301,12 +301,14 @@ Current implementation:
 - Protocol v0.2 freeze planning is documented.
 - Protocol v0.2 frozen contract is documented.
 - Protocol v0.2 machine-readable schema snapshot is available.
+- Production Architecture RFC is documented.
+- Data Plane and Control Plane backend direction is Go.
 - Python is frozen as a reference implementation and local dogfood harness, not the production data plane.
 
 Next engineering task:
 
 ```text
-Production Architecture RFC
+Python reference migration plan
 ```
 
 ## 9. Marketplace Is Later

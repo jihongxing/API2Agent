@@ -105,6 +105,7 @@ Implemented:
 - API2Agent Protocol v0.2 frozen contract
 - API2Agent Protocol v0.2 schema snapshot
 - API2Agent Protocol v0.2 hardening constraints for request context, versions, metrics windows, and plan/observation split
+- Production Architecture RFC with Go Data Plane and Go Control Plane backend direction
 
 Not implemented yet:
 
@@ -506,12 +507,13 @@ Completed architecture definition task:
 
 ```text
 Protocol v0.2 contract freeze
+Production Architecture RFC
 ```
 
 Immediate next task:
 
 ```text
-Production Architecture RFC
+Python reference migration plan
 ```
 
 Current implementation result:
@@ -641,11 +643,8 @@ Acceptance test set:
 
 Next strategic design requirements:
 
-- finalize Protocol v0.2 fields
-- define Control Plane vs Data Plane responsibilities
-- produce Production Architecture RFC
-- decide long-term data plane runtime
 - define Python reference implementation migration path
+- prepare Go Data Plane Skeleton plan
 
 ## 8.7 Phase 5.7: Architecture Definition Phase
 
@@ -678,6 +677,7 @@ Exit criteria:
 - `docs/en-US/API2AGENT_PROTOCOL_V0_2.md` is complete
 - `schemas/api2agent/v0.2/protocol.schema.json` is complete
 - `docs/en-US/ARCHITECTURE_DEFINITION_PHASE.md` is complete
+- `docs/en-US/PRODUCTION_ARCHITECTURE_RFC.md` is complete
 - production architecture responsibilities are explicit
 - Data Plane technology direction is chosen
 - Control Plane technology direction is chosen

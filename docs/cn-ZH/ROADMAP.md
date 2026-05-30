@@ -105,6 +105,7 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - API2Agent Protocol v0.2 frozen contract
 - API2Agent Protocol v0.2 schema snapshot
 - API2Agent Protocol v0.2 hardening constraints：request context、versions、metrics windows 和 plan/observation split
+- Production Architecture RFC，明确 Go Data Plane 和 Go Control Plane backend 方向
 
 尚未实现：
 
@@ -506,12 +507,13 @@ capability registry JSON
 
 ```text
 Protocol v0.2 contract freeze
+Production Architecture RFC
 ```
 
 立即下一步任务：
 
 ```text
-Production Architecture RFC
+Python reference migration plan
 ```
 
 当前实现结果：
@@ -641,11 +643,8 @@ Production Architecture RFC
 
 下一步战略设计要求：
 
-- finalise Protocol v0.2 fields
-- 定义 Control Plane vs Data Plane responsibilities
-- 输出 Production Architecture RFC
-- 决定长期 Data Plane runtime
 - 定义 Python reference implementation migration path
+- prepare Go Data Plane Skeleton plan
 
 ## 8.7 Phase 5.7：Architecture Definition Phase
 
@@ -678,6 +677,7 @@ Production Architecture RFC
 - `docs/cn-ZH/API2AGENT_PROTOCOL_V0_2.md` 完成
 - `schemas/api2agent/v0.2/protocol.schema.json` 完成
 - `docs/cn-ZH/ARCHITECTURE_DEFINITION_PHASE.md` 完成
+- `docs/cn-ZH/PRODUCTION_ARCHITECTURE_RFC.md` 完成
 - production architecture responsibilities 明确
 - Data Plane technology direction 已选择
 - Control Plane technology direction 已选择

@@ -24,6 +24,8 @@ Continuing to add Python features now risks:
 Output:
 
 - API2Agent Protocol v0.2 plan
+- API2Agent Protocol v0.2 frozen contract
+- API2Agent Protocol v0.2 schema snapshot
 - compatibility story from v0.1
 - stable schema ownership
 
@@ -39,7 +41,7 @@ Data Plane responsibilities:
 
 Suggested technology:
 
-- Go or Rust
+- Go
 
 Control Plane responsibilities:
 
@@ -52,7 +54,8 @@ Control Plane responsibilities:
 
 Suggested technology:
 
-- TypeScript or Go
+- Go for backend
+- TypeScript for future dashboard
 
 Python role:
 
