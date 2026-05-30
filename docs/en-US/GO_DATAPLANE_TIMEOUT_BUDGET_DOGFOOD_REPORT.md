@@ -53,7 +53,7 @@ Setup:
 
 - primary provider sleeps longer than the total request budget
 - fallback provider is healthy
-- total budget is `50ms`
+- total budget is `300ms`
 
 Observed result:
 

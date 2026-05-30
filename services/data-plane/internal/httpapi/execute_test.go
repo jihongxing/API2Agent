@@ -154,6 +154,33 @@ func TestHealthzReportsProtocolAndSnapshot(t *testing.T) {
 	}
 }
 
+func TestHealthzReportsDegradedForExpiredSnapshot(t *testing.T) {
+	snapshot := newTestSnapshot("https://example.test")
+	snapshot.SnapshotFetchedAt = time.Date(2026, 5, 28, 0, 0, 0, 0, time.UTC)
+	handler, _ := newTestHandler(snapshot, http.DefaultClient)
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var response HealthResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if response.Status != "degraded" {
+		t.Fatalf("expected degraded status, got %q", response.Status)
+	}
+	if response.SnapshotExpired == nil || !*response.SnapshotExpired {
+		t.Fatalf("expected expired snapshot, got %#v", response.SnapshotExpired)
+	}
+}
+
 func TestExecuteGoldenPath(t *testing.T) {
 	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Get("format") != "json" {
@@ -236,6 +263,110 @@ func TestExecuteGoldenPath(t *testing.T) {
 	assertProtocolConformance(t, "DecisionLog", decisionLog)
 	if decisionLog.EventSequenceID == 0 {
 		t.Fatalf("expected decision log event sequence id")
+	}
+}
+
+func TestExecuteFailsClosedWhenSnapshotExpired(t *testing.T) {
+	var providerCalls int32
+	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&providerCalls, 1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.10"}`))
+	}))
+	defer providerServer.Close()
+
+	snapshot := newTestSnapshot(providerServer.URL)
+	snapshot.SnapshotFetchedAt = time.Date(2026, 5, 28, 0, 0, 0, 0, time.UTC)
+	handler, writer := newTestHandler(snapshot, providerServer.Client())
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(executeBody(5000)))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if got := atomic.LoadInt32(&providerCalls); got != 0 {
+		t.Fatalf("provider should not be called for expired snapshot, got %d calls", got)
+	}
+	var response ExecuteResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if response.Success {
+		t.Fatalf("expected failed response")
+	}
+	if response.Error == nil || response.Error.ErrorType == nil || *response.Error.ErrorType != "SNAPSHOT_EXPIRED" {
+		t.Fatalf("expected SNAPSHOT_EXPIRED error, got %#v", response.Error)
+	}
+	if len(writer.Events) != 2 {
+		t.Fatalf("expected request_context and decision_log only, got %d events", len(writer.Events))
+	}
+	if writer.Events[0].EventType != "request_context" || writer.Events[1].EventType != "decision_log" {
+		t.Fatalf("unexpected event order: %#v", writer.Events)
+	}
+	assertProtocolConformance(t, "RequestContext", writer.Events[0].Record)
+	decisionLog, ok := writer.Events[1].Record.(*protocol.DecisionLog)
+	if !ok {
+		t.Fatalf("expected decision log, got %T", writer.Events[1].Record)
+	}
+	assertProtocolConformance(t, "DecisionLog", decisionLog)
+	if decisionLog.Outcome != "failure" {
+		t.Fatalf("expected failure decision outcome, got %q", decisionLog.Outcome)
+	}
+	if len(decisionLog.UsageEventIDs) != 0 {
+		t.Fatalf("expected no usage attempts, got %#v", decisionLog.UsageEventIDs)
+	}
+	if decisionLog.RoutingContext["error_type"] != "SNAPSHOT_EXPIRED" {
+		t.Fatalf("expected snapshot error in decision log, got %#v", decisionLog.RoutingContext)
+	}
+}
+
+func TestExecuteFailsClosedWhenSnapshotTTLInvalid(t *testing.T) {
+	var providerCalls int32
+	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&providerCalls, 1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.10"}`))
+	}))
+	defer providerServer.Close()
+
+	snapshot := newTestSnapshot(providerServer.URL)
+	snapshot.SnapshotTTL = "not-a-duration"
+	handler, writer := newTestHandler(snapshot, providerServer.Client())
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(executeBody(5000)))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if got := atomic.LoadInt32(&providerCalls); got != 0 {
+		t.Fatalf("provider should not be called for invalid snapshot ttl, got %d calls", got)
+	}
+	var response ExecuteResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if response.Error == nil || response.Error.ErrorType == nil || *response.Error.ErrorType != "SNAPSHOT_INVALID" {
+		t.Fatalf("expected SNAPSHOT_INVALID error, got %#v", response.Error)
+	}
+	if len(writer.Events) != 2 {
+		t.Fatalf("expected request_context and decision_log only, got %d events", len(writer.Events))
+	}
+	decisionLog, ok := writer.Events[1].Record.(*protocol.DecisionLog)
+	if !ok {
+		t.Fatalf("expected decision log, got %T", writer.Events[1].Record)
+	}
+	if decisionLog.RoutingContext["error_type"] != "SNAPSHOT_INVALID" {
+		t.Fatalf("expected snapshot invalid in decision log, got %#v", decisionLog.RoutingContext)
 	}
 }
 

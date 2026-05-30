@@ -709,6 +709,7 @@ Go Data Plane durable event ingestion - complete
 Go Data Plane real external provider retry dogfood - complete
 Go Data Plane Consolidation Hardening v0 - complete
 Timeout Budget Semantics v0 - complete
+Snapshot Freshness Gate v0 - complete
 Next: choose the next Go Data Plane production hardening slice
 ```
 

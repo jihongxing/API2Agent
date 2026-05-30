@@ -53,7 +53,7 @@ python scripts/go_dataplane_timeout_budget_dogfood.py \
 
 - primary provider sleep 时间超过 total request budget
 - fallback provider 健康
-- total budget 是 `50ms`
+- total budget 是 `300ms`
 
 观察结果：
 

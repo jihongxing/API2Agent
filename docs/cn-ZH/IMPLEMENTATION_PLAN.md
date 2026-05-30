@@ -352,6 +352,14 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - `DecisionLog.routing_context` 会记录 timeout budget 是否耗尽。
   - local dogfood 覆盖 slow-primary exhaustion 和 fast-failure fallback。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_TIMEOUT_BUDGET_DOGFOOD_REPORT.md`。
+- Snapshot Freshness Gate v0 已完成：
+  - `/v1/execute` 会在 routing 前检查 snapshot TTL。
+  - expired snapshots 会以 `SNAPSHOT_EXPIRED` fail closed。
+  - invalid snapshot TTL 会以 `SNAPSHOT_INVALID` fail closed。
+  - expired snapshots 不会调用 provider adapters。
+  - failed freshness checks 仍然会写入 `RequestContext` 和 failed `DecisionLog`。
+  - `/healthz` 会把 expired snapshots 报告为 `degraded`。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_FRESHNESS_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 

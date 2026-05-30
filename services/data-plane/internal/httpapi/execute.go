@@ -83,6 +83,11 @@ func (h Handler) Healthz(w http.ResponseWriter, r *http.Request) {
 	}
 	if expired, err := h.Snapshot.IsExpired(time.Now().UTC()); err == nil {
 		response.SnapshotExpired = &expired
+		if expired {
+			response.Status = "degraded"
+		}
+	} else {
+		response.Status = "degraded"
 	}
 	writeJSON(w, http.StatusOK, response)
 }
@@ -142,6 +147,10 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:         now,
 	}
 	if !h.writeEvent(w, r.Context(), "request_context", requestContext) {
+		return
+	}
+	if err := h.checkSnapshotFreshness(time.Now().UTC()); err != nil {
+		h.writeFailedDecision(w, r.Context(), requestContext, nil, snapshotFreshnessError(err), http.StatusServiceUnavailable)
 		return
 	}
 
@@ -353,6 +362,15 @@ func (h Handler) writeFailedDecision(w http.ResponseWriter, ctx context.Context,
 	if decision != nil {
 		routeID = decision.ID
 	}
+	routingContext := map[string]any{"snapshot_version": snapshotVersion(h.Snapshot)}
+	if record != nil {
+		if record.ErrorType != nil {
+			routingContext["error_type"] = *record.ErrorType
+		}
+		if record.ErrorScope != nil {
+			routingContext["error_scope"] = *record.ErrorScope
+		}
+	}
 	decisionLog := protocol.DecisionLog{
 		ID:              routing.NewID("decision_log"),
 		SchemaVersion:   protocol.SchemaVersion,
@@ -360,7 +378,7 @@ func (h Handler) writeFailedDecision(w http.ResponseWriter, ctx context.Context,
 		Identity:        request.Identity,
 		CapabilityID:    request.CapabilityID,
 		RoutingStrategy: "none",
-		RoutingContext:  map[string]any{"snapshot_version": snapshotVersion(h.Snapshot)},
+		RoutingContext:  routingContext,
 		Outcome:         "failure",
 		UsageEventIDs:   []string{},
 		CreatedAt:       time.Now().UTC(),
@@ -377,6 +395,36 @@ func (h Handler) writeFailedDecision(w http.ResponseWriter, ctx context.Context,
 		Success:           false,
 		Error:             record,
 	})
+}
+
+func (h Handler) checkSnapshotFreshness(now time.Time) error {
+	if h.Snapshot == nil {
+		return errors.New("snapshot is required")
+	}
+	expired, err := h.Snapshot.IsExpired(now)
+	if err != nil {
+		return err
+	}
+	if expired {
+		expiresAt, expiresErr := h.Snapshot.ExpiresAt()
+		if expiresErr != nil {
+			return expiresErr
+		}
+		if expiresAt != nil {
+			return fmt.Errorf("snapshot %q expired at %s", h.Snapshot.SnapshotVersion, expiresAt.Format(time.RFC3339))
+		}
+		return fmt.Errorf("snapshot %q expired", h.Snapshot.SnapshotVersion)
+	}
+	return nil
+}
+
+func snapshotFreshnessError(err error) *protocol.ErrorRecord {
+	message := err.Error()
+	errorType := "SNAPSHOT_EXPIRED"
+	if strings.Contains(message, "parse snapshot_ttl") {
+		errorType = "SNAPSHOT_INVALID"
+	}
+	return errorRecord(errorType, "platform", message, false)
 }
 
 func (h Handler) writeEvent(w http.ResponseWriter, ctx context.Context, eventType string, record any) bool {

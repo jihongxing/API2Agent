@@ -4,19 +4,16 @@ import argparse
 import json
 import os
 import shutil
-import socket
 import subprocess
 import tempfile
 import threading
-import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 
-SLOW_PRIMARY_IP = "203.0.113.101"
-FALLBACK_IP = "203.0.113.102"
+FIXED_IP = "203.0.113.120"
 
 
 class ProviderState:
@@ -33,21 +30,16 @@ class ProviderState:
             return self.calls
 
 
-def make_ip_handler(state: ProviderState, status_code: int, body: dict | None = None, delay_seconds: float = 0) -> type[BaseHTTPRequestHandler]:
+def make_ip_handler(state: ProviderState) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
             state.increment()
-            if delay_seconds > 0:
-                time.sleep(delay_seconds)
-            payload = json.dumps(body or {"ip": FALLBACK_IP}).encode("utf-8")
-            self.send_response(status_code)
+            body = json.dumps({"ip": FIXED_IP}).encode("utf-8")
+            self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Content-Length", str(len(body)))
             self.end_headers()
-            try:
-                self.wfile.write(payload)
-            except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError, socket.timeout):
-                return
+            self.wfile.write(body)
 
         def log_message(self, format: str, *args) -> None:
             return
@@ -56,16 +48,16 @@ def make_ip_handler(state: ProviderState, status_code: int, body: dict | None = 
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Dogfood Go Data Plane request-level timeout budget semantics.")
+    parser = argparse.ArgumentParser(description="Dogfood Go Data Plane snapshot freshness gate.")
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path(".dogfood/go-dataplane-timeout-budget/report.json"),
+        default=Path(".dogfood/go-dataplane-snapshot-freshness/report.json"),
     )
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
-    tmp = Path(tempfile.mkdtemp(prefix="api2agent-go-timeout-budget-"))
+    tmp = Path(tempfile.mkdtemp(prefix="api2agent-go-snapshot-freshness-"))
     try:
         go_dir = Path("services/data-plane")
         exe_name = "api2agent-dataplane.exe" if os.name == "nt" else "api2agent-dataplane"
@@ -75,33 +67,29 @@ def main() -> int:
         conformance_exe = tmp / conformance_exe_name
         subprocess.run(["go", "build", "-o", str(conformance_exe), "./cmd/api2agent-conformance"], cwd=go_dir, check=True)
 
-        exhausted = run_scenario(
+        active = run_scenario(
             tmp=tmp,
             go_dir=go_dir,
             exe_path=exe_path,
             conformance_exe=conformance_exe,
-            name="budget_exhausted_prevents_fallback",
-            primary_status=200,
-            primary_body={"ip": SLOW_PRIMARY_IP},
-            primary_delay_seconds=0.8,
-            timeout_budget_ms=300,
+            name="active_snapshot_executes",
+            snapshot_fetched_at="2026-05-30T00:00:00Z",
+            snapshot_ttl="8760h",
         )
-        fast_failure = run_scenario(
+        expired = run_scenario(
             tmp=tmp,
             go_dir=go_dir,
             exe_path=exe_path,
             conformance_exe=conformance_exe,
-            name="fast_failure_allows_fallback",
-            primary_status=500,
-            primary_body={"error": "primary failed fast"},
-            primary_delay_seconds=0,
-            timeout_budget_ms=1000,
+            name="expired_snapshot_fails_closed",
+            snapshot_fetched_at="2026-01-01T00:00:00Z",
+            snapshot_ttl="1h",
         )
 
         report = {
-            "dogfood": "go_dataplane_timeout_budget",
-            "scenarios": [exhausted, fast_failure],
-            "passed": exhausted["passed"] and fast_failure["passed"],
+            "dogfood": "go_dataplane_snapshot_freshness",
+            "scenarios": [active, expired],
+            "passed": active["passed"] and expired["passed"],
         }
         args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
         print(json.dumps(report, indent=2, ensure_ascii=False))
@@ -117,36 +105,23 @@ def run_scenario(
     exe_path: Path,
     conformance_exe: Path,
     name: str,
-    primary_status: int,
-    primary_body: dict,
-    primary_delay_seconds: float,
-    timeout_budget_ms: int,
+    snapshot_fetched_at: str,
+    snapshot_ttl: str,
 ) -> dict:
-    primary_state = ProviderState()
-    fallback_state = ProviderState()
-    primary = ThreadingHTTPServer(
-        ("127.0.0.1", 0),
-        make_ip_handler(primary_state, primary_status, primary_body, primary_delay_seconds),
-    )
-    fallback = ThreadingHTTPServer(
-        ("127.0.0.1", 0),
-        make_ip_handler(fallback_state, 200, {"ip": FALLBACK_IP}, 0),
-    )
-    threads = [
-        threading.Thread(target=primary.serve_forever, daemon=True),
-        threading.Thread(target=fallback.serve_forever, daemon=True),
-    ]
-    for thread in threads:
-        thread.start()
+    provider_state = ProviderState()
+    provider_server = ThreadingHTTPServer(("127.0.0.1", 0), make_ip_handler(provider_state))
+    thread = threading.Thread(target=provider_server.serve_forever, daemon=True)
+    thread.start()
 
     try:
         scenario_dir = tmp / name
         scenario_dir.mkdir(parents=True, exist_ok=True)
         snapshot = write_snapshot(
             scenario_dir / "snapshot.json",
-            snapshot_version=f"snapshot_go_timeout_budget_{name}_v1",
-            primary_url=f"http://127.0.0.1:{primary.server_port}",
-            fallback_url=f"http://127.0.0.1:{fallback.server_port}",
+            snapshot_version=f"snapshot_go_freshness_{name}_v1",
+            base_url=f"http://127.0.0.1:{provider_server.server_port}",
+            snapshot_fetched_at=snapshot_fetched_at,
+            snapshot_ttl=snapshot_ttl,
         )
         event_dir = scenario_dir / "events"
         port = free_port()
@@ -157,6 +132,7 @@ def run_scenario(
         proc = subprocess.Popen([str(exe_path)], cwd=go_dir, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             wait_for_port(port)
+            health = get_json(f"http://127.0.0.1:{port}/healthz")
             response = post_json(
                 f"http://127.0.0.1:{port}/v1/execute",
                 {
@@ -165,7 +141,7 @@ def run_scenario(
                     "capability_version": "0.1-migrated",
                     "input": {},
                     "execution_mode": "proxy",
-                    "timeout_budget_ms": timeout_budget_ms,
+                    "timeout_budget_ms": 5000,
                 },
             )
         finally:
@@ -179,27 +155,31 @@ def run_scenario(
         conformance_report = run_conformance(conformance_exe, event_dir / "events.jsonl")
         return build_scenario_report(
             name=name,
-            timeout_budget_ms=timeout_budget_ms,
+            health=health,
             response=response,
             events=events,
             conformance_report=conformance_report,
-            primary_calls=primary_state.count(),
-            fallback_calls=fallback_state.count(),
+            provider_calls=provider_state.count(),
         )
     finally:
-        primary.shutdown()
-        primary.server_close()
-        fallback.shutdown()
-        fallback.server_close()
+        provider_server.shutdown()
+        provider_server.server_close()
 
 
-def write_snapshot(path: Path, *, snapshot_version: str, primary_url: str, fallback_url: str) -> Path:
+def write_snapshot(
+    path: Path,
+    *,
+    snapshot_version: str,
+    base_url: str,
+    snapshot_fetched_at: str,
+    snapshot_ttl: str,
+) -> Path:
     path.write_text(
         json.dumps(
             {
                 "snapshot_version": snapshot_version,
-                "snapshot_fetched_at": "2026-05-30T00:00:00Z",
-                "snapshot_ttl": "24h",
+                "snapshot_fetched_at": snapshot_fetched_at,
+                "snapshot_ttl": snapshot_ttl,
                 "snapshot_source": "pull",
                 "capabilities": [
                     {
@@ -209,20 +189,24 @@ def write_snapshot(path: Path, *, snapshot_version: str, primary_url: str, fallb
                     }
                 ],
                 "providers": [
-                    provider("ipify_primary_v1", primary_url),
-                    provider("ipify_fallback_v1", fallback_url),
+                    {
+                        "id": "ipify_public_ip_v1",
+                        "capability_id": "network.public_ip.get",
+                        "capability_version": "0.1-migrated",
+                        "provider_id": "ipify",
+                        "provider_version": "1.0.0",
+                        "mapping_version": "1.0.0",
+                        "tool_id": "get_public_ip",
+                        "regions": ["global"],
+                        "geo_affinity": "global",
+                        "estimated_cost": 0,
+                        "metadata": {"base_url": base_url},
+                    }
                 ],
                 "routing_policy": {
                     "strategy": "first",
                     "routing_mode": "deterministic",
-                    "routing_seed": "go-timeout-budget-v1",
-                    "failover_policy": {
-                        "enabled": True,
-                        "max_attempts": 2,
-                        "retry_on_error_types": ["PROVIDER_ERROR", "TIMEOUT"],
-                        "retry_on_status_codes": [500, 502, 503, 504],
-                        "attempt_timeout_policy": "remaining_budget",
-                    },
+                    "routing_seed": "go-snapshot-freshness-v1",
                 },
             },
             indent=2,
@@ -232,86 +216,55 @@ def write_snapshot(path: Path, *, snapshot_version: str, primary_url: str, fallb
     return path
 
 
-def provider(provider_id: str, base_url: str) -> dict:
-    return {
-        "id": provider_id,
-        "capability_id": "network.public_ip.get",
-        "capability_version": "0.1-migrated",
-        "provider_id": "ipify",
-        "provider_version": "1.0.0",
-        "mapping_version": "1.0.0",
-        "tool_id": "get_public_ip",
-        "regions": ["global"],
-        "geo_affinity": "global",
-        "estimated_cost": 0,
-        "metadata": {"base_url": base_url},
-    }
-
-
 def build_scenario_report(
     *,
     name: str,
-    timeout_budget_ms: int,
+    health: dict,
     response: dict,
     events: list[dict],
     conformance_report: dict,
-    primary_calls: int,
-    fallback_calls: int,
+    provider_calls: int,
 ) -> dict:
-    usage_events = [event["record"] for event in events if event["event_type"] == "usage_event"]
+    event_types = [event["event_type"] for event in events]
     decision_log = next((event["record"] for event in events if event["event_type"] == "decision_log"), {})
-    attempts = [
-        {
-            "id": usage.get("id"),
-            "success": usage.get("success"),
-            "status_code": usage.get("status_code"),
-            "error_type": ((usage.get("error") or {}).get("error_type")),
-            "attempt_index": (usage.get("request_metadata") or {}).get("attempt_index"),
-            "total_timeout_budget_ms": (usage.get("request_metadata") or {}).get("total_timeout_budget_ms"),
-            "attempt_timeout_budget_ms": (usage.get("request_metadata") or {}).get("attempt_timeout_budget_ms"),
-            "remaining_timeout_budget_ms": (usage.get("request_metadata") or {}).get("remaining_timeout_budget_ms"),
-            "timeout_budget_policy": (usage.get("request_metadata") or {}).get("timeout_budget_policy"),
-        }
-        for usage in usage_events
-    ]
-
-    if name == "budget_exhausted_prevents_fallback":
+    error_type = (response.get("error") or {}).get("error_type")
+    if name == "active_snapshot_executes":
         checks = {
-            "response_failed": response.get("success") is False,
-            "response_timeout": ((response.get("error") or {}).get("error_type") == "TIMEOUT"),
-            "one_usage_event": len(usage_events) == 1,
-            "fallback_not_called": fallback_calls == 0,
-            "decision_log_failure": decision_log.get("outcome") == "failure",
-            "timeout_budget_exhausted": (decision_log.get("routing_context") or {}).get("timeout_budget_exhausted") is True,
-            "attempt_uses_total_deadline": all(attempt.get("timeout_budget_policy") == "total_deadline" for attempt in attempts),
+            "health_ok": health.get("status") == "ok",
+            "health_not_expired": health.get("snapshot_expired") is False,
+            "response_success": response.get("success") is True,
+            "provider_called_once": provider_calls == 1,
+            "event_order_is_execution_graph": event_types == [
+                "request_context",
+                "routing_decision",
+                "usage_event",
+                "decision_log",
+            ],
             "protocol_conformance": conformance_report.get("passed") is True,
         }
     else:
         checks = {
-            "response_success": response.get("success") is True,
-            "fallback_output": (response.get("output") or {}).get("ip") == FALLBACK_IP,
-            "two_usage_events": len(usage_events) == 2,
-            "fallback_called_once": fallback_calls == 1,
-            "decision_log_success": decision_log.get("outcome") == "success",
-            "timeout_budget_not_exhausted": (decision_log.get("routing_context") or {}).get("timeout_budget_exhausted") is False,
-            "attempts_use_total_deadline": all(attempt.get("timeout_budget_policy") == "total_deadline" for attempt in attempts),
+            "health_degraded": health.get("status") == "degraded",
+            "health_expired": health.get("snapshot_expired") is True,
+            "response_failed": response.get("success") is False,
+            "snapshot_expired_error": error_type == "SNAPSHOT_EXPIRED",
+            "provider_not_called": provider_calls == 0,
+            "event_order_is_fail_closed_graph": event_types == ["request_context", "decision_log"],
+            "decision_log_failure": decision_log.get("outcome") == "failure",
+            "decision_log_has_snapshot_error": (decision_log.get("routing_context") or {}).get("error_type")
+            == "SNAPSHOT_EXPIRED",
             "protocol_conformance": conformance_report.get("passed") is True,
         }
 
     return {
         "name": name,
-        "timeout_budget_ms": timeout_budget_ms,
-        "provider_calls": {
-            "primary": primary_calls,
-            "fallback": fallback_calls,
-        },
+        "health": health,
         "response": response,
-        "event_types": [event["event_type"] for event in events],
+        "provider_calls": provider_calls,
+        "event_types": event_types,
         "event_sequence_ids": [event["event_sequence_id"] for event in events],
-        "attempts": attempts,
         "decision_log": {
             "outcome": decision_log.get("outcome"),
-            "selected_provider_id": decision_log.get("selected_provider_id"),
             "usage_event_ids": decision_log.get("usage_event_ids"),
             "routing_context": decision_log.get("routing_context"),
         },
@@ -339,6 +292,11 @@ def run_conformance(exe_path: Path, event_log: Path) -> dict:
     return report
 
 
+def get_json(url: str) -> dict:
+    with urlopen(url, timeout=10) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
 def post_json(url: str, payload: dict) -> dict:
     data = json.dumps(payload).encode("utf-8")
     request = Request(url, data=data, headers={"Content-Type": "application/json"}, method="POST")
@@ -363,6 +321,7 @@ def free_port() -> int:
 
 def wait_for_port(port: int) -> None:
     import socket
+    import time
 
     deadline = time.time() + 10
     while time.time() < deadline:

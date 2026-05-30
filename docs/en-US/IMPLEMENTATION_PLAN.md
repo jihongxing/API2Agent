@@ -352,6 +352,14 @@ Current implementation:
   - `DecisionLog.routing_context` records timeout budget exhaustion state.
   - local dogfood covers slow-primary exhaustion and fast-failure fallback.
   - see `docs/en-US/GO_DATAPLANE_TIMEOUT_BUDGET_DOGFOOD_REPORT.md`.
+- Snapshot Freshness Gate v0 is complete:
+  - `/v1/execute` checks snapshot TTL before routing.
+  - expired snapshots fail closed with `SNAPSHOT_EXPIRED`.
+  - invalid snapshot TTL fails closed with `SNAPSHOT_INVALID`.
+  - expired snapshots do not call provider adapters.
+  - failed freshness checks still emit `RequestContext` and failed `DecisionLog`.
+  - `/healthz` reports expired snapshots as `degraded`.
+  - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_FRESHNESS_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
