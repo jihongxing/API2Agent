@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -594,6 +595,142 @@ func TestExecuteFailoverWritesFailedAndFallbackUsage(t *testing.T) {
 	}
 	if decisionLog.SelectedProviderID == nil || *decisionLog.SelectedProviderID != "ipify_fallback_v1" {
 		t.Fatalf("expected fallback provider selected in decision log, got %#v", decisionLog.SelectedProviderID)
+	}
+}
+
+func TestExecuteTimeoutBudgetExhaustionPreventsFallback(t *testing.T) {
+	var fallbackCalls int32
+	slowProvider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(150 * time.Millisecond)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.98"}`))
+	}))
+	defer slowProvider.Close()
+
+	fallbackProvider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&fallbackCalls, 1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.99"}`))
+	}))
+	defer fallbackProvider.Close()
+
+	handler, writer := newTestHandler(newFailoverSnapshot(slowProvider.URL, fallbackProvider.URL), fallbackProvider.Client())
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(executeBody(20)))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Fatalf("expected 502, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if got := atomic.LoadInt32(&fallbackCalls); got != 0 {
+		t.Fatalf("fallback should not be called after total timeout budget exhaustion, got %d calls", got)
+	}
+	var response ExecuteResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if response.Error == nil || response.Error.ErrorType == nil || *response.Error.ErrorType != "TIMEOUT" {
+		t.Fatalf("expected TIMEOUT response, got %#v", response.Error)
+	}
+	if len(writer.Events) != 4 {
+		t.Fatalf("expected 4 events, got %d", len(writer.Events))
+	}
+	usage, ok := writer.Events[2].Record.(*protocol.UsageEvent)
+	if !ok {
+		t.Fatalf("expected usage event, got %T", writer.Events[2].Record)
+	}
+	if usage.Success {
+		t.Fatalf("expected timeout usage event to fail")
+	}
+	if usage.RequestMetadata["timeout_budget_policy"] != "total_deadline" {
+		t.Fatalf("expected total_deadline timeout metadata, got %#v", usage.RequestMetadata)
+	}
+	if usage.RequestMetadata["total_timeout_budget_ms"] != 20 {
+		t.Fatalf("expected total budget metadata, got %#v", usage.RequestMetadata)
+	}
+	if got, ok := usage.RequestMetadata["attempt_timeout_budget_ms"].(int); !ok || got <= 0 || got > 20 {
+		t.Fatalf("expected attempt budget in (0,20], got %#v", usage.RequestMetadata["attempt_timeout_budget_ms"])
+	}
+	decisionLog, ok := writer.Events[3].Record.(*protocol.DecisionLog)
+	if !ok {
+		t.Fatalf("expected decision log, got %T", writer.Events[3].Record)
+	}
+	if decisionLog.Outcome != "failure" {
+		t.Fatalf("expected failure decision outcome, got %q", decisionLog.Outcome)
+	}
+	if decisionLog.RoutingContext["timeout_budget_exhausted"] != true {
+		t.Fatalf("expected exhausted budget in routing context, got %#v", decisionLog.RoutingContext)
+	}
+	if len(decisionLog.UsageEventIDs) != 1 {
+		t.Fatalf("expected only one usage event after exhausted budget, got %#v", decisionLog.UsageEventIDs)
+	}
+}
+
+func TestExecuteFastFailureAllowsFallbackWithinRemainingBudget(t *testing.T) {
+	failingProvider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "primary failed fast", http.StatusInternalServerError)
+	}))
+	defer failingProvider.Close()
+
+	fallbackProvider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.100"}`))
+	}))
+	defer fallbackProvider.Close()
+
+	handler, writer := newTestHandler(newFailoverSnapshot(failingProvider.URL, fallbackProvider.URL), fallbackProvider.Client())
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(executeBody(1000)))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 after fallback, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if len(writer.Events) != 5 {
+		t.Fatalf("expected 5 events, got %d", len(writer.Events))
+	}
+	firstUsage, ok := writer.Events[2].Record.(*protocol.UsageEvent)
+	if !ok {
+		t.Fatalf("expected first usage event, got %T", writer.Events[2].Record)
+	}
+	secondUsage, ok := writer.Events[3].Record.(*protocol.UsageEvent)
+	if !ok {
+		t.Fatalf("expected second usage event, got %T", writer.Events[3].Record)
+	}
+	if firstUsage.Success {
+		t.Fatalf("expected first attempt to fail")
+	}
+	if !secondUsage.Success {
+		t.Fatalf("expected fallback attempt to succeed")
+	}
+	for _, usage := range []*protocol.UsageEvent{firstUsage, secondUsage} {
+		if usage.RequestMetadata["timeout_budget_policy"] != "total_deadline" {
+			t.Fatalf("expected total_deadline metadata, got %#v", usage.RequestMetadata)
+		}
+		if usage.RequestMetadata["total_timeout_budget_ms"] != 1000 {
+			t.Fatalf("expected total budget metadata, got %#v", usage.RequestMetadata)
+		}
+		if got, ok := usage.RequestMetadata["attempt_timeout_budget_ms"].(int); !ok || got <= 0 || got > 1000 {
+			t.Fatalf("expected attempt budget in (0,1000], got %#v", usage.RequestMetadata["attempt_timeout_budget_ms"])
+		}
+	}
+	decisionLog, ok := writer.Events[4].Record.(*protocol.DecisionLog)
+	if !ok {
+		t.Fatalf("expected decision log, got %T", writer.Events[4].Record)
+	}
+	if decisionLog.Outcome != "success" {
+		t.Fatalf("expected success decision outcome, got %q", decisionLog.Outcome)
+	}
+	if decisionLog.RoutingContext["timeout_budget_exhausted"] != false {
+		t.Fatalf("expected non-exhausted budget in routing context, got %#v", decisionLog.RoutingContext)
 	}
 }
 

@@ -344,11 +344,19 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - event write failures 现在会 fail closed，并返回 `EVENT_WRITE_FAILED`。
   - runtime provider reachability probe 已完成 dogfood。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_CONSOLIDATION_HARDENING_REPORT.md`。
+- Timeout Budget Semantics v0 已完成：
+  - `timeout_budget_ms` 现在按 request-level total deadline 执行。
+  - 每个 provider attempt 只能使用 request 的剩余预算。
+  - total budget 耗尽后不会继续 fallback。
+  - `UsageEvent.request_metadata` 会记录 total、attempt、remaining 和 policy timeout metadata。
+  - `DecisionLog.routing_context` 会记录 timeout budget 是否耗尽。
+  - local dogfood 覆盖 slow-primary exhaustion 和 fast-failure fallback。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_TIMEOUT_BUDGET_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Timeout Budget Semantics v0
+选择下一项 Go Data Plane production hardening slice
 ```
 
 ## 9. Marketplace 是后面的结果

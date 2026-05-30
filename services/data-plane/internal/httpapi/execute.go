@@ -126,6 +126,8 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	requestStartedAt := time.Now()
+	requestDeadline := requestStartedAt.Add(time.Duration(req.TimeoutBudgetMS) * time.Millisecond)
 	identity := protocol.IdentityRef{ProjectID: req.ProjectID}
 	requestID := routing.NewID("req")
 	now := time.Now().UTC()
@@ -169,8 +171,18 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 	var finalOutput map[string]any
 	var finalError *protocol.ErrorRecord
 	success := false
+	timeoutBudgetExhausted := false
 
 	for attemptIndex, provider := range attempts[:maxAttempts] {
+		remainingBudget := time.Until(requestDeadline)
+		if remainingBudget <= 0 {
+			timeoutBudgetExhausted = true
+			if finalError == nil {
+				finalError = errorRecord("TIMEOUT", "platform", "request timeout budget exhausted before provider attempt", true)
+			}
+			break
+		}
+		attemptTimeoutBudgetMS := durationMillisecondsCeil(remainingBudget)
 		providerRegion := selectedRegionForProvider(req.ClientRegion, provider)
 		resolvedCredential := credentials.NewLocalResolver().Resolve(credentials.CredentialResolutionRequest{
 			ProjectID:    req.ProjectID,
@@ -187,7 +199,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		} else if !ok {
 			callErr = errors.New("adapter not registered")
 		} else {
-			execCtx, cancel := context.WithTimeout(r.Context(), time.Duration(req.TimeoutBudgetMS)*time.Millisecond)
+			execCtx, cancel := context.WithTimeout(r.Context(), remainingBudget)
 			start := time.Now()
 			result, callErr = adapter.Call(execCtx, provider, req.Input, resolvedCredential.InjectionPatch)
 			cancel()
@@ -222,6 +234,10 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		requestMetadata := map[string]any{
 			"snapshot_version":            snapshotVersion(h.Snapshot),
 			"execution_timeout_budget_ms": req.TimeoutBudgetMS,
+			"total_timeout_budget_ms":     req.TimeoutBudgetMS,
+			"attempt_timeout_budget_ms":   attemptTimeoutBudgetMS,
+			"remaining_timeout_budget_ms": attemptTimeoutBudgetMS,
+			"timeout_budget_policy":       "total_deadline",
 			"attempt_timeout_policy":      attemptTimeoutPolicy(decisionResult.Decision.FailoverPolicy),
 			"attempt_index":               attemptIndex + 1,
 			"max_attempts":                maxAttempts,
@@ -274,6 +290,10 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		if !shouldFailover(decisionResult.Decision.FailoverPolicy, errRecord, statusCode) {
 			break
 		}
+		if time.Until(requestDeadline) <= 0 {
+			timeoutBudgetExhausted = true
+			break
+		}
 	}
 
 	outcome := "success"
@@ -289,9 +309,15 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		CapabilityID:      req.CapabilityID,
 		RoutingStrategy:   decisionResult.Decision.Strategy,
 		RoutingContext: map[string]any{
-			"snapshot_version": snapshotVersion(h.Snapshot),
-			"routing_mode":     decisionResult.Decision.RoutingMode,
-			"attempt_count":    len(usageIDs),
+			"snapshot_version":            snapshotVersion(h.Snapshot),
+			"routing_mode":                decisionResult.Decision.RoutingMode,
+			"attempt_count":               len(usageIDs),
+			"total_timeout_budget_ms":     req.TimeoutBudgetMS,
+			"timeout_budget_policy":       "total_deadline",
+			"timeout_budget_exhausted":    timeoutBudgetExhausted,
+			"remaining_timeout_budget_ms": durationMillisecondsCeil(time.Until(requestDeadline)),
+			"attempt_timeout_policy":      attemptTimeoutPolicy(decisionResult.Decision.FailoverPolicy),
+			"execution_timeout_budget_ms": req.TimeoutBudgetMS,
 		},
 		SelectedProviderID:     selectedProviderID,
 		SelectedProviderRegion: selectedProviderRegion,
@@ -497,6 +523,20 @@ func selectedRegionForProvider(clientRegion *string, provider snapshots.Provider
 		return &value
 	}
 	return nil
+}
+
+func durationMillisecondsCeil(duration time.Duration) int {
+	if duration <= 0 {
+		return 0
+	}
+	milliseconds := int(duration / time.Millisecond)
+	if duration%time.Millisecond != 0 {
+		milliseconds++
+	}
+	if milliseconds == 0 {
+		return 1
+	}
+	return milliseconds
 }
 
 func mapAdapterError(err error) *protocol.ErrorRecord {

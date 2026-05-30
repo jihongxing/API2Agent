@@ -344,11 +344,19 @@ Current implementation:
   - event write failures now fail closed with `EVENT_WRITE_FAILED`.
   - runtime provider reachability probe is dogfooded.
   - see `docs/en-US/GO_DATAPLANE_CONSOLIDATION_HARDENING_REPORT.md`.
+- Timeout Budget Semantics v0 is complete:
+  - `timeout_budget_ms` is enforced as a request-level total deadline.
+  - each provider attempt receives only the remaining request budget.
+  - fallback is skipped when the total budget is exhausted.
+  - `UsageEvent.request_metadata` records total, attempt, remaining, and policy timeout metadata.
+  - `DecisionLog.routing_context` records timeout budget exhaustion state.
+  - local dogfood covers slow-primary exhaustion and fast-failure fallback.
+  - see `docs/en-US/GO_DATAPLANE_TIMEOUT_BUDGET_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Timeout Budget Semantics v0
+Choose the next Go Data Plane production hardening slice
 ```
 
 ## 9. Marketplace Is Later

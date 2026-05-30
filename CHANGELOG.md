@@ -83,6 +83,9 @@ All notable API2Agent changes will be documented in this file.
 - Fail-closed event write policy for Go Data Plane execution graph records.
 - Go Data Plane provider availability probe dogfood script and bilingual report.
 - Go Data Plane Consolidation Hardening v0 report.
+- Go Data Plane request-level timeout budget enforcement.
+- Timeout budget metadata on Go Data Plane usage events and decision logs.
+- Go Data Plane timeout budget dogfood script and bilingual report.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -122,9 +125,10 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane stage review completed and next hardening slice narrowed.
 - Go Data Plane dogfood JSONL events validate against Protocol v0.2 via `api2agent-conformance`.
 - Go Data Plane provider probe dogfood measured `httpbin` reachable and `ipify` unreachable from the Go runtime.
+- Go Data Plane timeout budget dogfood passed for exhausted-budget no-fallback and fast-failure fallback scenarios.
+- Go Data Plane tests: `go test ./...`.
 - Full test suite: `143 passed`.
 
 ### Planned Next
 
-- Go Data Plane schema conformance should be promoted from test helper to reusable validator.
-- Start Timeout Budget Semantics v0.
+- Choose the next Go Data Plane production hardening slice.
