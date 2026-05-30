@@ -335,11 +335,14 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - `DecisionLog` 记录最终成功，并引用两次 usage attempts。
   - dogfood 也记录了本地 Go runtime 访问 `api.ipify.org` fallback 被断开的失败经验，说明外部 API 可用性必须从真实 execution runtime 测量。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_REAL_EXTERNAL_PROVIDER_RETRY_DOGFOOD_REPORT.md`。
+- Go Data Plane stage review 已完成：
+  - 当前阶段总结在 `docs/cn-ZH/GO_DATAPLANE_STAGE_REVIEW.md`。
+  - 下一项 hardening slice 已收敛为 conformance validation、event write failure policy 和 runtime provider availability probing。
 
 下一项工程任务：
 
 ```text
-Choose the next Go Data Plane production hardening slice
+Go Data Plane Consolidation Hardening v0
 ```
 
 ## 9. Marketplace 是后面的结果

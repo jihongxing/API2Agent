@@ -335,11 +335,14 @@ Current implementation:
   - `DecisionLog` records success and references both usage attempts.
   - the dogfood also captured a failed `api.ipify.org` fallback attempt from the local Go runtime, proving external API availability must be measured from the actual execution runtime.
   - see `docs/en-US/GO_DATAPLANE_REAL_EXTERNAL_PROVIDER_RETRY_DOGFOOD_REPORT.md`.
+- Go Data Plane stage review is complete:
+  - the current stage is summarized in `docs/en-US/GO_DATAPLANE_STAGE_REVIEW.md`.
+  - the next hardening slice is narrowed to conformance validation, event write failure policy, and runtime provider availability probing.
 
 Next engineering task:
 
 ```text
-Choose the next Go Data Plane production hardening slice
+Go Data Plane Consolidation Hardening v0
 ```
 
 ## 9. Marketplace Is Later

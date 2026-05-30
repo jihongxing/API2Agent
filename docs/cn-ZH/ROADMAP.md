@@ -115,6 +115,7 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - Go Data Plane retry/failover execution 和 controlled failover dogfood
 - Go Data Plane env credential resolution skeleton 和 controlled credential dogfood
 - Go Data Plane durable event ingestion 和 real external provider retry dogfood
+- Go Data Plane stage review 和 consolidation hardening plan
 
 尚未实现：
 
@@ -569,6 +570,7 @@ Production Architecture RFC
 - location-aware schema dogfood 已完成；详见 `docs/cn-ZH/LOCATION_AWARE_SCHEMA_DOGFOOD_REPORT.md`。
 - Go Data Plane durable event ingestion 已完成；详见 `docs/cn-ZH/GO_DATAPLANE_DURABLE_EVENTS_DOGFOOD_REPORT.md`。
 - Go Data Plane real external provider retry dogfood 已完成；详见 `docs/cn-ZH/GO_DATAPLANE_REAL_EXTERNAL_PROVIDER_RETRY_DOGFOOD_REPORT.md`。
+- Go Data Plane stage review 已完成；详见 `docs/cn-ZH/GO_DATAPLANE_STAGE_REVIEW.md`。
 
 实施 checklist：
 
@@ -654,8 +656,10 @@ Production Architecture RFC
 
 下一步战略设计要求：
 
-- 把 Go protocol conformance helper 提升为 reusable validator
-- 选择下一项 Go Data Plane production hardening slice
+- 执行 Go Data Plane Consolidation Hardening v0：
+  - reusable Protocol v0.2 conformance validator
+  - event write failure policy
+  - runtime provider availability probe
 
 ## 8.7 Phase 5.7：Architecture Definition Phase
 
@@ -703,7 +707,7 @@ Go Data Plane protocol conformance + retry/failover dogfood - complete
 Go Data Plane env credential resolution skeleton - complete
 Go Data Plane durable event ingestion - complete
 Go Data Plane real external provider retry dogfood - complete
-Next: choose next Go Data Plane production hardening slice
+Next: Go Data Plane Consolidation Hardening v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
