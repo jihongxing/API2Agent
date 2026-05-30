@@ -109,6 +109,7 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - Python reference migration plan
 - Go Data Plane Skeleton plan
 - Go Data Plane Skeleton implementation，位于 `services/data-plane`
+- Go/Python dual-run dogfood，覆盖 `network.public_ip.get`
 
 尚未实现：
 
@@ -516,7 +517,7 @@ Production Architecture RFC
 立即下一步任务：
 
 ```text
-Go/Python dual-run dogfood
+Go Data Plane Skeleton hardening
 ```
 
 当前实现结果：

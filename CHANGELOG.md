@@ -67,6 +67,7 @@ All notable API2Agent changes will be documented in this file.
 - Python reference migration plan documenting the hot-path to reference-path transition.
 - Go Data Plane Skeleton plan covering `/v1/execute`, local snapshots, deterministic routing, ipify adapter, event writer, timeout budgets, and dual-run compatibility.
 - Go Data Plane Skeleton implementation with `/v1/execute`, static snapshot loading, deterministic routing, ipify adapter, JSONL event writer, and golden path Go tests.
+- Go/Python dual-run dogfood for `network.public_ip.get` with matching normalized output and Go execution graph events.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 

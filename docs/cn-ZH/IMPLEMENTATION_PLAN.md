@@ -306,12 +306,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Python reference migration plan 已文档化。
 - Go Data Plane Skeleton plan 已文档化。
 - Go Data Plane Skeleton implementation 已位于 `services/data-plane`。
+- Go/Python dual-run dogfood 已通过，覆盖 `network.public_ip.get`。
 - Python 冻结为 reference implementation 和 local dogfood harness，不作为 production data plane。
 
 下一项工程任务：
 
 ```text
-Go/Python dual-run dogfood
+Go Data Plane Skeleton hardening
 ```
 
 ## 9. Marketplace 是后面的结果

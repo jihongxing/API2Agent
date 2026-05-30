@@ -306,12 +306,13 @@ Current implementation:
 - Python reference migration plan is documented.
 - Go Data Plane Skeleton plan is documented.
 - Go Data Plane Skeleton implementation is present under `services/data-plane`.
+- Go/Python dual-run dogfood passed for `network.public_ip.get`.
 - Python is frozen as a reference implementation and local dogfood harness, not the production data plane.
 
 Next engineering task:
 
 ```text
-Go/Python dual-run dogfood
+Go Data Plane Skeleton hardening
 ```
 
 ## 9. Marketplace Is Later

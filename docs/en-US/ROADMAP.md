@@ -109,6 +109,7 @@ Implemented:
 - Python reference migration plan
 - Go Data Plane Skeleton plan
 - Go Data Plane Skeleton implementation under `services/data-plane`
+- Go/Python dual-run dogfood for `network.public_ip.get`
 
 Not implemented yet:
 
@@ -516,7 +517,7 @@ Production Architecture RFC
 Immediate next task:
 
 ```text
-Go/Python dual-run dogfood
+Go Data Plane Skeleton hardening
 ```
 
 Current implementation result:
