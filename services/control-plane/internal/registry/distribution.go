@@ -74,6 +74,53 @@ func WriteDistributionPointer(path string, pointer SnapshotDistributionPointer) 
 	return nil
 }
 
+func ReadDistributionPointerFile(path string) (SnapshotDistributionPointer, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return SnapshotDistributionPointer{}, fmt.Errorf("read distribution pointer: %w", err)
+	}
+	var pointer SnapshotDistributionPointer
+	if err := json.Unmarshal(data, &pointer); err != nil {
+		return SnapshotDistributionPointer{}, fmt.Errorf("decode distribution pointer: %w", err)
+	}
+	return pointer, nil
+}
+
+func WriteDistributionPointerAtomic(path string, pointer SnapshotDistributionPointer) error {
+	data, err := json.MarshalIndent(pointer, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode distribution pointer: %w", err)
+	}
+	data = append(data, '\n')
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("create distribution pointer dir: %w", err)
+	}
+	tempFile, err := os.CreateTemp(dir, ".current-*.json.tmp")
+	if err != nil {
+		return fmt.Errorf("create temporary distribution pointer: %w", err)
+	}
+	tempPath := tempFile.Name()
+	cleanup := true
+	defer func() {
+		if cleanup {
+			_ = os.Remove(tempPath)
+		}
+	}()
+	if _, err := tempFile.Write(data); err != nil {
+		_ = tempFile.Close()
+		return fmt.Errorf("write temporary distribution pointer: %w", err)
+	}
+	if err := tempFile.Close(); err != nil {
+		return fmt.Errorf("close temporary distribution pointer: %w", err)
+	}
+	if err := replaceFile(tempPath, path); err != nil {
+		return err
+	}
+	cleanup = false
+	return nil
+}
+
 func PublishArtifactDir(sourceArtifactDir string, distributionDir string, publishedAt time.Time) (SnapshotDistributionPointer, error) {
 	if sourceArtifactDir == "" {
 		return SnapshotDistributionPointer{}, fmt.Errorf("artifact dir is required")
@@ -97,17 +144,40 @@ func PublishArtifactDir(sourceArtifactDir string, distributionDir string, publis
 	}
 
 	relativeArtifactDir := filepath.ToSlash(filepath.Join("artifacts", manifest.SnapshotVersion))
+	artifactsDir := filepath.Join(distributionDir, "artifacts")
 	targetArtifactDir := filepath.Join(distributionDir, "artifacts", manifest.SnapshotVersion)
-	if err := os.MkdirAll(targetArtifactDir, 0o755); err != nil {
-		return SnapshotDistributionPointer{}, fmt.Errorf("create distribution artifact dir: %w", err)
+	if _, err := os.Stat(targetArtifactDir); err == nil {
+		return SnapshotDistributionPointer{}, fmt.Errorf("distribution artifact %q already exists", manifest.SnapshotVersion)
+	} else if !os.IsNotExist(err) {
+		return SnapshotDistributionPointer{}, fmt.Errorf("stat distribution artifact dir: %w", err)
 	}
-	if err := copyFile(sourceSnapshot, filepath.Join(targetArtifactDir, "snapshot.json")); err != nil {
+	if err := os.MkdirAll(artifactsDir, 0o755); err != nil {
+		return SnapshotDistributionPointer{}, fmt.Errorf("create distribution artifacts dir: %w", err)
+	}
+	tempArtifactDir, err := os.MkdirTemp(artifactsDir, "."+manifest.SnapshotVersion+".tmp-")
+	if err != nil {
+		return SnapshotDistributionPointer{}, fmt.Errorf("create temporary distribution artifact dir: %w", err)
+	}
+	cleanupTempArtifact := true
+	defer func() {
+		if cleanupTempArtifact {
+			_ = os.RemoveAll(tempArtifactDir)
+		}
+	}()
+	if err := copyFile(sourceSnapshot, filepath.Join(tempArtifactDir, "snapshot.json")); err != nil {
 		return SnapshotDistributionPointer{}, err
 	}
-	if err := copyFile(filepath.Join(sourceArtifactDir, "manifest.json"), filepath.Join(targetArtifactDir, "manifest.json")); err != nil {
+	if err := copyFile(filepath.Join(sourceArtifactDir, "manifest.json"), filepath.Join(tempArtifactDir, "manifest.json")); err != nil {
 		return SnapshotDistributionPointer{}, err
 	}
+	if err := os.Rename(tempArtifactDir, targetArtifactDir); err != nil {
+		return SnapshotDistributionPointer{}, fmt.Errorf("commit distribution artifact dir: %w", err)
+	}
+	cleanupTempArtifact = false
 
+	if err := os.MkdirAll(distributionDir, 0o755); err != nil {
+		return SnapshotDistributionPointer{}, fmt.Errorf("create distribution dir: %w", err)
+	}
 	pointer := SnapshotDistributionPointer{
 		DistributionVersion:   "api2agent.snapshot_distribution.v0",
 		PublishedAt:           publishedAt.UTC(),
@@ -120,13 +190,23 @@ func PublishArtifactDir(sourceArtifactDir string, distributionDir string, publis
 		SnapshotDigest:        manifest.SnapshotDigest,
 		SourceArtifactDir:     sourceArtifactDir,
 	}
-	if err := os.MkdirAll(distributionDir, 0o755); err != nil {
-		return SnapshotDistributionPointer{}, fmt.Errorf("create distribution dir: %w", err)
-	}
-	if err := WriteDistributionPointer(filepath.Join(distributionDir, "current.json"), pointer); err != nil {
+	if err := WriteDistributionPointerAtomic(filepath.Join(distributionDir, "current.json"), pointer); err != nil {
 		return SnapshotDistributionPointer{}, err
 	}
 	return pointer, nil
+}
+
+func replaceFile(sourcePath string, targetPath string) error {
+	if err := os.Rename(sourcePath, targetPath); err == nil {
+		return nil
+	}
+	if err := os.Remove(targetPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("replace distribution pointer: remove old pointer: %w", err)
+	}
+	if err := os.Rename(sourcePath, targetPath); err != nil {
+		return fmt.Errorf("replace distribution pointer: %w", err)
+	}
+	return nil
 }
 
 func copyFile(src string, dst string) error {

@@ -306,6 +306,35 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             force_current_snapshot_file(distribution_dir / "current.json", "../outside.json")
             unsafe_pointer_path_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
             health_after_unsafe_pointer_path_reload = get_json(f"http://127.0.0.1:{port}/healthz")
+            registry_v10 = write_registry(
+                scenario_dir / "registry-v10.json",
+                f"http://127.0.0.1:{provider_server.server_port}",
+                "snapshot_control_plane_public_ip_v10",
+            )
+            artifact_dir_v10 = scenario_dir / "artifact-v10-atomic-publish"
+            subprocess.run(
+                [str(cp_exe), "export-artifact", "--registry", str(registry_v10), "--output-dir", str(artifact_dir_v10)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v10), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            current_pointer_after_atomic_publish = read_json(distribution_dir / "current.json")
+            duplicate_atomic_publish = subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v10), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            current_pointer_after_duplicate_atomic_publish = read_json(distribution_dir / "current.json")
+            temp_artifacts_after_duplicate_publish = [
+                path.name
+                for path in (distribution_dir / "artifacts").glob(".snapshot_control_plane_public_ip_v10.tmp-*")
+            ]
             response = post_json(
                 f"http://127.0.0.1:{port}/v1/execute",
                 {
@@ -431,6 +460,15 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                 "snapshot_version"
             )
             == "snapshot_control_plane_public_ip_v2",
+            "atomic_publish_advanced_current_to_v10": current_pointer_after_atomic_publish.get("snapshot_version")
+            == "snapshot_control_plane_public_ip_v10",
+            "duplicate_atomic_publish_rejected": duplicate_atomic_publish.returncode != 0
+            and "already exists" in duplicate_atomic_publish.stderr,
+            "duplicate_atomic_publish_kept_current_v10": current_pointer_after_duplicate_atomic_publish.get(
+                "snapshot_version"
+            )
+            == "snapshot_control_plane_public_ip_v10",
+            "duplicate_atomic_publish_left_no_temp_artifacts": len(temp_artifacts_after_duplicate_publish) == 0,
             "distribution_current_after_reload_points_to_v2": current_pointer_after_reload.get("snapshot_file")
             == "artifacts/snapshot_control_plane_public_ip_v2/snapshot.json",
             "distribution_v2_artifact_snapshot_exists": (
@@ -496,6 +534,11 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "current_pointer_after_unsafe_manifest_path_publish": current_pointer_after_unsafe_manifest_path_publish,
             "unsafe_pointer_path_reload": unsafe_pointer_path_reload,
             "health_after_unsafe_pointer_path_reload": health_after_unsafe_pointer_path_reload,
+            "current_pointer_after_atomic_publish": current_pointer_after_atomic_publish,
+            "duplicate_atomic_publish_exit_code": duplicate_atomic_publish.returncode,
+            "duplicate_atomic_publish_error": duplicate_atomic_publish.stderr.strip(),
+            "current_pointer_after_duplicate_atomic_publish": current_pointer_after_duplicate_atomic_publish,
+            "temp_artifacts_after_duplicate_publish": temp_artifacts_after_duplicate_publish,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,

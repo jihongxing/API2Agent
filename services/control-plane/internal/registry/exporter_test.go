@@ -195,6 +195,45 @@ func TestPublishArtifactDir(t *testing.T) {
 	}
 }
 
+func TestPublishArtifactDirRejectsDuplicateSnapshotWithoutAdvancingCurrent(t *testing.T) {
+	reg := loadValidRegistry(t)
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+	artifactDir := filepath.Join(t.TempDir(), "artifact")
+	if err := WriteArtifactDir(artifactDir, snapshot, manifest); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+	distributionDir := t.TempDir()
+	firstPointer, err := PublishArtifactDir(artifactDir, distributionDir, time.Date(2026, 5, 30, 4, 5, 6, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("publish artifact: %v", err)
+	}
+
+	_, err = PublishArtifactDir(artifactDir, distributionDir, time.Date(2026, 5, 30, 4, 6, 0, 0, time.UTC))
+	if err == nil {
+		t.Fatalf("expected duplicate artifact publish failure")
+	}
+	if !strings.Contains(err.Error(), "already exists") {
+		t.Fatalf("expected duplicate artifact error, got %q", err.Error())
+	}
+	current, err := ReadDistributionPointerFile(filepath.Join(distributionDir, "current.json"))
+	if err != nil {
+		t.Fatalf("read current pointer: %v", err)
+	}
+	if current.PublishedAt != firstPointer.PublishedAt || current.SnapshotVersion != firstPointer.SnapshotVersion {
+		t.Fatalf("expected current pointer to remain unchanged: %#v vs %#v", current, firstPointer)
+	}
+	temps, err := filepath.Glob(filepath.Join(distributionDir, "artifacts", "."+snapshot.SnapshotVersion+".tmp-*"))
+	if err != nil {
+		t.Fatalf("glob temp artifacts: %v", err)
+	}
+	if len(temps) != 0 {
+		t.Fatalf("expected no temporary artifact dirs, got %#v", temps)
+	}
+}
+
 func TestPublishArtifactDirRejectsUnsafeManifestSnapshotFile(t *testing.T) {
 	reg := loadValidRegistry(t)
 	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")

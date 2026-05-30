@@ -505,11 +505,17 @@ Current Phase 6 progress:
   - absolute paths and `..` traversal are rejected inside distribution metadata.
   - direct `API2AGENT_SNAPSHOT=<snapshot.json>` paths remain unchanged.
   - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_PATH_SAFETY_DOGFOOD_REPORT.md`.
+- Control Plane Snapshot Distribution Atomic Publish Guard v0 is complete:
+  - Control Plane copies artifacts through a temporary artifact directory before committing the final versioned artifact path.
+  - `current.json` is written through a temporary file before replacement.
+  - duplicate `snapshot_version` publishes are rejected before changing `current.json`.
+  - duplicate publish dogfood verifies current remains stable and no temporary artifact dirs remain.
+  - see `docs/en-US/GO_CONTROL_PLANE_SNAPSHOT_ATOMIC_PUBLISH_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Control Plane Snapshot Distribution Atomic Publish Guard v0
+Go Control Plane Snapshot Distribution Closeout + Phase Review
 ```
 
 ## 9. Marketplace Is Later

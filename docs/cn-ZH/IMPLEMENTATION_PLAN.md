@@ -505,11 +505,17 @@ Go Control Plane Minimum v0
   - distribution metadata 内的绝对路径和 `..` 路径穿越都会被拒绝。
   - 直接传入 `API2AGENT_SNAPSHOT=<snapshot.json>` 的路径行为不变。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_PATH_SAFETY_DOGFOOD_REPORT.md`。
+- Control Plane Snapshot Distribution Atomic Publish Guard v0 已完成：
+  - Control Plane 会先通过 temporary artifact directory 复制 artifact，再 commit 最终 versioned artifact path。
+  - `current.json` 通过 temporary file 写入，再替换。
+  - duplicate `snapshot_version` publish 会在修改 `current.json` 前被拒绝。
+  - duplicate publish dogfood 验证 current 保持稳定，并且没有 temporary artifact dirs 残留。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SNAPSHOT_ATOMIC_PUBLISH_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Control Plane Snapshot Distribution Atomic Publish Guard v0
+Go Control Plane Snapshot Distribution Closeout + Phase Review
 ```
 
 ## 9. Marketplace 是后面的结果
