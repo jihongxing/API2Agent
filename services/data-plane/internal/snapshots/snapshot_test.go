@@ -1,6 +1,7 @@
 package snapshots
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -53,5 +54,18 @@ func TestSnapshotExpirationIgnoresMissingTTL(t *testing.T) {
 	}
 	if expired {
 		t.Fatalf("expected snapshot without ttl to remain active")
+	}
+}
+
+func TestLoadControlPlaneExportedSnapshotMetadata(t *testing.T) {
+	snapshot, err := LoadFile(filepath.Join("..", "..", "testdata", "snapshots", "control-plane-public-ip.json"))
+	if err != nil {
+		t.Fatalf("load control plane snapshot: %v", err)
+	}
+	if snapshot.Metadata["exporter"] != "api2agent-control-plane-minimum-v0" {
+		t.Fatalf("expected exporter metadata, got %#v", snapshot.Metadata)
+	}
+	if len(snapshot.Providers) != 1 || snapshot.Providers[0].ProviderID != "ipify" {
+		t.Fatalf("unexpected providers: %#v", snapshot.Providers)
 	}
 }

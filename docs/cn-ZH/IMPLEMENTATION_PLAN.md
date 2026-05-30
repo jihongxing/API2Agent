@@ -407,6 +407,16 @@ Go Control Plane Minimum v0
 5. Credential metadata model，不包含 secret storage
 6. Routing snapshot export format，供现有 Go Data Plane 消费
 
+当前 Phase 6 进展：
+
+- Go Control Plane Minimum v0 已完成：
+  - `services/control-plane` 包含初始 Go module。
+  - `api2agent-controlplane export-snapshot` 可以从 local registry JSON 导出 Data Plane-compatible routing snapshot。
+  - local registry JSON 覆盖 projects、API keys、capabilities、providers、credential metadata、routing policy 和 snapshot export metadata。
+  - Go Data Plane 可以加载 Control Plane 导出的 snapshot，并保留 exporter metadata。
+  - cross-plane dogfood 证明 `Control Plane registry -> snapshot export -> Data Plane execute`。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_MINIMUM_DOGFOOD_REPORT.md`。
+
 ## 9. Marketplace 是后面的结果
 
 在以下条件成立前，不要做 marketplace UI：

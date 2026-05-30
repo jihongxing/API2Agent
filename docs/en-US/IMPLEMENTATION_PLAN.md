@@ -407,6 +407,16 @@ Initial scope:
 5. Credential metadata model without secret storage
 6. Routing snapshot export format consumed by the existing Go Data Plane
 
+Current Phase 6 progress:
+
+- Go Control Plane Minimum v0 is complete:
+  - `services/control-plane` contains the initial Go module.
+  - `api2agent-controlplane export-snapshot` exports a Data Plane-compatible routing snapshot from local registry JSON.
+  - local registry JSON covers projects, API keys, capabilities, providers, credential metadata, routing policy, and snapshot export metadata.
+  - Go Data Plane loads a Control Plane exported snapshot and preserves exporter metadata.
+  - cross-plane dogfood proves `Control Plane registry -> snapshot export -> Data Plane execute`.
+  - see `docs/en-US/GO_CONTROL_PLANE_MINIMUM_DOGFOOD_REPORT.md`.
+
 ## 9. Marketplace Is Later
 
 Do not build a marketplace UI before:

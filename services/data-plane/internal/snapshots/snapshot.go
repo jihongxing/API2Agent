@@ -15,6 +15,7 @@ type Snapshot struct {
 	Capabilities      []Capability        `json:"capabilities"`
 	Providers         []ProviderCandidate `json:"providers"`
 	RoutingPolicy     RoutingPolicy       `json:"routing_policy"`
+	Metadata          map[string]string   `json:"metadata,omitempty"`
 }
 
 type Capability struct {

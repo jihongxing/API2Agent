@@ -1,0 +1,68 @@
+{
+  "projects": [
+    {
+      "id": "local",
+      "name": "Local Dogfood Project",
+      "status": "active",
+      "default_mode": "proxy"
+    }
+  ],
+  "api_keys": [
+    {
+      "id": "key_local_dev",
+      "project_id": "local",
+      "key_prefix": "local_",
+      "status": "active"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "network.public_ip.get",
+      "version": "0.1-migrated",
+      "name": "Public IP Lookup"
+    }
+  ],
+  "providers": [
+    {
+      "id": "ipify_public_ip_v1",
+      "capability_id": "network.public_ip.get",
+      "capability_version": "0.1-migrated",
+      "provider_id": "ipify",
+      "provider_version": "1.0.0",
+      "mapping_version": "1.0.0",
+      "tool_id": "get_public_ip",
+      "regions": ["global"],
+      "geo_affinity": "global",
+      "estimated_cost": 0,
+      "metadata": {
+        "base_url": "https://api.ipify.org"
+      },
+      "status": "active"
+    }
+  ],
+  "credential_metadata": [
+    {
+      "credential_id": "cred_local_ipify",
+      "credential_version": "local-v1",
+      "owner_type": "project",
+      "owner_id": "local",
+      "provider_id": "ipify",
+      "auth_type": "none",
+      "injection_mode": "none",
+      "source": "none",
+      "scope": ["capability:network.public_ip.get"],
+      "status": "active"
+    }
+  ],
+  "routing_policy": {
+    "strategy": "first",
+    "routing_mode": "deterministic",
+    "routing_seed": "control-plane-public-ip-v1"
+  },
+  "snapshot": {
+    "version": "snapshot_control_plane_public_ip_v1",
+    "fetched_at": "2026-05-30T00:00:00Z",
+    "ttl": "24h",
+    "source": "pull"
+  }
+}
