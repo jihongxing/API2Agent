@@ -35,12 +35,14 @@ func main() {
 
 	mux := http.NewServeMux()
 	handler := httpapi.Handler{
-		Snapshot:    snapshot,
-		Adapters:    registry,
-		Events:      writer,
-		ProjectKey:  cfg.ProjectKey,
-		Quota:       httpapi.NewQuotaGate(cfg.ProjectQuota),
-		Credentials: credentialConfig,
+		Snapshot:             snapshot,
+		SnapshotStore:        httpapi.NewSnapshotStore(cfg.SnapshotPath, snapshot),
+		SnapshotReloadPolicy: cfg.SnapshotReloadPolicy,
+		Adapters:             registry,
+		Events:               writer,
+		ProjectKey:           cfg.ProjectKey,
+		Quota:                httpapi.NewQuotaGate(cfg.ProjectQuota),
+		Credentials:          credentialConfig,
 	}
 	handler.Register(mux)
 

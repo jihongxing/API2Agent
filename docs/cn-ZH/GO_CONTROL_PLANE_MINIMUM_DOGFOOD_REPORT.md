@@ -52,6 +52,8 @@ Control Plane 导出了一个 artifact 目录：
 - `artifacts/snapshot_control_plane_public_ip_v1/snapshot.json`
 - `artifacts/snapshot_control_plane_public_ip_v1/manifest.json`
 
+dogfood 随后会将 v2 artifact 发布到同一个 distribution，并触发 Data Plane manual reload。
+
 manifest 记录了：
 
 - `snapshot_version = snapshot_control_plane_public_ip_v1`
@@ -76,6 +78,7 @@ snapshot 包含：
 - 通过 `api2agent-snapshot-check` 接受了 distribution 目录
 - 将 `current.json` 解析到已发布 artifact snapshot
 - 通过 `API2AGENT_SNAPSHOT=<distribution_dir>` 加载了 distributed snapshot
+- 通过 `POST /v1/admin/reload-snapshot` 从 v1 reload 到 v2
 - 在 `/healthz` 返回同一个 snapshot version
 - 执行了 `network.public_ip.get`
 - 返回了本地 provider 的 fixed public IP
@@ -110,6 +113,12 @@ Control Plane registry -> snapshot artifact export -> local distribution current
   "distribution_current_points_to_snapshot": true,
   "distribution_current_fingerprint_matches_manifest": true,
   "distribution_artifact_snapshot_exists": true,
+  "health_before_reload_snapshot_version_matches": true,
+  "reload_response_success": true,
+  "reload_previous_snapshot_version_matches": true,
+  "reload_snapshot_version_matches": true,
+  "distribution_current_after_reload_points_to_v2": true,
+  "distribution_v2_artifact_snapshot_exists": true,
   "snapshot_check_passed": true,
   "snapshot_check_has_registry_fingerprint": true,
   "snapshot_check_has_explicit_version_policy": true,

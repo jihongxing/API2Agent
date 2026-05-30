@@ -454,6 +454,14 @@ Current Phase 6 progress:
   - `api2agent-snapshot-check` can validate a distribution directory because it uses the same snapshot resolver.
   - cross-plane dogfood proves `Control Plane registry -> artifact export -> local distribution publish -> Data Plane execute`.
   - see `docs/en-US/GO_CONTROL_PLANE_SNAPSHOT_DISTRIBUTION_DOGFOOD_REPORT.md`.
+- Control Plane Snapshot Refresh / Reload Policy v0 is complete:
+  - Data Plane default snapshot policy remains `startup_only`.
+  - local manual reload is enabled only with `API2AGENT_SNAPSHOT_RELOAD_POLICY=manual`.
+  - `POST /v1/admin/reload-snapshot` reloads the configured snapshot source, including a distribution directory whose `current.json` has changed.
+  - `/healthz` reports snapshot reload policy, loaded-at timestamp, source path, and resolved snapshot path.
+  - if `API2AGENT_PROJECT_KEY` is set, the reload endpoint requires the same bearer token as `/v1/execute`.
+  - cross-plane dogfood proves v1 startup, v2 distribution publish, manual reload, and v2 execution event attribution.
+  - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_RELOAD_DOGFOOD_REPORT.md`.
 
 ## 9. Marketplace Is Later
 

@@ -19,12 +19,70 @@ import (
 )
 
 type Handler struct {
-	Snapshot    *snapshots.Snapshot
-	Adapters    *adapters.Registry
-	Events      events.Writer
-	ProjectKey  string
-	Quota       *QuotaGate
-	Credentials []credentials.CredentialDefinition
+	Snapshot             *snapshots.Snapshot
+	SnapshotStore        *SnapshotStore
+	SnapshotReloadPolicy string
+	Adapters             *adapters.Registry
+	Events               events.Writer
+	ProjectKey           string
+	Quota                *QuotaGate
+	Credentials          []credentials.CredentialDefinition
+}
+
+type SnapshotStore struct {
+	Path       string
+	LoadedAt   time.Time
+	mu         sync.RWMutex
+	snapshot   *snapshots.Snapshot
+	resolvedTo string
+}
+
+func NewSnapshotStore(path string, snapshot *snapshots.Snapshot) *SnapshotStore {
+	resolvedTo, _ := snapshots.ResolvePath(path)
+	return &SnapshotStore{
+		Path:       path,
+		LoadedAt:   time.Now().UTC(),
+		snapshot:   snapshot,
+		resolvedTo: resolvedTo,
+	}
+}
+
+func (s *SnapshotStore) Snapshot() *snapshots.Snapshot {
+	if s == nil {
+		return nil
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.snapshot
+}
+
+func (s *SnapshotStore) Reload(now time.Time) (*snapshots.Snapshot, string, error) {
+	if s == nil {
+		return nil, "", errors.New("snapshot store is not configured")
+	}
+	snapshot, err := snapshots.LoadFile(s.Path)
+	if err != nil {
+		return nil, "", err
+	}
+	resolvedTo, err := snapshots.ResolvePath(s.Path)
+	if err != nil {
+		return nil, "", err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.snapshot = snapshot
+	s.LoadedAt = now.UTC()
+	s.resolvedTo = resolvedTo
+	return snapshot, resolvedTo, nil
+}
+
+func (s *SnapshotStore) Metadata() (time.Time, string) {
+	if s == nil {
+		return time.Time{}, ""
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.LoadedAt, s.resolvedTo
 }
 
 type QuotaGate struct {
@@ -76,19 +134,24 @@ type ExecuteResponse struct {
 }
 
 type HealthResponse struct {
-	Status            string     `json:"status"`
-	SchemaVersion     string     `json:"schema_version"`
-	SnapshotVersion   string     `json:"snapshot_version,omitempty"`
-	SnapshotFetchedAt *time.Time `json:"snapshot_fetched_at,omitempty"`
-	SnapshotTTL       string     `json:"snapshot_ttl,omitempty"`
-	SnapshotExpiresAt *time.Time `json:"snapshot_expires_at,omitempty"`
-	SnapshotExpired   *bool      `json:"snapshot_expired,omitempty"`
-	SnapshotSource    string     `json:"snapshot_source,omitempty"`
+	Status               string     `json:"status"`
+	SchemaVersion        string     `json:"schema_version"`
+	SnapshotVersion      string     `json:"snapshot_version,omitempty"`
+	SnapshotFetchedAt    *time.Time `json:"snapshot_fetched_at,omitempty"`
+	SnapshotTTL          string     `json:"snapshot_ttl,omitempty"`
+	SnapshotExpiresAt    *time.Time `json:"snapshot_expires_at,omitempty"`
+	SnapshotExpired      *bool      `json:"snapshot_expired,omitempty"`
+	SnapshotSource       string     `json:"snapshot_source,omitempty"`
+	SnapshotLoadedAt     *time.Time `json:"snapshot_loaded_at,omitempty"`
+	SnapshotPath         string     `json:"snapshot_path,omitempty"`
+	SnapshotResolvedTo   string     `json:"snapshot_resolved_to,omitempty"`
+	SnapshotReloadPolicy string     `json:"snapshot_reload_policy,omitempty"`
 }
 
 func (h Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/v1/execute", h.Execute)
 	mux.HandleFunc("/healthz", h.Healthz)
+	mux.HandleFunc("/v1/admin/reload-snapshot", h.ReloadSnapshot)
 }
 
 func (h Handler) Healthz(w http.ResponseWriter, r *http.Request) {
@@ -97,22 +160,32 @@ func (h Handler) Healthz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response := HealthResponse{
-		Status:        "ok",
-		SchemaVersion: protocol.SchemaVersion,
+		Status:               "ok",
+		SchemaVersion:        protocol.SchemaVersion,
+		SnapshotReloadPolicy: h.reloadPolicy(),
 	}
-	if h.Snapshot == nil {
+	snapshot := h.currentSnapshot()
+	if snapshot == nil {
 		response.Status = "degraded"
 		writeJSON(w, http.StatusOK, response)
 		return
 	}
-	response.SnapshotVersion = h.Snapshot.SnapshotVersion
-	response.SnapshotFetchedAt = &h.Snapshot.SnapshotFetchedAt
-	response.SnapshotTTL = h.Snapshot.SnapshotTTL
-	response.SnapshotSource = h.Snapshot.SnapshotSource
-	if expiresAt, err := h.Snapshot.ExpiresAt(); err == nil {
+	response.SnapshotVersion = snapshot.SnapshotVersion
+	response.SnapshotFetchedAt = &snapshot.SnapshotFetchedAt
+	response.SnapshotTTL = snapshot.SnapshotTTL
+	response.SnapshotSource = snapshot.SnapshotSource
+	if h.SnapshotStore != nil {
+		loadedAt, resolvedTo := h.SnapshotStore.Metadata()
+		if !loadedAt.IsZero() {
+			response.SnapshotLoadedAt = &loadedAt
+		}
+		response.SnapshotPath = h.SnapshotStore.Path
+		response.SnapshotResolvedTo = resolvedTo
+	}
+	if expiresAt, err := snapshot.ExpiresAt(); err == nil {
 		response.SnapshotExpiresAt = expiresAt
 	}
-	if expired, err := h.Snapshot.IsExpired(time.Now().UTC()); err == nil {
+	if expired, err := snapshot.IsExpired(time.Now().UTC()); err == nil {
 		response.SnapshotExpired = &expired
 		if expired {
 			response.Status = "degraded"
@@ -121,6 +194,61 @@ func (h Handler) Healthz(w http.ResponseWriter, r *http.Request) {
 		response.Status = "degraded"
 	}
 	writeJSON(w, http.StatusOK, response)
+}
+
+type ReloadSnapshotResponse struct {
+	Reloaded                bool       `json:"reloaded"`
+	PreviousSnapshotVersion string     `json:"previous_snapshot_version,omitempty"`
+	SnapshotVersion         string     `json:"snapshot_version,omitempty"`
+	SnapshotLoadedAt        *time.Time `json:"snapshot_loaded_at,omitempty"`
+	SnapshotPath            string     `json:"snapshot_path,omitempty"`
+	SnapshotResolvedTo      string     `json:"snapshot_resolved_to,omitempty"`
+	SnapshotReloadPolicy    string     `json:"snapshot_reload_policy"`
+}
+
+func (h Handler) currentSnapshot() *snapshots.Snapshot {
+	if h.SnapshotStore != nil {
+		return h.SnapshotStore.Snapshot()
+	}
+	return h.Snapshot
+}
+
+func (h Handler) reloadPolicy() string {
+	if h.SnapshotReloadPolicy == "" {
+		return "startup_only"
+	}
+	return h.SnapshotReloadPolicy
+}
+
+func (h Handler) ReloadSnapshot(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed")
+		return
+	}
+	if h.ProjectKey != "" && !validBearer(r.Header.Get("Authorization"), h.ProjectKey) {
+		writeError(w, http.StatusUnauthorized, "AUTH_ERROR", "caller", "invalid api2agent project key")
+		return
+	}
+	if h.reloadPolicy() != "manual" {
+		writeError(w, http.StatusConflict, "SNAPSHOT_RELOAD_DISABLED", "platform", "snapshot reload policy is startup_only")
+		return
+	}
+	previousVersion := snapshotVersion(h.currentSnapshot())
+	loadedAt := time.Now().UTC()
+	snapshot, resolvedTo, err := h.SnapshotStore.Reload(loadedAt)
+	if err != nil {
+		writeError(w, http.StatusServiceUnavailable, "SNAPSHOT_RELOAD_FAILED", "platform", err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, ReloadSnapshotResponse{
+		Reloaded:                true,
+		PreviousSnapshotVersion: previousVersion,
+		SnapshotVersion:         snapshot.SnapshotVersion,
+		SnapshotLoadedAt:        &loadedAt,
+		SnapshotPath:            h.SnapshotStore.Path,
+		SnapshotResolvedTo:      resolvedTo,
+		SnapshotReloadPolicy:    h.reloadPolicy(),
+	})
 }
 
 func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
@@ -157,7 +285,8 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "capability_id is required")
 		return
 	}
-	if h.Snapshot == nil || h.Adapters == nil || h.Events == nil {
+	snapshot := h.currentSnapshot()
+	if snapshot == nil || h.Adapters == nil || h.Events == nil {
 		writeError(w, http.StatusInternalServerError, "PROVIDER_ERROR", "platform", "handler is not initialized")
 		return
 	}
@@ -180,7 +309,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 	if !h.writeEvent(w, r.Context(), "request_context", requestContext) {
 		return
 	}
-	if err := h.checkSnapshotFreshness(time.Now().UTC()); err != nil {
+	if err := h.checkSnapshotFreshness(snapshot, time.Now().UTC()); err != nil {
 		h.writeFailedDecision(w, r.Context(), requestContext, nil, snapshotFreshnessError(err), http.StatusServiceUnavailable)
 		return
 	}
@@ -194,7 +323,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		Identity:          identity,
 		CapabilityID:      req.CapabilityID,
 		ClientRegion:      req.ClientRegion,
-		Snapshot:          h.Snapshot,
+		Snapshot:          snapshot,
 		ExecutionBudgetMS: req.TimeoutBudgetMS,
 	})
 	if err != nil {
@@ -281,7 +410,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		latencyMS := result.LatencyMS
 		latency := protocol.LatencyProfile{LatencyMS: &latencyMS, LatencyRegion: req.ClientRegion}
 		requestMetadata := map[string]any{
-			"snapshot_version":            snapshotVersion(h.Snapshot),
+			"snapshot_version":            snapshotVersion(snapshot),
 			"execution_timeout_budget_ms": req.TimeoutBudgetMS,
 			"total_timeout_budget_ms":     req.TimeoutBudgetMS,
 			"attempt_timeout_budget_ms":   attemptTimeoutBudgetMS,
@@ -363,7 +492,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		CapabilityID:      req.CapabilityID,
 		RoutingStrategy:   decisionResult.Decision.Strategy,
 		RoutingContext: map[string]any{
-			"snapshot_version":            snapshotVersion(h.Snapshot),
+			"snapshot_version":            snapshotVersion(snapshot),
 			"routing_mode":                decisionResult.Decision.RoutingMode,
 			"attempt_count":               len(usageIDs),
 			"total_timeout_budget_ms":     req.TimeoutBudgetMS,
@@ -408,7 +537,7 @@ func (h Handler) writeFailedDecision(w http.ResponseWriter, ctx context.Context,
 	if decision != nil {
 		routeID = decision.ID
 	}
-	routingContext := map[string]any{"snapshot_version": snapshotVersion(h.Snapshot)}
+	routingContext := map[string]any{"snapshot_version": snapshotVersion(h.currentSnapshot())}
 	if record != nil {
 		if record.ErrorType != nil {
 			routingContext["error_type"] = *record.ErrorType
@@ -443,23 +572,23 @@ func (h Handler) writeFailedDecision(w http.ResponseWriter, ctx context.Context,
 	})
 }
 
-func (h Handler) checkSnapshotFreshness(now time.Time) error {
-	if h.Snapshot == nil {
+func (h Handler) checkSnapshotFreshness(snapshot *snapshots.Snapshot, now time.Time) error {
+	if snapshot == nil {
 		return errors.New("snapshot is required")
 	}
-	expired, err := h.Snapshot.IsExpired(now)
+	expired, err := snapshot.IsExpired(now)
 	if err != nil {
 		return err
 	}
 	if expired {
-		expiresAt, expiresErr := h.Snapshot.ExpiresAt()
+		expiresAt, expiresErr := snapshot.ExpiresAt()
 		if expiresErr != nil {
 			return expiresErr
 		}
 		if expiresAt != nil {
-			return fmt.Errorf("snapshot %q expired at %s", h.Snapshot.SnapshotVersion, expiresAt.Format(time.RFC3339))
+			return fmt.Errorf("snapshot %q expired at %s", snapshot.SnapshotVersion, expiresAt.Format(time.RFC3339))
 		}
-		return fmt.Errorf("snapshot %q expired", h.Snapshot.SnapshotVersion)
+		return fmt.Errorf("snapshot %q expired", snapshot.SnapshotVersion)
 	}
 	return nil
 }

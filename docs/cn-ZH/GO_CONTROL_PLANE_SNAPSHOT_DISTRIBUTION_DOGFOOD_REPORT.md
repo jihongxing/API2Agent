@@ -34,6 +34,8 @@ dogfood 脚本现在会：
 - 将 artifact 发布到 local distribution 目录
 - 对 distribution 目录运行 `api2agent-snapshot-check`
 - 使用 `API2AGENT_SNAPSHOT=<distribution_dir>` 启动 Go Data Plane
+- 将第二个 artifact version 发布到同一个 distribution 目录
+- 手动 reload Data Plane snapshot
 - 验证 `/v1/execute` 可以通过 distributed snapshot 成功执行
 
 ## 检查项
@@ -44,6 +46,8 @@ dogfood 脚本现在会：
   "distribution_current_points_to_snapshot": true,
   "distribution_current_fingerprint_matches_manifest": true,
   "distribution_artifact_snapshot_exists": true,
+  "reload_response_success": true,
+  "distribution_current_after_reload_points_to_v2": true,
   "snapshot_check_passed": true,
   "health_snapshot_version_matches": true,
   "response_success": true

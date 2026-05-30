@@ -70,7 +70,11 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
     try:
         scenario_dir = tmp / "control-plane-minimum"
         scenario_dir.mkdir(parents=True, exist_ok=True)
-        registry = write_registry(scenario_dir / "registry.json", f"http://127.0.0.1:{provider_server.server_port}")
+        registry = write_registry(
+            scenario_dir / "registry.json",
+            f"http://127.0.0.1:{provider_server.server_port}",
+            "snapshot_control_plane_public_ip_v1",
+        )
         invalid_registry = write_invalid_registry(scenario_dir / "invalid-registry.json", f"http://127.0.0.1:{provider_server.server_port}")
         artifact_dir = scenario_dir / "artifact"
         distribution_dir = scenario_dir / "distribution"
@@ -108,9 +112,29 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
         env["API2AGENT_DATAPLANE_ADDR"] = f"127.0.0.1:{port}"
         env["API2AGENT_EVENT_DIR"] = str(event_dir)
         env["API2AGENT_SNAPSHOT"] = str(distribution_dir)
+        env["API2AGENT_SNAPSHOT_RELOAD_POLICY"] = "manual"
         proc = subprocess.Popen([str(dp_exe)], cwd=dp_dir, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             wait_for_port(port)
+            health_before_reload = get_json(f"http://127.0.0.1:{port}/healthz")
+            registry_v2 = write_registry(
+                scenario_dir / "registry-v2.json",
+                f"http://127.0.0.1:{provider_server.server_port}",
+                "snapshot_control_plane_public_ip_v2",
+            )
+            artifact_dir_v2 = scenario_dir / "artifact-v2"
+            subprocess.run(
+                [str(cp_exe), "export-artifact", "--registry", str(registry_v2), "--output-dir", str(artifact_dir_v2)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v2), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            current_pointer_after_reload = read_json(distribution_dir / "current.json")
+            reload_response = post_json(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
             health = get_json(f"http://127.0.0.1:{port}/healthz")
             response = post_json(
                 f"http://127.0.0.1:{port}/v1/execute",
@@ -148,6 +172,18 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "distribution_artifact_snapshot_exists": (
                 distribution_dir / "artifacts" / "snapshot_control_plane_public_ip_v1" / "snapshot.json"
             ).exists(),
+            "health_before_reload_snapshot_version_matches": health_before_reload.get("snapshot_version")
+            == "snapshot_control_plane_public_ip_v1",
+            "reload_response_success": reload_response.get("reloaded") is True,
+            "reload_previous_snapshot_version_matches": reload_response.get("previous_snapshot_version")
+            == "snapshot_control_plane_public_ip_v1",
+            "reload_snapshot_version_matches": reload_response.get("snapshot_version")
+            == "snapshot_control_plane_public_ip_v2",
+            "distribution_current_after_reload_points_to_v2": current_pointer_after_reload.get("snapshot_file")
+            == "artifacts/snapshot_control_plane_public_ip_v2/snapshot.json",
+            "distribution_v2_artifact_snapshot_exists": (
+                distribution_dir / "artifacts" / "snapshot_control_plane_public_ip_v2" / "snapshot.json"
+            ).exists(),
             "snapshot_check_passed": snapshot_check.returncode == 0
             and snapshot_check_report.get("passed") is True,
             "snapshot_check_has_registry_fingerprint": isinstance(snapshot_check_report.get("registry_fingerprint"), str)
@@ -156,11 +192,11 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             == "explicit",
             "invalid_registry_rejected": invalid_export.returncode != 0
             and "references unknown project" in invalid_export.stderr,
-            "health_snapshot_version_matches": health.get("snapshot_version") == "snapshot_control_plane_public_ip_v1",
+            "health_snapshot_version_matches": health.get("snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "response_success": response.get("success") is True,
             "response_ip_matches_provider": (response.get("output") or {}).get("ip") == FIXED_IP,
             "usage_has_attempt_id": (usage.get("request_metadata") or {}).get("attempt_id") == usage.get("id"),
-            "routing_snapshot_version_matches": routing_decision.get("snapshot_version") == "snapshot_control_plane_public_ip_v1",
+            "routing_snapshot_version_matches": routing_decision.get("snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "event_order_is_graph": [event["event_type"] for event in events] == [
                 "request_context",
                 "routing_decision",
@@ -178,6 +214,9 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "manifest": manifest,
             "distribution_dir": str(distribution_dir),
             "current_pointer": current_pointer,
+            "current_pointer_after_reload": current_pointer_after_reload,
+            "health_before_reload": health_before_reload,
+            "reload_response": reload_response,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,
@@ -194,7 +233,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
         provider_server.server_close()
 
 
-def write_registry(path: Path, base_url: str) -> Path:
+def write_registry(path: Path, base_url: str, snapshot_version: str) -> Path:
     path.write_text(
         json.dumps(
             {
@@ -243,7 +282,7 @@ def write_registry(path: Path, base_url: str) -> Path:
                     "routing_seed": "control-plane-public-ip-v1",
                 },
                 "snapshot": {
-                    "version": "snapshot_control_plane_public_ip_v1",
+                    "version": snapshot_version,
                     "fetched_at": "2026-05-30T00:00:00Z",
                     "ttl": "24h",
                     "source": "pull",
@@ -257,7 +296,7 @@ def write_registry(path: Path, base_url: str) -> Path:
 
 
 def write_invalid_registry(path: Path, base_url: str) -> Path:
-    write_registry(path, base_url)
+    write_registry(path, base_url, "snapshot_control_plane_public_ip_v1")
     data = json.loads(path.read_text(encoding="utf-8"))
     data["api_keys"][0]["project_id"] = "missing_project"
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")

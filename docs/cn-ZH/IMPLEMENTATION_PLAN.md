@@ -454,6 +454,14 @@ Go Control Plane Minimum v0
   - `api2agent-snapshot-check` 可以校验 distribution 目录，因为它使用同一个 snapshot resolver。
   - cross-plane dogfood 证明 `Control Plane registry -> artifact export -> local distribution publish -> Data Plane execute`。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SNAPSHOT_DISTRIBUTION_DOGFOOD_REPORT.md`。
+- Control Plane Snapshot Refresh / Reload Policy v0 已完成：
+  - Data Plane 默认 snapshot policy 仍然是 `startup_only`。
+  - local manual reload 只有在 `API2AGENT_SNAPSHOT_RELOAD_POLICY=manual` 时开启。
+  - `POST /v1/admin/reload-snapshot` 会重新加载配置的 snapshot source，包括 `current.json` 已变化的 distribution 目录。
+  - `/healthz` 会报告 snapshot reload policy、loaded-at timestamp、source path 和 resolved snapshot path。
+  - 如果设置了 `API2AGENT_PROJECT_KEY`，reload endpoint 需要和 `/v1/execute` 相同的 bearer token。
+  - cross-plane dogfood 证明 v1 startup、v2 distribution publish、manual reload 和 v2 execution event attribution。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_RELOAD_DOGFOOD_REPORT.md`。
 
 ## 9. Marketplace 是后面的结果
 

@@ -34,6 +34,8 @@ The dogfood script now:
 - publishes the artifact into a local distribution directory
 - runs `api2agent-snapshot-check` against the distribution directory
 - starts Go Data Plane with `API2AGENT_SNAPSHOT=<distribution_dir>`
+- publishes a second artifact version into the same distribution directory
+- reloads the Data Plane snapshot manually
 - verifies `/v1/execute` succeeds with the distributed snapshot
 
 ## Checks
@@ -44,6 +46,8 @@ The dogfood script now:
   "distribution_current_points_to_snapshot": true,
   "distribution_current_fingerprint_matches_manifest": true,
   "distribution_artifact_snapshot_exists": true,
+  "reload_response_success": true,
+  "distribution_current_after_reload_points_to_v2": true,
   "snapshot_check_passed": true,
   "health_snapshot_version_matches": true,
   "response_success": true

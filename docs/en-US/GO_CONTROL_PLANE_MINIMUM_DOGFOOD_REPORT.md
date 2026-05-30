@@ -52,6 +52,8 @@ The control plane then published that artifact into a distribution directory wit
 - `artifacts/snapshot_control_plane_public_ip_v1/snapshot.json`
 - `artifacts/snapshot_control_plane_public_ip_v1/manifest.json`
 
+The dogfood then publishes a v2 artifact into the same distribution and triggers manual Data Plane reload.
+
 The manifest recorded:
 
 - `snapshot_version = snapshot_control_plane_public_ip_v1`
@@ -76,6 +78,7 @@ The data plane then:
 - accepted the distribution directory through `api2agent-snapshot-check`
 - resolved `current.json` to the published artifact snapshot
 - loaded the distributed snapshot through `API2AGENT_SNAPSHOT=<distribution_dir>`
+- reloaded from v1 to v2 through `POST /v1/admin/reload-snapshot`
 - reported the same snapshot version in `/healthz`
 - executed `network.public_ip.get`
 - returned the fixed public IP from the local provider
@@ -110,6 +113,12 @@ Control Plane registry -> snapshot artifact export -> local distribution current
   "distribution_current_points_to_snapshot": true,
   "distribution_current_fingerprint_matches_manifest": true,
   "distribution_artifact_snapshot_exists": true,
+  "health_before_reload_snapshot_version_matches": true,
+  "reload_response_success": true,
+  "reload_previous_snapshot_version_matches": true,
+  "reload_snapshot_version_matches": true,
+  "distribution_current_after_reload_points_to_v2": true,
+  "distribution_v2_artifact_snapshot_exists": true,
   "snapshot_check_passed": true,
   "snapshot_check_has_registry_fingerprint": true,
   "snapshot_check_has_explicit_version_policy": true,

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -120,6 +122,17 @@ func executeBody(timeoutBudgetMS int) []byte {
 	}`, timeoutBudgetMS))
 }
 
+func writeSnapshotFile(t *testing.T, path string, snapshot *snapshots.Snapshot) {
+	t.Helper()
+	data, err := json.MarshalIndent(snapshot, "", "  ")
+	if err != nil {
+		t.Fatalf("encode snapshot: %v", err)
+	}
+	if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
+		t.Fatalf("write snapshot: %v", err)
+	}
+}
+
 func TestHealthzReportsProtocolAndSnapshot(t *testing.T) {
 	snapshot := newTestSnapshot("https://example.test")
 	handler, _ := newTestHandler(snapshot, http.DefaultClient)
@@ -179,6 +192,61 @@ func TestHealthzReportsDegradedForExpiredSnapshot(t *testing.T) {
 	}
 	if response.SnapshotExpired == nil || !*response.SnapshotExpired {
 		t.Fatalf("expected expired snapshot, got %#v", response.SnapshotExpired)
+	}
+}
+
+func TestReloadSnapshotUpdatesCurrentSnapshot(t *testing.T) {
+	dir := t.TempDir()
+	snapshotPath := filepath.Join(dir, "snapshot.json")
+	snapshotV1 := newTestSnapshot("https://example.test")
+	snapshotV1.SnapshotVersion = "snapshot_test_v1"
+	snapshotV2 := newTestSnapshot("https://example.test")
+	snapshotV2.SnapshotVersion = "snapshot_test_v2"
+	writeSnapshotFile(t, snapshotPath, snapshotV1)
+
+	handler, _ := newTestHandler(snapshotV1, http.DefaultClient)
+	handler.SnapshotStore = NewSnapshotStore(snapshotPath, snapshotV1)
+	handler.SnapshotReloadPolicy = "manual"
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	writeSnapshotFile(t, snapshotPath, snapshotV2)
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/reload-snapshot", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected reload success, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var reload ReloadSnapshotResponse
+	if err := json.NewDecoder(rec.Body).Decode(&reload); err != nil {
+		t.Fatalf("decode reload response: %v", err)
+	}
+	if !reload.Reloaded || reload.PreviousSnapshotVersion != "snapshot_test_v1" || reload.SnapshotVersion != "snapshot_test_v2" {
+		t.Fatalf("unexpected reload response: %#v", reload)
+	}
+
+	healthReq := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	healthRec := httptest.NewRecorder()
+	mux.ServeHTTP(healthRec, healthReq)
+	var health HealthResponse
+	if err := json.NewDecoder(healthRec.Body).Decode(&health); err != nil {
+		t.Fatalf("decode health response: %v", err)
+	}
+	if health.SnapshotVersion != "snapshot_test_v2" {
+		t.Fatalf("expected reloaded snapshot version, got %#v", health)
+	}
+}
+
+func TestReloadSnapshotDisabledByDefault(t *testing.T) {
+	handler, _ := newTestHandler(newTestSnapshot("https://example.test"), http.DefaultClient)
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/reload-snapshot", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("expected reload disabled conflict, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
 
