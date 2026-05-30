@@ -731,12 +731,13 @@ Control Plane Snapshot Metadata Manifest Consistency Guard v0 - complete
 Control Plane Snapshot Artifact Content Digest Guard v0 - complete
 Control Plane Snapshot Artifact Path Safety Guard v0 - complete
 Control Plane Snapshot Distribution Atomic Publish Guard v0 - complete
-Next: Go Control Plane Snapshot Distribution Closeout + Phase Review
+Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
+Next: Go Control Plane Service API Skeleton v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: ready to begin as local Go Control Plane minimum.
+Status: active. Local Go Control Plane minimum and snapshot distribution are complete; next scope is the local service API boundary.
 
 Goal:
 
@@ -744,32 +745,42 @@ Move local proxy concepts into a hosted service.
 
 Immediate local scope:
 
-- local Go Control Plane model layer first
+- local Go Control Plane model layer
 - routing snapshot export consumed by the Go Data Plane
-- project identity
-- API keys for proxy access
+- local snapshot artifact and distribution lifecycle
+- local Control Plane service API boundary
+- project identity and admin authorization
 
-Immediate entry slice:
+Completed local entry slices:
 
 ```text
 Go Control Plane Minimum v0
+Go Control Plane Snapshot Distribution Closeout + Phase Review
+```
+
+Next local entry slice:
+
+```text
+Go Control Plane Service API Skeleton v0
 ```
 
 Scope:
 
-1. Project model
-2. API2Agent project API key model
-3. Capability registry model
-4. Provider registry model
-5. Credential metadata model without secret storage
-6. Routing snapshot export format consumed by the existing Go Data Plane
+1. Local Control Plane HTTP process.
+2. `GET /healthz` with service, protocol, and registry source metadata.
+3. Read-only registry validation endpoint.
+4. Snapshot artifact export endpoint backed by the existing exporter.
+5. Distribution status endpoint that reads `current.json`.
+6. Admin bearer token guard for non-health endpoints.
 
 Exit criteria:
 
-- Control Plane can produce a versioned local snapshot.
-- Go Data Plane can execute using a snapshot produced by Control Plane code.
-- Existing Data Plane dogfoods continue to pass.
-- No hosted deployment, billing, or marketplace work is included.
+- Control Plane can start as a local service against the existing file registry.
+- Control Plane can validate the registry through HTTP.
+- Control Plane can export a snapshot artifact through HTTP.
+- Control Plane can report local distribution pointer state through HTTP.
+- Existing CLI commands and cross-plane dogfoods continue to pass.
+- No hosted deployment, database, vault, billing, or marketplace work is included.
 
 Later hosted scope:
 

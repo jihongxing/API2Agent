@@ -511,11 +511,16 @@ Current Phase 6 progress:
   - duplicate `snapshot_version` publishes are rejected before changing `current.json`.
   - duplicate publish dogfood verifies current remains stable and no temporary artifact dirs remain.
   - see `docs/en-US/GO_CONTROL_PLANE_SNAPSHOT_ATOMIC_PUBLISH_DOGFOOD_REPORT.md`.
+- Go Control Plane Snapshot Distribution Closeout + Phase Review is complete:
+  - the local snapshot distribution chain is closed from registry to artifact to distribution to Data Plane reload.
+  - remaining gaps are explicitly deferred to service API, remote storage, hosted persistence, vault, billing, or marketplace stages.
+  - the next implementation slice is narrowed to a local Control Plane service API skeleton.
+  - see `docs/en-US/GO_CONTROL_PLANE_SNAPSHOT_DISTRIBUTION_CLOSEOUT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Snapshot Distribution Closeout + Phase Review
+Go Control Plane Service API Skeleton v0
 ```
 
 ## 9. Marketplace Is Later

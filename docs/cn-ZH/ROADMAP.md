@@ -731,12 +731,13 @@ Control Plane Snapshot Metadata Manifest Consistency Guard v0 - complete
 Control Plane Snapshot Artifact Content Digest Guard v0 - complete
 Control Plane Snapshot Artifact Path Safety Guard v0 - complete
 Control Plane Snapshot Distribution Atomic Publish Guard v0 - complete
-Next: Go Control Plane Snapshot Distribution Closeout + Phase Review
+Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
+Next: Go Control Plane Service API Skeleton v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：可以从 local Go Control Plane minimum 开始。
+状态：active。Local Go Control Plane minimum 和 snapshot distribution 已完成；下一步进入 local service API boundary。
 
 目标：
 
@@ -744,32 +745,42 @@ Next: Go Control Plane Snapshot Distribution Closeout + Phase Review
 
 立即本地范围：
 
-- 先实现 local Go Control Plane model layer
+- local Go Control Plane model layer
 - 生成可被 Go Data Plane 消费的 routing snapshot export
-- project identity
-- API keys for proxy access
+- local snapshot artifact and distribution lifecycle
+- local Control Plane service API boundary
+- project identity and admin authorization
 
-立即入口任务：
+已完成的 local entry slices：
 
 ```text
 Go Control Plane Minimum v0
+Go Control Plane Snapshot Distribution Closeout + Phase Review
+```
+
+下一项 local entry slice：
+
+```text
+Go Control Plane Service API Skeleton v0
 ```
 
 范围：
 
-1. Project model
-2. API2Agent project API key model
-3. Capability registry model
-4. Provider registry model
-5. Credential metadata model，不包含 secret storage
-6. Routing snapshot export format，供现有 Go Data Plane 消费
+1. Local Control Plane HTTP process。
+2. `GET /healthz` 返回 service、protocol 和 registry source metadata。
+3. Read-only registry validation endpoint。
+4. 基于现有 exporter 的 snapshot artifact export endpoint。
+5. Distribution status endpoint，读取 `current.json`。
+6. 非 health endpoints 使用 admin bearer token guard。
 
 退出标准：
 
-- Control Plane 可以生成 versioned local snapshot。
-- Go Data Plane 可以使用 Control Plane code 生成的 snapshot 执行。
-- 现有 Data Plane dogfoods 继续通过。
-- 不包含 hosted deployment、billing 或 marketplace 工作。
+- Control Plane 可以基于现有 file registry 作为 local service 启动。
+- Control Plane 可以通过 HTTP validate registry。
+- Control Plane 可以通过 HTTP export snapshot artifact。
+- Control Plane 可以通过 HTTP report local distribution pointer state。
+- 现有 CLI commands 和 cross-plane dogfoods 继续通过。
+- 不包含 hosted deployment、database、vault、billing 或 marketplace 工作。
 
 后续 hosted 范围：
 

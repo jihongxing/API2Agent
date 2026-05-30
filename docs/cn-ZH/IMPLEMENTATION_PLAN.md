@@ -511,11 +511,16 @@ Go Control Plane Minimum v0
   - duplicate `snapshot_version` publish 会在修改 `current.json` 前被拒绝。
   - duplicate publish dogfood 验证 current 保持稳定，并且没有 temporary artifact dirs 残留。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SNAPSHOT_ATOMIC_PUBLISH_DOGFOOD_REPORT.md`。
+- Go Control Plane Snapshot Distribution Closeout + Phase Review 已完成：
+  - local snapshot distribution 链路已经从 registry 到 artifact、distribution、Data Plane reload 完成收口。
+  - 剩余缺口明确推迟到 service API、remote storage、hosted persistence、vault、billing 或 marketplace 阶段。
+  - 下一项 implementation slice 收窄为 local Control Plane service API skeleton。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SNAPSHOT_DISTRIBUTION_CLOSEOUT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Snapshot Distribution Closeout + Phase Review
+Go Control Plane Service API Skeleton v0
 ```
 
 ## 9. Marketplace 是后面的结果

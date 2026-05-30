@@ -115,6 +115,7 @@ All notable API2Agent changes will be documented in this file.
 - Snapshot artifact content digest metadata and publish/reload validation.
 - Snapshot artifact and distribution path safety validation for manifest/current file references.
 - Snapshot distribution atomic publish behavior with temporary artifact/current writes and duplicate-version rejection.
+- Go Control Plane snapshot distribution closeout and local service API readiness review.
 - Go Control Plane minimum dogfood script and bilingual report.
 - Go Data Plane credential config dogfood script and bilingual report.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
@@ -178,10 +179,11 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane snapshot content digest dogfood passed with byte-level snapshot tampering rejected at publish and reload.
 - Go Data Plane snapshot path safety dogfood passed with unsafe manifest and current pointer paths rejected.
 - Go Control Plane snapshot atomic publish dogfood passed with duplicate publish rejected, current pointer preserved, and no temporary artifact residue.
+- Go Control Plane snapshot distribution milestone closed; next scope is a local Control Plane service API skeleton.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
 - Full test suite: `143 passed`.
 
 ### Planned Next
 
-- Go Control Plane Snapshot Distribution Closeout + Phase Review.
+- Go Control Plane Service API Skeleton v0.
