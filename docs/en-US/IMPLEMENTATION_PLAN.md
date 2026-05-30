@@ -528,11 +528,16 @@ Current Phase 6 progress:
   - duplicate publish returns `DISTRIBUTION_ARTIFACT_EXISTS` and leaves `current.json` unchanged.
   - service dogfood now verifies HTTP export -> HTTP publish -> HTTP current pointer.
   - see `docs/en-US/GO_CONTROL_PLANE_SERVICE_API_DOGFOOD_REPORT.md`.
+- Go Control Plane Service API Closeout + Hosted Persistence Readiness Review is complete:
+  - the local service boundary is closed around registry validation, artifact export, distribution publish, and current pointer reads.
+  - hosted persistence readiness is approved for design only, not direct database implementation.
+  - the next implementation slice is narrowed to persistent registry store design.
+  - see `docs/en-US/GO_CONTROL_PLANE_SERVICE_API_CLOSEOUT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
+Go Control Plane Persistent Registry Store Design v0
 ```
 
 ## 9. Marketplace Is Later

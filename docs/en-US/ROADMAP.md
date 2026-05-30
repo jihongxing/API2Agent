@@ -734,7 +734,8 @@ Control Plane Snapshot Distribution Atomic Publish Guard v0 - complete
 Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
 Go Control Plane Service API Skeleton v0 - complete
 Go Control Plane Service Snapshot Publish Endpoint v0 - complete
-Next: Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
+Go Control Plane Service API Closeout + Hosted Persistence Readiness Review - complete
+Next: Go Control Plane Persistent Registry Store Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -760,26 +761,28 @@ Go Control Plane Minimum v0
 Go Control Plane Snapshot Distribution Closeout + Phase Review
 Go Control Plane Service API Skeleton v0
 Go Control Plane Service Snapshot Publish Endpoint v0
+Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
+Go Control Plane Persistent Registry Store Design v0
 ```
 
 Scope:
 
-1. Review the local Control Plane service boundary against Phase 6 goals.
-2. Confirm the service can validate, export, publish, and report distribution state.
-3. Identify remaining gaps before hosted persistence.
-4. Decide the next implementation slice: persistent registry store, API key enforcement, or service hardening.
+1. Define the persistent registry store contract.
+2. Draft the first Postgres table model for Control Plane registry state.
+3. Define transaction boundaries for registry load, artifact export, and distribution publish.
+4. Define database-backed registry fingerprint and versioning rules.
+5. Define migration and dual-store strategy from file registry to persistent registry.
 
 Exit criteria:
 
-- The service API milestone has a bilingual closeout document.
-- Hosted persistence readiness is explicit.
-- The next implementation task is narrowed before any database work starts.
+- Persistent store design is documented in English and Chinese.
+- Database implementation scope is explicit before code starts.
+- Snapshot export output remains compatible with the current Go Data Plane snapshot contract.
 - No hosted deployment, database, vault, billing, or marketplace work is included.
 
 Later hosted scope:

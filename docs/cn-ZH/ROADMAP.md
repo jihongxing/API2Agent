@@ -734,7 +734,8 @@ Control Plane Snapshot Distribution Atomic Publish Guard v0 - complete
 Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
 Go Control Plane Service API Skeleton v0 - complete
 Go Control Plane Service Snapshot Publish Endpoint v0 - complete
-Next: Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
+Go Control Plane Service API Closeout + Hosted Persistence Readiness Review - complete
+Next: Go Control Plane Persistent Registry Store Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -760,26 +761,28 @@ Go Control Plane Minimum v0
 Go Control Plane Snapshot Distribution Closeout + Phase Review
 Go Control Plane Service API Skeleton v0
 Go Control Plane Service Snapshot Publish Endpoint v0
+Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
+Go Control Plane Persistent Registry Store Design v0
 ```
 
 范围：
 
-1. 对照 Phase 6 目标 review local Control Plane service boundary。
-2. 确认 service 可以 validate、export、publish 和 report distribution state。
-3. 明确 hosted persistence 前的剩余缺口。
-4. 在开始任何 database work 前，决定下一项 implementation slice：persistent registry store、API key enforcement 或 service hardening。
+1. 定义 persistent registry store contract。
+2. 起草第一版 Control Plane registry state 的 Postgres table model。
+3. 定义 registry load、artifact export 和 distribution publish 的 transaction boundaries。
+4. 定义 database-backed registry fingerprint 和 versioning rules。
+5. 定义从 file registry 到 persistent registry 的 migration 和 dual-store strategy。
 
 退出标准：
 
-- service API milestone 有双语 closeout document。
-- Hosted persistence readiness 明确。
-- 在任何 database work 开始前，下一项 implementation task 已经收窄。
+- Persistent store design 有英文和中文文档。
+- Database implementation scope 在写代码前明确。
+- Snapshot export output 与当前 Go Data Plane snapshot contract 保持兼容。
 - 不包含 hosted deployment、database、vault、billing 或 marketplace 工作。
 
 后续 hosted 范围：

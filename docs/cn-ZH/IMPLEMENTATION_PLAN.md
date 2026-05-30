@@ -528,11 +528,16 @@ Go Control Plane Minimum v0
   - duplicate publish 返回 `DISTRIBUTION_ARTIFACT_EXISTS`，并保持 `current.json` 不变。
   - service dogfood 现在验证 HTTP export -> HTTP publish -> HTTP current pointer。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SERVICE_API_DOGFOOD_REPORT.md`。
+- Go Control Plane Service API Closeout + Hosted Persistence Readiness Review 已完成：
+  - local service boundary 已围绕 registry validation、artifact export、distribution publish 和 current pointer reads 完成收口。
+  - hosted persistence readiness 被批准进入 design，但不直接进入 database implementation。
+  - 下一项 implementation slice 收窄为 persistent registry store design。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SERVICE_API_CLOSEOUT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
+Go Control Plane Persistent Registry Store Design v0
 ```
 
 ## 9. Marketplace 是后面的结果
