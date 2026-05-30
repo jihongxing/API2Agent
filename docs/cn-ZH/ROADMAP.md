@@ -513,6 +513,7 @@ Region-aware routing dogfood: same capability, different regions
 - `region_aware_latency` routing strategy 现在会按 client-region affinity 和 latency metrics 排序 providers。
 - `api2agent route` 和 `api2agent call` 现在支持 `--client-region`。
 - routing decisions 现在会持久化 `client_region`，用于 audit 和 decision dataset。
+- `run_region_aware_routing_benchmark` 现在会返回 routing decision 和 decision-dataset record。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 - proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。

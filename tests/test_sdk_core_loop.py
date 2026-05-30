@@ -3,7 +3,8 @@ from pathlib import Path
 from api2agent.adapters.models import AdapterResult, CostEstimate
 from api2agent.adapters.open_meteo import OpenMeteoWeatherAdapter
 from api2agent.adapters.wttr_in import WttrInWeatherAdapter
-from api2agent.benchmark import run_weather_benchmark
+from api2agent.benchmark import run_region_aware_routing_benchmark, run_weather_benchmark
+from api2agent.capabilities.models import MetricsSnapshot, ProviderCandidate
 from api2agent.control.storage import UsageStore
 from api2agent.sdk import call
 
@@ -430,3 +431,52 @@ def test_weather_benchmark_returns_provider_latency_stats(tmp_path: Path, monkey
     assert calls == {"open_meteo": 2, "wttr_in": 2}
     assert result["providers"][0]["p50_latency_ms"] == 100
     assert result["providers"][1]["p95_latency_ms"] == 50
+
+
+def test_region_aware_routing_benchmark_returns_decision_dataset() -> None:
+    result = run_region_aware_routing_benchmark(
+        capability_id="weather.current.get",
+        client_region="cn",
+        providers=[
+            ProviderCandidate(
+                id="weather_us",
+                capability_id="weather.current.get",
+                provider_id="weather_us",
+                tool_id="get",
+                regions=["us-east"],
+                geo_affinity="regional",
+                estimated_cost=0.02,
+            ),
+            ProviderCandidate(
+                id="weather_cn",
+                capability_id="weather.current.get",
+                provider_id="weather_cn",
+                tool_id="get",
+                regions=["cn"],
+                geo_affinity="regional",
+                estimated_cost=0.01,
+            ),
+        ],
+        metrics=[
+            MetricsSnapshot(
+                capability_id="weather.current.get",
+                provider_id="weather_us",
+                client_region="us-east",
+                total_calls=10,
+                average_latency_ms=40,
+            ),
+            MetricsSnapshot(
+                capability_id="weather.current.get",
+                provider_id="weather_cn",
+                client_region="cn",
+                total_calls=10,
+                average_latency_ms=90,
+            ),
+        ],
+    )
+
+    assert result["selected_provider_id"] == "weather_cn"
+    assert result["ranked_provider_ids"] == ["weather_cn", "weather_us"]
+    assert result["routing_decision"]["client_region"] == "cn"
+    assert result["decision_dataset_record"]["client_region"] == "cn"
+    assert result["decision_dataset_record"]["selected_provider_id"] == "weather_cn"

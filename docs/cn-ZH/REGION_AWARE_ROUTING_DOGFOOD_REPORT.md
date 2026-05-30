@@ -47,11 +47,13 @@ pytest tests/test_capability_routing.py tests/test_control_layer.py
 36 passed
 
 pytest
-139 passed
+140 passed
 ```
 
 ## 产品认知
 
 这验证了 location-aware execution 的第一个可运行步骤。API2Agent 现在可以把 region metadata 和 regional latency observations 转化成可审计的 provider decision，同时保持 v0.1-alpha 足够简单。
+
+可复用的 benchmark helper 是 `api2agent/benchmark.py` 里的 `run_region_aware_routing_benchmark`。
 
 下一次 dogfood 应该使用 same-capability registry，通过真实 provider calls 或模拟 regional latency snapshots，对比 selected provider、ranked providers、latency、cost 和 success outcome，并沉淀为 decision dataset record。

@@ -47,11 +47,13 @@ pytest tests/test_capability_routing.py tests/test_control_layer.py
 36 passed
 
 pytest
-139 passed
+140 passed
 ```
 
 ## Product Learning
 
 This validates the first practical step toward location-aware execution. API2Agent can now turn region metadata and regional latency observations into an auditable provider decision while keeping the strategy simple enough for v0.1-alpha.
+
+The reusable benchmark helper is `run_region_aware_routing_benchmark` in `api2agent/benchmark.py`.
 
 The next dogfood should use a same-capability registry with real provider calls from different regions or simulated regional latency snapshots, then compare selected provider, ranked providers, latency, cost, and success outcome as a decision dataset record.

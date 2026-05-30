@@ -1,6 +1,14 @@
 from pathlib import Path
 from typing import Any, Iterable
 
+from api2agent.capabilities.models import (
+    DecisionDatasetRecord,
+    MetricsSnapshot,
+    ProviderCandidate,
+    RoutingDecision,
+    RoutingPolicy,
+)
+from api2agent.capabilities.routing import rank_providers
 from api2agent.sdk import call
 
 
@@ -48,6 +56,54 @@ def run_weather_benchmark(
     }
 
 
+def run_region_aware_routing_benchmark(
+    *,
+    capability_id: str,
+    client_region: str,
+    providers: Iterable[ProviderCandidate],
+    metrics: Iterable[MetricsSnapshot],
+    project_id: str = "local",
+) -> dict[str, Any]:
+    provider_list = list(providers)
+    metric_list = list(metrics)
+    policy = RoutingPolicy(strategy="region_aware_latency", client_region=client_region)
+    ranked = rank_providers(provider_list, metric_list, policy)
+    selected = ranked[0] if ranked else None
+    decision = RoutingDecision(
+        project_id=project_id,
+        capability_id=capability_id,
+        strategy=policy.strategy,
+        client_region=client_region,
+        selected_provider_id=selected.provider_id if selected else None,
+        ranked_provider_ids=[provider.provider_id for provider in ranked],
+        metrics=metric_list,
+    )
+    selected_latency = _selected_latency(selected.provider_id if selected else None, metric_list, client_region)
+    dataset_record = DecisionDatasetRecord(
+        request_id=decision.id,
+        routing_decision_id=decision.id,
+        project_id=project_id,
+        capability_id=capability_id,
+        client_region=client_region,
+        candidate_provider_ids=[provider.provider_id for provider in provider_list],
+        selected_provider_id=selected.provider_id if selected else None,
+        routing_strategy=policy.strategy,
+        success=selected is not None,
+        latency_total_ms=selected_latency,
+        estimated_cost=selected.estimated_cost if selected else 0.0,
+        error_type=None if selected else "no_provider",
+    )
+
+    return {
+        "capability_id": capability_id,
+        "client_region": client_region,
+        "selected_provider_id": selected.provider_id if selected else None,
+        "ranked_provider_ids": [provider.provider_id for provider in ranked],
+        "routing_decision": decision.model_dump(mode="json"),
+        "decision_dataset_record": dataset_record.model_dump(mode="json"),
+    }
+
+
 def _percentile(values: list[float], percentile: int) -> float:
     if not values:
         return 0.0
@@ -59,3 +115,23 @@ def _percentile(values: list[float], percentile: int) -> float:
     upper = min(lower + 1, len(ordered) - 1)
     weight = index - lower
     return ordered[lower] * (1 - weight) + ordered[upper] * weight
+
+
+def _selected_latency(
+    provider_id: str | None,
+    metrics: list[MetricsSnapshot],
+    client_region: str,
+) -> float | None:
+    if provider_id is None:
+        return None
+    matching_metrics = [
+        item
+        for item in metrics
+        if item.provider_id == provider_id and item.client_region == client_region and item.total_calls
+    ]
+    if matching_metrics:
+        return min(item.average_latency_ms for item in matching_metrics)
+    provider_metrics = [item for item in metrics if item.provider_id == provider_id and item.total_calls]
+    if provider_metrics:
+        return min(item.average_latency_ms for item in provider_metrics)
+    return None

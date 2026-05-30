@@ -513,6 +513,7 @@ Current implementation result:
 - `region_aware_latency` routing strategy now ranks providers by client-region affinity and latency metrics.
 - `api2agent route` and `api2agent call` now accept `--client-region`.
 - routing decisions now persist `client_region` for audit and decision-dataset use.
+- `run_region_aware_routing_benchmark` now returns a routing decision and decision-dataset record.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
