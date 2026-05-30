@@ -79,6 +79,10 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane httpbin IP adapter for real external public-IP fallback normalization.
 - Go Data Plane real external provider retry dogfood script and bilingual report.
 - Go Data Plane stage review and consolidation hardening plan.
+- Reusable Go Protocol v0.2 conformance validator and JSONL event validation command.
+- Fail-closed event write policy for Go Data Plane execution graph records.
+- Go Data Plane provider availability probe dogfood script and bilingual report.
+- Go Data Plane Consolidation Hardening v0 report.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -116,9 +120,11 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane durable event dogfood passed with two process runs, eight event records, and monotonic event sequence IDs.
 - Go Data Plane real external provider retry dogfood passed with `httpbin/status/500` followed by `httpbin/ip` fallback.
 - Go Data Plane stage review completed and next hardening slice narrowed.
+- Go Data Plane dogfood JSONL events validate against Protocol v0.2 via `api2agent-conformance`.
+- Go Data Plane provider probe dogfood measured `httpbin` reachable and `ipify` unreachable from the Go runtime.
 - Full test suite: `143 passed`.
 
 ### Planned Next
 
 - Go Data Plane schema conformance should be promoted from test helper to reusable validator.
-- Start Go Data Plane Consolidation Hardening v0.
+- Start Timeout Budget Semantics v0.

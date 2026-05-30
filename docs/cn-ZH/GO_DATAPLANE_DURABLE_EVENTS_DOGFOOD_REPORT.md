@@ -39,7 +39,8 @@ python scripts/go_dataplane_durable_events_dogfood.py --output .dogfood/go-datap
     "no_duplicate_sequences": true,
     "two_request_contexts": true,
     "two_usage_events": true,
-    "two_decision_logs": true
+    "two_decision_logs": true,
+    "protocol_conformance": true
   }
 }
 ```
@@ -50,6 +51,7 @@ python scripts/go_dataplane_durable_events_dogfood.py --output .dogfood/go-datap
 - 重启后的 writer 会从已有 event log 恢复下一个 sequence ID。
 - Event sequence IDs 在进程重启后仍保持单调递增。
 - Execution graph 在重启前后保持 append-only。
+- 每条 emitted event record 都可以通过 Protocol v0.2 schema snapshot 校验。
 
 ## 备注
 

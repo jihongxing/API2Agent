@@ -39,7 +39,8 @@ python scripts/go_dataplane_durable_events_dogfood.py --output .dogfood/go-datap
     "no_duplicate_sequences": true,
     "two_request_contexts": true,
     "two_usage_events": true,
-    "two_decision_logs": true
+    "two_decision_logs": true,
+    "protocol_conformance": true
   }
 }
 ```
@@ -50,6 +51,7 @@ python scripts/go_dataplane_durable_events_dogfood.py --output .dogfood/go-datap
 - Restarted writers recover the next sequence ID from the existing event log.
 - Event sequence IDs remain monotonic across process restarts.
 - The execution graph remains append-only across restarts.
+- Every emitted event record validates against the Protocol v0.2 schema snapshot.
 
 ## Notes
 

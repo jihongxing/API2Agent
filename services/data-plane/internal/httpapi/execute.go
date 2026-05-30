@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -138,7 +139,9 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		ClientRegion:      req.ClientRegion,
 		CreatedAt:         now,
 	}
-	_, _ = h.Events.Write(r.Context(), "request_context", requestContext)
+	if !h.writeEvent(w, r.Context(), "request_context", requestContext) {
+		return
+	}
 
 	decisionResult, err := routing.Decide(routing.DecisionInput{
 		RequestID:         requestID,
@@ -152,7 +155,9 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		h.writeFailedDecision(w, r.Context(), requestContext, nil, errorRecord("NO_PROVIDER", "platform", err.Error(), false), http.StatusBadGateway)
 		return
 	}
-	_, _ = h.Events.Write(r.Context(), "routing_decision", decisionResult.Decision)
+	if !h.writeEvent(w, r.Context(), "routing_decision", decisionResult.Decision) {
+		return
+	}
 
 	routeID := decisionResult.Decision.ID
 	attempts := providersForAttempts(decisionResult)
@@ -253,7 +258,9 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 			CredentialReference: protocolCredentialReference(req.Credential, resolvedCredential),
 			CreatedAt:           time.Now().UTC(),
 		}
-		_, _ = h.Events.Write(r.Context(), "usage_event", &usage)
+		if !h.writeEvent(w, r.Context(), "usage_event", &usage) {
+			return
+		}
 
 		finalError = errRecord
 		if attemptSuccess {
@@ -292,7 +299,9 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		UsageEventIDs:          usageIDs,
 		CreatedAt:              time.Now().UTC(),
 	}
-	_, _ = h.Events.Write(r.Context(), "decision_log", &decisionLog)
+	if !h.writeEvent(w, r.Context(), "decision_log", &decisionLog) {
+		return
+	}
 
 	if !success {
 		writeJSON(w, http.StatusBadGateway, ExecuteResponse{
@@ -333,13 +342,26 @@ func (h Handler) writeFailedDecision(w http.ResponseWriter, ctx context.Context,
 	if decision != nil {
 		decisionLog.RoutingDecisionID = &decision.ID
 	}
-	_, _ = h.Events.Write(ctx, "decision_log", &decisionLog)
+	if !h.writeEvent(w, ctx, "decision_log", &decisionLog) {
+		return
+	}
 	writeJSON(w, status, ExecuteResponse{
 		RequestID:         request.ID,
 		RoutingDecisionID: routeID,
 		Success:           false,
 		Error:             record,
 	})
+}
+
+func (h Handler) writeEvent(w http.ResponseWriter, ctx context.Context, eventType string, record any) bool {
+	if _, err := h.Events.Write(ctx, eventType, record); err != nil {
+		writeJSON(w, http.StatusInternalServerError, ExecuteResponse{
+			Success: false,
+			Error:   errorRecord("EVENT_WRITE_FAILED", "platform", fmt.Sprintf("write %s event: %v", eventType, err), false),
+		})
+		return false
+	}
+	return true
 }
 
 func validBearer(header, expected string) bool {

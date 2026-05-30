@@ -32,6 +32,9 @@ def main() -> int:
         exe_name = "api2agent-dataplane.exe" if os.name == "nt" else "api2agent-dataplane"
         exe_path = tmp / exe_name
         subprocess.run(["go", "build", "-o", str(exe_path), "./cmd/api2agent-dataplane"], cwd=go_dir, check=True)
+        conformance_exe_name = "api2agent-conformance.exe" if os.name == "nt" else "api2agent-conformance"
+        conformance_exe = tmp / conformance_exe_name
+        subprocess.run(["go", "build", "-o", str(conformance_exe), "./cmd/api2agent-conformance"], cwd=go_dir, check=True)
 
         event_dir = tmp / "events"
         port = free_port()
@@ -61,7 +64,8 @@ def main() -> int:
                 proc.kill()
 
         events = read_jsonl(event_dir / "events.jsonl")
-        report = build_report(response, events)
+        conformance_report = run_conformance(conformance_exe, event_dir / "events.jsonl")
+        report = build_report(response, events, conformance_report)
         args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
         print(json.dumps(report, indent=2, ensure_ascii=False))
     finally:
@@ -136,7 +140,7 @@ def provider(candidate_id: str, provider_id: str, base_url: str, tool_id: str, e
     }
 
 
-def build_report(response: dict, events: list[dict]) -> dict:
+def build_report(response: dict, events: list[dict], conformance_report: dict) -> dict:
     routing_decision = next((event["record"] for event in events if event["event_type"] == "routing_decision"), {})
     usage_events = [event["record"] for event in events if event["event_type"] == "usage_event"]
     decision_log = next((event["record"] for event in events if event["event_type"] == "decision_log"), {})
@@ -165,6 +169,7 @@ def build_report(response: dict, events: list[dict]) -> dict:
         "decision_log_success": decision_log.get("outcome") == "success",
         "decision_log_references_both_attempts": len(decision_log.get("usage_event_ids") or []) == 2,
         "selected_fallback_provider": decision_log.get("selected_provider_id") == "httpbin_ip_real_v1",
+        "protocol_conformance": conformance_report.get("passed") is True,
         "event_order_is_graph": [event["event_type"] for event in events] == [
             "request_context",
             "routing_decision",
@@ -184,6 +189,7 @@ def build_report(response: dict, events: list[dict]) -> dict:
         "final_output": final_output,
         "event_types": [event["event_type"] for event in events],
         "event_sequence_ids": [event["event_sequence_id"] for event in events],
+        "conformance": conformance_report,
         "attempts": attempts,
         "routing_decision": {
             "id": routing_decision.get("id"),
@@ -201,6 +207,24 @@ def build_report(response: dict, events: list[dict]) -> dict:
         "checks": checks,
         "passed": all(checks.values()),
     }
+
+
+def run_conformance(exe_path: Path, event_log: Path) -> dict:
+    completed = subprocess.run(
+        [str(exe_path), "--events", str(event_log)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    try:
+        report = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        report = {
+            "passed": False,
+            "error": completed.stderr or completed.stdout or "invalid conformance output",
+        }
+    report["exit_code"] = completed.returncode
+    return report
 
 
 def post_json(url: str, payload: dict) -> dict:

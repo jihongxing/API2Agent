@@ -338,11 +338,17 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Go Data Plane stage review 已完成：
   - 当前阶段总结在 `docs/cn-ZH/GO_DATAPLANE_STAGE_REVIEW.md`。
   - 下一项 hardening slice 已收敛为 conformance validation、event write failure policy 和 runtime provider availability probing。
+- Go Data Plane Consolidation Hardening v0 已完成：
+  - reusable Protocol v0.2 conformance validator 已在 Go 中可用。
+  - durable 和 real external retry dogfood scripts 会校验 emitted JSONL events。
+  - event write failures 现在会 fail closed，并返回 `EVENT_WRITE_FAILED`。
+  - runtime provider reachability probe 已完成 dogfood。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_CONSOLIDATION_HARDENING_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Data Plane Consolidation Hardening v0
+Timeout Budget Semantics v0
 ```
 
 ## 9. Marketplace 是后面的结果

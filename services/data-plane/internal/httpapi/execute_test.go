@@ -2,18 +2,18 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
 
 	"api2agent/services/data-plane/internal/adapters"
+	"api2agent/services/data-plane/internal/conformance"
 	"api2agent/services/data-plane/internal/events"
 	"api2agent/services/data-plane/internal/protocol"
 	"api2agent/services/data-plane/internal/snapshots"
@@ -97,6 +97,14 @@ func newTestHandler(snapshot *snapshots.Snapshot, client *http.Client) (Handler,
 		Events:   writer,
 	}
 	return handler, writer
+}
+
+type failingEventWriter struct {
+	err error
+}
+
+func (w failingEventWriter) Write(ctx context.Context, eventType string, record any) (int64, error) {
+	return 0, w.err
 }
 
 func executeBody(timeoutBudgetMS int) []byte {
@@ -263,6 +271,35 @@ func TestExecuteRequiresBearerWhenProjectKeyConfigured(t *testing.T) {
 	mux.ServeHTTP(validAuthRec, validAuth)
 	if validAuthRec.Code != http.StatusOK {
 		t.Fatalf("expected valid bearer to pass, got %d: %s", validAuthRec.Code, validAuthRec.Body.String())
+	}
+}
+
+func TestExecuteFailsClosedWhenRequestContextCannotBeWritten(t *testing.T) {
+	handler := Handler{
+		Snapshot: newTestSnapshot("https://example.test"),
+		Adapters: adapters.NewRegistry(),
+		Events:   failingEventWriter{err: errors.New("disk full")},
+	}
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(executeBody(5000)))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var response ExecuteResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if response.Success {
+		t.Fatalf("expected failed response")
+	}
+	if response.Error == nil || response.Error.ErrorType == nil || *response.Error.ErrorType != "EVENT_WRITE_FAILED" {
+		t.Fatalf("expected EVENT_WRITE_FAILED error, got %#v", response.Error)
 	}
 }
 
@@ -562,61 +599,11 @@ func TestExecuteFailoverWritesFailedAndFallbackUsage(t *testing.T) {
 
 func assertProtocolConformance(t *testing.T, definitionName string, record any) {
 	t.Helper()
-	schema := loadProtocolSchema(t)
-	definition, ok := schema.Defs[definitionName]
-	if !ok {
-		t.Fatalf("schema definition %q not found", definitionName)
-	}
-
-	data, err := json.Marshal(record)
+	schema, err := conformance.LoadDefaultSchema()
 	if err != nil {
-		t.Fatalf("marshal %s: %v", definitionName, err)
+		t.Fatalf("load protocol schema: %v", err)
 	}
-	var payload map[string]any
-	if err := json.Unmarshal(data, &payload); err != nil {
-		t.Fatalf("decode marshaled %s: %v", definitionName, err)
+	if err := schema.ValidateRecord(definitionName, record); err != nil {
+		t.Fatalf("validate %s: %v", definitionName, err)
 	}
-	for _, required := range definition.Required {
-		if _, ok := payload[required]; !ok {
-			t.Fatalf("%s missing required schema field %q in %#v", definitionName, required, payload)
-		}
-	}
-	if definition.AdditionalProperties == false {
-		for key := range payload {
-			if _, ok := definition.Properties[key]; !ok {
-				t.Fatalf("%s emitted field %q not present in schema snapshot", definitionName, key)
-			}
-		}
-	}
-	if got, ok := payload["schema_version"].(string); ok && got != protocol.SchemaVersion {
-		t.Fatalf("%s schema_version = %q, want %q", definitionName, got, protocol.SchemaVersion)
-	}
-}
-
-type protocolSchema struct {
-	Defs map[string]schemaDefinition `json:"$defs"`
-}
-
-type schemaDefinition struct {
-	AdditionalProperties bool                       `json:"additionalProperties"`
-	Required             []string                   `json:"required"`
-	Properties           map[string]json.RawMessage `json:"properties"`
-}
-
-func loadProtocolSchema(t *testing.T) protocolSchema {
-	t.Helper()
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatalf("resolve caller path")
-	}
-	path := filepath.Clean(filepath.Join(filepath.Dir(file), "..", "..", "..", "..", "schemas", "api2agent", "v0.2", "protocol.schema.json"))
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read protocol schema %s: %v", path, err)
-	}
-	var schema protocolSchema
-	if err := json.Unmarshal(data, &schema); err != nil {
-		t.Fatalf("decode protocol schema: %v", err)
-	}
-	return schema
 }

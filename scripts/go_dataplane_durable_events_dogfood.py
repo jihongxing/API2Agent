@@ -47,6 +47,9 @@ def main() -> int:
             exe_name = "api2agent-dataplane.exe" if os.name == "nt" else "api2agent-dataplane"
             exe_path = tmp / exe_name
             subprocess.run(["go", "build", "-o", str(exe_path), "./cmd/api2agent-dataplane"], cwd=go_dir, check=True)
+            conformance_exe_name = "api2agent-conformance.exe" if os.name == "nt" else "api2agent-conformance"
+            conformance_exe = tmp / conformance_exe_name
+            subprocess.run(["go", "build", "-o", str(conformance_exe), "./cmd/api2agent-conformance"], cwd=go_dir, check=True)
 
             event_dir = tmp / "events"
             first_response = run_once(exe_path, go_dir, snapshot, event_dir)
@@ -54,7 +57,8 @@ def main() -> int:
 
             event_log = event_dir / "events.jsonl"
             events = read_jsonl(event_log)
-            report = build_report(first_response, second_response, event_log, events)
+            conformance_report = run_conformance(conformance_exe, event_log)
+            report = build_report(first_response, second_response, event_log, events, conformance_report)
             args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
             print(json.dumps(report, indent=2, ensure_ascii=False))
         finally:
@@ -136,7 +140,13 @@ def run_once(exe_path: Path, go_dir: Path, snapshot: Path, event_dir: Path) -> d
             proc.kill()
 
 
-def build_report(first_response: dict, second_response: dict, event_log: Path, events: list[dict]) -> dict:
+def build_report(
+    first_response: dict,
+    second_response: dict,
+    event_log: Path,
+    events: list[dict],
+    conformance_report: dict,
+) -> dict:
     sequences = [event.get("event_sequence_id") for event in events]
     expected_sequences = list(range(1, len(events) + 1))
     event_types = [event.get("event_type") for event in events]
@@ -150,6 +160,7 @@ def build_report(first_response: dict, second_response: dict, event_log: Path, e
         "two_request_contexts": event_types.count("request_context") == 2,
         "two_usage_events": event_types.count("usage_event") == 2,
         "two_decision_logs": event_types.count("decision_log") == 2,
+        "protocol_conformance": conformance_report.get("passed") is True,
     }
     return {
         "dogfood": "go_dataplane_durable_events",
@@ -159,9 +170,28 @@ def build_report(first_response: dict, second_response: dict, event_log: Path, e
         "event_count": len(events),
         "event_types": event_types,
         "event_sequence_ids": sequences,
+        "conformance": conformance_report,
         "checks": checks,
         "passed": all(checks.values()),
     }
+
+
+def run_conformance(exe_path: Path, event_log: Path) -> dict:
+    completed = subprocess.run(
+        [str(exe_path), "--events", str(event_log)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    try:
+        report = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        report = {
+            "passed": False,
+            "error": completed.stderr or completed.stdout or "invalid conformance output",
+        }
+    report["exit_code"] = completed.returncode
+    return report
 
 
 def post_json(url: str, payload: dict) -> dict:

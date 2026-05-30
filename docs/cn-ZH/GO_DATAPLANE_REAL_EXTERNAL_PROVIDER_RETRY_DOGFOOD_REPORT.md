@@ -44,6 +44,7 @@ python scripts/go_dataplane_real_external_provider_retry_dogfood.py --output .do
     "decision_log_success": true,
     "decision_log_references_both_attempts": true,
     "selected_fallback_provider": true,
+    "protocol_conformance": true,
     "event_order_is_graph": true
   }
 }
@@ -77,6 +78,7 @@ Attempt summary：
 - fallback provider attempt 会被记录成第二条 `UsageEvent`。
 - 最终 `DecisionLog` 会引用这两个 attempt。
 - 最终输出仍然保持标准化的 `{"ip": ...}` 形态。
+- 每条 emitted event record 都可以通过 Protocol v0.2 schema snapshot 校验。
 
 ## 备注
 

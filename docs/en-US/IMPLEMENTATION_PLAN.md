@@ -338,11 +338,17 @@ Current implementation:
 - Go Data Plane stage review is complete:
   - the current stage is summarized in `docs/en-US/GO_DATAPLANE_STAGE_REVIEW.md`.
   - the next hardening slice is narrowed to conformance validation, event write failure policy, and runtime provider availability probing.
+- Go Data Plane Consolidation Hardening v0 is complete:
+  - reusable Protocol v0.2 conformance validator is available in Go.
+  - durable and real external retry dogfood scripts validate emitted JSONL events.
+  - event write failures now fail closed with `EVENT_WRITE_FAILED`.
+  - runtime provider reachability probe is dogfooded.
+  - see `docs/en-US/GO_DATAPLANE_CONSOLIDATION_HARDENING_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Data Plane Consolidation Hardening v0
+Timeout Budget Semantics v0
 ```
 
 ## 9. Marketplace Is Later

@@ -707,7 +707,8 @@ Go Data Plane protocol conformance + retry/failover dogfood - complete
 Go Data Plane env credential resolution skeleton - complete
 Go Data Plane durable event ingestion - complete
 Go Data Plane real external provider retry dogfood - complete
-Next: Go Data Plane Consolidation Hardening v0
+Go Data Plane Consolidation Hardening v0 - complete
+Next: Timeout Budget Semantics v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
