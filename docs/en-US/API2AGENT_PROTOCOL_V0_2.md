@@ -590,3 +590,31 @@ This contract is frozen when:
 - roadmap and technical design link to this document
 - v0.1 compatibility is documented
 - no Python runtime feature expansion is included in the freeze commit
+
+## 23. Open Issues For v0.3
+
+These are not v0.2 blockers, but they should be planned before any long-term standard claim:
+
+- concurrency and parallel execution semantics
+  - `execution_group_id`
+  - `race_policy`
+  - winner selection
+  - cost attribution
+  - metrics attribution
+- data governance and privacy classification
+  - `data_class`
+  - `public`
+  - `internal`
+  - `sensitive`
+  - `regulated`
+- capability canonicalization
+  - `canonical_capability_id`
+  - aliases
+  - registry authority
+
+Additional future refinements:
+
+- standardized version format, including semver, hash, and alias modes
+- explicit `side_effect_level`
+- `delegated` credential resolution for on-behalf-of flows
+- `retryable` on standardized error records

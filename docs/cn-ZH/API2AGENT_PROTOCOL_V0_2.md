@@ -590,3 +590,31 @@ v0.2 consumers 在 migration 期间必须容忍 null optional fields，但新的
 - roadmap 和 technical design 链接到本文档
 - v0.1 compatibility 已文档化
 - freeze commit 不包含 Python runtime feature expansion
+
+## 23. v0.3 的开放问题
+
+这些不是 v0.2 blocker，但在长期标准化之前应该提前规划：
+
+- concurrency 和 parallel execution semantics
+  - `execution_group_id`
+  - `race_policy`
+  - winner selection
+  - cost attribution
+  - metrics attribution
+- data governance 和 privacy classification
+  - `data_class`
+  - `public`
+  - `internal`
+  - `sensitive`
+  - `regulated`
+- capability canonicalization
+  - `canonical_capability_id`
+  - aliases
+  - registry authority
+
+额外的 future refinements：
+
+- 标准化 version format，包括 semver、hash 和 alias modes
+- 显式 `side_effect_level`
+- on-behalf-of flows 使用的 `delegated` credential resolution
+- 标准化 error record 上的 `retryable`
