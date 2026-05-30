@@ -17,6 +17,7 @@ Go Control Plane 现在支持：
 - 非 health endpoints 的 admin bearer token guard
 - `POST /v1/admin/registry/validate`
 - `POST /v1/admin/snapshots/export-artifact`
+- `POST /v1/admin/distribution/publish`
 - `GET /v1/admin/distribution/current`
 
 这个 service 仍然是 local-first。它不包含 hosted persistence、remote object storage、vault、billing 或 marketplace flows。
@@ -33,7 +34,9 @@ dogfood 脚本会：
 6. 验证 unauthenticated admin call 会被 `AUTH_ERROR` 拒绝。
 7. 通过 HTTP validate registry。
 8. 通过 HTTP export snapshot artifact。
-9. 通过 HTTP 读取 current distribution pointer。
+9. 通过 HTTP publish artifact。
+10. 验证 duplicate HTTP publish 会被拒绝，并且不会推进 `current.json`。
+11. 通过 HTTP 读取 current distribution pointer。
 
 ## 检查项
 
@@ -44,12 +47,15 @@ dogfood 脚本会：
   "registry_validation_passed": true,
   "artifact_export_created_manifest": true,
   "artifact_export_created_snapshot": true,
-  "distribution_current_reported": true
+  "publish_endpoint_created_current": true,
+  "duplicate_publish_rejected": true,
+  "distribution_current_reported": true,
+  "duplicate_publish_kept_current": true
 }
 ```
 
 ## 结果
 
-Go Control Plane Service API Skeleton v0 通过。
+Go Control Plane Service Snapshot Publish Endpoint v0 通过。
 
-Control Plane 不再只是 CLI-only。它现在有了第一版 local service boundary，同时仍然复用已经验证过的 registry、artifact 和 distribution primitives。
+Control Plane service 现在可以通过 HTTP 驱动本地 snapshot lifecycle：validate registry、export artifact、publish distribution，并读取 current pointer。

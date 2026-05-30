@@ -111,6 +111,74 @@ func TestDistributionCurrentReadsPointer(t *testing.T) {
 	}
 }
 
+func TestPublishArtifactPublishesToDistribution(t *testing.T) {
+	artifactDir := filepath.Join(t.TempDir(), "artifact")
+	distributionDir := filepath.Join(t.TempDir(), "distribution")
+	reg := validRegistry()
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 31, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+	if err := registry.WriteArtifactDir(artifactDir, snapshot, manifest); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+	handler := newTestHandler(t, distributionDir)
+	response := performRequest(handler, http.MethodPost, "/v1/admin/distribution/publish", PublishArtifactRequest{ArtifactDir: artifactDir}, "secret")
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d: %s", response.Code, response.Body.String())
+	}
+	var published PublishArtifactResponse
+	decodeResponse(t, response, &published)
+	if published.Pointer.SnapshotVersion != "snapshot_service_api_v1" {
+		t.Fatalf("unexpected pointer: %#v", published.Pointer)
+	}
+	current, err := registry.ReadDistributionPointerFile(filepath.Join(distributionDir, "current.json"))
+	if err != nil {
+		t.Fatalf("read current pointer: %v", err)
+	}
+	if current.SnapshotVersion != published.Pointer.SnapshotVersion {
+		t.Fatalf("current pointer did not match response: %#v vs %#v", current, published.Pointer)
+	}
+}
+
+func TestPublishArtifactRejectsDuplicateWithoutAdvancingCurrent(t *testing.T) {
+	artifactDir := filepath.Join(t.TempDir(), "artifact")
+	distributionDir := filepath.Join(t.TempDir(), "distribution")
+	reg := validRegistry()
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 31, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+	if err := registry.WriteArtifactDir(artifactDir, snapshot, manifest); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+	handler := newTestHandler(t, distributionDir)
+	first := performRequest(handler, http.MethodPost, "/v1/admin/distribution/publish", PublishArtifactRequest{ArtifactDir: artifactDir}, "secret")
+	if first.Code != http.StatusCreated {
+		t.Fatalf("expected first status 201, got %d: %s", first.Code, first.Body.String())
+	}
+	currentBefore, err := registry.ReadDistributionPointerFile(filepath.Join(distributionDir, "current.json"))
+	if err != nil {
+		t.Fatalf("read current pointer before duplicate: %v", err)
+	}
+	duplicate := performRequest(handler, http.MethodPost, "/v1/admin/distribution/publish", PublishArtifactRequest{ArtifactDir: artifactDir}, "secret")
+	if duplicate.Code != http.StatusConflict {
+		t.Fatalf("expected duplicate status 409, got %d: %s", duplicate.Code, duplicate.Body.String())
+	}
+	var errorResponse ErrorResponse
+	decodeResponse(t, duplicate, &errorResponse)
+	if errorResponse.Error.ErrorType != "DISTRIBUTION_ARTIFACT_EXISTS" {
+		t.Fatalf("unexpected error response: %#v", errorResponse)
+	}
+	currentAfter, err := registry.ReadDistributionPointerFile(filepath.Join(distributionDir, "current.json"))
+	if err != nil {
+		t.Fatalf("read current pointer after duplicate: %v", err)
+	}
+	if currentAfter.PublishedAt != currentBefore.PublishedAt || currentAfter.SnapshotVersion != currentBefore.SnapshotVersion {
+		t.Fatalf("expected current pointer to remain unchanged: %#v vs %#v", currentAfter, currentBefore)
+	}
+}
+
 func newTestHandler(t *testing.T, distributionDir string) Handler {
 	t.Helper()
 	registryPath := filepath.Join(t.TempDir(), "registry.json")

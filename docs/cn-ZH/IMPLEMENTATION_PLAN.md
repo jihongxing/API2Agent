@@ -519,14 +519,20 @@ Go Control Plane Minimum v0
 - Go Control Plane Service API Skeleton v0 已完成：
   - `api2agent-controlplane serve` 会在现有 file registry 上启动 local HTTP service。
   - `/healthz` 是 public endpoint，会报告 service/protocol metadata。
-  - `/v1/admin/registry/validate`、`/v1/admin/snapshots/export-artifact` 和 `/v1/admin/distribution/current` 需要 admin bearer auth。
+  - `/v1/admin/registry/validate`、`/v1/admin/snapshots/export-artifact`、`/v1/admin/distribution/publish` 和 `/v1/admin/distribution/current` 需要 admin bearer auth。
   - service dogfood 验证 auth guard、registry validation、HTTP artifact export 和 distribution pointer read。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SERVICE_API_DOGFOOD_REPORT.md`。
+- Go Control Plane Service Snapshot Publish Endpoint v0 已完成：
+  - `/v1/admin/distribution/publish` 会把 existing artifact publish 到配置的 local distribution。
+  - endpoint 复用与 CLI 相同的 atomic publish 和 duplicate-version guards。
+  - duplicate publish 返回 `DISTRIBUTION_ARTIFACT_EXISTS`，并保持 `current.json` 不变。
+  - service dogfood 现在验证 HTTP export -> HTTP publish -> HTTP current pointer。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SERVICE_API_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Service Snapshot Publish Endpoint v0
+Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
 ```
 
 ## 9. Marketplace 是后面的结果

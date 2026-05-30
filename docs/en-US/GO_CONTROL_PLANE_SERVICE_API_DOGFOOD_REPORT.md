@@ -17,6 +17,7 @@ The Go Control Plane now supports:
 - admin bearer token guard for non-health endpoints
 - `POST /v1/admin/registry/validate`
 - `POST /v1/admin/snapshots/export-artifact`
+- `POST /v1/admin/distribution/publish`
 - `GET /v1/admin/distribution/current`
 
 The service is intentionally local-first. It does not include hosted persistence, remote object storage, a vault, billing, or marketplace flows.
@@ -33,7 +34,9 @@ The dogfood script:
 6. Verifies an unauthenticated admin call is rejected with `AUTH_ERROR`.
 7. Validates the registry through HTTP.
 8. Exports a snapshot artifact through HTTP.
-9. Reads the current distribution pointer through HTTP.
+9. Publishes the artifact through HTTP.
+10. Verifies duplicate HTTP publish is rejected without advancing `current.json`.
+11. Reads the current distribution pointer through HTTP.
 
 ## Checks
 
@@ -44,12 +47,15 @@ The dogfood script:
   "registry_validation_passed": true,
   "artifact_export_created_manifest": true,
   "artifact_export_created_snapshot": true,
-  "distribution_current_reported": true
+  "publish_endpoint_created_current": true,
+  "duplicate_publish_rejected": true,
+  "distribution_current_reported": true,
+  "duplicate_publish_kept_current": true
 }
 ```
 
 ## Result
 
-Go Control Plane Service API Skeleton v0 passed.
+Go Control Plane Service Snapshot Publish Endpoint v0 passed.
 
-The Control Plane is no longer CLI-only. It now has the first local service boundary while still reusing the proven registry, artifact, and distribution primitives.
+The Control Plane service can now drive the local snapshot lifecycle through HTTP: validate registry, export artifact, publish distribution, and read the current pointer.

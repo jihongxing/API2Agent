@@ -44,20 +44,8 @@ def run_scenario(*, tmp: Path, cp_dir: Path, cp_exe: Path) -> dict:
     scenario_dir = tmp / "control-plane-service-api"
     scenario_dir.mkdir(parents=True, exist_ok=True)
     registry_path = write_registry(scenario_dir / "registry.json")
-    artifact_dir = scenario_dir / "artifact-cli"
     distribution_dir = scenario_dir / "distribution"
     http_artifact_dir = scenario_dir / "artifact-http"
-
-    subprocess.run(
-        [str(cp_exe), "export-artifact", "--registry", str(registry_path), "--output-dir", str(artifact_dir)],
-        cwd=cp_dir,
-        check=True,
-    )
-    subprocess.run(
-        [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir), "--distribution-dir", str(distribution_dir)],
-        cwd=cp_dir,
-        check=True,
-    )
 
     port = free_port()
     proc = subprocess.Popen(
@@ -87,6 +75,16 @@ def run_scenario(*, tmp: Path, cp_dir: Path, cp_exe: Path) -> dict:
             {"output_dir": str(http_artifact_dir)},
             token=ADMIN_TOKEN,
         )
+        published = post_json(
+            f"http://127.0.0.1:{port}/v1/admin/distribution/publish",
+            {"artifact_dir": str(http_artifact_dir)},
+            token=ADMIN_TOKEN,
+        )
+        duplicate_publish = post_json_allow_error(
+            f"http://127.0.0.1:{port}/v1/admin/distribution/publish",
+            {"artifact_dir": str(http_artifact_dir)},
+            token=ADMIN_TOKEN,
+        )
         current = get_json(f"http://127.0.0.1:{port}/v1/admin/distribution/current", token=ADMIN_TOKEN)
     finally:
         proc.terminate()
@@ -106,8 +104,14 @@ def run_scenario(*, tmp: Path, cp_dir: Path, cp_exe: Path) -> dict:
         "artifact_export_created_manifest": (http_artifact_dir / "manifest.json").exists()
         and exported.get("manifest", {}).get("snapshot_version") == "snapshot_control_plane_service_api_v1",
         "artifact_export_created_snapshot": (http_artifact_dir / "snapshot.json").exists(),
+        "publish_endpoint_created_current": published.get("pointer", {}).get("snapshot_version")
+        == "snapshot_control_plane_service_api_v1",
+        "duplicate_publish_rejected": duplicate_publish.get("status_code") == 409
+        and duplicate_publish.get("error", {}).get("error_type") == "DISTRIBUTION_ARTIFACT_EXISTS",
         "distribution_current_reported": current.get("pointer", {}).get("snapshot_version")
         == "snapshot_control_plane_service_api_v1",
+        "duplicate_publish_kept_current": current.get("pointer", {}).get("published_at")
+        == published.get("pointer", {}).get("published_at"),
     }
     return {
         "dogfood": "go_control_plane_service_api",
@@ -117,6 +121,8 @@ def run_scenario(*, tmp: Path, cp_dir: Path, cp_exe: Path) -> dict:
         "unauth_validate": unauth_validate,
         "validation": validation,
         "exported": exported,
+        "published": published,
+        "duplicate_publish": duplicate_publish,
         "current": current,
         "checks": checks,
         "passed": all(checks.values()),

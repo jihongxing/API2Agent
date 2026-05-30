@@ -75,6 +75,7 @@ Service endpoints:
 - `GET /healthz` is public and reports service, protocol, registry source, and distribution metadata.
 - `POST /v1/admin/registry/validate` validates the configured registry and returns a registry fingerprint.
 - `POST /v1/admin/snapshots/export-artifact` writes a snapshot artifact to `output_dir`.
+- `POST /v1/admin/distribution/publish` publishes an artifact directory to the configured local distribution.
 - `GET /v1/admin/distribution/current` reads the configured distribution `current.json`.
 
 All `/v1/admin/*` endpoints require `Authorization: Bearer <admin-token>`.

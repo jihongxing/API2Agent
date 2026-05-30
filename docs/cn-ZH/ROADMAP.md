@@ -733,7 +733,8 @@ Control Plane Snapshot Artifact Path Safety Guard v0 - complete
 Control Plane Snapshot Distribution Atomic Publish Guard v0 - complete
 Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
 Go Control Plane Service API Skeleton v0 - complete
-Next: Go Control Plane Service Snapshot Publish Endpoint v0
+Go Control Plane Service Snapshot Publish Endpoint v0 - complete
+Next: Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -758,28 +759,27 @@ Next: Go Control Plane Service Snapshot Publish Endpoint v0
 Go Control Plane Minimum v0
 Go Control Plane Snapshot Distribution Closeout + Phase Review
 Go Control Plane Service API Skeleton v0
+Go Control Plane Service Snapshot Publish Endpoint v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Service Snapshot Publish Endpoint v0
+Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
 ```
 
 范围：
 
-1. 通过 HTTP endpoint 把已有 artifact publish 到配置的 local distribution。
-2. 复用现有 duplicate-version 和 atomic publish guards。
-3. 成功时返回新的 distribution pointer。
-4. 保留 admin bearer token enforcement。
-5. Dogfood service-driven export -> publish -> current pointer。
+1. 对照 Phase 6 目标 review local Control Plane service boundary。
+2. 确认 service 可以 validate、export、publish 和 report distribution state。
+3. 明确 hosted persistence 前的剩余缺口。
+4. 在开始任何 database work 前，决定下一项 implementation slice：persistent registry store、API key enforcement 或 service hardening。
 
 退出标准：
 
-- Control Plane service 可以通过 HTTP publish artifact。
-- 通过 HTTP duplicate publish 会在推进 `current.json` 前被拒绝。
-- Distribution current endpoint 可以在 publish 后报告新的 pointer。
-- 现有 CLI commands 和 cross-plane dogfoods 继续通过。
+- service API milestone 有双语 closeout document。
+- Hosted persistence readiness 明确。
+- 在任何 database work 开始前，下一项 implementation task 已经收窄。
 - 不包含 hosted deployment、database、vault、billing 或 marketplace 工作。
 
 后续 hosted 范围：

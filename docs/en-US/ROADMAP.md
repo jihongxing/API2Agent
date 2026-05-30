@@ -733,7 +733,8 @@ Control Plane Snapshot Artifact Path Safety Guard v0 - complete
 Control Plane Snapshot Distribution Atomic Publish Guard v0 - complete
 Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
 Go Control Plane Service API Skeleton v0 - complete
-Next: Go Control Plane Service Snapshot Publish Endpoint v0
+Go Control Plane Service Snapshot Publish Endpoint v0 - complete
+Next: Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -758,28 +759,27 @@ Completed local entry slices:
 Go Control Plane Minimum v0
 Go Control Plane Snapshot Distribution Closeout + Phase Review
 Go Control Plane Service API Skeleton v0
+Go Control Plane Service Snapshot Publish Endpoint v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Service Snapshot Publish Endpoint v0
+Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
 ```
 
 Scope:
 
-1. HTTP endpoint to publish an existing artifact into the configured local distribution.
-2. Reuse existing duplicate-version and atomic publish guards.
-3. Return the new distribution pointer on success.
-4. Preserve admin bearer token enforcement.
-5. Dogfood service-driven export -> publish -> current pointer.
+1. Review the local Control Plane service boundary against Phase 6 goals.
+2. Confirm the service can validate, export, publish, and report distribution state.
+3. Identify remaining gaps before hosted persistence.
+4. Decide the next implementation slice: persistent registry store, API key enforcement, or service hardening.
 
 Exit criteria:
 
-- Control Plane service can publish an artifact through HTTP.
-- Duplicate publish through HTTP is rejected before advancing `current.json`.
-- Distribution current endpoint reports the new pointer after publish.
-- Existing CLI commands and cross-plane dogfoods continue to pass.
+- The service API milestone has a bilingual closeout document.
+- Hosted persistence readiness is explicit.
+- The next implementation task is narrowed before any database work starts.
 - No hosted deployment, database, vault, billing, or marketplace work is included.
 
 Later hosted scope:

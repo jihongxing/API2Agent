@@ -65,10 +65,20 @@ type DistributionCurrentResponse struct {
 	Pointer         registry.SnapshotDistributionPointer `json:"pointer"`
 }
 
+type PublishArtifactRequest struct {
+	ArtifactDir string `json:"artifact_dir"`
+}
+
+type PublishArtifactResponse struct {
+	DistributionDir string                               `json:"distribution_dir"`
+	Pointer         registry.SnapshotDistributionPointer `json:"pointer"`
+}
+
 func (h Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/healthz", h.Healthz)
 	mux.HandleFunc("/v1/admin/registry/validate", h.ValidateRegistry)
 	mux.HandleFunc("/v1/admin/snapshots/export-artifact", h.ExportArtifact)
+	mux.HandleFunc("/v1/admin/distribution/publish", h.PublishArtifact)
 	mux.HandleFunc("/v1/admin/distribution/current", h.DistributionCurrent)
 }
 
@@ -181,6 +191,46 @@ func (h Handler) DistributionCurrent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, DistributionCurrentResponse{
+		DistributionDir: h.DistributionDir,
+		Pointer:         pointer,
+	})
+}
+
+func (h Handler) PublishArtifact(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed", false)
+		return
+	}
+	if !h.authorized(r) {
+		writeError(w, http.StatusUnauthorized, "AUTH_ERROR", "caller", "invalid control plane admin token", false)
+		return
+	}
+	if strings.TrimSpace(h.DistributionDir) == "" {
+		writeError(w, http.StatusConflict, "DISTRIBUTION_NOT_CONFIGURED", "platform", "distribution dir is not configured", false)
+		return
+	}
+	var req PublishArtifactRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "invalid json body", false)
+		return
+	}
+	if strings.TrimSpace(req.ArtifactDir) == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "artifact_dir is required", false)
+		return
+	}
+	pointer, err := registry.PublishArtifactDir(req.ArtifactDir, h.DistributionDir, h.now())
+	if err != nil {
+		status := http.StatusBadRequest
+		errorType := "DISTRIBUTION_PUBLISH_FAILED"
+		retryable := false
+		if strings.Contains(err.Error(), "already exists") {
+			status = http.StatusConflict
+			errorType = "DISTRIBUTION_ARTIFACT_EXISTS"
+		}
+		writeError(w, status, errorType, "platform", err.Error(), retryable)
+		return
+	}
+	writeJSON(w, http.StatusCreated, PublishArtifactResponse{
 		DistributionDir: h.DistributionDir,
 		Pointer:         pointer,
 	})

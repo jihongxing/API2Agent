@@ -519,14 +519,20 @@ Current Phase 6 progress:
 - Go Control Plane Service API Skeleton v0 is complete:
   - `api2agent-controlplane serve` starts a local HTTP service over the existing file registry.
   - `/healthz` is public and reports service/protocol metadata.
-  - `/v1/admin/registry/validate`, `/v1/admin/snapshots/export-artifact`, and `/v1/admin/distribution/current` require admin bearer auth.
+  - `/v1/admin/registry/validate`, `/v1/admin/snapshots/export-artifact`, `/v1/admin/distribution/publish`, and `/v1/admin/distribution/current` require admin bearer auth.
   - service dogfood verifies auth guard, registry validation, HTTP artifact export, and distribution pointer reads.
+  - see `docs/en-US/GO_CONTROL_PLANE_SERVICE_API_DOGFOOD_REPORT.md`.
+- Go Control Plane Service Snapshot Publish Endpoint v0 is complete:
+  - `/v1/admin/distribution/publish` publishes an existing artifact into the configured local distribution.
+  - the endpoint reuses the same atomic publish and duplicate-version guards as the CLI.
+  - duplicate publish returns `DISTRIBUTION_ARTIFACT_EXISTS` and leaves `current.json` unchanged.
+  - service dogfood now verifies HTTP export -> HTTP publish -> HTTP current pointer.
   - see `docs/en-US/GO_CONTROL_PLANE_SERVICE_API_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Service Snapshot Publish Endpoint v0
+Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
 ```
 
 ## 9. Marketplace Is Later
