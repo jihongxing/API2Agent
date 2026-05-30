@@ -514,6 +514,7 @@ Current implementation result:
 - `api2agent route` and `api2agent call` now accept `--client-region`.
 - routing decisions now persist `client_region` for audit and decision-dataset use.
 - `run_region_aware_routing_benchmark` now returns a routing decision and decision-dataset record.
+- route/call now load aggregate plus matching client-region metrics for `region_aware_latency`.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.

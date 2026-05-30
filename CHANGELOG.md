@@ -56,6 +56,7 @@ All notable API2Agent changes will be documented in this file.
 - `--client-region` support for `api2agent route` and `api2agent call`.
 - Routing decision persistence for `client_region`.
 - Region-aware routing benchmark helper and decision dataset artifact.
+- Region-specific usage metrics loading for `region_aware_latency`.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -86,7 +87,7 @@ All notable API2Agent changes will be documented in this file.
 - Location-aware routing strategy documented.
 - Location-aware schema dogfooded across usage storage, proxy events, provider metadata, and decision dataset records.
 - Region-aware routing strategy dogfooded with same-capability, different-region providers.
-- Full test suite: `140 passed`.
+- Full test suite: `141 passed`.
 
 ### Planned Next
 

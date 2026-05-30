@@ -31,7 +31,11 @@ def execute_capability(
     shadow_provider_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     candidates = [provider for provider in providers if provider.capability_id == capability_id]
-    metrics = store.metrics_for_capability(capability_id, include_shadow=include_shadow_metrics)
+    metrics = store.metrics_for_capability(
+        capability_id,
+        include_shadow=include_shadow_metrics,
+        client_region=policy.client_region if policy else None,
+    )
     selected = select_provider(candidates, metrics, policy)
     ranked = rank_providers(candidates, metrics, policy)
     effective_failover_policy = failover_policy or build_failover_policy(

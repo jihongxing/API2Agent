@@ -673,7 +673,11 @@ def route(
         policy.client_region = client_region
 
     store = UsageStore(db)
-    metrics = store.metrics_for_capability(capability_id, include_shadow=not exclude_shadow_metrics)
+    metrics = store.metrics_for_capability(
+        capability_id,
+        include_shadow=not exclude_shadow_metrics,
+        client_region=policy.client_region if policy.strategy == "region_aware_latency" else None,
+    )
     selected = select_provider(providers, metrics, policy)
     ranked = rank_providers(providers, metrics, policy)
     decision = RoutingDecision(

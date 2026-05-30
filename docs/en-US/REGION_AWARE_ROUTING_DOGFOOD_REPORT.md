@@ -39,15 +39,16 @@ Expected outcome:
 - `api2agent route --client-region cn --strategy region_aware_latency --json` returned `weather_cn`.
 - the stored routing decision preserved `client_region=cn`.
 - `api2agent call --client-region` now carries the same policy into execution decisions.
+- route/call now load both aggregate metrics and matching client-region metrics from the local usage store.
 
 ## Tests
 
 ```text
 pytest tests/test_capability_routing.py tests/test_control_layer.py
-36 passed
+37 passed
 
 pytest
-140 passed
+141 passed
 ```
 
 ## Product Learning

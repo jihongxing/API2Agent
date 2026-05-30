@@ -398,6 +398,109 @@ def test_route_command_supports_region_aware_latency(tmp_path) -> None:
     assert stored_decision.client_region == "cn"
 
 
+def test_route_command_uses_region_specific_metrics(tmp_path) -> None:
+    registry = tmp_path / "registry.json"
+    db = tmp_path / "usage.sqlite"
+    registry.write_text(
+        json.dumps(
+            {
+                "providers": [
+                    {
+                        "id": "weather_a",
+                        "capability_id": "weather.current.get",
+                        "provider_id": "weather_a",
+                        "tool_id": "get",
+                        "regions": ["cn"],
+                        "geo_affinity": "regional",
+                    },
+                    {
+                        "id": "weather_b",
+                        "capability_id": "weather.current.get",
+                        "provider_id": "weather_b",
+                        "tool_id": "get",
+                        "regions": ["cn"],
+                        "geo_affinity": "regional",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    store = UsageStore(db)
+    store.record(
+        UsageEvent(
+            project_id="local",
+            capability_id="weather.current.get",
+            provider_id="weather_a",
+            tool_id="get",
+            method="GET",
+            path="/weather",
+            status_code=200,
+            success=True,
+            latency_ms=10,
+            estimated_cost=0.01,
+            client_region="us-east",
+        )
+    )
+    store.record(
+        UsageEvent(
+            project_id="local",
+            capability_id="weather.current.get",
+            provider_id="weather_a",
+            tool_id="get",
+            method="GET",
+            path="/weather",
+            status_code=200,
+            success=True,
+            latency_ms=100,
+            estimated_cost=0.01,
+            client_region="cn",
+        )
+    )
+    store.record(
+        UsageEvent(
+            project_id="local",
+            capability_id="weather.current.get",
+            provider_id="weather_b",
+            tool_id="get",
+            method="GET",
+            path="/weather",
+            status_code=200,
+            success=True,
+            latency_ms=60,
+            estimated_cost=0.02,
+            client_region="cn",
+        )
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "route",
+            str(registry),
+            "--capability-id",
+            "weather.current.get",
+            "--strategy",
+            "region_aware_latency",
+            "--client-region",
+            "cn",
+            "--db",
+            str(db),
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    stored_decision = UsageStore(db).get_routing_decision(payload["decision"]["id"])
+
+    assert payload["selected"]["provider_id"] == "weather_b"
+    assert payload["decision"]["client_region"] == "cn"
+    assert any(metric["client_region"] == "cn" for metric in payload["metrics"])
+    assert stored_decision is not None
+    assert stored_decision.client_region == "cn"
+
+
 def test_route_command_rejects_invalid_registry_schema(tmp_path) -> None:
     registry = tmp_path / "registry.json"
     registry.write_text(json.dumps({"providers": [{"id": "missing_required_fields"}]}), encoding="utf-8")

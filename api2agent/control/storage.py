@@ -336,6 +336,7 @@ class UsageStore:
         *,
         include_shadow: bool = True,
         include_replay: bool = False,
+        client_region: str | None = None,
     ) -> list[MetricsSnapshot]:
         mode_clauses = []
         if not include_shadow:
@@ -363,6 +364,30 @@ class UsageStore:
                     (capability_id,),
                 ).fetchall()
             ]
+            if client_region is not None:
+                region_rows = [
+                    dict(row)
+                    for row in connection.execute(
+                        f"""
+                        SELECT
+                          capability_id,
+                          provider_id,
+                          COUNT(*) AS total_calls,
+                          SUM(success) AS successful_calls,
+                          AVG(latency_ms) AS average_latency_ms,
+                          AVG(estimated_cost) AS estimated_cost_per_call
+                        FROM usage_events
+                        WHERE capability_id = ?
+                          AND client_region = ?
+                          {mode_sql}
+                        GROUP BY capability_id, provider_id
+                        """,
+                        (capability_id, client_region),
+                    ).fetchall()
+                ]
+                for row in region_rows:
+                    row["client_region"] = client_region
+                rows.extend(region_rows)
 
         snapshots: list[MetricsSnapshot] = []
         for row in rows:
@@ -373,6 +398,7 @@ class UsageStore:
                 MetricsSnapshot(
                     capability_id=str(row["capability_id"]),
                     provider_id=str(row["provider_id"]),
+                    client_region=str(row["client_region"]) if row.get("client_region") is not None else None,
                     total_calls=total_calls,
                     successful_calls=successful_calls,
                     failed_calls=failed_calls,
