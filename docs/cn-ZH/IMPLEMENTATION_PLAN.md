@@ -367,6 +367,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - quota failures 不会调用 provider adapters。
   - quota failures 仍然会写入 `RequestContext` 和 failed `DecisionLog`。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_PROJECT_QUOTA_DOGFOOD_REPORT.md`。
+- Go Data Plane Credential Config v0 已完成：
+  - Go Data Plane 可以通过 `API2AGENT_CREDENTIAL_CONFIG` 加载本地 JSON credentials。
+  - config credentials 可以在每次 request 不携带 credential intent 时注入 provider auth。
+  - config credential references 会记录为 `config:<credential_id>`。
+  - raw secrets 不会写入 emitted events。
+  - config credential scope 和 lifecycle checks 会被执行。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 

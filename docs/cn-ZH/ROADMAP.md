@@ -711,6 +711,7 @@ Go Data Plane Consolidation Hardening v0 - complete
 Timeout Budget Semantics v0 - complete
 Snapshot Freshness Gate v0 - complete
 Project Quota Gate v0 - complete
+Go Data Plane Credential Config v0 - complete
 Next: 选择下一项 Go Data Plane production hardening slice
 ```
 

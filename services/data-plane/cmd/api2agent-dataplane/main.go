@@ -6,6 +6,7 @@ import (
 
 	"api2agent/services/data-plane/internal/adapters"
 	"api2agent/services/data-plane/internal/config"
+	"api2agent/services/data-plane/internal/credentials"
 	"api2agent/services/data-plane/internal/events"
 	"api2agent/services/data-plane/internal/httpapi"
 	"api2agent/services/data-plane/internal/snapshots"
@@ -21,17 +22,25 @@ func main() {
 	if err != nil {
 		log.Fatalf("create event writer: %v", err)
 	}
+	var credentialConfig []credentials.CredentialDefinition
+	if cfg.CredentialConfigPath != "" {
+		credentialConfig, err = credentials.LoadConfigFile(cfg.CredentialConfigPath)
+		if err != nil {
+			log.Fatalf("load credential config: %v", err)
+		}
+	}
 	registry := adapters.NewRegistry()
 	registry.Register("httpbin", adapters.HttpbinIPAdapter{})
 	registry.Register("ipify", adapters.IpifyAdapter{})
 
 	mux := http.NewServeMux()
 	handler := httpapi.Handler{
-		Snapshot:   snapshot,
-		Adapters:   registry,
-		Events:     writer,
-		ProjectKey: cfg.ProjectKey,
-		Quota:      httpapi.NewQuotaGate(cfg.ProjectQuota),
+		Snapshot:    snapshot,
+		Adapters:    registry,
+		Events:      writer,
+		ProjectKey:  cfg.ProjectKey,
+		Quota:       httpapi.NewQuotaGate(cfg.ProjectQuota),
+		Credentials: credentialConfig,
 	}
 	handler.Register(mux)
 

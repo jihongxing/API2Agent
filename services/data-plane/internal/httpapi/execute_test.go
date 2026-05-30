@@ -15,6 +15,7 @@ import (
 
 	"api2agent/services/data-plane/internal/adapters"
 	"api2agent/services/data-plane/internal/conformance"
+	"api2agent/services/data-plane/internal/credentials"
 	"api2agent/services/data-plane/internal/events"
 	"api2agent/services/data-plane/internal/protocol"
 	"api2agent/services/data-plane/internal/snapshots"
@@ -713,6 +714,111 @@ func TestExecuteMissingEnvCredentialRecordsFailureWithoutCallingProvider(t *test
 	}
 	if usage.Error == nil || usage.Error.ErrorType == nil || *usage.Error.ErrorType != "missing_credential_secret" {
 		t.Fatalf("expected missing credential error, got %#v", usage.Error)
+	}
+}
+
+func TestExecuteUsesConfigCredentialWhenRequestCredentialMissing(t *testing.T) {
+	t.Setenv("API2AGENT_CONFIG_TOKEN", "config-secret")
+	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Query().Get("api_key"); got != "config-secret" {
+			t.Fatalf("expected config query credential, got %q", got)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.120"}`))
+	}))
+	defer providerServer.Close()
+
+	handler, writer := newTestHandler(newTestSnapshot(providerServer.URL), providerServer.Client())
+	handler.Credentials = []credentials.CredentialDefinition{{
+		CredentialID:  "cred_config_ipify",
+		OwnerType:     "project",
+		OwnerID:       "local",
+		ProviderID:    "ipify",
+		AuthType:      "api_key",
+		InjectionMode: "query",
+		InjectionName: "api_key",
+		Source:        "config",
+		SecretRef:     "API2AGENT_CONFIG_TOKEN",
+	}}
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(executeBody(5000)))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	usage, ok := writer.Events[2].Record.(*protocol.UsageEvent)
+	if !ok {
+		t.Fatalf("expected usage event, got %T", writer.Events[2].Record)
+	}
+	if usage.CredentialReference == nil || usage.CredentialReference.CredentialReference == nil {
+		t.Fatalf("expected credential reference, got %#v", usage.CredentialReference)
+	}
+	if got := *usage.CredentialReference.CredentialReference; got != "config:cred_config_ipify" {
+		t.Fatalf("expected config credential reference, got %q", got)
+	}
+	if usage.CredentialReference.ResolutionStrategy == nil || *usage.CredentialReference.ResolutionStrategy != "static" {
+		t.Fatalf("expected static credential resolution, got %#v", usage.CredentialReference)
+	}
+	metadata, ok := usage.RequestMetadata["credential"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected credential metadata, got %#v", usage.RequestMetadata)
+	}
+	encodedMetadata, err := json.Marshal(metadata)
+	if err != nil {
+		t.Fatalf("marshal credential metadata: %v", err)
+	}
+	if strings.Contains(string(encodedMetadata), "config-secret") {
+		t.Fatalf("credential metadata leaked config secret: %s", string(encodedMetadata))
+	}
+}
+
+func TestExecuteConfigCredentialScopeDenialDoesNotCallProvider(t *testing.T) {
+	t.Setenv("API2AGENT_CONFIG_TOKEN", "config-secret")
+	called := false
+	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.121"}`))
+	}))
+	defer providerServer.Close()
+
+	handler, writer := newTestHandler(newTestSnapshot(providerServer.URL), providerServer.Client())
+	handler.Credentials = []credentials.CredentialDefinition{{
+		CredentialID:  "cred_config_ipify",
+		OwnerType:     "project",
+		OwnerID:       "local",
+		ProviderID:    "ipify",
+		AuthType:      "api_key",
+		InjectionMode: "query",
+		Source:        "config",
+		SecretRef:     "API2AGENT_CONFIG_TOKEN",
+		Scope:         []string{"capability:network.public_ip.create"},
+	}}
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(executeBody(5000)))
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Fatalf("expected 502, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if called {
+		t.Fatalf("provider should not be called when config credential scope is denied")
+	}
+	usage, ok := writer.Events[2].Record.(*protocol.UsageEvent)
+	if !ok {
+		t.Fatalf("expected usage event, got %T", writer.Events[2].Record)
+	}
+	if usage.Error == nil || usage.Error.ErrorType == nil || *usage.Error.ErrorType != "credential_scope_denied" {
+		t.Fatalf("expected credential_scope_denied usage error, got %#v", usage.Error)
 	}
 }
 

@@ -46,6 +46,7 @@ Environment variables:
 - `API2AGENT_EVENT_DIR`
 - `API2AGENT_PROJECT_KEY`
 - `API2AGENT_PROJECT_QUOTA`
+- `API2AGENT_CREDENTIAL_CONFIG`
 
 Dogfood:
 
@@ -55,4 +56,5 @@ python ../../scripts/go_dataplane_credential_dogfood.py
 python ../../scripts/go_dataplane_timeout_budget_dogfood.py
 python ../../scripts/go_dataplane_snapshot_freshness_dogfood.py
 python ../../scripts/go_dataplane_project_quota_dogfood.py
+python ../../scripts/go_dataplane_credential_config_dogfood.py
 ```

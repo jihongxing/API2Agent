@@ -19,11 +19,12 @@ import (
 )
 
 type Handler struct {
-	Snapshot   *snapshots.Snapshot
-	Adapters   *adapters.Registry
-	Events     events.Writer
-	ProjectKey string
-	Quota      *QuotaGate
+	Snapshot    *snapshots.Snapshot
+	Adapters    *adapters.Registry
+	Events      events.Writer
+	ProjectKey  string
+	Quota       *QuotaGate
+	Credentials []credentials.CredentialDefinition
 }
 
 type QuotaGate struct {
@@ -227,7 +228,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		}
 		attemptTimeoutBudgetMS := durationMillisecondsCeil(remainingBudget)
 		providerRegion := selectedRegionForProvider(req.ClientRegion, provider)
-		resolvedCredential := credentials.NewLocalResolver().Resolve(credentials.CredentialResolutionRequest{
+		resolvedCredential := credentials.NewLocalResolver(h.Credentials).Resolve(credentials.CredentialResolutionRequest{
 			ProjectID:    req.ProjectID,
 			CapabilityID: req.CapabilityID,
 			ProviderID:   provider.ProviderID,
@@ -496,14 +497,14 @@ func protocolCredentialReference(credential *credentials.CredentialDefinition, r
 		return nil
 	}
 	reference := resolved.CredentialReference
-	credentialID := ""
-	ownerType := ""
-	ownerID := ""
-	providerID := ""
-	authType := ""
-	injectionMode := ""
-	source := ""
-	status := ""
+	credentialID := metadataString(resolved.RedactedMetadata, "credential_id")
+	ownerType := metadataString(resolved.RedactedMetadata, "owner_type")
+	ownerID := metadataString(resolved.RedactedMetadata, "owner_id")
+	providerID := metadataString(resolved.RedactedMetadata, "provider_id")
+	authType := metadataString(resolved.RedactedMetadata, "auth_type")
+	injectionMode := metadataString(resolved.RedactedMetadata, "injection_mode")
+	source := metadataString(resolved.RedactedMetadata, "source")
+	status := metadataString(resolved.RedactedMetadata, "status")
 	if credential != nil {
 		credentialID = credential.CredentialID
 		ownerType = credential.OwnerType
@@ -523,9 +524,27 @@ func protocolCredentialReference(credential *credentials.CredentialDefinition, r
 		AuthType:            optionalStringPtr(authType),
 		InjectionMode:       optionalStringPtr(injectionMode),
 		Source:              optionalStringPtr(source),
-		ResolutionStrategy:  stringPtr("per_request"),
+		ResolutionStrategy:  stringPtr(credentialResolutionStrategy(source)),
 		Status:              optionalStringPtr(status),
 	}
+}
+
+func metadataString(metadata map[string]any, key string) string {
+	if metadata == nil {
+		return ""
+	}
+	value, ok := metadata[key].(string)
+	if !ok {
+		return ""
+	}
+	return value
+}
+
+func credentialResolutionStrategy(source string) string {
+	if source == "config" {
+		return "static"
+	}
+	return "per_request"
 }
 
 func stringPtr(value string) *string {

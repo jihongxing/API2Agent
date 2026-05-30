@@ -367,6 +367,13 @@ Current implementation:
   - quota failures do not call provider adapters.
   - quota failures still emit `RequestContext` and failed `DecisionLog`.
   - see `docs/en-US/GO_DATAPLANE_PROJECT_QUOTA_DOGFOOD_REPORT.md`.
+- Go Data Plane Credential Config v0 is complete:
+  - Go Data Plane can load local JSON credentials through `API2AGENT_CREDENTIAL_CONFIG`.
+  - config credentials can inject provider auth without per-request credential intent.
+  - config credential references are recorded as `config:<credential_id>`.
+  - raw secrets are not written to emitted events.
+  - config credential scope and lifecycle checks are enforced.
+  - see `docs/en-US/GO_DATAPLANE_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
