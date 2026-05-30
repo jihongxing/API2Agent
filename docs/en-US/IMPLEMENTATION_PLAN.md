@@ -481,6 +481,18 @@ Current Phase 6 progress:
   - legacy local snapshots without `metadata.schema_version` are still accepted for now.
   - cross-plane dogfood verifies incompatible v3 reload is rejected, v2 remains active, and execution continues on v2.
   - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_COMPATIBILITY_GUARD_DOGFOOD_REPORT.md`.
+- Control Plane Snapshot Strict Metadata Requirement v0 is complete:
+  - Control Plane/exported snapshots must include `metadata.schema_version`, `metadata.registry_fingerprint`, and `metadata.snapshot_version_policy`.
+  - legacy local snapshots without Control Plane metadata are still accepted for now.
+  - startup load, `api2agent-snapshot-check`, and manual reload share the same strict metadata guard.
+  - cross-plane dogfood verifies a v4 distribution missing `registry_fingerprint` is rejected, v2 remains active, and a reload audit event is recorded.
+  - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_STRICT_METADATA_DOGFOOD_REPORT.md`.
+
+Next engineering task:
+
+```text
+Control Plane Snapshot Metadata Manifest Consistency Guard v0
+```
 
 ## 9. Marketplace Is Later
 

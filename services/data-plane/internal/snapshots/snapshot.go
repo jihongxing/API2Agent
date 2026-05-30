@@ -99,11 +99,22 @@ func ValidateCompatibility(snapshot *Snapshot) error {
 	if snapshot == nil {
 		return fmt.Errorf("snapshot is required")
 	}
+	if requiresStrictMetadata(snapshot.Metadata) {
+		for _, key := range []string{"schema_version", "registry_fingerprint", "snapshot_version_policy"} {
+			if snapshot.Metadata[key] == "" {
+				return fmt.Errorf("control plane snapshot metadata.%s is required", key)
+			}
+		}
+	}
 	schemaVersion := snapshot.Metadata["schema_version"]
 	if schemaVersion != "" && schemaVersion != protocol.SchemaVersion {
 		return fmt.Errorf("snapshot schema_version %q is incompatible with data plane schema_version %q", schemaVersion, protocol.SchemaVersion)
 	}
 	return nil
+}
+
+func requiresStrictMetadata(metadata map[string]string) bool {
+	return metadata["exporter"] != "" || metadata["registry_fingerprint"] != "" || metadata["snapshot_version_policy"] != ""
 }
 
 func ResolvePath(path string) (string, error) {

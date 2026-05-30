@@ -110,6 +110,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane reload failure semantics that keep the previous snapshot active and return retryable `SNAPSHOT_RELOAD_FAILED` metadata.
 - Go Data Plane `snapshot_reload_event` audit events for failed and successful manual snapshot reloads.
 - Control Plane exported snapshot protocol schema metadata and Data Plane snapshot compatibility guard.
+- Go Data Plane strict metadata requirement for Control Plane/exported snapshots.
 - Go Control Plane minimum dogfood script and bilingual report.
 - Go Data Plane credential config dogfood script and bilingual report.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
@@ -168,10 +169,11 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane reload failure dogfood passed with broken `current.json`, v1 retained, and later v2 reload success.
 - Go Data Plane snapshot reload audit dogfood passed with failure/success audit events before the execution graph.
 - Go Data Plane snapshot compatibility guard dogfood passed with incompatible v3 reload rejected and v2 retained.
+- Go Data Plane snapshot strict metadata dogfood passed with missing `registry_fingerprint` rejected and v2 retained.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
 - Full test suite: `143 passed`.
 
 ### Planned Next
 
-- Control Plane Snapshot Strict Metadata Requirement v0.
+- Control Plane Snapshot Metadata Manifest Consistency Guard v0.

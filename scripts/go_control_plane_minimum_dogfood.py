@@ -169,6 +169,25 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             )
             incompatible_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
             health_after_incompatible_reload = get_json(f"http://127.0.0.1:{port}/healthz")
+            registry_v4 = write_registry(
+                scenario_dir / "registry-v4.json",
+                f"http://127.0.0.1:{provider_server.server_port}",
+                "snapshot_control_plane_public_ip_v4",
+            )
+            artifact_dir_v4 = scenario_dir / "artifact-v4-strict-metadata"
+            subprocess.run(
+                [str(cp_exe), "export-artifact", "--registry", str(registry_v4), "--output-dir", str(artifact_dir_v4)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            remove_snapshot_metadata_key(artifact_dir_v4 / "snapshot.json", "registry_fingerprint")
+            subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v4), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            strict_metadata_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
+            health_after_strict_metadata_reload = get_json(f"http://127.0.0.1:{port}/healthz")
             response = post_json(
                 f"http://127.0.0.1:{port}/v1/execute",
                 {
@@ -246,6 +265,15 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             and reload_events[2].get("kept_snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "health_after_incompatible_reload_still_v2": health_after_incompatible_reload.get("snapshot_version")
             == "snapshot_control_plane_public_ip_v2",
+            "strict_metadata_reload_rejected": strict_metadata_reload.get("status_code") == 503
+            and strict_metadata_reload.get("reloaded") is False,
+            "strict_metadata_reload_kept_v2": strict_metadata_reload.get("kept_snapshot_version")
+            == "snapshot_control_plane_public_ip_v2",
+            "strict_metadata_reload_audit_event_recorded": len(reload_events) >= 4
+            and reload_events[3].get("outcome") == "failure"
+            and reload_events[3].get("kept_snapshot_version") == "snapshot_control_plane_public_ip_v2",
+            "health_after_strict_metadata_reload_still_v2": health_after_strict_metadata_reload.get("snapshot_version")
+            == "snapshot_control_plane_public_ip_v2",
             "distribution_current_after_reload_points_to_v2": current_pointer_after_reload.get("snapshot_file")
             == "artifacts/snapshot_control_plane_public_ip_v2/snapshot.json",
             "distribution_v2_artifact_snapshot_exists": (
@@ -267,6 +295,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "usage_has_attempt_id": (usage.get("request_metadata") or {}).get("attempt_id") == usage.get("id"),
             "routing_snapshot_version_matches": routing_decision.get("snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "event_order_is_graph": [event["event_type"] for event in events] == [
+                "snapshot_reload_event",
                 "snapshot_reload_event",
                 "snapshot_reload_event",
                 "snapshot_reload_event",
@@ -293,6 +322,8 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "reload_response": reload_response,
             "incompatible_reload": incompatible_reload,
             "health_after_incompatible_reload": health_after_incompatible_reload,
+            "strict_metadata_reload": strict_metadata_reload,
+            "health_after_strict_metadata_reload": health_after_strict_metadata_reload,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,
@@ -383,6 +414,13 @@ def force_snapshot_schema_version(path: Path, schema_version: str) -> None:
     data = read_json(path)
     metadata = data.setdefault("metadata", {})
     metadata["schema_version"] = schema_version
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def remove_snapshot_metadata_key(path: Path, key: str) -> None:
+    data = read_json(path)
+    metadata = data.setdefault("metadata", {})
+    metadata.pop(key, None)
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 

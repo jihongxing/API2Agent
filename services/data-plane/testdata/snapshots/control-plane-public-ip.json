@@ -34,6 +34,8 @@
   },
   "metadata": {
     "exporter": "api2agent-control-plane-minimum-v0",
+    "registry_fingerprint": "sha256:test-control-plane-public-ip",
+    "snapshot_version_policy": "explicit",
     "schema_version": "api2agent.protocol.v0.2"
   }
 }

@@ -111,6 +111,42 @@ func TestValidateCompatibilityAcceptsCurrentSchemaVersion(t *testing.T) {
 	}
 }
 
+func TestValidateCompatibilityAcceptsLegacyLocalSnapshotWithoutMetadata(t *testing.T) {
+	for _, snapshot := range []*Snapshot{
+		{},
+		{Metadata: map[string]string{}},
+	} {
+		if err := ValidateCompatibility(snapshot); err != nil {
+			t.Fatalf("expected legacy local snapshot to pass: %v", err)
+		}
+	}
+}
+
+func TestValidateCompatibilityRequiresStrictControlPlaneMetadata(t *testing.T) {
+	base := map[string]string{
+		"exporter":                "api2agent-control-plane-minimum-v0",
+		"registry_fingerprint":    "sha256:test",
+		"schema_version":          protocol.SchemaVersion,
+		"snapshot_version_policy": "explicit",
+	}
+
+	for _, missingKey := range []string{"schema_version", "registry_fingerprint", "snapshot_version_policy"} {
+		metadata := map[string]string{}
+		for key, value := range base {
+			metadata[key] = value
+		}
+		delete(metadata, missingKey)
+
+		err := ValidateCompatibility(&Snapshot{Metadata: metadata})
+		if err == nil {
+			t.Fatalf("expected missing %s to fail", missingKey)
+		}
+		if want := "control plane snapshot metadata." + missingKey + " is required"; err.Error() != want {
+			t.Fatalf("expected error %q, got %q", want, err.Error())
+		}
+	}
+}
+
 func TestLoadSnapshotFromDistributionDirectory(t *testing.T) {
 	source := filepath.Join("..", "..", "testdata", "snapshots", "control-plane-public-ip.json")
 	distributionDir := t.TempDir()

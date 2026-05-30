@@ -481,6 +481,18 @@ Go Control Plane Minimum v0
   - 暂时仍然允许缺少 `metadata.schema_version` 的 legacy local snapshots。
   - cross-plane dogfood 验证 incompatible v3 reload 被拒绝，v2 保持 active，并且 execution 继续使用 v2。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_COMPATIBILITY_GUARD_DOGFOOD_REPORT.md`。
+- Control Plane Snapshot Strict Metadata Requirement v0 已完成：
+  - Control Plane/exported snapshots 必须包含 `metadata.schema_version`、`metadata.registry_fingerprint` 和 `metadata.snapshot_version_policy`。
+  - 暂时仍然允许没有 Control Plane metadata 的 legacy local snapshots。
+  - startup load、`api2agent-snapshot-check` 和 manual reload 共享同一个 strict metadata guard。
+  - cross-plane dogfood 验证缺少 `registry_fingerprint` 的 v4 distribution 会被拒绝，v2 保持 active，并记录 reload audit event。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_STRICT_METADATA_DOGFOOD_REPORT.md`。
+
+下一项工程任务：
+
+```text
+Control Plane Snapshot Metadata Manifest Consistency Guard v0
+```
 
 ## 9. Marketplace 是后面的结果
 
