@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -71,5 +72,67 @@ func TestValidateRejectsProviderCapabilityVersionMismatch(t *testing.T) {
 
 	if _, err := reg.ExportSnapshot(); err == nil {
 		t.Fatalf("expected validation error")
+	}
+}
+
+func TestValidateRejectsDuplicateCapability(t *testing.T) {
+	reg := loadValidRegistry(t)
+	reg.Capabilities = append(reg.Capabilities, reg.Capabilities[0])
+
+	assertValidationError(t, reg, "capability \"network.public_ip.get\" is duplicated")
+}
+
+func TestValidateRejectsAPIKeyUnknownProject(t *testing.T) {
+	reg := loadValidRegistry(t)
+	reg.APIKeys[0].ProjectID = "missing"
+
+	assertValidationError(t, reg, "api_key \"key_local_dev\" references unknown project \"missing\"")
+}
+
+func TestValidateRejectsActiveProviderWithoutBaseURL(t *testing.T) {
+	reg := loadValidRegistry(t)
+	reg.Providers[0].Metadata = map[string]string{}
+
+	assertValidationError(t, reg, "active provider \"ipify_public_ip_v1\" metadata.base_url is required")
+}
+
+func TestValidateRejectsUnknownCredentialScope(t *testing.T) {
+	reg := loadValidRegistry(t)
+	reg.CredentialMetadata[0].Scope = []string{"capability:missing.capability.get"}
+
+	assertValidationError(t, reg, "credential_metadata \"cred_local_ipify\" scope references unknown capability \"missing.capability.get\"")
+}
+
+func TestValidateRejectsInvalidRoutingStrategy(t *testing.T) {
+	reg := loadValidRegistry(t)
+	reg.RoutingPolicy.Strategy = "magic"
+
+	assertValidationError(t, reg, "routing_policy.strategy \"magic\" is invalid")
+}
+
+func TestValidateRejectsNoActiveProviders(t *testing.T) {
+	reg := loadValidRegistry(t)
+	reg.Providers[0].Status = "disabled"
+
+	assertValidationError(t, reg, "at least one active provider is required")
+}
+
+func loadValidRegistry(t *testing.T) Registry {
+	t.Helper()
+	reg, err := LoadFile(filepath.Join("..", "..", "testdata", "registry", "network.public_ip.get.json"))
+	if err != nil {
+		t.Fatalf("load registry: %v", err)
+	}
+	return *reg
+}
+
+func assertValidationError(t *testing.T, reg Registry, message string) {
+	t.Helper()
+	_, err := reg.ExportSnapshot()
+	if err == nil {
+		t.Fatalf("expected validation error")
+	}
+	if !strings.Contains(err.Error(), message) {
+		t.Fatalf("expected error containing %q, got %q", message, err.Error())
 	}
 }

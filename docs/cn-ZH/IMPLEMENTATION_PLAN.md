@@ -416,6 +416,14 @@ Go Control Plane Minimum v0
   - Go Data Plane 可以加载 Control Plane 导出的 snapshot，并保留 exporter metadata。
   - cross-plane dogfood 证明 `Control Plane registry -> snapshot export -> Data Plane execute`。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_MINIMUM_DOGFOOD_REPORT.md`。
+- Control Plane Registry Validation v0 已完成：
+  - registry validation 会检查 project、API key、capability、provider 和 credential ids 的唯一性。
+  - API keys 必须引用已知 projects。
+  - providers 必须引用已知 capabilities，并且 capability version 要一致。
+  - active providers 必须包含 `metadata.base_url`。
+  - routing strategy、routing mode、failover policy、snapshot source 和 snapshot TTL 会被校验。
+  - credential metadata 会校验 owner/project references、provider references、status、auth type、injection mode、source 和 scope references。
+  - dogfood 会验证 invalid registries 在 snapshot export 前被拒绝。
 
 ## 9. Marketplace 是后面的结果
 

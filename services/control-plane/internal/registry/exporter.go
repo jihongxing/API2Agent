@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
+	"time"
 )
 
 func LoadFile(path string) (*Registry, error) {
@@ -65,6 +67,47 @@ func (r Registry) Validate() error {
 	if r.Snapshot.TTL == "" {
 		return fmt.Errorf("snapshot.ttl is required")
 	}
+	if _, err := time.ParseDuration(r.Snapshot.TTL); err != nil {
+		return fmt.Errorf("snapshot.ttl is invalid: %w", err)
+	}
+	if !oneOf(defaultString(r.Snapshot.Source, "pull"), "push", "pull") {
+		return fmt.Errorf("snapshot.source must be push or pull")
+	}
+	projects := map[string]Project{}
+	for _, project := range r.Projects {
+		if project.ID == "" {
+			return fmt.Errorf("project.id is required")
+		}
+		if _, exists := projects[project.ID]; exists {
+			return fmt.Errorf("project %q is duplicated", project.ID)
+		}
+		if !oneOf(defaultString(project.Status, "active"), "active", "disabled") {
+			return fmt.Errorf("project %q status %q is invalid", project.ID, project.Status)
+		}
+		if project.DefaultMode != "" && !oneOf(project.DefaultMode, "direct", "proxy", "shadow", "replay") {
+			return fmt.Errorf("project %q default_mode %q is invalid", project.ID, project.DefaultMode)
+		}
+		projects[project.ID] = project
+	}
+	apiKeys := map[string]APIKey{}
+	for _, apiKey := range r.APIKeys {
+		if apiKey.ID == "" {
+			return fmt.Errorf("api_key.id is required")
+		}
+		if _, exists := apiKeys[apiKey.ID]; exists {
+			return fmt.Errorf("api_key %q is duplicated", apiKey.ID)
+		}
+		if apiKey.ProjectID == "" {
+			return fmt.Errorf("api_key %q project_id is required", apiKey.ID)
+		}
+		if _, ok := projects[apiKey.ProjectID]; !ok {
+			return fmt.Errorf("api_key %q references unknown project %q", apiKey.ID, apiKey.ProjectID)
+		}
+		if !oneOf(defaultString(apiKey.Status, "active"), "active", "disabled", "revoked") {
+			return fmt.Errorf("api_key %q status %q is invalid", apiKey.ID, apiKey.Status)
+		}
+		apiKeys[apiKey.ID] = apiKey
+	}
 	if len(r.Capabilities) == 0 {
 		return fmt.Errorf("at least one capability is required")
 	}
@@ -76,14 +119,24 @@ func (r Registry) Validate() error {
 		if capability.Version == "" {
 			return fmt.Errorf("capability %q version is required", capability.ID)
 		}
+		if _, exists := capabilities[capability.ID]; exists {
+			return fmt.Errorf("capability %q is duplicated", capability.ID)
+		}
 		capabilities[capability.ID] = capability
 	}
 	if len(r.Providers) == 0 {
 		return fmt.Errorf("at least one provider is required")
 	}
+	providers := map[string]Provider{}
+	providerIDs := map[string]bool{}
+	toolIDs := map[string]bool{}
+	activeProviderCount := 0
 	for _, provider := range r.Providers {
 		if provider.ID == "" {
 			return fmt.Errorf("provider.id is required")
+		}
+		if _, exists := providers[provider.ID]; exists {
+			return fmt.Errorf("provider %q is duplicated", provider.ID)
 		}
 		if provider.CapabilityID == "" {
 			return fmt.Errorf("provider %q capability_id is required", provider.ID)
@@ -110,6 +163,72 @@ func (r Registry) Validate() error {
 		if provider.ToolID == "" {
 			return fmt.Errorf("provider %q tool_id is required", provider.ID)
 		}
+		if len(provider.Regions) == 0 {
+			return fmt.Errorf("provider %q regions are required", provider.ID)
+		}
+		if provider.GeoAffinity == "" {
+			return fmt.Errorf("provider %q geo_affinity is required", provider.ID)
+		}
+		if !oneOf(defaultString(provider.Status, "active"), "active", "disabled") {
+			return fmt.Errorf("provider %q status %q is invalid", provider.ID, provider.Status)
+		}
+		if defaultString(provider.Status, "active") == "active" {
+			activeProviderCount++
+			if strings.TrimSpace(provider.Metadata["base_url"]) == "" {
+				return fmt.Errorf("active provider %q metadata.base_url is required", provider.ID)
+			}
+		}
+		providers[provider.ID] = provider
+		providerIDs[provider.ProviderID] = true
+		toolIDs[provider.ToolID] = true
+	}
+	if activeProviderCount == 0 {
+		return fmt.Errorf("at least one active provider is required")
+	}
+	if err := validateRoutingPolicy(defaultRoutingPolicy(r.RoutingPolicy)); err != nil {
+		return err
+	}
+	credentials := map[string]CredentialMetadata{}
+	for _, credential := range r.CredentialMetadata {
+		if credential.CredentialID == "" {
+			return fmt.Errorf("credential_metadata.credential_id is required")
+		}
+		if _, exists := credentials[credential.CredentialID]; exists {
+			return fmt.Errorf("credential_metadata %q is duplicated", credential.CredentialID)
+		}
+		if !oneOf(credential.OwnerType, "user", "project", "platform", "provider") {
+			return fmt.Errorf("credential_metadata %q owner_type %q is invalid", credential.CredentialID, credential.OwnerType)
+		}
+		if credential.OwnerID == "" {
+			return fmt.Errorf("credential_metadata %q owner_id is required", credential.CredentialID)
+		}
+		if credential.OwnerType == "project" {
+			if _, ok := projects[credential.OwnerID]; !ok {
+				return fmt.Errorf("credential_metadata %q references unknown project owner %q", credential.CredentialID, credential.OwnerID)
+			}
+		}
+		if credential.ProviderID == "" {
+			return fmt.Errorf("credential_metadata %q provider_id is required", credential.CredentialID)
+		}
+		if !providerIDs[credential.ProviderID] {
+			return fmt.Errorf("credential_metadata %q references unknown provider_id %q", credential.CredentialID, credential.ProviderID)
+		}
+		if credential.AuthType != "" && !oneOf(credential.AuthType, "api_key", "bearer", "basic", "oauth", "none") {
+			return fmt.Errorf("credential_metadata %q auth_type %q is invalid", credential.CredentialID, credential.AuthType)
+		}
+		if credential.InjectionMode != "" && !oneOf(credential.InjectionMode, "header", "query", "body", "none") {
+			return fmt.Errorf("credential_metadata %q injection_mode %q is invalid", credential.CredentialID, credential.InjectionMode)
+		}
+		if credential.Source != "" && !oneOf(credential.Source, "env", "config", "inline", "vault", "none") {
+			return fmt.Errorf("credential_metadata %q source %q is invalid", credential.CredentialID, credential.Source)
+		}
+		if !oneOf(defaultString(credential.Status, "active"), "active", "disabled", "expired") {
+			return fmt.Errorf("credential_metadata %q status %q is invalid", credential.CredentialID, credential.Status)
+		}
+		if err := validateCredentialScope(credential, capabilities, providerIDs, toolIDs); err != nil {
+			return err
+		}
+		credentials[credential.CredentialID] = credential
 	}
 	return nil
 }
@@ -133,4 +252,76 @@ func defaultRoutingPolicy(policy RoutingPolicy) RoutingPolicy {
 		policy.RoutingMode = "deterministic"
 	}
 	return policy
+}
+
+func validateRoutingPolicy(policy RoutingPolicy) error {
+	if !oneOf(policy.Strategy, "first", "lowest_cost", "lowest_latency", "region_aware_latency", "highest_success_rate", "balanced") {
+		return fmt.Errorf("routing_policy.strategy %q is invalid", policy.Strategy)
+	}
+	if !oneOf(policy.RoutingMode, "deterministic", "stochastic") {
+		return fmt.Errorf("routing_policy.routing_mode %q is invalid", policy.RoutingMode)
+	}
+	if policy.FailoverPolicy != nil {
+		if policy.FailoverPolicy.Enabled && policy.FailoverPolicy.MaxAttempts <= 0 {
+			return fmt.Errorf("routing_policy.failover_policy.max_attempts must be positive when enabled")
+		}
+		if policy.FailoverPolicy.AttemptTimeoutPolicy != "" && !oneOf(policy.FailoverPolicy.AttemptTimeoutPolicy, "fixed", "remaining_budget") {
+			return fmt.Errorf("routing_policy.failover_policy.attempt_timeout_policy %q is invalid", policy.FailoverPolicy.AttemptTimeoutPolicy)
+		}
+		for _, statusCode := range policy.FailoverPolicy.RetryOnStatusCodes {
+			if statusCode < 100 || statusCode > 599 {
+				return fmt.Errorf("routing_policy.failover_policy retry status code %d is invalid", statusCode)
+			}
+		}
+	}
+	return nil
+}
+
+func validateCredentialScope(credential CredentialMetadata, capabilities map[string]Capability, providerIDs map[string]bool, toolIDs map[string]bool) error {
+	for _, scope := range credential.Scope {
+		switch {
+		case scope == "*" || scope == "*:*":
+			continue
+		case strings.HasPrefix(scope, "capability:"):
+			capabilityID := strings.TrimPrefix(scope, "capability:")
+			if _, ok := capabilities[capabilityID]; !ok {
+				return fmt.Errorf("credential_metadata %q scope references unknown capability %q", credential.CredentialID, capabilityID)
+			}
+		case strings.HasPrefix(scope, "provider:"):
+			providerID := strings.TrimPrefix(scope, "provider:")
+			if !providerIDs[providerID] {
+				return fmt.Errorf("credential_metadata %q scope references unknown provider_id %q", credential.CredentialID, providerID)
+			}
+		case strings.HasPrefix(scope, "tool:"):
+			toolID := strings.TrimPrefix(scope, "tool:")
+			if !toolIDs[toolID] {
+				return fmt.Errorf("credential_metadata %q scope references unknown tool_id %q", credential.CredentialID, toolID)
+			}
+		default:
+			if _, ok := capabilities[scope]; ok {
+				continue
+			}
+			if toolIDs[scope] {
+				continue
+			}
+			return fmt.Errorf("credential_metadata %q scope %q is not resolvable", credential.CredentialID, scope)
+		}
+	}
+	return nil
+}
+
+func defaultString(value string, fallback string) string {
+	if value == "" {
+		return fallback
+	}
+	return value
+}
+
+func oneOf(value string, allowed ...string) bool {
+	for _, item := range allowed {
+		if value == item {
+			return true
+		}
+	}
+	return false
 }

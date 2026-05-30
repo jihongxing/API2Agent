@@ -98,6 +98,7 @@ All notable API2Agent changes will be documented in this file.
 - Phase 6 entry task: Go Control Plane Minimum v0.
 - Go Control Plane minimum module with local registry models and `export-snapshot` command.
 - Control Plane exported snapshot metadata accepted by Go Data Plane snapshot loader.
+- Control Plane registry validation for uniqueness, references, routing policy, snapshot metadata, provider metadata, and credential metadata scopes.
 - Go Control Plane minimum dogfood script and bilingual report.
 - Go Data Plane credential config dogfood script and bilingual report.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
@@ -146,6 +147,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane failover and real external retry dogfoods passed with ordered attempt correlation.
 - Go Data Plane local production primitive milestone closed; ready to begin local Go Control Plane minimum.
 - Go Control Plane minimum dogfood passed for registry export to Data Plane execution.
+- Go Control Plane minimum dogfood passed invalid-registry rejection before snapshot export.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
 - Full test suite: `143 passed`.

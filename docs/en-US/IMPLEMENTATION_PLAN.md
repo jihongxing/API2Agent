@@ -416,6 +416,14 @@ Current Phase 6 progress:
   - Go Data Plane loads a Control Plane exported snapshot and preserves exporter metadata.
   - cross-plane dogfood proves `Control Plane registry -> snapshot export -> Data Plane execute`.
   - see `docs/en-US/GO_CONTROL_PLANE_MINIMUM_DOGFOOD_REPORT.md`.
+- Control Plane Registry Validation v0 is complete:
+  - registry validation enforces unique project, API key, capability, provider, and credential ids.
+  - API keys must reference known projects.
+  - providers must reference known capabilities and matching capability versions.
+  - active providers must include `metadata.base_url`.
+  - routing strategy, routing mode, failover policy, snapshot source, and snapshot TTL are validated.
+  - credential metadata validates owner/project references, provider references, status, auth type, injection mode, source, and scope references.
+  - dogfood verifies invalid registries are rejected before snapshot export.
 
 ## 9. Marketplace Is Later
 

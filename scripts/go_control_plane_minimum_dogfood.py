@@ -68,11 +68,19 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, dp_dir: Path) -> dict
         scenario_dir = tmp / "control-plane-minimum"
         scenario_dir.mkdir(parents=True, exist_ok=True)
         registry = write_registry(scenario_dir / "registry.json", f"http://127.0.0.1:{provider_server.server_port}")
+        invalid_registry = write_invalid_registry(scenario_dir / "invalid-registry.json", f"http://127.0.0.1:{provider_server.server_port}")
         snapshot = scenario_dir / "snapshot.json"
         subprocess.run(
             [str(cp_exe), "export-snapshot", "--registry", str(registry), "--output", str(snapshot)],
             cwd=dp_dir.parent,
             check=True,
+        )
+        invalid_export = subprocess.run(
+            [str(cp_exe), "export-snapshot", "--registry", str(invalid_registry), "--output", str(scenario_dir / "invalid-snapshot.json")],
+            cwd=dp_dir.parent,
+            check=False,
+            capture_output=True,
+            text=True,
         )
         event_dir = scenario_dir / "events"
         port = free_port()
@@ -107,6 +115,8 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, dp_dir: Path) -> dict
         routing_decision = next((event["record"] for event in events if event["event_type"] == "routing_decision"), {})
         checks = {
             "control_plane_export_success": snapshot.exists(),
+            "invalid_registry_rejected": invalid_export.returncode != 0
+            and "references unknown project" in invalid_export.stderr,
             "health_snapshot_version_matches": health.get("snapshot_version") == "snapshot_control_plane_public_ip_v1",
             "response_success": response.get("success") is True,
             "response_ip_matches_provider": (response.get("output") or {}).get("ip") == FIXED_IP,
@@ -122,6 +132,9 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, dp_dir: Path) -> dict
         return {
             "dogfood": "go_control_plane_minimum",
             "registry_path": str(registry),
+            "invalid_registry_path": str(invalid_registry),
+            "invalid_registry_exit_code": invalid_export.returncode,
+            "invalid_registry_error": invalid_export.stderr.strip(),
             "snapshot_path": str(snapshot),
             "health": health,
             "response": response,
@@ -196,6 +209,14 @@ def write_registry(path: Path, base_url: str) -> Path:
         ),
         encoding="utf-8",
     )
+    return path
+
+
+def write_invalid_registry(path: Path, base_url: str) -> Path:
+    write_registry(path, base_url)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["api_keys"][0]["project_id"] = "missing_project"
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return path
 
 

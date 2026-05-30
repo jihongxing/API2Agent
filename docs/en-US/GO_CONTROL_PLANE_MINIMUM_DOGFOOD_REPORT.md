@@ -6,6 +6,8 @@ Date: 2026-05-30
 
 Verify that the new minimum Go Control Plane can export a versioned routing snapshot that the existing Go Data Plane can consume without code changes in the Data Plane snapshot loader.
 
+This report also verifies that invalid registry relationships are rejected before snapshot export.
+
 ## Setup
 
 Control Plane registry:
@@ -54,6 +56,12 @@ The data plane then:
 - returned the fixed public IP from the local provider
 - wrote a valid execution graph
 
+The control plane also rejected an invalid registry where an API key referenced a missing project:
+
+```text
+api_key "key_local_dev" references unknown project "missing_project"
+```
+
 ## Result
 
 Go Control Plane Minimum v0 passed.
@@ -69,6 +77,7 @@ Control Plane registry -> versioned snapshot export -> Data Plane consumption
 ```json
 {
   "control_plane_export_success": true,
+  "invalid_registry_rejected": true,
   "health_snapshot_version_matches": true,
   "response_success": true,
   "response_ip_matches_provider": true,

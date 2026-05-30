@@ -6,6 +6,8 @@
 
 验证新的最小 Go Control Plane 是否可以导出 versioned routing snapshot，并且现有 Go Data Plane 可以在不修改 snapshot loader 的情况下直接消费。
 
+本报告也验证 invalid registry relationships 会在 snapshot export 前被拒绝。
+
 ## 设置
 
 Control Plane registry 包含：
@@ -54,6 +56,12 @@ Control Plane 导出了一个 snapshot：
 - 返回了本地 provider 的 fixed public IP
 - 写入了有效 execution graph
 
+Control Plane 也拒绝了一个 API key 引用 missing project 的 invalid registry：
+
+```text
+api_key "key_local_dev" references unknown project "missing_project"
+```
+
 ## 结果
 
 Go Control Plane Minimum v0 通过。
@@ -69,6 +77,7 @@ Control Plane registry -> versioned snapshot export -> Data Plane consumption
 ```json
 {
   "control_plane_export_success": true,
+  "invalid_registry_rejected": true,
   "health_snapshot_version_matches": true,
   "response_success": true,
   "response_ip_matches_provider": true,
