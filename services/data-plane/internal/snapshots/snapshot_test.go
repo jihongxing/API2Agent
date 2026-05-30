@@ -1,10 +1,13 @@
 package snapshots
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"api2agent/services/data-plane/internal/protocol"
 )
 
 func TestSnapshotExpiration(t *testing.T) {
@@ -68,6 +71,43 @@ func TestLoadControlPlaneExportedSnapshotMetadata(t *testing.T) {
 	}
 	if len(snapshot.Providers) != 1 || snapshot.Providers[0].ProviderID != "ipify" {
 		t.Fatalf("unexpected providers: %#v", snapshot.Providers)
+	}
+}
+
+func TestLoadRejectsIncompatibleSchemaVersion(t *testing.T) {
+	source := filepath.Join("..", "..", "testdata", "snapshots", "control-plane-public-ip.json")
+	data, err := os.ReadFile(source)
+	if err != nil {
+		t.Fatalf("read source snapshot: %v", err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(data, &payload); err != nil {
+		t.Fatalf("decode source snapshot: %v", err)
+	}
+	metadata, _ := payload["metadata"].(map[string]any)
+	if metadata == nil {
+		metadata = map[string]any{}
+		payload["metadata"] = metadata
+	}
+	metadata["schema_version"] = "api2agent.protocol.v9"
+	path := filepath.Join(t.TempDir(), "snapshot.json")
+	encoded, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		t.Fatalf("encode incompatible snapshot: %v", err)
+	}
+	if err := os.WriteFile(path, encoded, 0o644); err != nil {
+		t.Fatalf("write incompatible snapshot: %v", err)
+	}
+
+	if _, err := LoadFile(path); err == nil {
+		t.Fatalf("expected incompatible schema version to fail")
+	}
+}
+
+func TestValidateCompatibilityAcceptsCurrentSchemaVersion(t *testing.T) {
+	snapshot := &Snapshot{Metadata: map[string]string{"schema_version": protocol.SchemaVersion}}
+	if err := ValidateCompatibility(snapshot); err != nil {
+		t.Fatalf("expected current schema version to pass: %v", err)
 	}
 }
 

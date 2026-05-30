@@ -474,6 +474,13 @@ Current Phase 6 progress:
   - reload audit events share the same append-only event stream and event sequence IDs as execution events.
   - cross-plane dogfood verifies failed reload audit, successful reload audit, and execution graph ordering.
   - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_RELOAD_AUDIT_DOGFOOD_REPORT.md`.
+- Control Plane Snapshot Version Compatibility Guard v0 is complete:
+  - Control Plane exported snapshots include `metadata.schema_version=api2agent.protocol.v0.2`.
+  - Data Plane snapshot loading rejects snapshots that declare a different `metadata.schema_version`.
+  - the guard applies to startup load, `api2agent-snapshot-check`, and manual reload because they use the same snapshot loader.
+  - legacy local snapshots without `metadata.schema_version` are still accepted for now.
+  - cross-plane dogfood verifies incompatible v3 reload is rejected, v2 remains active, and execution continues on v2.
+  - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_COMPATIBILITY_GUARD_DOGFOOD_REPORT.md`.
 
 ## 9. Marketplace Is Later
 

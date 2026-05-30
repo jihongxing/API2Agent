@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"api2agent/services/data-plane/internal/protocol"
 )
 
 type Snapshot struct {
@@ -87,7 +89,21 @@ func LoadFile(path string) (*Snapshot, error) {
 	if snapshot.RoutingPolicy.RoutingMode == "" {
 		snapshot.RoutingPolicy.RoutingMode = "deterministic"
 	}
+	if err := ValidateCompatibility(&snapshot); err != nil {
+		return nil, err
+	}
 	return &snapshot, nil
+}
+
+func ValidateCompatibility(snapshot *Snapshot) error {
+	if snapshot == nil {
+		return fmt.Errorf("snapshot is required")
+	}
+	schemaVersion := snapshot.Metadata["schema_version"]
+	if schemaVersion != "" && schemaVersion != protocol.SchemaVersion {
+		return fmt.Errorf("snapshot schema_version %q is incompatible with data plane schema_version %q", schemaVersion, protocol.SchemaVersion)
+	}
+	return nil
 }
 
 func ResolvePath(path string) (string, error) {

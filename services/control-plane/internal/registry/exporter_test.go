@@ -41,6 +41,9 @@ func TestExportSnapshotFromRegistry(t *testing.T) {
 	if snapshot.Metadata["snapshot_version_policy"] != "explicit" {
 		t.Fatalf("expected explicit snapshot version policy, got %#v", snapshot.Metadata)
 	}
+	if snapshot.Metadata["schema_version"] != ProtocolSchemaVersion {
+		t.Fatalf("expected protocol schema version metadata, got %#v", snapshot.Metadata)
+	}
 }
 
 func TestWriteSnapshotFile(t *testing.T) {

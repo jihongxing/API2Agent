@@ -81,6 +81,7 @@ snapshot 包含：
 - 拒绝损坏的 reload，同时保持 v1 active
 - 为 failed 和 successful reload attempts 写入 reload audit events
 - 通过 `POST /v1/admin/reload-snapshot` 从 v1 reload 到 v2
+- 拒绝 incompatible v3 schema version，同时保持 v2 active
 - 在 `/healthz` 返回同一个 snapshot version
 - 执行了 `network.public_ip.get`
 - 返回了本地 provider 的 fixed public IP
@@ -124,11 +125,16 @@ Control Plane registry -> snapshot artifact export -> local distribution current
   "reload_previous_snapshot_version_matches": true,
   "reload_snapshot_version_matches": true,
   "successful_reload_audit_event_recorded": true,
+  "incompatible_reload_rejected": true,
+  "incompatible_reload_kept_v2": true,
+  "incompatible_reload_audit_event_recorded": true,
+  "health_after_incompatible_reload_still_v2": true,
   "distribution_current_after_reload_points_to_v2": true,
   "distribution_v2_artifact_snapshot_exists": true,
   "snapshot_check_passed": true,
   "snapshot_check_has_registry_fingerprint": true,
   "snapshot_check_has_explicit_version_policy": true,
+  "snapshot_check_schema_version_matches": true,
   "invalid_registry_rejected": true,
   "health_snapshot_version_matches": true,
   "response_success": true,

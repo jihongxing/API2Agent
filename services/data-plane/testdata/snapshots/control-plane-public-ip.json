@@ -33,6 +33,7 @@
     "routing_seed": "control-plane-public-ip-v1"
   },
   "metadata": {
-    "exporter": "api2agent-control-plane-minimum-v0"
+    "exporter": "api2agent-control-plane-minimum-v0",
+    "schema_version": "api2agent.protocol.v0.2"
   }
 }

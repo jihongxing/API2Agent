@@ -150,6 +150,25 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             current_pointer_after_reload = read_json(distribution_dir / "current.json")
             reload_response = post_json(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
             health = get_json(f"http://127.0.0.1:{port}/healthz")
+            registry_v3 = write_registry(
+                scenario_dir / "registry-v3.json",
+                f"http://127.0.0.1:{provider_server.server_port}",
+                "snapshot_control_plane_public_ip_v3",
+            )
+            artifact_dir_v3 = scenario_dir / "artifact-v3-incompatible"
+            subprocess.run(
+                [str(cp_exe), "export-artifact", "--registry", str(registry_v3), "--output-dir", str(artifact_dir_v3)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            force_snapshot_schema_version(artifact_dir_v3 / "snapshot.json", "api2agent.protocol.v9")
+            subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v3), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            incompatible_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
+            health_after_incompatible_reload = get_json(f"http://127.0.0.1:{port}/healthz")
             response = post_json(
                 f"http://127.0.0.1:{port}/v1/execute",
                 {
@@ -161,6 +180,18 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                     "timeout_budget_ms": 5000,
                 },
             )
+        except Exception as exc:
+            proc.terminate()
+            try:
+                stdout, stderr = proc.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                stdout, stderr = proc.communicate()
+            raise RuntimeError(
+                "go data plane dogfood process failed; "
+                f"stdout={stdout.decode('utf-8', errors='replace')} "
+                f"stderr={stderr.decode('utf-8', errors='replace')}"
+            ) from exc
         finally:
             proc.terminate()
             try:
@@ -206,6 +237,15 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "successful_reload_audit_event_recorded": len(reload_events) >= 2
             and reload_events[1].get("outcome") == "success"
             and reload_events[1].get("target_snapshot_version") == "snapshot_control_plane_public_ip_v2",
+            "incompatible_reload_rejected": incompatible_reload.get("status_code") == 503
+            and incompatible_reload.get("reloaded") is False,
+            "incompatible_reload_kept_v2": incompatible_reload.get("kept_snapshot_version")
+            == "snapshot_control_plane_public_ip_v2",
+            "incompatible_reload_audit_event_recorded": len(reload_events) >= 3
+            and reload_events[2].get("outcome") == "failure"
+            and reload_events[2].get("kept_snapshot_version") == "snapshot_control_plane_public_ip_v2",
+            "health_after_incompatible_reload_still_v2": health_after_incompatible_reload.get("snapshot_version")
+            == "snapshot_control_plane_public_ip_v2",
             "distribution_current_after_reload_points_to_v2": current_pointer_after_reload.get("snapshot_file")
             == "artifacts/snapshot_control_plane_public_ip_v2/snapshot.json",
             "distribution_v2_artifact_snapshot_exists": (
@@ -217,6 +257,8 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             and snapshot_check_report.get("registry_fingerprint", "").startswith("sha256:"),
             "snapshot_check_has_explicit_version_policy": snapshot_check_report.get("snapshot_version_policy")
             == "explicit",
+            "snapshot_check_schema_version_matches": snapshot_check_report.get("schema_version")
+            == "api2agent.protocol.v0.2",
             "invalid_registry_rejected": invalid_export.returncode != 0
             and "references unknown project" in invalid_export.stderr,
             "health_snapshot_version_matches": health.get("snapshot_version") == "snapshot_control_plane_public_ip_v2",
@@ -225,6 +267,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "usage_has_attempt_id": (usage.get("request_metadata") or {}).get("attempt_id") == usage.get("id"),
             "routing_snapshot_version_matches": routing_decision.get("snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "event_order_is_graph": [event["event_type"] for event in events] == [
+                "snapshot_reload_event",
                 "snapshot_reload_event",
                 "snapshot_reload_event",
                 "request_context",
@@ -248,6 +291,8 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "failed_reload": failed_reload,
             "health_after_failed_reload": health_after_failed_reload,
             "reload_response": reload_response,
+            "incompatible_reload": incompatible_reload,
+            "health_after_incompatible_reload": health_after_incompatible_reload,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,
@@ -332,6 +377,13 @@ def write_invalid_registry(path: Path, base_url: str) -> Path:
     data["api_keys"][0]["project_id"] = "missing_project"
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return path
+
+
+def force_snapshot_schema_version(path: Path, schema_version: str) -> None:
+    data = read_json(path)
+    metadata = data.setdefault("metadata", {})
+    metadata["schema_version"] = schema_version
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 def parse_json_report(completed: subprocess.CompletedProcess[str]) -> dict:

@@ -19,6 +19,7 @@ type Report struct {
 	RoutingStrategy       string `json:"routing_strategy,omitempty"`
 	RoutingMode           string `json:"routing_mode,omitempty"`
 	Exporter              string `json:"exporter,omitempty"`
+	SchemaVersion         string `json:"schema_version,omitempty"`
 	RegistryFingerprint   string `json:"registry_fingerprint,omitempty"`
 	SnapshotVersionPolicy string `json:"snapshot_version_policy,omitempty"`
 	Passed                bool   `json:"passed"`
@@ -57,6 +58,7 @@ func run(snapshotPath string) (Report, error) {
 	report.RoutingStrategy = snapshot.RoutingPolicy.Strategy
 	report.RoutingMode = snapshot.RoutingPolicy.RoutingMode
 	report.Exporter = snapshot.Metadata["exporter"]
+	report.SchemaVersion = snapshot.Metadata["schema_version"]
 	report.RegistryFingerprint = snapshot.Metadata["registry_fingerprint"]
 	report.SnapshotVersionPolicy = snapshot.Metadata["snapshot_version_policy"]
 

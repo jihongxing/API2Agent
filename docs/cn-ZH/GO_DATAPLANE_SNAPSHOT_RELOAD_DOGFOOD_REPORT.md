@@ -44,9 +44,10 @@ cross-plane dogfood 现在会验证：
 8. Control Plane 导出并发布 snapshot v2 到同一个 distribution 目录。
 9. Data Plane 接收 `POST /v1/admin/reload-snapshot`。
 10. active snapshot 被替换前，先写入 successful `snapshot_reload_event`。
-11. `/healthz` 返回 `snapshot_control_plane_public_ip_v2`。
-12. `/v1/execute` 成功。
-13. RoutingDecision 和 UsageEvent 记录 `snapshot_control_plane_public_ip_v2`。
+11. incompatible v3 snapshot 声明 `api2agent.protocol.v9` 并被拒绝。
+12. `/healthz` 仍然停留在 `snapshot_control_plane_public_ip_v2`。
+13. `/v1/execute` 成功。
+14. RoutingDecision 和 UsageEvent 记录 `snapshot_control_plane_public_ip_v2`。
 
 ## 检查项
 
@@ -61,6 +62,10 @@ cross-plane dogfood 现在会验证：
   "reload_previous_snapshot_version_matches": true,
   "reload_snapshot_version_matches": true,
   "successful_reload_audit_event_recorded": true,
+  "incompatible_reload_rejected": true,
+  "incompatible_reload_kept_v2": true,
+  "incompatible_reload_audit_event_recorded": true,
+  "health_after_incompatible_reload_still_v2": true,
   "distribution_current_after_reload_points_to_v2": true,
   "distribution_v2_artifact_snapshot_exists": true,
   "routing_snapshot_version_matches": true
@@ -76,3 +81,5 @@ Snapshot Refresh / Reload Policy v0 通过。
 Reload Failure Semantics v0 也通过：失败 reload 不会替换 active snapshot，并且失败响应是机器可读、可重试的。
 
 Reload Audit Events v0 也通过：失败和成功 reload attempts 都会写入 append-only event stream。
+
+Snapshot Version Compatibility Guard v0 也通过：不兼容 schema version 会被拒绝，并且不会替换 active snapshot。

@@ -39,6 +39,8 @@ The artifact contains:
 
 The manifest records the artifact version, registry source, snapshot version policy, registry fingerprint, and validation summary.
 
+Exported snapshots include `metadata.schema_version=api2agent.protocol.v0.2` so Data Plane can reject incompatible snapshots before startup or reload.
+
 Publish a snapshot artifact to a local distribution directory:
 
 ```bash

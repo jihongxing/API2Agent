@@ -327,6 +327,84 @@ func TestReloadSnapshotFailureWritesJSONLAuditEvent(t *testing.T) {
 	}
 }
 
+func TestReloadSnapshotSuccessWritesJSONLAuditEvent(t *testing.T) {
+	dir := t.TempDir()
+	snapshotPath := filepath.Join(dir, "snapshot.json")
+	snapshotV1 := newTestSnapshot("https://example.test")
+	snapshotV1.SnapshotVersion = "snapshot_test_v1"
+	snapshotV2 := newTestSnapshot("https://example.test")
+	snapshotV2.SnapshotVersion = "snapshot_test_v2"
+	writeSnapshotFile(t, snapshotPath, snapshotV1)
+
+	writer, err := events.NewJSONLWriter(filepath.Join(dir, "events"))
+	if err != nil {
+		t.Fatalf("create jsonl writer: %v", err)
+	}
+	registry := adapters.NewRegistry()
+	registry.Register("ipify", adapters.IpifyAdapter{Client: http.DefaultClient})
+	handler := Handler{
+		Snapshot:             snapshotV1,
+		SnapshotStore:        NewSnapshotStore(snapshotPath, snapshotV1),
+		SnapshotReloadPolicy: "manual",
+		Adapters:             registry,
+		Events:               writer,
+	}
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	writeSnapshotFile(t, snapshotPath, snapshotV2)
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/reload-snapshot", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected reload success, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestReloadSnapshotFailureThenSuccessWritesJSONLAuditEvents(t *testing.T) {
+	dir := t.TempDir()
+	snapshotPath := filepath.Join(dir, "snapshot.json")
+	snapshotV1 := newTestSnapshot("https://example.test")
+	snapshotV1.SnapshotVersion = "snapshot_test_v1"
+	snapshotV2 := newTestSnapshot("https://example.test")
+	snapshotV2.SnapshotVersion = "snapshot_test_v2"
+	writeSnapshotFile(t, snapshotPath, snapshotV1)
+
+	writer, err := events.NewJSONLWriter(filepath.Join(dir, "events"))
+	if err != nil {
+		t.Fatalf("create jsonl writer: %v", err)
+	}
+	registry := adapters.NewRegistry()
+	registry.Register("ipify", adapters.IpifyAdapter{Client: http.DefaultClient})
+	handler := Handler{
+		Snapshot:             snapshotV1,
+		SnapshotStore:        NewSnapshotStore(snapshotPath, snapshotV1),
+		SnapshotReloadPolicy: "manual",
+		Adapters:             registry,
+		Events:               writer,
+	}
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	if err := os.WriteFile(snapshotPath, []byte(`{"snapshot_version":""}`), 0o644); err != nil {
+		t.Fatalf("write invalid snapshot: %v", err)
+	}
+	failedReq := httptest.NewRequest(http.MethodPost, "/v1/admin/reload-snapshot", nil)
+	failedRec := httptest.NewRecorder()
+	mux.ServeHTTP(failedRec, failedReq)
+	if failedRec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected reload failure, got %d: %s", failedRec.Code, failedRec.Body.String())
+	}
+
+	writeSnapshotFile(t, snapshotPath, snapshotV2)
+	successReq := httptest.NewRequest(http.MethodPost, "/v1/admin/reload-snapshot", nil)
+	successRec := httptest.NewRecorder()
+	mux.ServeHTTP(successRec, successReq)
+	if successRec.Code != http.StatusOK {
+		t.Fatalf("expected reload success, got %d: %s", successRec.Code, successRec.Body.String())
+	}
+}
+
 func TestReloadSnapshotDisabledByDefault(t *testing.T) {
 	handler, _ := newTestHandler(newTestSnapshot("https://example.test"), http.DefaultClient)
 	mux := http.NewServeMux()

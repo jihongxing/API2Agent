@@ -44,9 +44,10 @@ The cross-plane dogfood now verifies:
 8. Control Plane exports and publishes snapshot v2 into the same distribution directory.
 9. Data Plane receives `POST /v1/admin/reload-snapshot`.
 10. A successful `snapshot_reload_event` is written before the active snapshot is swapped.
-11. `/healthz` reports `snapshot_control_plane_public_ip_v2`.
-12. `/v1/execute` succeeds.
-13. RoutingDecision and UsageEvent record `snapshot_control_plane_public_ip_v2`.
+11. An incompatible v3 snapshot declares `api2agent.protocol.v9` and is rejected.
+12. `/healthz` remains on `snapshot_control_plane_public_ip_v2`.
+13. `/v1/execute` succeeds.
+14. RoutingDecision and UsageEvent record `snapshot_control_plane_public_ip_v2`.
 
 ## Checks
 
@@ -61,6 +62,10 @@ The cross-plane dogfood now verifies:
   "reload_previous_snapshot_version_matches": true,
   "reload_snapshot_version_matches": true,
   "successful_reload_audit_event_recorded": true,
+  "incompatible_reload_rejected": true,
+  "incompatible_reload_kept_v2": true,
+  "incompatible_reload_audit_event_recorded": true,
+  "health_after_incompatible_reload_still_v2": true,
   "distribution_current_after_reload_points_to_v2": true,
   "distribution_v2_artifact_snapshot_exists": true,
   "routing_snapshot_version_matches": true
@@ -76,3 +81,5 @@ This keeps the production default conservative while giving local Control Plane 
 Reload Failure Semantics v0 also passed: failed reload does not swap the active snapshot, and the failure response is machine-readable and retryable.
 
 Reload Audit Events v0 also passed: failed and successful reload attempts are written into the append-only event stream.
+
+Snapshot Version Compatibility Guard v0 also passed: incompatible schema versions are rejected without replacing the active snapshot.

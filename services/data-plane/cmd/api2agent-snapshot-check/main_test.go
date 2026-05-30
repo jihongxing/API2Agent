@@ -3,6 +3,8 @@ package main
 import (
 	"path/filepath"
 	"testing"
+
+	"api2agent/services/data-plane/internal/protocol"
 )
 
 func TestRunAcceptsControlPlaneExportedSnapshot(t *testing.T) {
@@ -15,6 +17,9 @@ func TestRunAcceptsControlPlaneExportedSnapshot(t *testing.T) {
 	}
 	if report.Exporter != "api2agent-control-plane-minimum-v0" {
 		t.Fatalf("unexpected exporter: %q", report.Exporter)
+	}
+	if report.SchemaVersion != protocol.SchemaVersion {
+		t.Fatalf("unexpected schema version: %q", report.SchemaVersion)
 	}
 }
 

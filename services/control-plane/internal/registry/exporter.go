@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const ProtocolSchemaVersion = "api2agent.protocol.v0.2"
+
 func WriteSnapshotFile(path string, snapshot RoutingSnapshot) error {
 	data, err := json.MarshalIndent(snapshot, "", "  ")
 	if err != nil {
@@ -74,6 +76,7 @@ func (r Registry) ExportSnapshot() (RoutingSnapshot, error) {
 		Metadata: map[string]string{
 			"exporter":                "api2agent-control-plane-minimum-v0",
 			"registry_fingerprint":    fingerprint,
+			"schema_version":          ProtocolSchemaVersion,
 			"snapshot_version_policy": "explicit",
 		},
 	}, nil

@@ -474,6 +474,13 @@ Go Control Plane Minimum v0
   - reload audit events 与 execution events 共享同一个 append-only event stream 和 event sequence IDs。
   - cross-plane dogfood 验证 failed reload audit、successful reload audit 和 execution graph ordering。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_RELOAD_AUDIT_DOGFOOD_REPORT.md`。
+- Control Plane Snapshot Version Compatibility Guard v0 已完成：
+  - Control Plane exported snapshots 包含 `metadata.schema_version=api2agent.protocol.v0.2`。
+  - Data Plane snapshot loading 会拒绝声明了其他 `metadata.schema_version` 的 snapshots。
+  - 因为 startup load、`api2agent-snapshot-check` 和 manual reload 使用同一个 snapshot loader，所以 guard 覆盖三条路径。
+  - 暂时仍然允许缺少 `metadata.schema_version` 的 legacy local snapshots。
+  - cross-plane dogfood 验证 incompatible v3 reload 被拒绝，v2 保持 active，并且 execution 继续使用 v2。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_COMPATIBILITY_GUARD_DOGFOOD_REPORT.md`。
 
 ## 9. Marketplace 是后面的结果
 
