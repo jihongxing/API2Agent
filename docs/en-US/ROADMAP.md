@@ -735,7 +735,8 @@ Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
 Go Control Plane Service API Skeleton v0 - complete
 Go Control Plane Service Snapshot Publish Endpoint v0 - complete
 Go Control Plane Service API Closeout + Hosted Persistence Readiness Review - complete
-Next: Go Control Plane Persistent Registry Store Design v0
+Go Control Plane Persistent Registry Store Design v0 - complete
+Next: Go Control Plane Persistent Registry Store Schema v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -762,28 +763,28 @@ Go Control Plane Snapshot Distribution Closeout + Phase Review
 Go Control Plane Service API Skeleton v0
 Go Control Plane Service Snapshot Publish Endpoint v0
 Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
+Go Control Plane Persistent Registry Store Design v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Persistent Registry Store Design v0
+Go Control Plane Persistent Registry Store Schema v0
 ```
 
 Scope:
 
-1. Define the persistent registry store contract.
-2. Draft the first Postgres table model for Control Plane registry state.
-3. Define transaction boundaries for registry load, artifact export, and distribution publish.
-4. Define database-backed registry fingerprint and versioning rules.
-5. Define migration and dual-store strategy from file registry to persistent registry.
+1. Add a SQL schema or migration draft for the persistent registry model.
+2. Add fixtures that map the existing file registry into the schema.
+3. Add deterministic ordering tests for canonical registry export inputs.
+4. Keep `FileStore` as the default runtime store.
 
 Exit criteria:
 
-- Persistent store design is documented in English and Chinese.
-- Database implementation scope is explicit before code starts.
+- Schema shape is testable locally without changing runtime defaults.
+- File registry and persistent schema mapping are proven against the existing fixture.
 - Snapshot export output remains compatible with the current Go Data Plane snapshot contract.
-- No hosted deployment, database, vault, billing, or marketplace work is included.
+- No hosted deployment, live database service, vault, billing, or marketplace work is included.
 
 Later hosted scope:
 

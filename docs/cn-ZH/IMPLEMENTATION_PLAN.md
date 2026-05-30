@@ -533,11 +533,17 @@ Go Control Plane Minimum v0
   - hosted persistence readiness 被批准进入 design，但不直接进入 database implementation。
   - 下一项 implementation slice 收窄为 persistent registry store design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SERVICE_API_CLOSEOUT.md`。
+- Go Control Plane Persistent Registry Store Design v0 已完成：
+  - persistent registry store 仍然位于现有 `registry.Store` read boundary 后面。
+  - 第一版 Postgres logical table model 已文档化，覆盖 projects、API keys、capabilities、providers、credential metadata、routing policy、snapshot configs、registry revisions、artifact publications 和 admin audit events。
+  - registry load、artifact export 和 distribution publish 的 transaction boundaries 已定义。
+  - fingerprint、versioning、migration 和 dual-store rules 已文档化。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_STORE_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Persistent Registry Store Design v0
+Go Control Plane Persistent Registry Store Schema v0
 ```
 
 ## 9. Marketplace 是后面的结果

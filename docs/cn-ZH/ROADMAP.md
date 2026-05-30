@@ -735,7 +735,8 @@ Go Control Plane Snapshot Distribution Closeout + Phase Review - complete
 Go Control Plane Service API Skeleton v0 - complete
 Go Control Plane Service Snapshot Publish Endpoint v0 - complete
 Go Control Plane Service API Closeout + Hosted Persistence Readiness Review - complete
-Next: Go Control Plane Persistent Registry Store Design v0
+Go Control Plane Persistent Registry Store Design v0 - complete
+Next: Go Control Plane Persistent Registry Store Schema v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -762,28 +763,28 @@ Go Control Plane Snapshot Distribution Closeout + Phase Review
 Go Control Plane Service API Skeleton v0
 Go Control Plane Service Snapshot Publish Endpoint v0
 Go Control Plane Service API Closeout + Hosted Persistence Readiness Review
+Go Control Plane Persistent Registry Store Design v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Persistent Registry Store Design v0
+Go Control Plane Persistent Registry Store Schema v0
 ```
 
 范围：
 
-1. 定义 persistent registry store contract。
-2. 起草第一版 Control Plane registry state 的 Postgres table model。
-3. 定义 registry load、artifact export 和 distribution publish 的 transaction boundaries。
-4. 定义 database-backed registry fingerprint 和 versioning rules。
-5. 定义从 file registry 到 persistent registry 的 migration 和 dual-store strategy。
+1. 为 persistent registry model 添加 SQL schema 或 migration draft。
+2. 添加 fixture，把现有 file registry 映射到 schema。
+3. 为 canonical registry export inputs 添加 deterministic ordering tests。
+4. 保持 `FileStore` 作为默认 runtime store。
 
 退出标准：
 
-- Persistent store design 有英文和中文文档。
-- Database implementation scope 在写代码前明确。
+- Schema shape 可以在本地测试，且不改变 runtime defaults。
+- File registry 和 persistent schema mapping 已经用现有 fixture 证明。
 - Snapshot export output 与当前 Go Data Plane snapshot contract 保持兼容。
-- 不包含 hosted deployment、database、vault、billing 或 marketplace 工作。
+- 不包含 hosted deployment、live database service、vault、billing 或 marketplace 工作。
 
 后续 hosted 范围：
 

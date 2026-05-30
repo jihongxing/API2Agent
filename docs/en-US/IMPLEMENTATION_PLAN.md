@@ -533,11 +533,17 @@ Current Phase 6 progress:
   - hosted persistence readiness is approved for design only, not direct database implementation.
   - the next implementation slice is narrowed to persistent registry store design.
   - see `docs/en-US/GO_CONTROL_PLANE_SERVICE_API_CLOSEOUT.md`.
+- Go Control Plane Persistent Registry Store Design v0 is complete:
+  - persistent registry store remains behind the existing `registry.Store` read boundary.
+  - the first Postgres logical table model is documented for projects, API keys, capabilities, providers, credential metadata, routing policy, snapshot configs, registry revisions, artifact publications, and admin audit events.
+  - registry load, artifact export, and distribution publish transaction boundaries are defined.
+  - fingerprint, versioning, migration, and dual-store rules are documented.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_STORE_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Persistent Registry Store Design v0
+Go Control Plane Persistent Registry Store Schema v0
 ```
 
 ## 9. Marketplace Is Later
