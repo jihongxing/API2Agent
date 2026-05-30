@@ -104,6 +104,7 @@ Implemented:
 - API2Agent Protocol v0.2 plan
 - API2Agent Protocol v0.2 frozen contract
 - API2Agent Protocol v0.2 schema snapshot
+- API2Agent Protocol v0.2 hardening constraints for request context, versions, metrics windows, and plan/observation split
 
 Not implemented yet:
 

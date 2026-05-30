@@ -5,6 +5,7 @@
   "description": "Frozen contract draft for API2Agent protocol v0.2 objects.",
   "type": "object",
   "oneOf": [
+    { "$ref": "#/$defs/RequestContext" },
     { "$ref": "#/$defs/CapabilityDefinition" },
     { "$ref": "#/$defs/CapabilitySource" },
     { "$ref": "#/$defs/ProviderCandidate" },
@@ -35,11 +36,47 @@
     "ExecutionClass": {
       "enum": ["api", "workflow", "tool", "model", "human", "async_job"]
     },
+    "ExecutionProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sync": { "type": ["boolean", "null"] },
+        "streaming": { "type": ["boolean", "null"] },
+        "deterministic": { "type": ["boolean", "null"] },
+        "idempotent": { "type": ["boolean", "null"] }
+      }
+    },
     "Safety": {
       "enum": ["read", "write", "delete", "unknown"]
     },
     "JsonSchemaObject": {
       "type": "object"
+    },
+    "RequestContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "schema_version",
+        "identity",
+        "capability_id",
+        "capability_version",
+        "execution_mode",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "identity": { "$ref": "#/$defs/IdentityRef" },
+        "capability_id": { "type": "string", "minLength": 1 },
+        "capability_version": { "type": "string", "minLength": 1 },
+        "input_fingerprint": { "type": ["string", "null"] },
+        "execution_mode": {
+          "enum": ["direct", "proxy", "shadow", "replay", "race"]
+        },
+        "client_region": { "type": ["string", "null"] },
+        "created_at": { "$ref": "#/$defs/Timestamp" }
+      }
     },
     "CapabilityDefinition": {
       "type": "object",
@@ -47,8 +84,10 @@
       "required": [
         "schema_version",
         "id",
+        "version",
         "name",
         "execution_class",
+        "execution_properties",
         "input_schema",
         "output_schema",
         "safety"
@@ -59,9 +98,11 @@
           "type": "string",
           "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
         },
+        "version": { "type": "string", "minLength": 1 },
         "name": { "type": "string", "minLength": 1 },
         "description": { "type": "string" },
         "execution_class": { "$ref": "#/$defs/ExecutionClass" },
+        "execution_properties": { "$ref": "#/$defs/ExecutionProperties" },
         "input_schema": { "$ref": "#/$defs/JsonSchemaObject" },
         "output_schema": { "$ref": "#/$defs/JsonSchemaObject" },
         "safety": { "$ref": "#/$defs/Safety" },
@@ -79,6 +120,7 @@
         "source_id",
         "source_type",
         "execution_class",
+        "execution_properties",
         "executor_ref",
         "input_schema",
         "output_schema"
@@ -99,6 +141,7 @@
           ]
         },
         "execution_class": { "$ref": "#/$defs/ExecutionClass" },
+        "execution_properties": { "$ref": "#/$defs/ExecutionProperties" },
         "executor_ref": { "type": "string", "minLength": 1 },
         "input_schema": { "$ref": "#/$defs/JsonSchemaObject" },
         "output_schema": { "$ref": "#/$defs/JsonSchemaObject" },
@@ -125,7 +168,20 @@
         "unit": { "type": ["string", "null"] },
         "cost_source": {
           "enum": ["estimated", "provider_declared", "observed", "contracted"]
-        }
+        },
+        "metrics_window": { "$ref": "#/$defs/MetricsWindow" }
+      }
+    },
+    "MetricsWindow": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["rolling", "fixed", "lifetime", null] },
+        "size": { "type": ["string", "null"] },
+        "sample_size": { "type": ["integer", "null"], "minimum": 0 },
+        "observed_at": { "type": ["string", "null"], "format": "date-time" },
+        "period_start": { "type": ["string", "null"], "format": "date-time" },
+        "period_end": { "type": ["string", "null"], "format": "date-time" }
       }
     },
     "ProviderCandidate": {
@@ -135,15 +191,20 @@
         "schema_version",
         "id",
         "capability_id",
+        "capability_version",
         "provider_id",
+        "provider_version",
         "tool_id",
+        "mapping_version",
         "execution_class"
       ],
       "properties": {
         "schema_version": { "$ref": "#/$defs/SchemaVersion" },
         "id": { "type": "string", "minLength": 1 },
         "capability_id": { "type": "string", "minLength": 1 },
+        "capability_version": { "type": "string", "minLength": 1 },
         "provider_id": { "type": "string", "minLength": 1 },
+        "provider_version": { "type": "string", "minLength": 1 },
         "tool_id": { "type": "string", "minLength": 1 },
         "source_id": { "type": ["string", "null"] },
         "execution_class": { "$ref": "#/$defs/ExecutionClass" },
@@ -158,6 +219,7 @@
           "type": "object",
           "additionalProperties": { "type": "string" }
         },
+        "mapping_version": { "type": "string", "minLength": 1 },
         "metadata": {
           "type": "object",
           "additionalProperties": true
@@ -184,6 +246,9 @@
         "source": {
           "enum": ["env", "config", "inline", "vault", "none", null]
         },
+        "resolution_strategy": {
+          "enum": ["static", "dynamic", "per_request", null]
+        },
         "scope": {
           "type": "array",
           "items": { "type": "string" }
@@ -205,7 +270,8 @@
         "latency_network_ms": { "type": ["number", "null"], "minimum": 0 },
         "latency_provider_ms": { "type": ["number", "null"], "minimum": 0 },
         "latency_overhead_ms": { "type": ["number", "null"], "minimum": 0 },
-        "latency_region": { "type": ["string", "null"] }
+        "latency_region": { "type": ["string", "null"] },
+        "metrics_window": { "$ref": "#/$defs/MetricsWindow" }
       }
     },
     "NetworkTopology": {
@@ -233,7 +299,36 @@
         "error_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
         "retry_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
         "failover_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
-        "sla_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+        "sla_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "metrics_window": { "$ref": "#/$defs/MetricsWindow" }
+      }
+    },
+    "ErrorRecord": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "error_type": {
+          "enum": [
+            "RATE_LIMIT",
+            "TIMEOUT",
+            "AUTH_ERROR",
+            "INVALID_REQUEST",
+            "NOT_FOUND",
+            "PROVIDER_ERROR",
+            "NORMALIZATION_ERROR",
+            "QUOTA_EXCEEDED",
+            "MISSING_AUTH",
+            "NO_PROVIDER",
+            "ALL_PROVIDERS_FAILED",
+            "UNKNOWN",
+            null
+          ]
+        },
+        "error_scope": {
+          "enum": ["caller", "provider", "platform", null]
+        },
+        "message": { "type": ["string", "null"] },
+        "retryable": { "type": ["boolean", "null"] }
       }
     },
     "FailoverPolicy": {
@@ -258,6 +353,7 @@
       "required": [
         "id",
         "schema_version",
+        "request_id",
         "identity",
         "capability_id",
         "strategy",
@@ -268,6 +364,7 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "request_id": { "type": "string", "minLength": 1 },
         "identity": { "$ref": "#/$defs/IdentityRef" },
         "capability_id": { "type": "string", "minLength": 1 },
         "strategy": {
@@ -313,10 +410,14 @@
       "required": [
         "id",
         "schema_version",
+        "request_id",
         "execution_mode",
         "identity",
         "capability_id",
+        "capability_version",
         "provider_id",
+        "provider_version",
+        "mapping_version",
         "tool_id",
         "success",
         "latency",
@@ -326,13 +427,17 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "schema_version": { "$ref": "#/$defs/SchemaVersion" },
+        "request_id": { "type": "string", "minLength": 1 },
         "routing_decision_id": { "type": ["string", "null"] },
         "execution_mode": {
           "enum": ["direct", "proxy", "shadow", "replay", "race"]
         },
         "identity": { "$ref": "#/$defs/IdentityRef" },
         "capability_id": { "type": "string", "minLength": 1 },
+        "capability_version": { "type": "string", "minLength": 1 },
         "provider_id": { "type": "string", "minLength": 1 },
+        "provider_version": { "type": "string", "minLength": 1 },
+        "mapping_version": { "type": "string", "minLength": 1 },
         "tool_id": { "type": "string", "minLength": 1 },
         "method": { "type": ["string", "null"] },
         "path": { "type": ["string", "null"] },
@@ -341,6 +446,7 @@
         "latency": { "$ref": "#/$defs/LatencyProfile" },
         "topology": { "$ref": "#/$defs/NetworkTopology" },
         "cost": { "$ref": "#/$defs/CostProfile" },
+        "error": { "$ref": "#/$defs/ErrorRecord" },
         "error_type": {
           "enum": [
             "RATE_LIMIT",
@@ -375,9 +481,9 @@
         "id",
         "schema_version",
         "request_id",
+        "routing_decision_id",
         "identity",
         "capability_id",
-        "candidate_provider_ids",
         "routing_strategy",
         "outcome",
         "created_at"
@@ -386,7 +492,7 @@
         "id": { "type": "string", "minLength": 1 },
         "schema_version": { "$ref": "#/$defs/SchemaVersion" },
         "request_id": { "type": "string", "minLength": 1 },
-        "routing_decision_id": { "type": ["string", "null"] },
+        "routing_decision_id": { "type": ["string", "null"], "minLength": 1 },
         "identity": { "$ref": "#/$defs/IdentityRef" },
         "capability_id": { "type": "string", "minLength": 1 },
         "input_fingerprint": { "type": ["string", "null"] },

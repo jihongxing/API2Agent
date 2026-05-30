@@ -6,6 +6,14 @@ Frozen contract: `docs/en-US/API2AGENT_PROTOCOL_V0_2.md`
 
 Schema snapshot: `schemas/api2agent/v0.2/protocol.schema.json`
 
+Hardening additions after infra audit:
+
+- `RequestContext` as the top-level invocation context
+- version fields for capability, provider, and output mapping evolution
+- `metrics_window` for aggregate cost, latency, and reliability metrics
+- explicit split between `RoutingDecision` as pre-execution plan and `DecisionLog` as post-execution observation
+- execution properties, credential resolution strategy, and error scope
+
 ## Purpose
 
 Protocol v0.2 should turn the current working MVP contracts into industrial-grade infrastructure contracts.

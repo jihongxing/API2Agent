@@ -104,6 +104,7 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - API2Agent Protocol v0.2 plan
 - API2Agent Protocol v0.2 frozen contract
 - API2Agent Protocol v0.2 schema snapshot
+- API2Agent Protocol v0.2 hardening constraints：request context、versions、metrics windows 和 plan/observation split
 
 尚未实现：
 

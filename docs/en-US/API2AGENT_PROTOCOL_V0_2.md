@@ -59,7 +59,39 @@ Future versions MAY add optional fields.
 
 Future versions MUST NOT remove or rename v0.2 stable fields without a new contract version.
 
-## 4. Identity Reference
+Persistent definitions MUST include explicit versions where behavior or schema can change:
+
+- `capability_version`
+- `provider_version`
+- `mapping_version`
+
+Usage, replay, ledger, and decision dataset records MUST preserve the versions used at execution time.
+
+## 4. Request Context
+
+Request context is the top-level object for one Agent capability invocation.
+
+Stable fields:
+
+- `id`
+- `schema_version`
+- `identity`
+- `capability_id`
+- `capability_version`
+- `input_fingerprint`
+- `execution_mode`
+- `client_region`
+- `created_at`
+
+Rules:
+
+- Routing decisions MUST reference `request_id`.
+- Usage events MUST reference `request_id`.
+- Decision logs MUST reference `request_id`.
+- A single request MAY produce multiple routing decisions and multiple usage events.
+- Raw input SHOULD NOT be stored by default. Use `input_fingerprint` for safe correlation.
+
+## 5. Identity Reference
 
 Identity answers who owns or initiated a call.
 
@@ -76,7 +108,7 @@ Rules:
 - `user_id`, `api_key_id`, and `agent_id` MAY be null in local execution.
 - Usage events, routing decisions, decision logs, ledger rows, quota checks, and future billing exports MUST carry identity attribution.
 
-## 5. Execution Class
+## 6. Execution Class
 
 Execution class describes the type of external capability source.
 
@@ -95,16 +127,27 @@ Rules:
 - v0.2 does not require implementation of every execution class.
 - Current Python MVP generated packages SHOULD map to `api`.
 
-## 6. Capability Definition
+Execution properties:
+
+- `sync`
+- `streaming`
+- `deterministic`
+- `idempotent`
+
+These properties describe execution behavior for routing, retry, replay, and future async handling.
+
+## 7. Capability Definition
 
 A capability is the semantic unit an Agent requests and the router optimizes.
 
 Stable fields:
 
 - `id`
+- `version`
 - `name`
 - `description`
 - `execution_class`
+- `execution_properties`
 - `input_schema`
 - `output_schema`
 - `safety`
@@ -123,7 +166,12 @@ Examples:
 - `commerce.product.search`
 - `payment.charge.create`
 
-## 7. Capability Source Contract
+Rules:
+
+- `version` MUST change when input schema, output schema, safety classification, or behavior changes incompatibly.
+- Usage events MUST preserve the capability version used at execution time.
+
+## 8. Capability Source Contract
 
 Capability source metadata describes where execution comes from.
 
@@ -132,6 +180,7 @@ Stable fields:
 - `source_id`
 - `source_type`
 - `execution_class`
+- `execution_properties`
 - `executor_ref`
 - `input_schema`
 - `output_schema`
@@ -155,7 +204,7 @@ Rules:
 - Non-API sources MUST be adapted into an input -> execution -> output shape before routing.
 - API2Agent MUST NOT become a workflow engine; workflows should be invoked through an adapter or endpoint.
 
-## 8. Provider Candidate
+## 9. Provider Candidate
 
 A provider candidate implements a capability.
 
@@ -163,7 +212,9 @@ Stable fields:
 
 - `id`
 - `capability_id`
+- `capability_version`
 - `provider_id`
+- `provider_version`
 - `tool_id`
 - `source_id`
 - `execution_class`
@@ -172,6 +223,7 @@ Stable fields:
 - `regions`
 - `geo_affinity`
 - `output_mapping`
+- `mapping_version`
 - `metadata`
 
 Stable `geo_affinity` values:
@@ -183,7 +235,13 @@ Stable `geo_affinity` values:
 
 Provider region selection MUST be deterministic when possible.
 
-## 9. Credential Reference
+Rules:
+
+- `provider_version` MUST change when provider behavior, endpoint semantics, or adapter behavior changes incompatibly.
+- `mapping_version` MUST change when output normalization or mapping behavior changes.
+- Usage events MUST preserve provider and mapping versions used at execution time.
+
+## 10. Credential Reference
 
 Credential references describe which calling right was used without exposing secrets.
 
@@ -197,6 +255,7 @@ Stable fields:
 - `auth_type`
 - `injection_mode`
 - `source`
+- `resolution_strategy`
 - `scope`
 - `status`
 
@@ -206,7 +265,38 @@ Rules:
 - Usage events MUST store only references or redacted metadata.
 - Replay MAY require credential re-resolution.
 
-## 10. Cost Profile
+Stable `resolution_strategy` values:
+
+- `static`
+- `dynamic`
+- `per_request`
+
+## 11. Metrics Window
+
+Metrics window defines the observation window behind aggregate metrics.
+
+Stable fields:
+
+- `type`
+- `size`
+- `sample_size`
+- `observed_at`
+- `period_start`
+- `period_end`
+
+Stable `type` values:
+
+- `rolling`
+- `fixed`
+- `lifetime`
+
+Rules:
+
+- Aggregate latency, cost, and reliability metrics SHOULD include a metrics window.
+- Routing MUST NOT treat metrics from different windows as equally comparable without policy.
+- `sample_size` SHOULD be present when metrics are observed from calls.
+
+## 12. Cost Profile
 
 Cost profile makes routing and future economic measurement auditable.
 
@@ -217,6 +307,7 @@ Stable fields:
 - `currency`
 - `unit`
 - `cost_source`
+- `metrics_window`
 
 Stable `cost_source` values:
 
@@ -231,7 +322,7 @@ Rules:
 - `observed_cost` MAY be null.
 - Billing MUST NOT be inferred from ledger rows alone.
 
-## 11. Latency Profile
+## 13. Latency Profile
 
 Latency profile separates total latency from its components.
 
@@ -246,6 +337,7 @@ Stable fields:
 - `latency_provider_ms`
 - `latency_overhead_ms`
 - `latency_region`
+- `metrics_window`
 
 Rules:
 
@@ -253,7 +345,7 @@ Rules:
 - Component fields MAY be null when not measured.
 - Aggregate metrics SHOULD use p50 and p95 before p99 is trusted.
 
-## 12. Network Topology
+## 14. Network Topology
 
 Network topology makes region-aware routing auditable.
 
@@ -273,7 +365,7 @@ Rules:
 - `selected_provider_region` describes the router's intended provider region.
 - `route_path` records the logical path, not necessarily every physical network hop.
 
-## 13. Reliability Profile
+## 15. Reliability Profile
 
 Reliability profile lets routing compare stability, not only success rate.
 
@@ -286,6 +378,7 @@ Stable fields:
 - `retry_rate`
 - `failover_rate`
 - `sla_confidence`
+- `metrics_window`
 
 Rules:
 
@@ -293,14 +386,15 @@ Rules:
 - `sla_confidence` measures confidence in the metric, not the declared SLA itself.
 - Reliability fields MAY be null for cold-start providers.
 
-## 14. Routing Decision
+## 16. Routing Decision
 
-Routing decisions are auditable records of why a provider was selected.
+Routing decisions are pre-execution plans. They record why a provider should be selected based on estimates and policy.
 
 Stable fields:
 
 - `id`
 - `schema_version`
+- `request_id`
 - `identity`
 - `capability_id`
 - `strategy`
@@ -330,10 +424,12 @@ Stable routing strategies:
 Rules:
 
 - A routing decision MUST be recorded before controlled execution.
+- A routing decision MUST reference one request context.
 - The selected provider MUST appear in `candidate_provider_ids` unless the decision is a synthetic failure record.
 - `region_aware_latency` MUST consider `client_region` when available.
+- Routing decisions contain estimates, not final observed outcomes.
 
-## 15. Usage Event
+## 17. Usage Event
 
 Usage events record execution attempts.
 
@@ -341,11 +437,15 @@ Stable fields:
 
 - `id`
 - `schema_version`
+- `request_id`
 - `routing_decision_id`
 - `execution_mode`
 - `identity`
 - `capability_id`
+- `capability_version`
 - `provider_id`
+- `provider_version`
+- `mapping_version`
 - `tool_id`
 - `method`
 - `path`
@@ -354,7 +454,7 @@ Stable fields:
 - `latency`
 - `topology`
 - `cost`
-- `error_type`
+- `error`
 - `request_metadata`
 - `credential_reference`
 - `provider_runtime_reference`
@@ -375,9 +475,9 @@ Rules:
 - `replay` events are included in audit ledgers but excluded from default routing metrics.
 - `shadow` events are included in routing metrics by default unless policy says otherwise.
 
-## 16. Decision Log
+## 18. Decision Log
 
-Decision logs connect context, candidates, decision, and outcome.
+Decision logs are post-execution observations. They connect request context, routing plan, usage events, and outcome.
 
 Stable fields:
 
@@ -388,8 +488,6 @@ Stable fields:
 - `identity`
 - `capability_id`
 - `input_fingerprint`
-- `candidate_provider_ids`
-- `candidate_regions`
 - `routing_strategy`
 - `routing_context`
 - `selected_provider_id`
@@ -404,10 +502,12 @@ Stable fields:
 Rules:
 
 - Decision logs are the seed of the future decision dataset.
+- Decision logs MUST reference a routing decision unless no routing decision could be created.
+- Decision logs SHOULD NOT duplicate candidate rankings from routing decisions unless denormalization is explicitly required.
 - Raw user input SHOULD NOT be stored by default.
 - `input_fingerprint` SHOULD be stable enough for debugging and safe enough for privacy.
 
-## 17. Ledger Row
+## 19. Ledger Row
 
 Ledger rows aggregate usage events for audit and measurement.
 
@@ -435,7 +535,7 @@ Rules:
 - Ledger is measurement, not payment settlement.
 - Billing systems MAY consume ledger data later, but MUST add explicit billing contracts.
 
-## 18. Error Taxonomy
+## 20. Error Taxonomy
 
 Stable error categories:
 
@@ -452,12 +552,18 @@ Stable error categories:
 - `ALL_PROVIDERS_FAILED`
 - `UNKNOWN`
 
+Stable `error_scope` values:
+
+- `caller`
+- `provider`
+- `platform`
+
 Rules:
 
 - Error records SHOULD distinguish caller fault, provider fault, and platform fault.
 - Failover policies SHOULD use standardized error categories.
 
-## 19. v0.1 Compatibility
+## 21. v0.1 Compatibility
 
 v0.1 objects map into v0.2 as follows:
 
@@ -467,13 +573,15 @@ v0.1 objects map into v0.2 as follows:
 - Region fields map into `topology`.
 - `estimated_cost` maps to `cost.estimated_cost`.
 - Existing generated package providers map to `execution_class=api`.
+- Missing `request_id` maps to a synthetic request context during migration.
+- Missing version fields map to `0.1-migrated`.
 - Missing latency percentile fields map to null.
 - Missing reliability fields map to null.
 - Existing `credential_reference` remains a redacted credential reference.
 
-v0.2 consumers MUST tolerate null optional fields during migration.
+v0.2 consumers MUST tolerate null optional fields during migration, but new v0.2 writers SHOULD emit request context and version fields.
 
-## 20. Freeze Criteria
+## 22. Freeze Criteria
 
 This contract is frozen when:
 

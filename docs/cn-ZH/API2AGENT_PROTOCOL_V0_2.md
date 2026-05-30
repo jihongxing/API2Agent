@@ -59,7 +59,39 @@ api2agent.protocol.v0.2
 
 未来版本不能在没有新 contract version 的情况下删除或重命名 v0.2 stable fields。
 
-## 4. Identity Reference
+行为或 schema 可能变化的持久定义必须包含明确版本：
+
+- `capability_version`
+- `provider_version`
+- `mapping_version`
+
+Usage、replay、ledger 和 decision dataset records 必须保留 execution time 使用的版本。
+
+## 4. Request Context
+
+Request context 是一次 Agent capability invocation 的顶层对象。
+
+稳定字段：
+
+- `id`
+- `schema_version`
+- `identity`
+- `capability_id`
+- `capability_version`
+- `input_fingerprint`
+- `execution_mode`
+- `client_region`
+- `created_at`
+
+规则：
+
+- Routing decisions 必须引用 `request_id`。
+- Usage events 必须引用 `request_id`。
+- Decision logs 必须引用 `request_id`。
+- 一次 request 可以产生多个 routing decisions 和多个 usage events。
+- 默认不应该存储 raw input。使用 `input_fingerprint` 做安全关联。
+
+## 5. Identity Reference
 
 Identity 回答谁拥有或发起了这次调用。
 
@@ -76,7 +108,7 @@ Identity 回答谁拥有或发起了这次调用。
 - local execution 中，`user_id`、`api_key_id`、`agent_id` 可以为 null。
 - Usage events、routing decisions、decision logs、ledger rows、quota checks 和未来 billing exports 必须携带 identity attribution。
 
-## 5. Execution Class
+## 6. Execution Class
 
 Execution class 描述外部能力来源的类型。
 
@@ -95,16 +127,27 @@ Execution class 描述外部能力来源的类型。
 - v0.2 不要求实现所有 execution class。
 - 当前 Python MVP generated packages 应该映射为 `api`。
 
-## 6. Capability Definition
+Execution properties：
+
+- `sync`
+- `streaming`
+- `deterministic`
+- `idempotent`
+
+这些属性描述 execution behavior，用于 routing、retry、replay 和未来 async handling。
+
+## 7. Capability Definition
 
 Capability 是 Agent 请求和 router 优化的语义单位。
 
 稳定字段：
 
 - `id`
+- `version`
 - `name`
 - `description`
 - `execution_class`
+- `execution_properties`
 - `input_schema`
 - `output_schema`
 - `safety`
@@ -123,7 +166,12 @@ Capability 是 Agent 请求和 router 优化的语义单位。
 - `commerce.product.search`
 - `payment.charge.create`
 
-## 7. Capability Source Contract
+规则：
+
+- input schema、output schema、safety classification 或 behavior 发生不兼容变化时，`version` 必须变化。
+- Usage events 必须保留 execution time 使用的 capability version。
+
+## 8. Capability Source Contract
 
 Capability source metadata 描述执行能力来自哪里。
 
@@ -132,6 +180,7 @@ Capability source metadata 描述执行能力来自哪里。
 - `source_id`
 - `source_type`
 - `execution_class`
+- `execution_properties`
 - `executor_ref`
 - `input_schema`
 - `output_schema`
@@ -155,7 +204,7 @@ Capability source metadata 描述执行能力来自哪里。
 - 非 API source 必须先适配为 input -> execution -> output 形态，才能进入 routing。
 - API2Agent 不应该成为 workflow engine；workflow 应通过 adapter 或 endpoint 被调用。
 
-## 8. Provider Candidate
+## 9. Provider Candidate
 
 Provider candidate 实现一个 capability。
 
@@ -163,7 +212,9 @@ Provider candidate 实现一个 capability。
 
 - `id`
 - `capability_id`
+- `capability_version`
 - `provider_id`
+- `provider_version`
 - `tool_id`
 - `source_id`
 - `execution_class`
@@ -172,6 +223,7 @@ Provider candidate 实现一个 capability。
 - `regions`
 - `geo_affinity`
 - `output_mapping`
+- `mapping_version`
 - `metadata`
 
 稳定 `geo_affinity` 值：
@@ -183,7 +235,13 @@ Provider candidate 实现一个 capability。
 
 Provider region selection 应尽可能保持确定性。
 
-## 9. Credential Reference
+规则：
+
+- provider behavior、endpoint semantics 或 adapter behavior 发生不兼容变化时，`provider_version` 必须变化。
+- output normalization 或 mapping behavior 变化时，`mapping_version` 必须变化。
+- Usage events 必须保留 execution time 使用的 provider 和 mapping versions。
+
+## 10. Credential Reference
 
 Credential reference 描述使用了哪个调用权，但不暴露 secret。
 
@@ -197,6 +255,7 @@ Credential reference 描述使用了哪个调用权，但不暴露 secret。
 - `auth_type`
 - `injection_mode`
 - `source`
+- `resolution_strategy`
 - `scope`
 - `status`
 
@@ -206,7 +265,38 @@ Credential reference 描述使用了哪个调用权，但不暴露 secret。
 - Usage events 只能存 references 或 redacted metadata。
 - Replay 可能需要重新 resolve credential。
 
-## 10. Cost Profile
+稳定 `resolution_strategy` 值：
+
+- `static`
+- `dynamic`
+- `per_request`
+
+## 11. Metrics Window
+
+Metrics window 定义 aggregate metrics 背后的 observation window。
+
+稳定字段：
+
+- `type`
+- `size`
+- `sample_size`
+- `observed_at`
+- `period_start`
+- `period_end`
+
+稳定 `type` 值：
+
+- `rolling`
+- `fixed`
+- `lifetime`
+
+规则：
+
+- Aggregate latency、cost 和 reliability metrics 应包含 metrics window。
+- Routing 不应该在没有 policy 的情况下把不同 window 的 metrics 当成同等可比。
+- metrics 来自 observed calls 时，应该包含 `sample_size`。
+
+## 12. Cost Profile
 
 Cost profile 让 routing 和未来 economic measurement 可审计。
 
@@ -217,6 +307,7 @@ Cost profile 让 routing 和未来 economic measurement 可审计。
 - `currency`
 - `unit`
 - `cost_source`
+- `metrics_window`
 
 稳定 `cost_source` 值：
 
@@ -231,7 +322,7 @@ Cost profile 让 routing 和未来 economic measurement 可审计。
 - `observed_cost` 可以为 null。
 - Billing 不能只从 ledger rows 推断。
 
-## 11. Latency Profile
+## 13. Latency Profile
 
 Latency profile 把 total latency 和组成部分拆开。
 
@@ -246,6 +337,7 @@ Latency profile 把 total latency 和组成部分拆开。
 - `latency_provider_ms`
 - `latency_overhead_ms`
 - `latency_region`
+- `metrics_window`
 
 规则：
 
@@ -253,7 +345,7 @@ Latency profile 把 total latency 和组成部分拆开。
 - 无法测量时，component fields 可以为 null。
 - Aggregate metrics 在 p99 可信之前，应该优先使用 p50 和 p95。
 
-## 12. Network Topology
+## 14. Network Topology
 
 Network topology 让 region-aware routing 可审计。
 
@@ -273,7 +365,7 @@ Network topology 让 region-aware routing 可审计。
 - `selected_provider_region` 描述 router 选择的目标 provider region。
 - `route_path` 记录 logical path，不要求记录每个 physical network hop。
 
-## 13. Reliability Profile
+## 15. Reliability Profile
 
 Reliability profile 让 routing 能比较稳定性，而不只是 success rate。
 
@@ -286,6 +378,7 @@ Reliability profile 让 routing 能比较稳定性，而不只是 success rate�
 - `retry_rate`
 - `failover_rate`
 - `sla_confidence`
+- `metrics_window`
 
 规则：
 
@@ -293,14 +386,15 @@ Reliability profile 让 routing 能比较稳定性，而不只是 success rate�
 - `sla_confidence` 衡量的是 metric confidence，不是 declared SLA 本身。
 - cold-start provider 的 reliability fields 可以为 null。
 
-## 14. Routing Decision
+## 16. Routing Decision
 
-Routing decision 是 provider 为什么被选择的可审计记录。
+Routing decision 是 pre-execution plan。它基于 estimates 和 policy 记录为什么应该选择某个 provider。
 
 稳定字段：
 
 - `id`
 - `schema_version`
+- `request_id`
 - `identity`
 - `capability_id`
 - `strategy`
@@ -330,10 +424,12 @@ Routing decision 是 provider 为什么被选择的可审计记录。
 规则：
 
 - controlled execution 前必须记录 routing decision。
+- Routing decision 必须引用一个 request context。
 - 除 synthetic failure record 外，selected provider 必须出现在 `candidate_provider_ids` 里。
 - `region_aware_latency` 在 `client_region` 可用时必须纳入考虑。
+- Routing decision 包含 estimates，不包含最终 observed outcomes。
 
-## 15. Usage Event
+## 17. Usage Event
 
 Usage event 记录 execution attempt。
 
@@ -341,11 +437,15 @@ Usage event 记录 execution attempt。
 
 - `id`
 - `schema_version`
+- `request_id`
 - `routing_decision_id`
 - `execution_mode`
 - `identity`
 - `capability_id`
+- `capability_version`
 - `provider_id`
+- `provider_version`
+- `mapping_version`
 - `tool_id`
 - `method`
 - `path`
@@ -354,7 +454,7 @@ Usage event 记录 execution attempt。
 - `latency`
 - `topology`
 - `cost`
-- `error_type`
+- `error`
 - `request_metadata`
 - `credential_reference`
 - `provider_runtime_reference`
@@ -375,9 +475,9 @@ Usage event 记录 execution attempt。
 - `replay` events 进入 audit ledgers，但默认不进入 routing metrics。
 - `shadow` events 默认进入 routing metrics，除非 policy 另有说明。
 
-## 16. Decision Log
+## 18. Decision Log
 
-Decision log 连接 context、candidates、decision 和 outcome。
+Decision log 是 post-execution observation。它连接 request context、routing plan、usage events 和 outcome。
 
 稳定字段：
 
@@ -388,8 +488,6 @@ Decision log 连接 context、candidates、decision 和 outcome。
 - `identity`
 - `capability_id`
 - `input_fingerprint`
-- `candidate_provider_ids`
-- `candidate_regions`
 - `routing_strategy`
 - `routing_context`
 - `selected_provider_id`
@@ -404,10 +502,12 @@ Decision log 连接 context、candidates、decision 和 outcome。
 规则：
 
 - Decision logs 是未来 decision dataset 的种子。
+- 除非无法创建 routing decision，否则 Decision logs 必须引用 routing decision。
+- 除非明确需要 denormalization，否则 Decision logs 不应该重复 routing decisions 里的 candidate rankings。
 - 默认不应该存储 raw user input。
 - `input_fingerprint` 应足够稳定以便 debug，同时足够安全以保护隐私。
 
-## 17. Ledger Row
+## 19. Ledger Row
 
 Ledger row 聚合 usage events，用于 audit 和 measurement。
 
@@ -435,7 +535,7 @@ Ledger row 聚合 usage events，用于 audit 和 measurement。
 - Ledger 是 measurement，不是 payment settlement。
 - Billing system 未来可以消费 ledger data，但必须增加明确的 billing contracts。
 
-## 18. Error Taxonomy
+## 20. Error Taxonomy
 
 稳定 error categories：
 
@@ -452,12 +552,18 @@ Ledger row 聚合 usage events，用于 audit 和 measurement。
 - `ALL_PROVIDERS_FAILED`
 - `UNKNOWN`
 
+稳定 `error_scope` 值：
+
+- `caller`
+- `provider`
+- `platform`
+
 规则：
 
 - Error records 应区分 caller fault、provider fault 和 platform fault。
 - Failover policies 应使用标准化 error categories。
 
-## 19. v0.1 Compatibility
+## 21. v0.1 Compatibility
 
 v0.1 objects 到 v0.2 的映射：
 
@@ -467,13 +573,15 @@ v0.1 objects 到 v0.2 的映射：
 - region fields 映射到 `topology`。
 - `estimated_cost` 映射到 `cost.estimated_cost`。
 - 现有 generated package providers 映射为 `execution_class=api`。
+- 缺失的 `request_id` 在 migration 中映射为 synthetic request context。
+- 缺失的 version fields 映射为 `0.1-migrated`。
 - 缺失的 latency percentile fields 映射为 null。
 - 缺失的 reliability fields 映射为 null。
 - 现有 `credential_reference` 保持为 redacted credential reference。
 
-v0.2 consumers 在 migration 期间必须容忍 null optional fields。
+v0.2 consumers 在 migration 期间必须容忍 null optional fields，但新的 v0.2 writers 应该写入 request context 和 version fields。
 
-## 20. Freeze Criteria
+## 22. Freeze Criteria
 
 该 contract 在以下条件满足时视为冻结：
 

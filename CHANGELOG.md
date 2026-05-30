@@ -62,6 +62,7 @@ All notable API2Agent changes will be documented in this file.
 - MVP exit review and Architecture Definition Phase documentation.
 - API2Agent Protocol v0.2 planning document.
 - API2Agent Protocol v0.2 frozen contract and machine-readable schema snapshot.
+- API2Agent Protocol v0.2 hardening for request context, versioned definitions, metrics windows, routing plan vs observation split, execution properties, credential resolution strategy, and error scope.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 

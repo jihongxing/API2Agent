@@ -6,6 +6,14 @@ Frozen contract：`docs/cn-ZH/API2AGENT_PROTOCOL_V0_2.md`
 
 Schema snapshot：`schemas/api2agent/v0.2/protocol.schema.json`
 
+Infra audit 后补强项：
+
+- `RequestContext` 作为顶层 invocation context
+- capability、provider 和 output mapping evolution 的 version fields
+- aggregate cost、latency 和 reliability metrics 的 `metrics_window`
+- 明确 `RoutingDecision` 是 pre-execution plan，`DecisionLog` 是 post-execution observation
+- execution properties、credential resolution strategy 和 error scope
+
 ## 目的
 
 Protocol v0.2 要把当前可运行的 MVP contracts 升级为工业级基础设施 contracts。
