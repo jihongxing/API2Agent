@@ -41,7 +41,10 @@ func ReadArtifactDir(dir string) (RoutingSnapshot, ExportArtifactManifest, error
 	if err != nil {
 		return RoutingSnapshot{}, ExportArtifactManifest{}, err
 	}
-	snapshotPath := filepath.Join(dir, filepath.FromSlash(manifest.SnapshotFile))
+	snapshotPath, err := safeJoinRelative(dir, manifest.SnapshotFile, "manifest snapshot_file", "artifact")
+	if err != nil {
+		return RoutingSnapshot{}, ExportArtifactManifest{}, err
+	}
 	snapshot, err := ReadSnapshotFile(snapshotPath)
 	if err != nil {
 		return RoutingSnapshot{}, ExportArtifactManifest{}, err
@@ -85,7 +88,10 @@ func PublishArtifactDir(sourceArtifactDir string, distributionDir string, publis
 	if err := validateSnapshotVersionForPath(manifest.SnapshotVersion); err != nil {
 		return SnapshotDistributionPointer{}, err
 	}
-	sourceSnapshot := filepath.Join(sourceArtifactDir, manifest.SnapshotFile)
+	sourceSnapshot, err := safeJoinRelative(sourceArtifactDir, manifest.SnapshotFile, "manifest snapshot_file", "artifact")
+	if err != nil {
+		return SnapshotDistributionPointer{}, err
+	}
 	if _, err := os.Stat(sourceSnapshot); err != nil {
 		return SnapshotDistributionPointer{}, fmt.Errorf("stat snapshot artifact: %w", err)
 	}
@@ -142,4 +148,19 @@ func validateSnapshotVersionForPath(version string) error {
 		return fmt.Errorf("snapshot version %q is not safe for distribution path", version)
 	}
 	return nil
+}
+
+func safeJoinRelative(baseDir string, reference string, field string, scope string) (string, error) {
+	if reference == "" {
+		return "", fmt.Errorf("%s is required", field)
+	}
+	relativePath := filepath.FromSlash(reference)
+	if filepath.IsAbs(relativePath) {
+		return "", fmt.Errorf("%s %q is not safe for %s path", field, reference, scope)
+	}
+	cleanPath := filepath.Clean(relativePath)
+	if cleanPath == "." || cleanPath == ".." || strings.HasPrefix(cleanPath, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("%s %q is not safe for %s path", field, reference, scope)
+	}
+	return filepath.Join(baseDir, cleanPath), nil
 }

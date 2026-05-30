@@ -47,6 +47,7 @@ Environment variables:
 
 Snapshots that declare `metadata.schema_version` must match the Data Plane protocol schema version.
 Distributed snapshots with `current.json` and `manifest.json` must keep pointer, manifest, snapshot metadata, and snapshot content digest consistent before startup or reload.
+Distributed file references must stay inside the distribution or artifact directory; absolute paths and `..` traversal are rejected.
 - `API2AGENT_EVENT_DIR`
 - `API2AGENT_PROJECT_KEY`
 - `API2AGENT_PROJECT_QUOTA`

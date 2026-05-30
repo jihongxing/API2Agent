@@ -138,6 +138,23 @@ func TestWriteArtifactDirRejectsManifestSnapshotVersionMismatch(t *testing.T) {
 	}
 }
 
+func TestWriteArtifactDirRejectsUnsafeManifestSnapshotFile(t *testing.T) {
+	reg := loadValidRegistry(t)
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+	manifest.SnapshotFile = "../snapshot.json"
+
+	err = WriteArtifactDir(t.TempDir(), snapshot, manifest)
+	if err == nil {
+		t.Fatalf("expected unsafe path failure")
+	}
+	if !strings.Contains(err.Error(), "manifest snapshot_file") || !strings.Contains(err.Error(), "not safe") {
+		t.Fatalf("expected unsafe snapshot file error, got %q", err.Error())
+	}
+}
+
 func TestPublishArtifactDir(t *testing.T) {
 	reg := loadValidRegistry(t)
 	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
@@ -175,6 +192,33 @@ func TestPublishArtifactDir(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(distributionDir, "artifacts", snapshot.SnapshotVersion, "manifest.json")); err != nil {
 		t.Fatalf("expected published manifest: %v", err)
+	}
+}
+
+func TestPublishArtifactDirRejectsUnsafeManifestSnapshotFile(t *testing.T) {
+	reg := loadValidRegistry(t)
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+	artifactDir := filepath.Join(t.TempDir(), "artifact")
+	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
+		t.Fatalf("create artifact dir: %v", err)
+	}
+	if err := WriteSnapshotFile(filepath.Join(artifactDir, "snapshot.json"), snapshot); err != nil {
+		t.Fatalf("write snapshot: %v", err)
+	}
+	manifest.SnapshotFile = "../snapshot.json"
+	if err := WriteManifestFile(filepath.Join(artifactDir, "manifest.json"), manifest); err != nil {
+		t.Fatalf("write manifest: %v", err)
+	}
+
+	_, err = PublishArtifactDir(artifactDir, t.TempDir(), time.Date(2026, 5, 30, 4, 5, 6, 0, time.UTC))
+	if err == nil {
+		t.Fatalf("expected unsafe path failure")
+	}
+	if !strings.Contains(err.Error(), "manifest snapshot_file") || !strings.Contains(err.Error(), "not safe") {
+		t.Fatalf("expected unsafe snapshot file error, got %q", err.Error())
 	}
 }
 

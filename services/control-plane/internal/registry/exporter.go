@@ -87,7 +87,11 @@ func WriteArtifactDir(dir string, snapshot RoutingSnapshot, manifest ExportArtif
 	if err := ValidateArtifactConsistency(snapshot, manifest); err != nil {
 		return err
 	}
-	if err := WriteSnapshotFile(filepath.Join(dir, manifest.SnapshotFile), snapshot); err != nil {
+	snapshotPath, err := safeJoinRelative(dir, manifest.SnapshotFile, "manifest snapshot_file", "artifact")
+	if err != nil {
+		return err
+	}
+	if err := WriteSnapshotFile(snapshotPath, snapshot); err != nil {
 		return err
 	}
 	if err := WriteManifestFile(filepath.Join(dir, "manifest.json"), manifest); err != nil {
@@ -99,6 +103,9 @@ func WriteArtifactDir(dir string, snapshot RoutingSnapshot, manifest ExportArtif
 func ValidateArtifactConsistency(snapshot RoutingSnapshot, manifest ExportArtifactManifest) error {
 	if manifest.SnapshotFile == "" {
 		return fmt.Errorf("manifest snapshot_file is required")
+	}
+	if _, err := safeJoinRelative(".", manifest.SnapshotFile, "manifest snapshot_file", "artifact"); err != nil {
+		return err
 	}
 	if manifest.SnapshotVersion == "" {
 		return fmt.Errorf("manifest snapshot_version is required")

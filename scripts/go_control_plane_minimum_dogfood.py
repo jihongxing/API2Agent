@@ -267,6 +267,45 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                 text=True,
             )
             current_pointer_after_content_digest_publish = read_json(distribution_dir / "current.json")
+            registry_v8 = write_registry(
+                scenario_dir / "registry-v8.json",
+                f"http://127.0.0.1:{provider_server.server_port}",
+                "snapshot_control_plane_public_ip_v8",
+            )
+            artifact_dir_v8 = scenario_dir / "artifact-v8-unsafe-manifest-path"
+            subprocess.run(
+                [str(cp_exe), "export-artifact", "--registry", str(registry_v8), "--output-dir", str(artifact_dir_v8)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            force_manifest_snapshot_file(artifact_dir_v8 / "manifest.json", "../snapshot.json")
+            unsafe_manifest_path_publish = subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v8), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            current_pointer_after_unsafe_manifest_path_publish = read_json(distribution_dir / "current.json")
+            registry_v9 = write_registry(
+                scenario_dir / "registry-v9.json",
+                f"http://127.0.0.1:{provider_server.server_port}",
+                "snapshot_control_plane_public_ip_v9",
+            )
+            artifact_dir_v9 = scenario_dir / "artifact-v9-unsafe-pointer-path"
+            subprocess.run(
+                [str(cp_exe), "export-artifact", "--registry", str(registry_v9), "--output-dir", str(artifact_dir_v9)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v9), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            force_current_snapshot_file(distribution_dir / "current.json", "../outside.json")
+            unsafe_pointer_path_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
+            health_after_unsafe_pointer_path_reload = get_json(f"http://127.0.0.1:{port}/healthz")
             response = post_json(
                 f"http://127.0.0.1:{port}/v1/execute",
                 {
@@ -374,6 +413,24 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                 "snapshot_version"
             )
             == "snapshot_control_plane_public_ip_v6",
+            "unsafe_manifest_path_publish_rejected": unsafe_manifest_path_publish.returncode != 0
+            and "manifest snapshot_file" in unsafe_manifest_path_publish.stderr
+            and "not safe" in unsafe_manifest_path_publish.stderr,
+            "unsafe_manifest_path_publish_did_not_advance_current": current_pointer_after_unsafe_manifest_path_publish.get(
+                "snapshot_version"
+            )
+            == "snapshot_control_plane_public_ip_v6",
+            "unsafe_pointer_path_reload_rejected": unsafe_pointer_path_reload.get("status_code") == 503
+            and unsafe_pointer_path_reload.get("reloaded") is False,
+            "unsafe_pointer_path_reload_kept_v2": unsafe_pointer_path_reload.get("kept_snapshot_version")
+            == "snapshot_control_plane_public_ip_v2",
+            "unsafe_pointer_path_reload_audit_event_recorded": len(reload_events) >= 6
+            and reload_events[5].get("outcome") == "failure"
+            and reload_events[5].get("kept_snapshot_version") == "snapshot_control_plane_public_ip_v2",
+            "health_after_unsafe_pointer_path_reload_still_v2": health_after_unsafe_pointer_path_reload.get(
+                "snapshot_version"
+            )
+            == "snapshot_control_plane_public_ip_v2",
             "distribution_current_after_reload_points_to_v2": current_pointer_after_reload.get("snapshot_file")
             == "artifacts/snapshot_control_plane_public_ip_v2/snapshot.json",
             "distribution_v2_artifact_snapshot_exists": (
@@ -395,6 +452,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "usage_has_attempt_id": (usage.get("request_metadata") or {}).get("attempt_id") == usage.get("id"),
             "routing_snapshot_version_matches": routing_decision.get("snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "event_order_is_graph": [event["event_type"] for event in events] == [
+                "snapshot_reload_event",
                 "snapshot_reload_event",
                 "snapshot_reload_event",
                 "snapshot_reload_event",
@@ -433,6 +491,11 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "content_digest_publish_exit_code": content_digest_publish.returncode,
             "content_digest_publish_error": content_digest_publish.stderr.strip(),
             "current_pointer_after_content_digest_publish": current_pointer_after_content_digest_publish,
+            "unsafe_manifest_path_publish_exit_code": unsafe_manifest_path_publish.returncode,
+            "unsafe_manifest_path_publish_error": unsafe_manifest_path_publish.stderr.strip(),
+            "current_pointer_after_unsafe_manifest_path_publish": current_pointer_after_unsafe_manifest_path_publish,
+            "unsafe_pointer_path_reload": unsafe_pointer_path_reload,
+            "health_after_unsafe_pointer_path_reload": health_after_unsafe_pointer_path_reload,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,
@@ -536,6 +599,18 @@ def remove_snapshot_metadata_key(path: Path, key: str) -> None:
 def force_manifest_registry_fingerprint(path: Path, registry_fingerprint: str) -> None:
     data = read_json(path)
     data["registry_fingerprint"] = registry_fingerprint
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def force_manifest_snapshot_file(path: Path, snapshot_file: str) -> None:
+    data = read_json(path)
+    data["snapshot_file"] = snapshot_file
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def force_current_snapshot_file(path: Path, snapshot_file: str) -> None:
+    data = read_json(path)
+    data["snapshot_file"] = snapshot_file
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 

@@ -41,6 +41,7 @@ The manifest records the artifact version, registry source, snapshot version pol
 
 Exported snapshots include `metadata.schema_version=api2agent.protocol.v0.2` so Data Plane can reject incompatible snapshots before startup or reload.
 Artifact export and publish validate that `manifest.json` agrees with `snapshot.json` metadata and file content before distribution state is advanced.
+Artifact file references must stay inside the artifact directory; absolute paths and `..` traversal are rejected.
 
 Publish a snapshot artifact to a local distribution directory:
 

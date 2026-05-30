@@ -499,11 +499,17 @@ Go Control Plane Minimum v0
   - `snapshot.json` 文件字节不匹配 manifest digest 时，Control Plane 会拒绝 artifact publish。
   - 文件字节不再匹配 manifest/current digest 时，Data Plane 会拒绝 distributed snapshot reload。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_CONTENT_DIGEST_DOGFOOD_REPORT.md`。
+- Control Plane Snapshot Artifact Path Safety Guard v0 已完成：
+  - Control Plane 会在写入或发布 artifact 前拒绝 unsafe `manifest.snapshot_file` 引用。
+  - Data Plane 会在读取 distributed files 前拒绝 unsafe `current.snapshot_file`、`current.manifest_file` 和 `manifest.snapshot_file` 引用。
+  - distribution metadata 内的绝对路径和 `..` 路径穿越都会被拒绝。
+  - 直接传入 `API2AGENT_SNAPSHOT=<snapshot.json>` 的路径行为不变。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_PATH_SAFETY_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Control Plane Snapshot Artifact Path Safety Guard v0
+Control Plane Snapshot Distribution Atomic Publish Guard v0
 ```
 
 ## 9. Marketplace 是后面的结果

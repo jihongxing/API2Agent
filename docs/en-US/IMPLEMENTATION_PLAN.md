@@ -499,11 +499,17 @@ Current Phase 6 progress:
   - Control Plane rejects artifact publish when `snapshot.json` file bytes do not match the manifest digest.
   - Data Plane rejects distributed snapshot reload when file bytes no longer match the manifest/current digest.
   - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_CONTENT_DIGEST_DOGFOOD_REPORT.md`.
+- Control Plane Snapshot Artifact Path Safety Guard v0 is complete:
+  - Control Plane rejects unsafe `manifest.snapshot_file` references before writing or publishing artifacts.
+  - Data Plane rejects unsafe `current.snapshot_file`, `current.manifest_file`, and `manifest.snapshot_file` references before reading distributed files.
+  - absolute paths and `..` traversal are rejected inside distribution metadata.
+  - direct `API2AGENT_SNAPSHOT=<snapshot.json>` paths remain unchanged.
+  - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_PATH_SAFETY_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Control Plane Snapshot Artifact Path Safety Guard v0
+Control Plane Snapshot Distribution Atomic Publish Guard v0
 ```
 
 ## 9. Marketplace Is Later

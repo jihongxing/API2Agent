@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"api2agent/services/data-plane/internal/protocol"
@@ -162,14 +163,14 @@ func resolveDistributionPointer(path string, baseDir string) (string, error) {
 	if pointer.SnapshotVersion == "" {
 		return "", fmt.Errorf("distribution pointer snapshot_version is required")
 	}
-	snapshotPath := filepath.FromSlash(pointer.SnapshotFile)
-	if !filepath.IsAbs(snapshotPath) {
-		snapshotPath = filepath.Join(baseDir, snapshotPath)
+	snapshotPath, err := safeJoinRelative(baseDir, pointer.SnapshotFile, "distribution pointer snapshot_file", "distribution")
+	if err != nil {
+		return "", err
 	}
 	if pointer.ManifestFile != "" {
-		manifestPath := filepath.FromSlash(pointer.ManifestFile)
-		if !filepath.IsAbs(manifestPath) {
-			manifestPath = filepath.Join(baseDir, manifestPath)
+		manifestPath, err := safeJoinRelative(baseDir, pointer.ManifestFile, "distribution pointer manifest_file", "distribution")
+		if err != nil {
+			return "", err
 		}
 		if err := validateDistributionManifest(pointer, manifestPath, snapshotPath); err != nil {
 			return "", err
@@ -202,9 +203,9 @@ func validateDistributionManifest(pointer DistributionPointer, manifestPath stri
 	if manifest.SnapshotDigest == "" {
 		return fmt.Errorf("distribution manifest snapshot_digest is required")
 	}
-	manifestSnapshotPath := filepath.FromSlash(manifest.SnapshotFile)
-	if !filepath.IsAbs(manifestSnapshotPath) {
-		manifestSnapshotPath = filepath.Join(filepath.Dir(manifestPath), manifestSnapshotPath)
+	manifestSnapshotPath, err := safeJoinRelative(filepath.Dir(manifestPath), manifest.SnapshotFile, "distribution manifest snapshot_file", "artifact")
+	if err != nil {
+		return err
 	}
 	if filepath.Clean(manifestSnapshotPath) != filepath.Clean(snapshotPath) {
 		return fmt.Errorf("distribution manifest snapshot_file %q does not match pointer snapshot_file %q", manifest.SnapshotFile, pointer.SnapshotFile)
@@ -248,6 +249,21 @@ func validateDistributionManifest(pointer DistributionPointer, manifestPath stri
 func digestBytes(data []byte) string {
 	sum := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(sum[:])
+}
+
+func safeJoinRelative(baseDir string, reference string, field string, scope string) (string, error) {
+	if reference == "" {
+		return "", fmt.Errorf("%s is required", field)
+	}
+	relativePath := filepath.FromSlash(reference)
+	if filepath.IsAbs(relativePath) {
+		return "", fmt.Errorf("%s %q is not safe for %s path", field, reference, scope)
+	}
+	cleanPath := filepath.Clean(relativePath)
+	if cleanPath == "." || cleanPath == ".." || strings.HasPrefix(cleanPath, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("%s %q is not safe for %s path", field, reference, scope)
+	}
+	return filepath.Join(baseDir, cleanPath), nil
 }
 
 func (s Snapshot) TTLDuration() (time.Duration, error) {

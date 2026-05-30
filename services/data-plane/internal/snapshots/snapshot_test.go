@@ -294,3 +294,72 @@ func TestLoadSnapshotFromDistributionDirectoryRejectsSnapshotDigestMismatch(t *t
 		t.Fatalf("expected error containing %q, got %q", want, err.Error())
 	}
 }
+
+func TestLoadSnapshotFromDistributionDirectoryRejectsUnsafePointerSnapshotPath(t *testing.T) {
+	distributionDir := t.TempDir()
+	pointer := []byte(`{
+  "distribution_version": "api2agent.snapshot_distribution.v0",
+  "snapshot_version": "snapshot_control_plane_public_ip_v1",
+  "snapshot_file": "../outside.json"
+}`)
+	if err := os.WriteFile(filepath.Join(distributionDir, "current.json"), pointer, 0o644); err != nil {
+		t.Fatalf("write current pointer: %v", err)
+	}
+
+	_, err := LoadFile(distributionDir)
+	if err == nil {
+		t.Fatalf("expected unsafe pointer path failure")
+	}
+	if want := "distribution pointer snapshot_file"; !strings.Contains(err.Error(), want) || !strings.Contains(err.Error(), "not safe") {
+		t.Fatalf("expected unsafe pointer path error, got %q", err.Error())
+	}
+}
+
+func TestLoadSnapshotFromDistributionDirectoryRejectsUnsafeManifestSnapshotPath(t *testing.T) {
+	source := filepath.Join("..", "..", "testdata", "snapshots", "control-plane-public-ip.json")
+	distributionDir := t.TempDir()
+	artifactDir := filepath.Join(distributionDir, "artifacts", "snapshot_control_plane_public_ip_v1")
+	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
+		t.Fatalf("create artifact dir: %v", err)
+	}
+	data, err := os.ReadFile(source)
+	if err != nil {
+		t.Fatalf("read source snapshot: %v", err)
+	}
+	digest := digestBytes(data)
+	if err := os.WriteFile(filepath.Join(artifactDir, "snapshot.json"), data, 0o644); err != nil {
+		t.Fatalf("write distributed snapshot: %v", err)
+	}
+	manifest := []byte(`{
+  "artifact_version": "api2agent.snapshot_artifact.v0",
+  "snapshot_file": "../snapshot.json",
+  "snapshot_version": "snapshot_control_plane_public_ip_v1",
+  "snapshot_source": "pull",
+  "registry_fingerprint": "sha256:test-control-plane-public-ip",
+  "snapshot_version_policy": "explicit",
+  "snapshot_digest": "` + digest + `"
+}`)
+	if err := os.WriteFile(filepath.Join(artifactDir, "manifest.json"), manifest, 0o644); err != nil {
+		t.Fatalf("write distributed manifest: %v", err)
+	}
+	pointer := []byte(`{
+  "distribution_version": "api2agent.snapshot_distribution.v0",
+  "snapshot_version": "snapshot_control_plane_public_ip_v1",
+  "snapshot_file": "artifacts/snapshot_control_plane_public_ip_v1/snapshot.json",
+  "manifest_file": "artifacts/snapshot_control_plane_public_ip_v1/manifest.json",
+  "registry_fingerprint": "sha256:test-control-plane-public-ip",
+  "snapshot_version_policy": "explicit",
+  "snapshot_digest": "` + digest + `"
+}`)
+	if err := os.WriteFile(filepath.Join(distributionDir, "current.json"), pointer, 0o644); err != nil {
+		t.Fatalf("write current pointer: %v", err)
+	}
+
+	_, err = LoadFile(distributionDir)
+	if err == nil {
+		t.Fatalf("expected unsafe manifest path failure")
+	}
+	if want := "distribution manifest snapshot_file"; !strings.Contains(err.Error(), want) || !strings.Contains(err.Error(), "not safe") {
+		t.Fatalf("expected unsafe manifest path error, got %q", err.Error())
+	}
+}
