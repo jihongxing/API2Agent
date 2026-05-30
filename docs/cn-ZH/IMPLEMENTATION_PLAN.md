@@ -424,6 +424,11 @@ Go Control Plane Minimum v0
   - routing strategy、routing mode、failover policy、snapshot source 和 snapshot TTL 会被校验。
   - credential metadata 会校验 owner/project references、provider references、status、auth type、injection mode、source 和 scope references。
   - dogfood 会验证 invalid registries 在 snapshot export 前被拒绝。
+- Control Plane Snapshot Compatibility Gate v0 已完成：
+  - Go Data Plane 提供 `api2agent-snapshot-check`。
+  - snapshot checker 会加载 exported snapshots、解析 TTL、校验 required capability/provider/routing fields，并输出 JSON report。
+  - Control Plane minimum dogfood 现在会先用 `api2agent-snapshot-check` gate snapshot export，再进入 Data Plane execution。
+  - 这可以防止 Control Plane/Data Plane contract 静默漂移。
 
 ## 9. Marketplace 是后面的结果
 

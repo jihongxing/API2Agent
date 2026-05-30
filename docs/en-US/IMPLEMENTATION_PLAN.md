@@ -424,6 +424,11 @@ Current Phase 6 progress:
   - routing strategy, routing mode, failover policy, snapshot source, and snapshot TTL are validated.
   - credential metadata validates owner/project references, provider references, status, auth type, injection mode, source, and scope references.
   - dogfood verifies invalid registries are rejected before snapshot export.
+- Control Plane Snapshot Compatibility Gate v0 is complete:
+  - Go Data Plane provides `api2agent-snapshot-check`.
+  - the snapshot checker loads exported snapshots, parses TTL, validates required capability/provider/routing fields, and reports JSON.
+  - Control Plane minimum dogfood now gates snapshot export with `api2agent-snapshot-check` before Data Plane execution.
+  - this protects the Control Plane/Data Plane contract from silent drift.
 
 ## 9. Marketplace Is Later
 

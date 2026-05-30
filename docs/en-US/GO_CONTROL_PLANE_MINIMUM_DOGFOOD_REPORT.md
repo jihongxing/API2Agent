@@ -37,6 +37,7 @@ The script builds:
 
 - `api2agent-controlplane`
 - `api2agent-dataplane`
+- `api2agent-snapshot-check`
 
 ## Observed Result
 
@@ -50,6 +51,7 @@ The control plane exported a snapshot with:
 
 The data plane then:
 
+- accepted the exported snapshot through `api2agent-snapshot-check`
 - loaded the exported snapshot
 - reported the same snapshot version in `/healthz`
 - executed `network.public_ip.get`
@@ -77,6 +79,7 @@ Control Plane registry -> versioned snapshot export -> Data Plane consumption
 ```json
 {
   "control_plane_export_success": true,
+  "snapshot_check_passed": true,
   "invalid_registry_rejected": true,
   "health_snapshot_version_matches": true,
   "response_success": true,

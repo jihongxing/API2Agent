@@ -47,12 +47,15 @@ def main() -> int:
         dp_dir = Path("services/data-plane")
         cp_exe_name = "api2agent-controlplane.exe" if os.name == "nt" else "api2agent-controlplane"
         dp_exe_name = "api2agent-dataplane.exe" if os.name == "nt" else "api2agent-dataplane"
+        snapshot_check_exe_name = "api2agent-snapshot-check.exe" if os.name == "nt" else "api2agent-snapshot-check"
         cp_exe = tmp / cp_exe_name
         dp_exe = tmp / dp_exe_name
+        snapshot_check_exe = tmp / snapshot_check_exe_name
         subprocess.run(["go", "build", "-o", str(cp_exe), "./cmd/api2agent-controlplane"], cwd=cp_dir, check=True)
         subprocess.run(["go", "build", "-o", str(dp_exe), "./cmd/api2agent-dataplane"], cwd=dp_dir, check=True)
+        subprocess.run(["go", "build", "-o", str(snapshot_check_exe), "./cmd/api2agent-snapshot-check"], cwd=dp_dir, check=True)
 
-        report = run_scenario(tmp=tmp, cp_exe=cp_exe, dp_exe=dp_exe, dp_dir=dp_dir)
+        report = run_scenario(tmp=tmp, cp_exe=cp_exe, dp_exe=dp_exe, snapshot_check_exe=snapshot_check_exe, dp_dir=dp_dir)
         args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
         print(json.dumps(report, indent=2, ensure_ascii=False))
         return 0 if report["passed"] else 1
@@ -60,7 +63,7 @@ def main() -> int:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
-def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, dp_dir: Path) -> dict:
+def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: Path, dp_dir: Path) -> dict:
     provider_server = ThreadingHTTPServer(("127.0.0.1", 0), make_ip_handler())
     thread = threading.Thread(target=provider_server.serve_forever, daemon=True)
     thread.start()
@@ -75,6 +78,14 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, dp_dir: Path) -> dict
             cwd=dp_dir.parent,
             check=True,
         )
+        snapshot_check = subprocess.run(
+            [str(snapshot_check_exe), "--snapshot", str(snapshot)],
+            cwd=dp_dir,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        snapshot_check_report = parse_json_report(snapshot_check)
         invalid_export = subprocess.run(
             [str(cp_exe), "export-snapshot", "--registry", str(invalid_registry), "--output", str(scenario_dir / "invalid-snapshot.json")],
             cwd=dp_dir.parent,
@@ -115,6 +126,8 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, dp_dir: Path) -> dict
         routing_decision = next((event["record"] for event in events if event["event_type"] == "routing_decision"), {})
         checks = {
             "control_plane_export_success": snapshot.exists(),
+            "snapshot_check_passed": snapshot_check.returncode == 0
+            and snapshot_check_report.get("passed") is True,
             "invalid_registry_rejected": invalid_export.returncode != 0
             and "references unknown project" in invalid_export.stderr,
             "health_snapshot_version_matches": health.get("snapshot_version") == "snapshot_control_plane_public_ip_v1",
@@ -135,6 +148,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, dp_dir: Path) -> dict
             "invalid_registry_path": str(invalid_registry),
             "invalid_registry_exit_code": invalid_export.returncode,
             "invalid_registry_error": invalid_export.stderr.strip(),
+            "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,
             "response": response,
@@ -218,6 +232,18 @@ def write_invalid_registry(path: Path, base_url: str) -> Path:
     data["api_keys"][0]["project_id"] = "missing_project"
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return path
+
+
+def parse_json_report(completed: subprocess.CompletedProcess[str]) -> dict:
+    try:
+        report = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        report = {
+            "passed": False,
+            "error": completed.stderr or completed.stdout or "invalid json report",
+        }
+    report["exit_code"] = completed.returncode
+    return report
 
 
 def post_json(url: str, payload: dict) -> dict:

@@ -37,6 +37,7 @@ python scripts/go_control_plane_minimum_dogfood.py \
 
 - `api2agent-controlplane`
 - `api2agent-dataplane`
+- `api2agent-snapshot-check`
 
 ## 观察结果
 
@@ -50,6 +51,7 @@ Control Plane 导出了一个 snapshot：
 
 随后 Data Plane：
 
+- 通过 `api2agent-snapshot-check` 接受了导出的 snapshot
 - 加载了导出的 snapshot
 - 在 `/healthz` 返回同一个 snapshot version
 - 执行了 `network.public_ip.get`
@@ -77,6 +79,7 @@ Control Plane registry -> versioned snapshot export -> Data Plane consumption
 ```json
 {
   "control_plane_export_success": true,
+  "snapshot_check_passed": true,
   "invalid_registry_rejected": true,
   "health_snapshot_version_matches": true,
   "response_success": true,

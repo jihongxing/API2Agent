@@ -717,6 +717,7 @@ Execution Event Ordering / Attempt Correlation v0 - complete
 Go Data Plane Milestone Closeout + Phase 6 Readiness Review - complete
 Go Control Plane Minimum v0 - complete
 Control Plane Registry Validation v0 - complete
+Control Plane Snapshot Compatibility Gate v0 - complete
 Next: 选择下一项 Phase 6 local Control Plane slice
 ```
 
