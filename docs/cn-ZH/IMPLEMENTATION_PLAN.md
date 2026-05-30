@@ -539,6 +539,12 @@ Go Control Plane Minimum v0
   - registry load、artifact export 和 distribution publish 的 transaction boundaries 已定义。
   - fingerprint、versioning、migration 和 dual-store rules 已文档化。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_STORE_DESIGN.md`。
+- Control, Receipt, and Trust Layer Strategy 已文档化：
+  - `UsageEvent` 保持为 internal observation record。
+  - 未来 `Receipt` 被定义为从 execution records 派生的 protocol-grade、verifiable execution evidence。
+  - receipt farming 和 Edge-Mesh privacy requirements 已作为战略约束记录。
+  - 这不改变当前下一项任务。
+  - 详见 `docs/cn-ZH/CONTROL_RECEIPT_AND_TRUST_LAYER_STRATEGY.md`。
 
 下一项工程任务：
 

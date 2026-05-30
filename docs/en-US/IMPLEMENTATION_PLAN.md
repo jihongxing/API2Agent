@@ -539,6 +539,12 @@ Current Phase 6 progress:
   - registry load, artifact export, and distribution publish transaction boundaries are defined.
   - fingerprint, versioning, migration, and dual-store rules are documented.
   - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_STORE_DESIGN.md`.
+- Control, Receipt, and Trust Layer Strategy is documented:
+  - `UsageEvent` remains the internal observation record.
+  - future `Receipt` is defined as protocol-grade, verifiable execution evidence derived from execution records.
+  - receipt farming and Edge-Mesh privacy requirements are captured as strategic constraints.
+  - this does not change the current next task.
+  - see `docs/en-US/CONTROL_RECEIPT_AND_TRUST_LAYER_STRATEGY.md`.
 
 Next engineering task:
 

@@ -36,6 +36,10 @@ Strategic thesis:
 
 > API2Agent starts as a local Agent capability compiler, then becomes the control, metrics, routing, and reliable execution layer for Agent access to API-backed capabilities.
 
+Receipt and trust thesis:
+
+> API2Agent should eventually turn internal usage observations into verifiable receipts that can power routing, trust, anti-gaming controls, and future settlement. This is a strategic direction, not the current implementation task. See `docs/en-US/CONTROL_RECEIPT_AND_TRUST_LAYER_STRATEGY.md`.
+
 Capability source boundary:
 
 > v0.1-alpha is API-first. Long term, API2Agent may support any source that can be adapted into `input -> execution -> output`, but non-API sources enter only as future adapters after API execution is reliable. See `docs/en-US/CAPABILITY_SOURCES.md`.
@@ -736,6 +740,7 @@ Go Control Plane Service API Skeleton v0 - complete
 Go Control Plane Service Snapshot Publish Endpoint v0 - complete
 Go Control Plane Service API Closeout + Hosted Persistence Readiness Review - complete
 Go Control Plane Persistent Registry Store Design v0 - complete
+Control, Receipt, and Trust Layer Strategy - documented
 Next: Go Control Plane Persistent Registry Store Schema v0
 ```
 

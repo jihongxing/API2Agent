@@ -36,6 +36,10 @@ Architecture Definition Phase
 
 > API2Agent 起步是本地 Agent capability compiler，之后演进为 Agent 访问 API-backed capabilities 的 control、metrics、routing 和 reliable execution layer。
 
+Receipt and trust thesis：
+
+> API2Agent 未来应该把 internal usage observations 演进为 verifiable receipts，用于 routing、trust、anti-gaming controls 和未来 settlement。这是战略方向，不是当前 implementation task。详见 `docs/cn-ZH/CONTROL_RECEIPT_AND_TRUST_LAYER_STRATEGY.md`。
+
 Capability source 边界：
 
 > v0.1-alpha 坚持 API-first。长期来看，API2Agent 可以支持任何能被适配成 `input -> execution -> output` 的来源，但非 API sources 只能在 API execution 可靠之后作为 future adapters 进入。详见 `docs/cn-ZH/CAPABILITY_SOURCES.md`。
@@ -736,6 +740,7 @@ Go Control Plane Service API Skeleton v0 - complete
 Go Control Plane Service Snapshot Publish Endpoint v0 - complete
 Go Control Plane Service API Closeout + Hosted Persistence Readiness Review - complete
 Go Control Plane Persistent Registry Store Design v0 - complete
+Control, Receipt, and Trust Layer Strategy - documented
 Next: Go Control Plane Persistent Registry Store Schema v0
 ```
 

@@ -120,6 +120,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane service snapshot publish endpoint with duplicate-version protection.
 - Go Control Plane service API closeout and hosted persistence readiness review.
 - Go Control Plane persistent registry store design covering logical Postgres tables, transaction boundaries, fingerprint rules, and migration strategy.
+- Control, Receipt, and Trust Layer strategy for future verifiable receipts, routing control, anti-farming, and Edge-Mesh privacy.
 - Go Control Plane minimum dogfood script and bilingual report.
 - Go Control Plane service API dogfood script and bilingual report.
 - Go Data Plane credential config dogfood script and bilingual report.
@@ -189,6 +190,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane service publish dogfood passed with HTTP export, HTTP publish, duplicate publish rejection, and stable current pointer.
 - Go Control Plane service API milestone closed; next scope is persistent registry store design, not direct database implementation.
 - Go Control Plane persistent registry store design completed; next scope is schema/load-parity work with `FileStore` still the default.
+- Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
 - Full test suite: `143 passed`.
