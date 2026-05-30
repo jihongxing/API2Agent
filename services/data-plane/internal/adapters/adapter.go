@@ -11,6 +11,7 @@ type Result struct {
 	StatusCode int
 	Method     string
 	Path       string
+	LatencyMS  float64
 }
 
 type Adapter interface {

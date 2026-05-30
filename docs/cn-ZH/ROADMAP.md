@@ -111,6 +111,8 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - Go Data Plane Skeleton implementation，位于 `services/data-plane`
 - Go/Python dual-run dogfood，覆盖 `network.public_ip.get`
 - Go Data Plane Skeleton hardening，覆盖 health、auth、timeout、snapshot TTL 和 failure-event tests
+- Go Data Plane protocol conformance checks，基于 v0.2 schema snapshot
+- Go Data Plane retry/failover execution 和 controlled failover dogfood
 
 尚未实现：
 
@@ -518,7 +520,7 @@ Production Architecture RFC
 立即下一步任务：
 
 ```text
-Go Data Plane protocol conformance checks and real-provider retry/failover dogfood
+Choose the next Go Data Plane migration slice: credential resolution, durable event ingestion, or real external provider retry dogfood
 ```
 
 当前实现结果：
@@ -693,7 +695,8 @@ Go Data Plane protocol conformance checks and real-provider retry/failover dogfo
 
 ```text
 Go Data Plane Skeleton hardening - complete
-Next: Go Data Plane protocol conformance + retry/failover dogfood
+Go Data Plane protocol conformance + retry/failover dogfood - complete
+Next: choose the next Go Data Plane migration slice
 ```
 
 ## 9. Phase 6：Hosted Control Plane

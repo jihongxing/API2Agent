@@ -312,11 +312,16 @@ Current implementation:
   - `/healthz` exposes protocol and snapshot metadata.
   - snapshot TTL parsing and expiration helpers are implemented.
   - project-key bearer auth, timeout failure mapping, missing-adapter failed decisions, and event sequence IDs are covered by Go tests.
+- Go Data Plane protocol conformance and failover dogfood are complete:
+  - emitted RequestContext, RoutingDecision, UsageEvent, and DecisionLog records are checked against the v0.2 schema snapshot.
+  - failover policy can retry a controlled HTTP 500 primary provider and succeed on a fallback provider.
+  - each attempt writes a UsageEvent, and DecisionLog aggregates both attempt IDs.
+  - see `docs/en-US/GO_DATAPLANE_FAILOVER_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Data Plane protocol conformance checks and retry/failover dogfood
+Choose the next Go Data Plane migration slice: credential resolution, durable event ingestion, or real external provider retry dogfood
 ```
 
 ## 9. Marketplace Is Later

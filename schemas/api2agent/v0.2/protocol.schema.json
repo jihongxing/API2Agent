@@ -344,6 +344,9 @@
         "retry_on_status_codes": {
           "type": "array",
           "items": { "type": "integer" }
+        },
+        "attempt_timeout_policy": {
+          "enum": ["fixed", "proportional", null]
         }
       }
     },
@@ -390,6 +393,11 @@
         },
         "selected_provider_id": { "type": ["string", "null"] },
         "selected_provider_region": { "type": ["string", "null"] },
+        "snapshot_version": { "type": "string" },
+        "routing_mode": {
+          "enum": ["deterministic", "stochastic"]
+        },
+        "routing_seed": { "type": ["string", "null"] },
         "metrics": {
           "type": "array",
           "items": {
@@ -471,6 +479,8 @@
         "credential_reference": { "$ref": "#/$defs/CredentialReference" },
         "provider_runtime_reference": { "type": ["string", "null"] },
         "is_golden": { "type": "boolean" },
+        "event_sequence_id": { "type": "integer", "minimum": 0 },
+        "parent_attempt_id": { "type": ["string", "null"] },
         "created_at": { "$ref": "#/$defs/Timestamp" }
       }
     },
@@ -521,6 +531,7 @@
           "type": "array",
           "items": { "type": "string" }
         },
+        "event_sequence_id": { "type": "integer", "minimum": 0 },
         "created_at": { "$ref": "#/$defs/Timestamp" }
       }
     },

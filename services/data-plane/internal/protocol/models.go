@@ -143,7 +143,7 @@ type DecisionLog struct {
 	ID                     string         `json:"id"`
 	SchemaVersion          string         `json:"schema_version"`
 	RequestID              string         `json:"request_id"`
-	RoutingDecisionID      *string        `json:"routing_decision_id,omitempty"`
+	RoutingDecisionID      *string        `json:"routing_decision_id"`
 	Identity               IdentityRef    `json:"identity"`
 	CapabilityID           string         `json:"capability_id"`
 	InputFingerprint       *string        `json:"input_fingerprint,omitempty"`

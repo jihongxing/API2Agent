@@ -404,6 +404,9 @@ Routing decision 是 pre-execution plan。它基于 estimates 和 policy 记录�
 - `ranked_provider_ids`
 - `selected_provider_id`
 - `selected_provider_region`
+- `snapshot_version`
+- `routing_mode`
+- `routing_seed`
 - `metrics`
 - `cost_estimate`
 - `latency_estimate`
@@ -459,6 +462,8 @@ Usage event 记录 execution attempt。
 - `credential_reference`
 - `provider_runtime_reference`
 - `is_golden`
+- `event_sequence_id`
+- `parent_attempt_id`
 - `created_at`
 
 稳定 execution modes：
@@ -497,6 +502,7 @@ Decision log 是 post-execution observation。它连接 request context、routin
 - `reliability_estimate`
 - `outcome`
 - `usage_event_ids`
+- `event_sequence_id`
 - `created_at`
 
 规则：

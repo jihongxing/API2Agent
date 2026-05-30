@@ -20,6 +20,12 @@ Default endpoint:
 POST http://127.0.0.1:8080/v1/execute
 ```
 
+Health endpoint:
+
+```http
+GET http://127.0.0.1:8080/healthz
+```
+
 Example request:
 
 ```json
@@ -39,3 +45,9 @@ Environment variables:
 - `API2AGENT_SNAPSHOT`
 - `API2AGENT_EVENT_DIR`
 - `API2AGENT_PROJECT_KEY`
+
+Dogfood:
+
+```bash
+python ../../scripts/go_dataplane_failover_dogfood.py
+```

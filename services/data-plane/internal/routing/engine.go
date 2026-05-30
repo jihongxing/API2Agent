@@ -18,8 +18,9 @@ type DecisionInput struct {
 }
 
 type DecisionResult struct {
-	Decision protocol.RoutingDecision
-	Provider snapshots.ProviderCandidate
+	Decision  protocol.RoutingDecision
+	Provider  snapshots.ProviderCandidate
+	Providers []snapshots.ProviderCandidate
 }
 
 func Decide(input DecisionInput) (DecisionResult, error) {
@@ -52,6 +53,26 @@ func Decide(input DecisionInput) (DecisionResult, error) {
 	if routingMode == "" {
 		routingMode = "deterministic"
 	}
+	failoverPolicy := protocol.FailoverPolicy{
+		Enabled:              false,
+		MaxAttempts:          1,
+		AttemptTimeoutPolicy: "fixed",
+	}
+	if input.Snapshot.RoutingPolicy.FailoverPolicy != nil {
+		failoverPolicy = protocol.FailoverPolicy{
+			Enabled:              input.Snapshot.RoutingPolicy.FailoverPolicy.Enabled,
+			MaxAttempts:          input.Snapshot.RoutingPolicy.FailoverPolicy.MaxAttempts,
+			RetryOnErrorTypes:    input.Snapshot.RoutingPolicy.FailoverPolicy.RetryOnErrorTypes,
+			RetryOnStatusCodes:   input.Snapshot.RoutingPolicy.FailoverPolicy.RetryOnStatusCodes,
+			AttemptTimeoutPolicy: input.Snapshot.RoutingPolicy.FailoverPolicy.AttemptTimeoutPolicy,
+		}
+		if failoverPolicy.MaxAttempts <= 0 {
+			failoverPolicy.MaxAttempts = 1
+		}
+		if failoverPolicy.AttemptTimeoutPolicy == "" {
+			failoverPolicy.AttemptTimeoutPolicy = "fixed"
+		}
+	}
 	decision := protocol.RoutingDecision{
 		ID:                     decisionID,
 		SchemaVersion:          protocol.SchemaVersion,
@@ -67,14 +88,10 @@ func Decide(input DecisionInput) (DecisionResult, error) {
 		SnapshotVersion:        input.Snapshot.SnapshotVersion,
 		RoutingMode:            routingMode,
 		RoutingSeed:            input.Snapshot.RoutingPolicy.RoutingSeed,
-		FailoverPolicy: &protocol.FailoverPolicy{
-			Enabled:              false,
-			MaxAttempts:          1,
-			AttemptTimeoutPolicy: "fixed",
-		},
-		CreatedAt: now,
+		FailoverPolicy:         &failoverPolicy,
+		CreatedAt:              now,
 	}
-	return DecisionResult{Decision: decision, Provider: selected}, nil
+	return DecisionResult{Decision: decision, Provider: selected, Providers: candidates}, nil
 }
 
 func selectProviderRegion(clientRegion *string, provider snapshots.ProviderCandidate) *string {

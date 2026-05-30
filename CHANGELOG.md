@@ -69,6 +69,9 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane Skeleton implementation with `/v1/execute`, static snapshot loading, deterministic routing, ipify adapter, JSONL event writer, and golden path Go tests.
 - Go/Python dual-run dogfood for `network.public_ip.get` with matching normalized output and Go execution graph events.
 - Go Data Plane Skeleton hardening with `/healthz`, snapshot TTL helpers, bearer auth regression tests, timeout error mapping, missing-adapter failure events, and event sequence checks.
+- Go Data Plane protocol conformance checks for emitted RequestContext, RoutingDecision, UsageEvent, and DecisionLog records against the v0.2 schema snapshot.
+- Go Data Plane retry/failover execution with per-attempt UsageEvents and final DecisionLog attempt aggregation.
+- Go Data Plane failover dogfood script and bilingual report for controlled HTTP 500 primary failure followed by fallback success.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -100,9 +103,11 @@ All notable API2Agent changes will be documented in this file.
 - Location-aware schema dogfooded across usage storage, proxy events, provider metadata, and decision dataset records.
 - Region-aware routing strategy dogfooded with same-capability, different-region providers.
 - Go Data Plane hardening tests for health metadata, project-key auth, timeout usage errors, and failed decision logging.
+- Go Data Plane protocol conformance tests passed for v0.2 execution graph records.
+- Go Data Plane failover dogfood passed with two usage attempts and fallback provider selection.
 - Full test suite: `143 passed`.
 
 ### Planned Next
 
-- Go Data Plane protocol conformance checks against the v0.2 schema snapshot.
-- Go Data Plane real-provider retry/failover dogfood.
+- Go Data Plane schema conformance should be promoted from test helper to reusable validator.
+- Decide the next data-plane migration task: credential resolution, persistent event ingestion, or real external provider retry dogfood.

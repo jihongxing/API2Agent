@@ -404,6 +404,9 @@ Stable fields:
 - `ranked_provider_ids`
 - `selected_provider_id`
 - `selected_provider_region`
+- `snapshot_version`
+- `routing_mode`
+- `routing_seed`
 - `metrics`
 - `cost_estimate`
 - `latency_estimate`
@@ -459,6 +462,8 @@ Stable fields:
 - `credential_reference`
 - `provider_runtime_reference`
 - `is_golden`
+- `event_sequence_id`
+- `parent_attempt_id`
 - `created_at`
 
 Stable execution modes:
@@ -497,6 +502,7 @@ Stable fields:
 - `reliability_estimate`
 - `outcome`
 - `usage_event_ids`
+- `event_sequence_id`
 - `created_at`
 
 Rules:

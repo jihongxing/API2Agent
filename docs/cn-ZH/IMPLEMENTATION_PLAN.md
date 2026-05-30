@@ -312,11 +312,16 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - `/healthz` 暴露 protocol 和 snapshot metadata。
   - snapshot TTL parsing 和 expiration helpers 已实现。
   - project-key bearer auth、timeout failure mapping、missing-adapter failed decisions 和 event sequence IDs 已有 Go tests 覆盖。
+- Go Data Plane protocol conformance 和 failover dogfood 已完成：
+  - emitted RequestContext、RoutingDecision、UsageEvent 和 DecisionLog records 会基于 v0.2 schema snapshot 检查。
+  - failover policy 可以在 controlled HTTP 500 primary provider 失败后切到 fallback provider 成功。
+  - 每个 attempt 都会写 UsageEvent，DecisionLog 会聚合两个 attempt IDs。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_FAILOVER_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Data Plane protocol conformance checks and retry/failover dogfood
+Choose the next Go Data Plane migration slice: credential resolution, durable event ingestion, or real external provider retry dogfood
 ```
 
 ## 9. Marketplace 是后面的结果

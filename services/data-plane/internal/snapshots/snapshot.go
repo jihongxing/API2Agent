@@ -38,9 +38,18 @@ type ProviderCandidate struct {
 }
 
 type RoutingPolicy struct {
-	Strategy    string  `json:"strategy"`
-	RoutingMode string  `json:"routing_mode"`
-	RoutingSeed *string `json:"routing_seed,omitempty"`
+	Strategy       string          `json:"strategy"`
+	RoutingMode    string          `json:"routing_mode"`
+	RoutingSeed    *string         `json:"routing_seed,omitempty"`
+	FailoverPolicy *FailoverPolicy `json:"failover_policy,omitempty"`
+}
+
+type FailoverPolicy struct {
+	Enabled              bool     `json:"enabled"`
+	MaxAttempts          int      `json:"max_attempts"`
+	RetryOnErrorTypes    []string `json:"retry_on_error_types,omitempty"`
+	RetryOnStatusCodes   []int    `json:"retry_on_status_codes,omitempty"`
+	AttemptTimeoutPolicy string   `json:"attempt_timeout_policy,omitempty"`
 }
 
 func LoadFile(path string) (*Snapshot, error) {

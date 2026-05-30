@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -152,68 +153,105 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 	}
 	_, _ = h.Events.Write(r.Context(), "routing_decision", decisionResult.Decision)
 
-	adapter, ok := h.Adapters.Get(decisionResult.Provider.ProviderID)
-	if !ok {
-		h.writeFailedDecision(w, r.Context(), requestContext, &decisionResult.Decision, errorRecord("NO_PROVIDER", "platform", "adapter not registered", false), http.StatusBadGateway)
-		return
-	}
-
-	execCtx, cancel := context.WithTimeout(r.Context(), time.Duration(req.TimeoutBudgetMS)*time.Millisecond)
-	defer cancel()
-	start := time.Now()
-	result, callErr := adapter.Call(execCtx, decisionResult.Provider, req.Input)
-	latencyMS := float64(time.Since(start).Microseconds()) / 1000
-	statusCode := result.StatusCode
-	if statusCode == 0 && callErr == nil {
-		statusCode = http.StatusOK
-	}
-	success := callErr == nil
-	var errRecord *protocol.ErrorRecord
-	if callErr != nil {
-		errRecord = mapAdapterError(callErr)
-	}
-
-	usageID := routing.NewID("usage")
 	routeID := decisionResult.Decision.ID
-	method := result.Method
-	path := result.Path
-	costSource := "estimated"
-	estimatedCost := decisionResult.Provider.EstimatedCost
-	latency := protocol.LatencyProfile{LatencyMS: &latencyMS, LatencyRegion: req.ClientRegion}
-	usage := protocol.UsageEvent{
-		ID:                usageID,
-		SchemaVersion:     protocol.SchemaVersion,
-		RequestID:         requestID,
-		RoutingDecisionID: &routeID,
-		ExecutionMode:     req.ExecutionMode,
-		Identity:          identity,
-		CapabilityID:      req.CapabilityID,
-		CapabilityVersion: req.CapabilityVersion,
-		ProviderID:        decisionResult.Provider.ProviderID,
-		ProviderVersion:   decisionResult.Provider.ProviderVersion,
-		MappingVersion:    decisionResult.Provider.MappingVersion,
-		ToolID:            decisionResult.Provider.ToolID,
-		Method:            &method,
-		Path:              &path,
-		StatusCode:        &statusCode,
-		Success:           success,
-		Latency:           latency,
-		Topology: protocol.NetworkTopology{
-			ClientRegion:           req.ClientRegion,
-			SelectedProviderRegion: decisionResult.Decision.SelectedProviderRegion,
-			ProviderRegion:         decisionResult.Decision.SelectedProviderRegion,
-		},
-		Cost:  protocol.CostProfile{EstimatedCost: &estimatedCost, CostSource: &costSource},
-		Error: errRecord,
-		RequestMetadata: map[string]any{
-			"snapshot_version":            snapshotVersion(h.Snapshot),
-			"execution_timeout_budget_ms": req.TimeoutBudgetMS,
-			"attempt_timeout_policy":      "fixed",
-		},
-		CredentialReference: &protocol.CredentialReference{},
-		CreatedAt:           time.Now().UTC(),
+	attempts := providersForAttempts(decisionResult)
+	maxAttempts := maxAttempts(decisionResult.Decision.FailoverPolicy, len(attempts))
+	var usageIDs []string
+	var selectedProviderID *string
+	var selectedProviderRegion *string
+	var finalUsageID string
+	var finalOutput map[string]any
+	var finalError *protocol.ErrorRecord
+	success := false
+
+	for attemptIndex, provider := range attempts[:maxAttempts] {
+		providerRegion := selectedRegionForProvider(req.ClientRegion, provider)
+		adapter, ok := h.Adapters.Get(provider.ProviderID)
+		var result adapters.Result
+		var callErr error
+		if !ok {
+			callErr = fmt.Errorf("adapter not registered")
+		} else {
+			execCtx, cancel := context.WithTimeout(r.Context(), time.Duration(req.TimeoutBudgetMS)*time.Millisecond)
+			start := time.Now()
+			result, callErr = adapter.Call(execCtx, provider, req.Input)
+			cancel()
+			result.LatencyMS = float64(time.Since(start).Microseconds()) / 1000
+		}
+
+		statusCode := result.StatusCode
+		if statusCode == 0 && callErr == nil {
+			statusCode = http.StatusOK
+		}
+		attemptSuccess := callErr == nil
+		var errRecord *protocol.ErrorRecord
+		if callErr != nil {
+			if !ok {
+				errRecord = errorRecord("NO_PROVIDER", "platform", callErr.Error(), false)
+			} else {
+				errRecord = mapAdapterError(callErr)
+			}
+		}
+
+		usageID := routing.NewID("usage")
+		finalUsageID = usageID
+		usageIDs = append(usageIDs, usageID)
+		method := result.Method
+		path := result.Path
+		costSource := "estimated"
+		estimatedCost := provider.EstimatedCost
+		latencyMS := result.LatencyMS
+		latency := protocol.LatencyProfile{LatencyMS: &latencyMS, LatencyRegion: req.ClientRegion}
+		usage := protocol.UsageEvent{
+			ID:                usageID,
+			SchemaVersion:     protocol.SchemaVersion,
+			RequestID:         requestID,
+			RoutingDecisionID: &routeID,
+			ExecutionMode:     req.ExecutionMode,
+			Identity:          identity,
+			CapabilityID:      req.CapabilityID,
+			CapabilityVersion: req.CapabilityVersion,
+			ProviderID:        provider.ProviderID,
+			ProviderVersion:   provider.ProviderVersion,
+			MappingVersion:    provider.MappingVersion,
+			ToolID:            provider.ToolID,
+			Method:            &method,
+			Path:              &path,
+			StatusCode:        &statusCode,
+			Success:           attemptSuccess,
+			Latency:           latency,
+			Topology: protocol.NetworkTopology{
+				ClientRegion:           req.ClientRegion,
+				SelectedProviderRegion: decisionResult.Decision.SelectedProviderRegion,
+				ProviderRegion:         providerRegion,
+			},
+			Cost:  protocol.CostProfile{EstimatedCost: &estimatedCost, CostSource: &costSource},
+			Error: errRecord,
+			RequestMetadata: map[string]any{
+				"snapshot_version":            snapshotVersion(h.Snapshot),
+				"execution_timeout_budget_ms": req.TimeoutBudgetMS,
+				"attempt_timeout_policy":      attemptTimeoutPolicy(decisionResult.Decision.FailoverPolicy),
+				"attempt_index":               attemptIndex + 1,
+				"max_attempts":                maxAttempts,
+			},
+			CredentialReference: &protocol.CredentialReference{},
+			CreatedAt:           time.Now().UTC(),
+		}
+		_, _ = h.Events.Write(r.Context(), "usage_event", &usage)
+
+		finalError = errRecord
+		if attemptSuccess {
+			success = true
+			finalOutput = result.Output
+			providerID := provider.ID
+			selectedProviderID = &providerID
+			selectedProviderRegion = providerRegion
+			break
+		}
+		if !shouldFailover(decisionResult.Decision.FailoverPolicy, errRecord, statusCode) {
+			break
+		}
 	}
-	_, _ = h.Events.Write(r.Context(), "usage_event", &usage)
 
 	outcome := "success"
 	if !success {
@@ -230,11 +268,12 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		RoutingContext: map[string]any{
 			"snapshot_version": snapshotVersion(h.Snapshot),
 			"routing_mode":     decisionResult.Decision.RoutingMode,
+			"attempt_count":    len(usageIDs),
 		},
-		SelectedProviderID:     decisionResult.Decision.SelectedProviderID,
-		SelectedProviderRegion: decisionResult.Decision.SelectedProviderRegion,
+		SelectedProviderID:     selectedProviderID,
+		SelectedProviderRegion: selectedProviderRegion,
 		Outcome:                outcome,
-		UsageEventIDs:          []string{usageID},
+		UsageEventIDs:          usageIDs,
 		CreatedAt:              time.Now().UTC(),
 	}
 	_, _ = h.Events.Write(r.Context(), "decision_log", &decisionLog)
@@ -243,18 +282,18 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadGateway, ExecuteResponse{
 			RequestID:         requestID,
 			RoutingDecisionID: routeID,
-			UsageEventID:      usageID,
+			UsageEventID:      finalUsageID,
 			Success:           false,
-			Error:             errRecord,
+			Error:             finalError,
 		})
 		return
 	}
 	writeJSON(w, http.StatusOK, ExecuteResponse{
 		RequestID:         requestID,
 		RoutingDecisionID: routeID,
-		UsageEventID:      usageID,
+		UsageEventID:      finalUsageID,
 		Success:           true,
-		Output:            result.Output,
+		Output:            finalOutput,
 	})
 }
 
@@ -300,6 +339,78 @@ func snapshotVersion(snapshot *snapshots.Snapshot) string {
 		return ""
 	}
 	return snapshot.SnapshotVersion
+}
+
+func providersForAttempts(result routing.DecisionResult) []snapshots.ProviderCandidate {
+	if len(result.Providers) > 0 {
+		return result.Providers
+	}
+	return []snapshots.ProviderCandidate{result.Provider}
+}
+
+func maxAttempts(policy *protocol.FailoverPolicy, providerCount int) int {
+	if providerCount <= 0 {
+		return 0
+	}
+	if policy == nil || !policy.Enabled || policy.MaxAttempts <= 0 {
+		return 1
+	}
+	if policy.MaxAttempts > providerCount {
+		return providerCount
+	}
+	return policy.MaxAttempts
+}
+
+func attemptTimeoutPolicy(policy *protocol.FailoverPolicy) string {
+	if policy == nil || policy.AttemptTimeoutPolicy == "" {
+		return "fixed"
+	}
+	return policy.AttemptTimeoutPolicy
+}
+
+func shouldFailover(policy *protocol.FailoverPolicy, record *protocol.ErrorRecord, statusCode int) bool {
+	if policy == nil || !policy.Enabled {
+		return false
+	}
+	if record != nil && record.ErrorType != nil {
+		for _, errorType := range policy.RetryOnErrorTypes {
+			if errorType == *record.ErrorType {
+				return true
+			}
+		}
+	}
+	for _, retryStatus := range policy.RetryOnStatusCodes {
+		if retryStatus == statusCode {
+			return true
+		}
+	}
+	return false
+}
+
+func selectedRegionForProvider(clientRegion *string, provider snapshots.ProviderCandidate) *string {
+	if clientRegion != nil {
+		for _, region := range provider.Regions {
+			if region == *clientRegion {
+				value := region
+				return &value
+			}
+		}
+	}
+	for _, region := range provider.Regions {
+		if region == "global" {
+			value := region
+			return &value
+		}
+	}
+	if provider.GeoAffinity == "global" {
+		value := "global"
+		return &value
+	}
+	if len(provider.Regions) > 0 {
+		value := provider.Regions[0]
+		return &value
+	}
+	return nil
 }
 
 func mapAdapterError(err error) *protocol.ErrorRecord {
