@@ -57,11 +57,20 @@ type FailoverPolicy struct {
 }
 
 type DistributionPointer struct {
-	DistributionVersion string `json:"distribution_version"`
-	SnapshotVersion     string `json:"snapshot_version"`
-	SnapshotFile        string `json:"snapshot_file"`
-	ManifestFile        string `json:"manifest_file,omitempty"`
-	RegistryFingerprint string `json:"registry_fingerprint,omitempty"`
+	DistributionVersion   string `json:"distribution_version"`
+	SnapshotVersion       string `json:"snapshot_version"`
+	SnapshotFile          string `json:"snapshot_file"`
+	ManifestFile          string `json:"manifest_file,omitempty"`
+	RegistryFingerprint   string `json:"registry_fingerprint,omitempty"`
+	SnapshotVersionPolicy string `json:"snapshot_version_policy,omitempty"`
+}
+
+type DistributionManifest struct {
+	SnapshotFile          string `json:"snapshot_file"`
+	SnapshotVersion       string `json:"snapshot_version"`
+	SnapshotSource        string `json:"snapshot_source,omitempty"`
+	RegistryFingerprint   string `json:"registry_fingerprint,omitempty"`
+	SnapshotVersionPolicy string `json:"snapshot_version_policy,omitempty"`
 }
 
 func LoadFile(path string) (*Snapshot, error) {
@@ -153,7 +162,73 @@ func resolveDistributionPointer(path string, baseDir string) (string, error) {
 	if !filepath.IsAbs(snapshotPath) {
 		snapshotPath = filepath.Join(baseDir, snapshotPath)
 	}
+	if pointer.ManifestFile != "" {
+		manifestPath := filepath.FromSlash(pointer.ManifestFile)
+		if !filepath.IsAbs(manifestPath) {
+			manifestPath = filepath.Join(baseDir, manifestPath)
+		}
+		if err := validateDistributionManifest(pointer, manifestPath, snapshotPath); err != nil {
+			return "", err
+		}
+	}
 	return snapshotPath, nil
+}
+
+func validateDistributionManifest(pointer DistributionPointer, manifestPath string, snapshotPath string) error {
+	manifestData, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return fmt.Errorf("read distribution manifest: %w", err)
+	}
+	var manifest DistributionManifest
+	if err := json.Unmarshal(manifestData, &manifest); err != nil {
+		return fmt.Errorf("decode distribution manifest: %w", err)
+	}
+	if manifest.SnapshotFile == "" {
+		return fmt.Errorf("distribution manifest snapshot_file is required")
+	}
+	if manifest.SnapshotVersion == "" {
+		return fmt.Errorf("distribution manifest snapshot_version is required")
+	}
+	if manifest.RegistryFingerprint == "" {
+		return fmt.Errorf("distribution manifest registry_fingerprint is required")
+	}
+	if manifest.SnapshotVersionPolicy == "" {
+		return fmt.Errorf("distribution manifest snapshot_version_policy is required")
+	}
+	manifestSnapshotPath := filepath.FromSlash(manifest.SnapshotFile)
+	if !filepath.IsAbs(manifestSnapshotPath) {
+		manifestSnapshotPath = filepath.Join(filepath.Dir(manifestPath), manifestSnapshotPath)
+	}
+	if filepath.Clean(manifestSnapshotPath) != filepath.Clean(snapshotPath) {
+		return fmt.Errorf("distribution manifest snapshot_file %q does not match pointer snapshot_file %q", manifest.SnapshotFile, pointer.SnapshotFile)
+	}
+	if manifest.SnapshotVersion != pointer.SnapshotVersion {
+		return fmt.Errorf("distribution manifest snapshot_version %q does not match pointer snapshot_version %q", manifest.SnapshotVersion, pointer.SnapshotVersion)
+	}
+	if pointer.RegistryFingerprint != "" && manifest.RegistryFingerprint != pointer.RegistryFingerprint {
+		return fmt.Errorf("distribution manifest registry_fingerprint %q does not match pointer registry_fingerprint %q", manifest.RegistryFingerprint, pointer.RegistryFingerprint)
+	}
+	if pointer.SnapshotVersionPolicy != "" && manifest.SnapshotVersionPolicy != pointer.SnapshotVersionPolicy {
+		return fmt.Errorf("distribution manifest snapshot_version_policy %q does not match pointer snapshot_version_policy %q", manifest.SnapshotVersionPolicy, pointer.SnapshotVersionPolicy)
+	}
+	snapshotData, err := os.ReadFile(snapshotPath)
+	if err != nil {
+		return fmt.Errorf("read distribution snapshot: %w", err)
+	}
+	var snapshot Snapshot
+	if err := json.Unmarshal(snapshotData, &snapshot); err != nil {
+		return fmt.Errorf("decode distribution snapshot: %w", err)
+	}
+	if snapshot.SnapshotVersion != manifest.SnapshotVersion {
+		return fmt.Errorf("distribution manifest snapshot_version %q does not match snapshot snapshot_version %q", manifest.SnapshotVersion, snapshot.SnapshotVersion)
+	}
+	if manifest.RegistryFingerprint != snapshot.Metadata["registry_fingerprint"] {
+		return fmt.Errorf("distribution manifest registry_fingerprint %q does not match snapshot metadata.registry_fingerprint %q", manifest.RegistryFingerprint, snapshot.Metadata["registry_fingerprint"])
+	}
+	if manifest.SnapshotVersionPolicy != snapshot.Metadata["snapshot_version_policy"] {
+		return fmt.Errorf("distribution manifest snapshot_version_policy %q does not match snapshot metadata.snapshot_version_policy %q", manifest.SnapshotVersionPolicy, snapshot.Metadata["snapshot_version_policy"])
+	}
+	return nil
 }
 
 func (s Snapshot) TTLDuration() (time.Duration, error) {

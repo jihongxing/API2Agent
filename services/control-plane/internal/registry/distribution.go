@@ -24,7 +24,29 @@ func ReadManifestFile(path string) (ExportArtifactManifest, error) {
 	if manifest.SnapshotVersion == "" {
 		return ExportArtifactManifest{}, fmt.Errorf("manifest snapshot_version is required")
 	}
+	if manifest.RegistryFingerprint == "" {
+		return ExportArtifactManifest{}, fmt.Errorf("manifest registry_fingerprint is required")
+	}
+	if manifest.SnapshotVersionPolicy == "" {
+		return ExportArtifactManifest{}, fmt.Errorf("manifest snapshot_version_policy is required")
+	}
 	return manifest, nil
+}
+
+func ReadArtifactDir(dir string) (RoutingSnapshot, ExportArtifactManifest, error) {
+	manifest, err := ReadManifestFile(filepath.Join(dir, "manifest.json"))
+	if err != nil {
+		return RoutingSnapshot{}, ExportArtifactManifest{}, err
+	}
+	snapshotPath := filepath.Join(dir, filepath.FromSlash(manifest.SnapshotFile))
+	snapshot, err := ReadSnapshotFile(snapshotPath)
+	if err != nil {
+		return RoutingSnapshot{}, ExportArtifactManifest{}, err
+	}
+	if err := ValidateArtifactConsistency(snapshot, manifest); err != nil {
+		return RoutingSnapshot{}, ExportArtifactManifest{}, err
+	}
+	return snapshot, manifest, nil
 }
 
 func WriteDistributionPointer(path string, pointer SnapshotDistributionPointer) error {
@@ -46,7 +68,7 @@ func PublishArtifactDir(sourceArtifactDir string, distributionDir string, publis
 	if distributionDir == "" {
 		return SnapshotDistributionPointer{}, fmt.Errorf("distribution dir is required")
 	}
-	manifest, err := ReadManifestFile(filepath.Join(sourceArtifactDir, "manifest.json"))
+	_, manifest, err := ReadArtifactDir(sourceArtifactDir)
 	if err != nil {
 		return SnapshotDistributionPointer{}, err
 	}

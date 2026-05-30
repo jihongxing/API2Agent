@@ -487,11 +487,17 @@ Current Phase 6 progress:
   - startup load, `api2agent-snapshot-check`, and manual reload share the same strict metadata guard.
   - cross-plane dogfood verifies a v4 distribution missing `registry_fingerprint` is rejected, v2 remains active, and a reload audit event is recorded.
   - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_STRICT_METADATA_DOGFOOD_REPORT.md`.
+- Control Plane Snapshot Metadata Manifest Consistency Guard v0 is complete:
+  - Control Plane validates `snapshot.json` and `manifest.json` consistency before writing or publishing artifacts.
+  - Data Plane validates `current.json`, `manifest.json`, and `snapshot.json` consistency before loading a distributed snapshot.
+  - publish-time manifest mismatch is rejected before advancing `current.json`.
+  - reload-time distribution tampering is rejected while the previous active snapshot remains serving.
+  - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_MANIFEST_CONSISTENCY_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Control Plane Snapshot Metadata Manifest Consistency Guard v0
+Control Plane Snapshot Artifact Content Digest Guard v0
 ```
 
 ## 9. Marketplace Is Later

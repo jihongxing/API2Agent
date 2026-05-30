@@ -46,6 +46,7 @@ Environment variables:
 - `API2AGENT_SNAPSHOT_RELOAD_POLICY` defaults to `startup_only`; set `manual` to enable `POST /v1/admin/reload-snapshot`. Failed reloads keep the previous snapshot active, and reload attempts write `snapshot_reload_event` audit records.
 
 Snapshots that declare `metadata.schema_version` must match the Data Plane protocol schema version.
+Distributed snapshots with `current.json` and `manifest.json` must keep pointer, manifest, and snapshot metadata consistent before startup or reload.
 - `API2AGENT_EVENT_DIR`
 - `API2AGENT_PROJECT_KEY`
 - `API2AGENT_PROJECT_QUOTA`

@@ -25,6 +25,18 @@ func WriteSnapshotFile(path string, snapshot RoutingSnapshot) error {
 	return nil
 }
 
+func ReadSnapshotFile(path string) (RoutingSnapshot, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return RoutingSnapshot{}, fmt.Errorf("read snapshot: %w", err)
+	}
+	var snapshot RoutingSnapshot
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		return RoutingSnapshot{}, fmt.Errorf("decode snapshot: %w", err)
+	}
+	return snapshot, nil
+}
+
 func WriteManifestFile(path string, manifest ExportArtifactManifest) error {
 	data, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
@@ -44,11 +56,42 @@ func WriteArtifactDir(dir string, snapshot RoutingSnapshot, manifest ExportArtif
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("create artifact dir: %w", err)
 	}
+	if err := ValidateArtifactConsistency(snapshot, manifest); err != nil {
+		return err
+	}
 	if err := WriteSnapshotFile(filepath.Join(dir, manifest.SnapshotFile), snapshot); err != nil {
 		return err
 	}
 	if err := WriteManifestFile(filepath.Join(dir, "manifest.json"), manifest); err != nil {
 		return err
+	}
+	return nil
+}
+
+func ValidateArtifactConsistency(snapshot RoutingSnapshot, manifest ExportArtifactManifest) error {
+	if manifest.SnapshotFile == "" {
+		return fmt.Errorf("manifest snapshot_file is required")
+	}
+	if manifest.SnapshotVersion == "" {
+		return fmt.Errorf("manifest snapshot_version is required")
+	}
+	if manifest.RegistryFingerprint == "" {
+		return fmt.Errorf("manifest registry_fingerprint is required")
+	}
+	if manifest.SnapshotVersionPolicy == "" {
+		return fmt.Errorf("manifest snapshot_version_policy is required")
+	}
+	if manifest.SnapshotVersion != snapshot.SnapshotVersion {
+		return fmt.Errorf("manifest snapshot_version %q does not match snapshot snapshot_version %q", manifest.SnapshotVersion, snapshot.SnapshotVersion)
+	}
+	if manifest.SnapshotSource != snapshot.SnapshotSource {
+		return fmt.Errorf("manifest snapshot_source %q does not match snapshot snapshot_source %q", manifest.SnapshotSource, snapshot.SnapshotSource)
+	}
+	if manifest.RegistryFingerprint != snapshot.Metadata["registry_fingerprint"] {
+		return fmt.Errorf("manifest registry_fingerprint %q does not match snapshot metadata.registry_fingerprint %q", manifest.RegistryFingerprint, snapshot.Metadata["registry_fingerprint"])
+	}
+	if manifest.SnapshotVersionPolicy != snapshot.Metadata["snapshot_version_policy"] {
+		return fmt.Errorf("manifest snapshot_version_policy %q does not match snapshot metadata.snapshot_version_policy %q", manifest.SnapshotVersionPolicy, snapshot.Metadata["snapshot_version_policy"])
 	}
 	return nil
 }

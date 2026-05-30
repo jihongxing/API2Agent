@@ -487,11 +487,17 @@ Go Control Plane Minimum v0
   - startup load、`api2agent-snapshot-check` 和 manual reload 共享同一个 strict metadata guard。
   - cross-plane dogfood 验证缺少 `registry_fingerprint` 的 v4 distribution 会被拒绝，v2 保持 active，并记录 reload audit event。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_STRICT_METADATA_DOGFOOD_REPORT.md`。
+- Control Plane Snapshot Metadata Manifest Consistency Guard v0 已完成：
+  - Control Plane 会在写入或发布 artifact 前校验 `snapshot.json` 和 `manifest.json` consistency。
+  - Data Plane 会在加载 distributed snapshot 前校验 `current.json`、`manifest.json` 和 `snapshot.json` consistency。
+  - publish-time manifest mismatch 会在推进 `current.json` 前被拒绝。
+  - reload-time distribution tampering 会被拒绝，previous active snapshot 继续 serving。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_MANIFEST_CONSISTENCY_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Control Plane Snapshot Metadata Manifest Consistency Guard v0
+Control Plane Snapshot Artifact Content Digest Guard v0
 ```
 
 ## 9. Marketplace 是后面的结果

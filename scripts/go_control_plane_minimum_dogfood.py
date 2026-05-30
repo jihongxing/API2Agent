@@ -180,14 +180,40 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                 cwd=dp_dir.parent,
                 check=True,
             )
-            remove_snapshot_metadata_key(artifact_dir_v4 / "snapshot.json", "registry_fingerprint")
             subprocess.run(
                 [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v4), "--distribution-dir", str(distribution_dir)],
                 cwd=dp_dir.parent,
                 check=True,
             )
-            strict_metadata_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
-            health_after_strict_metadata_reload = get_json(f"http://127.0.0.1:{port}/healthz")
+            remove_snapshot_metadata_key(
+                distribution_dir
+                / "artifacts"
+                / "snapshot_control_plane_public_ip_v4"
+                / "snapshot.json",
+                "registry_fingerprint",
+            )
+            manifest_consistency_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
+            health_after_manifest_consistency_reload = get_json(f"http://127.0.0.1:{port}/healthz")
+            registry_v5 = write_registry(
+                scenario_dir / "registry-v5.json",
+                f"http://127.0.0.1:{provider_server.server_port}",
+                "snapshot_control_plane_public_ip_v5",
+            )
+            artifact_dir_v5 = scenario_dir / "artifact-v5-manifest-mismatch"
+            subprocess.run(
+                [str(cp_exe), "export-artifact", "--registry", str(registry_v5), "--output-dir", str(artifact_dir_v5)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            force_manifest_registry_fingerprint(artifact_dir_v5 / "manifest.json", "sha256:manifest-mismatch")
+            manifest_mismatch_publish = subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v5), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            current_pointer_after_manifest_mismatch_publish = read_json(distribution_dir / "current.json")
             response = post_json(
                 f"http://127.0.0.1:{port}/v1/execute",
                 {
@@ -265,15 +291,21 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             and reload_events[2].get("kept_snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "health_after_incompatible_reload_still_v2": health_after_incompatible_reload.get("snapshot_version")
             == "snapshot_control_plane_public_ip_v2",
-            "strict_metadata_reload_rejected": strict_metadata_reload.get("status_code") == 503
-            and strict_metadata_reload.get("reloaded") is False,
-            "strict_metadata_reload_kept_v2": strict_metadata_reload.get("kept_snapshot_version")
+            "manifest_consistency_reload_rejected": manifest_consistency_reload.get("status_code") == 503
+            and manifest_consistency_reload.get("reloaded") is False,
+            "manifest_consistency_reload_kept_v2": manifest_consistency_reload.get("kept_snapshot_version")
             == "snapshot_control_plane_public_ip_v2",
-            "strict_metadata_reload_audit_event_recorded": len(reload_events) >= 4
+            "manifest_consistency_reload_audit_event_recorded": len(reload_events) >= 4
             and reload_events[3].get("outcome") == "failure"
             and reload_events[3].get("kept_snapshot_version") == "snapshot_control_plane_public_ip_v2",
-            "health_after_strict_metadata_reload_still_v2": health_after_strict_metadata_reload.get("snapshot_version")
+            "health_after_manifest_consistency_reload_still_v2": health_after_manifest_consistency_reload.get("snapshot_version")
             == "snapshot_control_plane_public_ip_v2",
+            "manifest_mismatch_publish_rejected": manifest_mismatch_publish.returncode != 0
+            and "manifest registry_fingerprint" in manifest_mismatch_publish.stderr,
+            "manifest_mismatch_publish_did_not_advance_current": current_pointer_after_manifest_mismatch_publish.get(
+                "snapshot_version"
+            )
+            == "snapshot_control_plane_public_ip_v4",
             "distribution_current_after_reload_points_to_v2": current_pointer_after_reload.get("snapshot_file")
             == "artifacts/snapshot_control_plane_public_ip_v2/snapshot.json",
             "distribution_v2_artifact_snapshot_exists": (
@@ -322,8 +354,11 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "reload_response": reload_response,
             "incompatible_reload": incompatible_reload,
             "health_after_incompatible_reload": health_after_incompatible_reload,
-            "strict_metadata_reload": strict_metadata_reload,
-            "health_after_strict_metadata_reload": health_after_strict_metadata_reload,
+            "manifest_consistency_reload": manifest_consistency_reload,
+            "health_after_manifest_consistency_reload": health_after_manifest_consistency_reload,
+            "manifest_mismatch_publish_exit_code": manifest_mismatch_publish.returncode,
+            "manifest_mismatch_publish_error": manifest_mismatch_publish.stderr.strip(),
+            "current_pointer_after_manifest_mismatch_publish": current_pointer_after_manifest_mismatch_publish,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,
@@ -421,6 +456,12 @@ def remove_snapshot_metadata_key(path: Path, key: str) -> None:
     data = read_json(path)
     metadata = data.setdefault("metadata", {})
     metadata.pop(key, None)
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def force_manifest_registry_fingerprint(path: Path, registry_fingerprint: str) -> None:
+    data = read_json(path)
+    data["registry_fingerprint"] = registry_fingerprint
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 

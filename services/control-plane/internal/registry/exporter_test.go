@@ -118,6 +118,23 @@ func TestWriteArtifactDir(t *testing.T) {
 	}
 }
 
+func TestWriteArtifactDirRejectsManifestSnapshotVersionMismatch(t *testing.T) {
+	reg := loadValidRegistry(t)
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+	manifest.SnapshotVersion = "snapshot_other"
+
+	err = WriteArtifactDir(t.TempDir(), snapshot, manifest)
+	if err == nil {
+		t.Fatalf("expected artifact consistency failure")
+	}
+	if !strings.Contains(err.Error(), "manifest snapshot_version") {
+		t.Fatalf("expected snapshot version mismatch error, got %q", err.Error())
+	}
+}
+
 func TestPublishArtifactDir(t *testing.T) {
 	reg := loadValidRegistry(t)
 	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
@@ -152,6 +169,30 @@ func TestPublishArtifactDir(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(distributionDir, "artifacts", snapshot.SnapshotVersion, "manifest.json")); err != nil {
 		t.Fatalf("expected published manifest: %v", err)
+	}
+}
+
+func TestPublishArtifactDirRejectsManifestSnapshotFingerprintMismatch(t *testing.T) {
+	reg := loadValidRegistry(t)
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+	artifactDir := filepath.Join(t.TempDir(), "artifact")
+	if err := WriteArtifactDir(artifactDir, snapshot, manifest); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+	manifest.RegistryFingerprint = "sha256:other"
+	if err := WriteManifestFile(filepath.Join(artifactDir, "manifest.json"), manifest); err != nil {
+		t.Fatalf("write modified manifest: %v", err)
+	}
+
+	_, err = PublishArtifactDir(artifactDir, t.TempDir(), time.Date(2026, 5, 30, 4, 5, 6, 0, time.UTC))
+	if err == nil {
+		t.Fatalf("expected artifact consistency failure")
+	}
+	if !strings.Contains(err.Error(), "manifest registry_fingerprint") {
+		t.Fatalf("expected registry fingerprint mismatch error, got %q", err.Error())
 	}
 }
 
