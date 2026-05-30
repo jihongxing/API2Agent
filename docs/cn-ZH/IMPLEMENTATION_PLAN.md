@@ -360,6 +360,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - failed freshness checks 仍然会写入 `RequestContext` 和 failed `DecisionLog`。
   - `/healthz` 会把 expired snapshots 报告为 `degraded`。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_FRESHNESS_DOGFOOD_REPORT.md`。
+- Project Quota Gate v0 已完成：
+  - Go Data Plane 可以执行本地 process-level project quota。
+  - quota 通过 `API2AGENT_PROJECT_QUOTA` 配置。
+  - quota failures 会返回 `QUOTA_EXCEEDED` 和 HTTP `429`。
+  - quota failures 不会调用 provider adapters。
+  - quota failures 仍然会写入 `RequestContext` 和 failed `DecisionLog`。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_PROJECT_QUOTA_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 

@@ -406,6 +406,62 @@ func TestExecuteRequiresBearerWhenProjectKeyConfigured(t *testing.T) {
 	}
 }
 
+func TestExecuteProjectQuotaFailsClosedBeforeRouting(t *testing.T) {
+	var providerCalls int32
+	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&providerCalls, 1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ip":"203.0.113.10"}`))
+	}))
+	defer providerServer.Close()
+
+	handler, writer := newTestHandler(newTestSnapshot(providerServer.URL), providerServer.Client())
+	handler.Quota = NewQuotaGate(1)
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	firstReq := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(executeBody(5000)))
+	firstRec := httptest.NewRecorder()
+	mux.ServeHTTP(firstRec, firstReq)
+	if firstRec.Code != http.StatusOK {
+		t.Fatalf("expected first request to pass, got %d: %s", firstRec.Code, firstRec.Body.String())
+	}
+
+	secondReq := httptest.NewRequest(http.MethodPost, "/v1/execute", bytes.NewReader(executeBody(5000)))
+	secondRec := httptest.NewRecorder()
+	mux.ServeHTTP(secondRec, secondReq)
+	if secondRec.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected second request to return 429, got %d: %s", secondRec.Code, secondRec.Body.String())
+	}
+	if got := atomic.LoadInt32(&providerCalls); got != 1 {
+		t.Fatalf("expected provider to be called only once, got %d calls", got)
+	}
+	var response ExecuteResponse
+	if err := json.Unmarshal(secondRec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if response.Error == nil || response.Error.ErrorType == nil || *response.Error.ErrorType != "QUOTA_EXCEEDED" {
+		t.Fatalf("expected QUOTA_EXCEEDED error, got %#v", response.Error)
+	}
+	if len(writer.Events) != 6 {
+		t.Fatalf("expected 6 events across two requests, got %d", len(writer.Events))
+	}
+	if writer.Events[4].EventType != "request_context" || writer.Events[5].EventType != "decision_log" {
+		t.Fatalf("expected quota failure to write request_context and decision_log, got %#v", writer.Events[4:])
+	}
+	decisionLog, ok := writer.Events[5].Record.(*protocol.DecisionLog)
+	if !ok {
+		t.Fatalf("expected decision log, got %T", writer.Events[5].Record)
+	}
+	assertProtocolConformance(t, "DecisionLog", decisionLog)
+	if decisionLog.RoutingContext["error_type"] != "QUOTA_EXCEEDED" {
+		t.Fatalf("expected quota error in decision log, got %#v", decisionLog.RoutingContext)
+	}
+	if len(decisionLog.UsageEventIDs) != 0 {
+		t.Fatalf("expected no provider usage event for quota failure, got %#v", decisionLog.UsageEventIDs)
+	}
+}
+
 func TestExecuteFailsClosedWhenRequestContextCannotBeWritten(t *testing.T) {
 	handler := Handler{
 		Snapshot: newTestSnapshot("https://example.test"),

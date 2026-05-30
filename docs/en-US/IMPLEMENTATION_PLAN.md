@@ -360,6 +360,13 @@ Current implementation:
   - failed freshness checks still emit `RequestContext` and failed `DecisionLog`.
   - `/healthz` reports expired snapshots as `degraded`.
   - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_FRESHNESS_DOGFOOD_REPORT.md`.
+- Project Quota Gate v0 is complete:
+  - Go Data Plane can enforce a local process-level project quota.
+  - quota is configured with `API2AGENT_PROJECT_QUOTA`.
+  - quota failures return `QUOTA_EXCEEDED` with HTTP `429`.
+  - quota failures do not call provider adapters.
+  - quota failures still emit `RequestContext` and failed `DecisionLog`.
+  - see `docs/en-US/GO_DATAPLANE_PROJECT_QUOTA_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 

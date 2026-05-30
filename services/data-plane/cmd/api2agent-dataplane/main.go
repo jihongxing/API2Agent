@@ -31,6 +31,7 @@ func main() {
 		Adapters:   registry,
 		Events:     writer,
 		ProjectKey: cfg.ProjectKey,
+		Quota:      httpapi.NewQuotaGate(cfg.ProjectQuota),
 	}
 	handler.Register(mux)
 

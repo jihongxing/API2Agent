@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"api2agent/services/data-plane/internal/adapters"
@@ -22,6 +23,35 @@ type Handler struct {
 	Adapters   *adapters.Registry
 	Events     events.Writer
 	ProjectKey string
+	Quota      *QuotaGate
+}
+
+type QuotaGate struct {
+	Limit  int
+	mu     sync.Mutex
+	counts map[string]int
+}
+
+func NewQuotaGate(limit int) *QuotaGate {
+	if limit <= 0 {
+		return nil
+	}
+	return &QuotaGate{Limit: limit, counts: map[string]int{}}
+}
+
+func (q *QuotaGate) Allow(projectID string) (int, bool) {
+	if q == nil || q.Limit <= 0 {
+		return 0, true
+	}
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	current := q.counts[projectID]
+	if current >= q.Limit {
+		return current, false
+	}
+	current++
+	q.counts[projectID] = current
+	return current, true
 }
 
 type ExecuteRequest struct {
@@ -151,6 +181,10 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := h.checkSnapshotFreshness(time.Now().UTC()); err != nil {
 		h.writeFailedDecision(w, r.Context(), requestContext, nil, snapshotFreshnessError(err), http.StatusServiceUnavailable)
+		return
+	}
+	if used, ok := h.Quota.Allow(req.ProjectID); !ok {
+		h.writeFailedDecision(w, r.Context(), requestContext, nil, quotaExceededError(req.ProjectID, h.Quota.Limit, used), http.StatusTooManyRequests)
 		return
 	}
 
@@ -425,6 +459,10 @@ func snapshotFreshnessError(err error) *protocol.ErrorRecord {
 		errorType = "SNAPSHOT_INVALID"
 	}
 	return errorRecord(errorType, "platform", message, false)
+}
+
+func quotaExceededError(projectID string, limit int, used int) *protocol.ErrorRecord {
+	return errorRecord("QUOTA_EXCEEDED", "caller", fmt.Sprintf("project %q exceeded quota: limit=%d used=%d", projectID, limit, used), false)
 }
 
 func (h Handler) writeEvent(w http.ResponseWriter, ctx context.Context, eventType string, record any) bool {
