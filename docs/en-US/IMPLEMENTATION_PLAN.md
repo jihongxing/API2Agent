@@ -374,6 +374,12 @@ Current implementation:
   - raw secrets are not written to emitted events.
   - config credential scope and lifecycle checks are enforced.
   - see `docs/en-US/GO_DATAPLANE_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
+- Go Data Plane Credential Audit Metadata v0 is complete:
+  - local credential definitions can carry `credential_version`.
+  - credential resolution records safe `resolved_at` audit metadata.
+  - rotation hints and lifecycle status are preserved in redacted usage metadata.
+  - Protocol v0.2 `CredentialReference` remains unchanged; audit extensions stay under `UsageEvent.request_metadata.credential`.
+  - see `docs/en-US/GO_DATAPLANE_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 

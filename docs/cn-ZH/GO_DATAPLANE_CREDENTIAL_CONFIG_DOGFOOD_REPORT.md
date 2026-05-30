@@ -17,6 +17,7 @@ Credential config 在这个切片中：
 - 在 provider execution 前 resolve
 - 可以注入 headers、query params 或 body patches
 - 只以 redacted metadata 写入 `UsageEvent`
+- 可以携带 `credential_version`、`rotation_hint` 和 `resolved_at` 等本地 audit metadata
 
 解析顺序：
 
@@ -64,6 +65,9 @@ API2AGENT_CONFIG_TOKEN=config-secret
 - `UsageEvent.credential_reference` 是 `config:cred_config_ipify`
 - `resolution_strategy` 是 `static`
 - credential metadata source 是 `config`
+- credential metadata 包含 `credential_version=2026-05-30`
+- credential metadata 包含 `rotation_hint=rotate-quarterly`
+- credential metadata 包含非空 `resolved_at`
 - raw secret 没有出现在 emitted events 中
 - Protocol v0.2 conformance 通过
 
@@ -72,6 +76,7 @@ API2AGENT_CONFIG_TOKEN=config-secret
 Go Data Plane Credential Config v0 通过。
 
 Go Data Plane 现在可以用本地 config credentials 作为未来 project-owned vault credentials 的替代物。
+它也可以在不改变 frozen Protocol v0.2 `CredentialReference` 结构的前提下，记录安全的本地 credential audit metadata。
 
 ## 非目标
 

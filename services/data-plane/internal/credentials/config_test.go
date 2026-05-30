@@ -38,15 +38,17 @@ func TestResolverUsesConfigCredentialWhenRequestCredentialMissing(t *testing.T) 
 	t.Setenv("TEST_CONFIG_SECRET", "config-secret")
 	resolver := NewLocalResolver([]CredentialDefinition{
 		{
-			CredentialID:  "cred_demo",
-			OwnerType:     "project",
-			OwnerID:       "project_a",
-			ProviderID:    "demo",
-			AuthType:      "bearer",
-			InjectionMode: "header",
-			InjectionName: "Authorization",
-			Source:        "config",
-			SecretRef:     "TEST_CONFIG_SECRET",
+			CredentialID:      "cred_demo",
+			CredentialVersion: "v1",
+			OwnerType:         "project",
+			OwnerID:           "project_a",
+			ProviderID:        "demo",
+			AuthType:          "bearer",
+			InjectionMode:     "header",
+			InjectionName:     "Authorization",
+			Source:            "config",
+			SecretRef:         "TEST_CONFIG_SECRET",
+			RotationHint:      "rotate-before-2026-06-30",
 		},
 	})
 
@@ -65,6 +67,15 @@ func TestResolverUsesConfigCredentialWhenRequestCredentialMissing(t *testing.T) 
 	}
 	if got := result.InjectionPatch.Headers["Authorization"]; got != "Bearer config-secret" {
 		t.Fatalf("expected injected bearer secret, got %#v", result.InjectionPatch.Headers)
+	}
+	if result.RedactedMetadata["credential_version"] != "v1" {
+		t.Fatalf("expected credential version metadata, got %#v", result.RedactedMetadata)
+	}
+	if result.RedactedMetadata["rotation_hint"] != "rotate-before-2026-06-30" {
+		t.Fatalf("expected rotation metadata, got %#v", result.RedactedMetadata)
+	}
+	if _, ok := result.RedactedMetadata["resolved_at"].(string); !ok {
+		t.Fatalf("expected resolved_at metadata, got %#v", result.RedactedMetadata)
 	}
 }
 

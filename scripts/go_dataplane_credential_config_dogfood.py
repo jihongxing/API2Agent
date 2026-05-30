@@ -186,6 +186,7 @@ def write_credential_config(path: Path) -> Path:
                 "credentials": [
                     {
                         "credential_id": "cred_config_ipify",
+                        "credential_version": "2026-05-30",
                         "owner_type": "project",
                         "owner_id": "local",
                         "provider_id": "ipify",
@@ -196,6 +197,7 @@ def write_credential_config(path: Path) -> Path:
                         "secret_ref": "API2AGENT_CONFIG_TOKEN",
                         "scope": ["capability:network.public_ip.get"],
                         "status": "active",
+                        "rotation_hint": "rotate-quarterly",
                     }
                 ]
             },
@@ -219,6 +221,9 @@ def build_report(*, response: dict, health: dict, events: list[dict], conformanc
         "usage_has_config_reference": credential_reference.get("credential_reference") == "config:cred_config_ipify",
         "usage_strategy_static": credential_reference.get("resolution_strategy") == "static",
         "metadata_source_config": metadata.get("source") == "config",
+        "metadata_has_credential_version": metadata.get("credential_version") == "2026-05-30",
+        "metadata_has_rotation_hint": metadata.get("rotation_hint") == "rotate-quarterly",
+        "metadata_has_resolved_at": isinstance(metadata.get("resolved_at"), str) and bool(metadata.get("resolved_at")),
         "raw_secret_not_logged": SECRET_VALUE not in encoded_events,
         "protocol_conformance": conformance_report.get("passed") is True,
     }

@@ -730,15 +730,17 @@ func TestExecuteUsesConfigCredentialWhenRequestCredentialMissing(t *testing.T) {
 
 	handler, writer := newTestHandler(newTestSnapshot(providerServer.URL), providerServer.Client())
 	handler.Credentials = []credentials.CredentialDefinition{{
-		CredentialID:  "cred_config_ipify",
-		OwnerType:     "project",
-		OwnerID:       "local",
-		ProviderID:    "ipify",
-		AuthType:      "api_key",
-		InjectionMode: "query",
-		InjectionName: "api_key",
-		Source:        "config",
-		SecretRef:     "API2AGENT_CONFIG_TOKEN",
+		CredentialID:      "cred_config_ipify",
+		CredentialVersion: "2026-05-30",
+		OwnerType:         "project",
+		OwnerID:           "local",
+		ProviderID:        "ipify",
+		AuthType:          "api_key",
+		InjectionMode:     "query",
+		InjectionName:     "api_key",
+		Source:            "config",
+		SecretRef:         "API2AGENT_CONFIG_TOKEN",
+		RotationHint:      "rotate-quarterly",
 	}}
 	mux := http.NewServeMux()
 	handler.Register(mux)
@@ -774,6 +776,18 @@ func TestExecuteUsesConfigCredentialWhenRequestCredentialMissing(t *testing.T) {
 	}
 	if strings.Contains(string(encodedMetadata), "config-secret") {
 		t.Fatalf("credential metadata leaked config secret: %s", string(encodedMetadata))
+	}
+	if metadata["credential_version"] != "2026-05-30" {
+		t.Fatalf("expected credential_version metadata, got %#v", metadata)
+	}
+	if metadata["rotation_hint"] != "rotate-quarterly" {
+		t.Fatalf("expected rotation_hint metadata, got %#v", metadata)
+	}
+	if metadata["status"] != "active" {
+		t.Fatalf("expected default active status metadata, got %#v", metadata)
+	}
+	if _, ok := metadata["resolved_at"].(string); !ok {
+		t.Fatalf("expected resolved_at metadata, got %#v", metadata)
 	}
 }
 

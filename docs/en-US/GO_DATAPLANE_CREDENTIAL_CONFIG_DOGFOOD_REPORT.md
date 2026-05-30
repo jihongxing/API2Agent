@@ -17,6 +17,7 @@ Credential config is:
 - resolved before provider execution
 - injected into headers, query params, or body patches
 - recorded only as redacted metadata in `UsageEvent`
+- can carry local audit metadata such as `credential_version`, `rotation_hint`, and `resolved_at`
 
 Resolution order:
 
@@ -64,6 +65,9 @@ Observed behavior:
 - `UsageEvent.credential_reference` was `config:cred_config_ipify`
 - `resolution_strategy` was `static`
 - credential metadata source was `config`
+- credential metadata included `credential_version=2026-05-30`
+- credential metadata included `rotation_hint=rotate-quarterly`
+- credential metadata included a non-empty `resolved_at`
 - raw secret did not appear in emitted events
 - Protocol v0.2 conformance passed
 
@@ -72,6 +76,7 @@ Observed behavior:
 Go Data Plane Credential Config v0 passed.
 
 The Go Data Plane can now use local config credentials as a stand-in for future project-owned vault credentials.
+It also captures safe local credential audit metadata without changing the frozen Protocol v0.2 `CredentialReference` shape.
 
 ## Non-Goals
 

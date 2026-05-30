@@ -374,6 +374,12 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - raw secrets 不会写入 emitted events。
   - config credential scope 和 lifecycle checks 会被执行。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
+- Go Data Plane Credential Audit Metadata v0 已完成：
+  - local credential definitions 可以携带 `credential_version`。
+  - credential resolution 会记录安全的 `resolved_at` audit metadata。
+  - rotation hints 和 lifecycle status 会保留在 redacted usage metadata 中。
+  - Protocol v0.2 `CredentialReference` 保持不变；audit extensions 放在 `UsageEvent.request_metadata.credential` 下。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 

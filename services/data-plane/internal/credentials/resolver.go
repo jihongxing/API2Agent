@@ -20,6 +20,7 @@ func NewLocalResolver(configCredentials ...[]CredentialDefinition) LocalResolver
 }
 
 func (r LocalResolver) Resolve(request CredentialResolutionRequest) ResolvedCredential {
+	resolvedAt := time.Now().UTC()
 	credential := request.Credential
 	if credential == nil {
 		credential = r.findConfigCredential(request)
@@ -31,34 +32,37 @@ func (r LocalResolver) Resolve(request CredentialResolutionRequest) ResolvedCred
 			RedactedMetadata: map[string]any{
 				"source":      "none",
 				"provider_id": request.ProviderID,
+				"resolved_at": resolvedAt.Format(time.RFC3339Nano),
 			},
+			ResolvedAt: resolvedAt,
 		}
 	}
 
 	selected := *credential
 	if selected.ProviderID != "" && selected.ProviderID != request.ProviderID {
-		return r.denied(selected, request, "credential_provider_mismatch", "Credential provider does not match request provider")
+		return r.denied(selected, request, resolvedAt, "credential_provider_mismatch", "Credential provider does not match request provider")
 	}
 	if strings.EqualFold(selected.Status, "disabled") {
-		return r.denied(selected, request, "credential_disabled", "Credential is disabled")
+		return r.denied(selected, request, resolvedAt, "credential_disabled", "Credential is disabled")
 	}
-	if selected.ExpiresAt != nil && !selected.ExpiresAt.After(time.Now().UTC()) {
-		return r.denied(selected, request, "credential_expired", "Credential is expired")
+	if selected.ExpiresAt != nil && !selected.ExpiresAt.After(resolvedAt) {
+		return r.denied(selected, request, resolvedAt, "credential_expired", "Credential is expired")
 	}
 	if !r.scopeAllows(selected, request) {
-		return r.denied(selected, request, "credential_scope_denied", fmt.Sprintf("Credential scope does not allow capability=%s, tool=%s", request.CapabilityID, request.ToolID))
+		return r.denied(selected, request, resolvedAt, "credential_scope_denied", fmt.Sprintf("Credential scope does not allow capability=%s, tool=%s", request.CapabilityID, request.ToolID))
 	}
 
 	secret, credentialReference, ok := r.secretFor(selected)
 	if !ok {
-		return r.denied(selected, request, "missing_credential_secret", "Credential secret is unavailable")
+		return r.denied(selected, request, resolvedAt, "missing_credential_secret", "Credential secret is unavailable")
 	}
 	patch := r.injectionPatch(selected, secret)
 	return ResolvedCredential{
 		Resolved:            true,
 		CredentialReference: credentialReference,
 		InjectionPatch:      patch,
-		RedactedMetadata:    r.redactedMetadata(selected),
+		RedactedMetadata:    r.redactedMetadata(selected, resolvedAt),
+		ResolvedAt:          resolvedAt,
 	}
 }
 
@@ -131,21 +135,23 @@ func (r LocalResolver) injectionPatch(credential CredentialDefinition, secret st
 	}
 }
 
-func (r LocalResolver) redactedMetadata(credential CredentialDefinition) map[string]any {
+func (r LocalResolver) redactedMetadata(credential CredentialDefinition, resolvedAt time.Time) map[string]any {
 	return map[string]any{
-		"credential_id":  credential.CredentialID,
-		"owner_type":     credential.OwnerType,
-		"owner_id":       credential.OwnerID,
-		"provider_id":    credential.ProviderID,
-		"auth_type":      credential.AuthType,
-		"injection_mode": credential.InjectionMode,
-		"injection_name": credential.InjectionName,
-		"source":         credential.Source,
-		"secret_ref":     credential.SecretRef,
-		"scope":          credential.Scope,
-		"status":         credential.Status,
-		"expires_at":     credentialExpiresAt(credential.ExpiresAt),
-		"rotation_hint":  credential.RotationHint,
+		"credential_id":      credential.CredentialID,
+		"credential_version": credentialVersion(credential),
+		"owner_type":         credential.OwnerType,
+		"owner_id":           credential.OwnerID,
+		"provider_id":        credential.ProviderID,
+		"auth_type":          credential.AuthType,
+		"injection_mode":     credential.InjectionMode,
+		"injection_name":     credential.InjectionName,
+		"source":             credential.Source,
+		"secret_ref":         credential.SecretRef,
+		"scope":              credential.Scope,
+		"status":             credentialStatus(credential),
+		"expires_at":         credentialExpiresAt(credential.ExpiresAt),
+		"rotation_hint":      credential.RotationHint,
+		"resolved_at":        resolvedAt.Format(time.RFC3339Nano),
 	}
 }
 
@@ -172,7 +178,7 @@ func (r LocalResolver) scopeAllows(credential CredentialDefinition, request Cred
 	return false
 }
 
-func (r LocalResolver) denied(credential CredentialDefinition, request CredentialResolutionRequest, errorType, message string) ResolvedCredential {
+func (r LocalResolver) denied(credential CredentialDefinition, request CredentialResolutionRequest, resolvedAt time.Time, errorType, message string) ResolvedCredential {
 	reference := "missing"
 	if credential.CredentialID != "" {
 		reference = credentialReference(credential)
@@ -180,7 +186,8 @@ func (r LocalResolver) denied(credential CredentialDefinition, request Credentia
 	return ResolvedCredential{
 		Resolved:            false,
 		CredentialReference: reference,
-		RedactedMetadata:    r.redactedMetadata(credential),
+		RedactedMetadata:    r.redactedMetadata(credential, resolvedAt),
+		ResolvedAt:          resolvedAt,
 		ErrorType:           errorType,
 		ErrorMessage:        message,
 	}
@@ -208,6 +215,20 @@ func credentialExpiresAt(value *time.Time) string {
 		return ""
 	}
 	return value.UTC().Format(time.RFC3339)
+}
+
+func credentialVersion(credential CredentialDefinition) string {
+	if credential.CredentialVersion != "" {
+		return credential.CredentialVersion
+	}
+	return "local"
+}
+
+func credentialStatus(credential CredentialDefinition) string {
+	if credential.Status != "" {
+		return credential.Status
+	}
+	return "active"
 }
 
 func defaultInjectionName(authType string) string {
