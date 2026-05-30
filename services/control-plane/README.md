@@ -23,3 +23,18 @@ go run ./cmd/api2agent-controlplane export-snapshot \
 ```
 
 The exported snapshot is compatible with the existing Go Data Plane snapshot loader.
+
+Export a snapshot artifact:
+
+```bash
+go run ./cmd/api2agent-controlplane export-artifact \
+  --registry testdata/registry/network.public_ip.get.json \
+  --output-dir artifact
+```
+
+The artifact contains:
+
+- `snapshot.json`
+- `manifest.json`
+
+The manifest records the artifact version, registry source, snapshot version policy, registry fingerprint, and validation summary.

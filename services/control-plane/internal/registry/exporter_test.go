@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestExportSnapshotFromRegistry(t *testing.T) {
@@ -66,6 +67,51 @@ func TestWriteSnapshotFile(t *testing.T) {
 	}
 	if decoded.SnapshotVersion != snapshot.SnapshotVersion {
 		t.Fatalf("expected roundtrip snapshot version %q, got %q", snapshot.SnapshotVersion, decoded.SnapshotVersion)
+	}
+}
+
+func TestExportArtifactManifest(t *testing.T) {
+	reg := loadValidRegistry(t)
+	exportedAt := time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC)
+
+	snapshot, manifest, err := reg.ExportArtifact(exportedAt, "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+
+	if manifest.ArtifactVersion != "api2agent.snapshot_artifact.v0" {
+		t.Fatalf("unexpected artifact version: %q", manifest.ArtifactVersion)
+	}
+	if manifest.SnapshotFile != "snapshot.json" {
+		t.Fatalf("unexpected snapshot file: %q", manifest.SnapshotFile)
+	}
+	if manifest.SnapshotVersion != snapshot.SnapshotVersion {
+		t.Fatalf("manifest snapshot version mismatch: %#v vs %#v", manifest, snapshot)
+	}
+	if manifest.RegistryFingerprint != snapshot.Metadata["registry_fingerprint"] {
+		t.Fatalf("manifest fingerprint mismatch: %#v vs %#v", manifest, snapshot.Metadata)
+	}
+	if manifest.Validation.ActiveProviderCount != 1 || !manifest.Validation.Valid {
+		t.Fatalf("unexpected validation report: %#v", manifest.Validation)
+	}
+}
+
+func TestWriteArtifactDir(t *testing.T) {
+	reg := loadValidRegistry(t)
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+
+	dir := t.TempDir()
+	if err := WriteArtifactDir(dir, snapshot, manifest); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "snapshot.json")); err != nil {
+		t.Fatalf("expected snapshot artifact: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "manifest.json")); err != nil {
+		t.Fatalf("expected manifest artifact: %v", err)
 	}
 }
 

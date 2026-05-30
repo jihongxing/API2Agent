@@ -440,6 +440,12 @@ Current Phase 6 progress:
   - exported snapshots include deterministic `registry_fingerprint=sha256:<hash>` metadata.
   - registry fingerprints are stable for identical registry content and change when registry content changes.
   - `api2agent-snapshot-check` reports version policy and registry fingerprint metadata.
+- Control Plane Snapshot Export Artifact v0 is complete:
+  - `api2agent-controlplane export-artifact` writes an artifact directory instead of only a bare snapshot file.
+  - artifact layout is `snapshot.json` plus `manifest.json`.
+  - the manifest records artifact version, export time, registry store/source, snapshot file/version/source, snapshot version policy, registry fingerprint, and validation summary.
+  - Control Plane minimum dogfood verifies manifest existence, snapshot reference, registry fingerprint agreement with `api2agent-snapshot-check`, and valid registry validation summary before Data Plane execution.
+  - this creates the local artifact boundary needed before snapshot distribution.
 
 ## 9. Marketplace Is Later
 

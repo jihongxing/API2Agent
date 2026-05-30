@@ -4,7 +4,7 @@
 
 ## 目标
 
-验证新的最小 Go Control Plane 是否可以导出 versioned routing snapshot，并且现有 Go Data Plane 可以在不修改 snapshot loader 的情况下直接消费。
+验证新的最小 Go Control Plane 是否可以导出 versioned routing snapshot artifact，并且现有 Go Data Plane 可以在不修改 snapshot loader 的情况下直接消费。
 
 本报告也验证 invalid registry relationships 会在 snapshot export 前被拒绝。
 
@@ -41,18 +41,32 @@ python scripts/go_control_plane_minimum_dogfood.py \
 
 ## 观察结果
 
-Control Plane 导出了一个 snapshot：
+Control Plane 导出了一个 artifact 目录：
+
+- `snapshot.json`
+- `manifest.json`
+
+manifest 记录了：
 
 - `snapshot_version = snapshot_control_plane_public_ip_v1`
 - `snapshot_source = pull`
 - `snapshot_version_policy = explicit`
 - `registry_fingerprint = sha256:<hash>`
+- `artifact_version = api2agent.snapshot_artifact.v0`
+- `registry_store = file`
+- `snapshot_file = snapshot.json`
+- validation summary 中 `valid = true`
+
+snapshot 包含：
+
 - 一个 capability
 - 一个 active provider
-- 一个 credential metadata entry
+- 零个 credential metadata entries
 
 随后 Data Plane：
 
+- 验证 manifest 引用了导出的 snapshot
+- 验证 manifest registry fingerprint 与 snapshot compatibility checker 一致
 - 通过 `api2agent-snapshot-check` 接受了导出的 snapshot
 - 加载了导出的 snapshot
 - 在 `/healthz` 返回同一个 snapshot version
@@ -73,7 +87,7 @@ Go Control Plane Minimum v0 通过。
 这证明了 Phase 6 的第一条边界：
 
 ```text
-Control Plane registry -> versioned snapshot export -> Data Plane consumption
+Control Plane registry -> snapshot artifact export -> compatibility gate -> Data Plane consumption
 ```
 
 ## 检查项
@@ -81,6 +95,10 @@ Control Plane registry -> versioned snapshot export -> Data Plane consumption
 ```json
 {
   "control_plane_export_success": true,
+  "artifact_manifest_exists": true,
+  "manifest_references_snapshot": true,
+  "manifest_fingerprint_matches_snapshot_check": true,
+  "manifest_validation_valid": true,
   "snapshot_check_passed": true,
   "snapshot_check_has_registry_fingerprint": true,
   "snapshot_check_has_explicit_version_policy": true,

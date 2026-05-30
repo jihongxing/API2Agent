@@ -4,7 +4,7 @@ Date: 2026-05-30
 
 ## Goal
 
-Verify that the new minimum Go Control Plane can export a versioned routing snapshot that the existing Go Data Plane can consume without code changes in the Data Plane snapshot loader.
+Verify that the new minimum Go Control Plane can export a versioned routing snapshot artifact that the existing Go Data Plane can consume without code changes in the Data Plane snapshot loader.
 
 This report also verifies that invalid registry relationships are rejected before snapshot export.
 
@@ -41,18 +41,32 @@ The script builds:
 
 ## Observed Result
 
-The control plane exported a snapshot with:
+The control plane exported an artifact directory with:
+
+- `snapshot.json`
+- `manifest.json`
+
+The manifest recorded:
 
 - `snapshot_version = snapshot_control_plane_public_ip_v1`
 - `snapshot_source = pull`
 - `snapshot_version_policy = explicit`
 - `registry_fingerprint = sha256:<hash>`
+- `artifact_version = api2agent.snapshot_artifact.v0`
+- `registry_store = file`
+- `snapshot_file = snapshot.json`
+- validation summary with `valid = true`
+
+The snapshot contained:
+
 - one capability
 - one active provider
-- one credential metadata entry
+- zero credential metadata entries
 
 The data plane then:
 
+- verified the manifest references the exported snapshot
+- verified the manifest registry fingerprint matches the snapshot compatibility checker
 - accepted the exported snapshot through `api2agent-snapshot-check`
 - loaded the exported snapshot
 - reported the same snapshot version in `/healthz`
@@ -73,7 +87,7 @@ Go Control Plane Minimum v0 passed.
 This proves the first Phase 6 boundary:
 
 ```text
-Control Plane registry -> versioned snapshot export -> Data Plane consumption
+Control Plane registry -> snapshot artifact export -> compatibility gate -> Data Plane consumption
 ```
 
 ## Checks
@@ -81,6 +95,10 @@ Control Plane registry -> versioned snapshot export -> Data Plane consumption
 ```json
 {
   "control_plane_export_success": true,
+  "artifact_manifest_exists": true,
+  "manifest_references_snapshot": true,
+  "manifest_fingerprint_matches_snapshot_check": true,
+  "manifest_validation_valid": true,
   "snapshot_check_passed": true,
   "snapshot_check_has_registry_fingerprint": true,
   "snapshot_check_has_explicit_version_policy": true,

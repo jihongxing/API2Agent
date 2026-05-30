@@ -72,12 +72,14 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
         scenario_dir.mkdir(parents=True, exist_ok=True)
         registry = write_registry(scenario_dir / "registry.json", f"http://127.0.0.1:{provider_server.server_port}")
         invalid_registry = write_invalid_registry(scenario_dir / "invalid-registry.json", f"http://127.0.0.1:{provider_server.server_port}")
-        snapshot = scenario_dir / "snapshot.json"
+        artifact_dir = scenario_dir / "artifact"
         subprocess.run(
-            [str(cp_exe), "export-snapshot", "--registry", str(registry), "--output", str(snapshot)],
+            [str(cp_exe), "export-artifact", "--registry", str(registry), "--output-dir", str(artifact_dir)],
             cwd=dp_dir.parent,
             check=True,
         )
+        snapshot = artifact_dir / "snapshot.json"
+        manifest = read_json(artifact_dir / "manifest.json")
         snapshot_check = subprocess.run(
             [str(snapshot_check_exe), "--snapshot", str(snapshot)],
             cwd=dp_dir,
@@ -87,7 +89,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
         )
         snapshot_check_report = parse_json_report(snapshot_check)
         invalid_export = subprocess.run(
-            [str(cp_exe), "export-snapshot", "--registry", str(invalid_registry), "--output", str(scenario_dir / "invalid-snapshot.json")],
+            [str(cp_exe), "export-artifact", "--registry", str(invalid_registry), "--output-dir", str(scenario_dir / "invalid-artifact")],
             cwd=dp_dir.parent,
             check=False,
             capture_output=True,
@@ -126,6 +128,11 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
         routing_decision = next((event["record"] for event in events if event["event_type"] == "routing_decision"), {})
         checks = {
             "control_plane_export_success": snapshot.exists(),
+            "artifact_manifest_exists": (artifact_dir / "manifest.json").exists(),
+            "manifest_references_snapshot": manifest.get("snapshot_file") == "snapshot.json",
+            "manifest_fingerprint_matches_snapshot_check": manifest.get("registry_fingerprint")
+            == snapshot_check_report.get("registry_fingerprint"),
+            "manifest_validation_valid": (manifest.get("validation") or {}).get("valid") is True,
             "snapshot_check_passed": snapshot_check.returncode == 0
             and snapshot_check_report.get("passed") is True,
             "snapshot_check_has_registry_fingerprint": isinstance(snapshot_check_report.get("registry_fingerprint"), str)
@@ -152,6 +159,8 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "invalid_registry_path": str(invalid_registry),
             "invalid_registry_exit_code": invalid_export.returncode,
             "invalid_registry_error": invalid_export.stderr.strip(),
+            "artifact_dir": str(artifact_dir),
+            "manifest": manifest,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,
@@ -264,6 +273,10 @@ def get_json(url: str) -> dict:
 
 def read_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def read_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def free_port() -> int:

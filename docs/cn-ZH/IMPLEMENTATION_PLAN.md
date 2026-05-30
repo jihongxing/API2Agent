@@ -440,6 +440,12 @@ Go Control Plane Minimum v0
   - exported snapshots 包含确定性的 `registry_fingerprint=sha256:<hash>` metadata。
   - 相同 registry content 的 fingerprint 稳定，registry content 变化时 fingerprint 会变化。
   - `api2agent-snapshot-check` 会报告 version policy 和 registry fingerprint metadata。
+- Control Plane Snapshot Export Artifact v0 已完成：
+  - `api2agent-controlplane export-artifact` 会写入 artifact 目录，而不是只输出裸 `snapshot` 文件。
+  - artifact layout 是 `snapshot.json` 加 `manifest.json`。
+  - manifest 记录 artifact version、export time、registry store/source、snapshot file/version/source、snapshot version policy、registry fingerprint 和 validation summary。
+  - Control Plane minimum dogfood 会在 Data Plane execution 前验证 manifest 存在、manifest 引用 snapshot、registry fingerprint 与 `api2agent-snapshot-check` 一致，以及 registry validation summary 有效。
+  - 这为后续 snapshot distribution 建立了 local artifact boundary。
 
 ## 9. Marketplace 是后面的结果
 

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -18,6 +19,34 @@ func WriteSnapshotFile(path string, snapshot RoutingSnapshot) error {
 	data = append(data, '\n')
 	if err := os.WriteFile(path, data, 0o644); err != nil {
 		return fmt.Errorf("write snapshot: %w", err)
+	}
+	return nil
+}
+
+func WriteManifestFile(path string, manifest ExportArtifactManifest) error {
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode manifest: %w", err)
+	}
+	data = append(data, '\n')
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return fmt.Errorf("write manifest: %w", err)
+	}
+	return nil
+}
+
+func WriteArtifactDir(dir string, snapshot RoutingSnapshot, manifest ExportArtifactManifest) error {
+	if dir == "" {
+		return fmt.Errorf("artifact output dir is required")
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("create artifact dir: %w", err)
+	}
+	if err := WriteSnapshotFile(filepath.Join(dir, manifest.SnapshotFile), snapshot); err != nil {
+		return err
+	}
+	if err := WriteManifestFile(filepath.Join(dir, "manifest.json"), manifest); err != nil {
+		return err
 	}
 	return nil
 }
@@ -48,6 +77,34 @@ func (r Registry) ExportSnapshot() (RoutingSnapshot, error) {
 			"snapshot_version_policy": "explicit",
 		},
 	}, nil
+}
+
+func (r Registry) ExportArtifact(exportedAt time.Time, registryStore string, registrySource string) (RoutingSnapshot, ExportArtifactManifest, error) {
+	snapshot, err := r.ExportSnapshot()
+	if err != nil {
+		return RoutingSnapshot{}, ExportArtifactManifest{}, err
+	}
+	manifest := ExportArtifactManifest{
+		ArtifactVersion:       "api2agent.snapshot_artifact.v0",
+		ExportedAt:            exportedAt.UTC(),
+		RegistryStore:         registryStore,
+		RegistrySource:        registrySource,
+		SnapshotFile:          "snapshot.json",
+		SnapshotVersion:       snapshot.SnapshotVersion,
+		SnapshotSource:        snapshot.SnapshotSource,
+		SnapshotVersionPolicy: snapshot.Metadata["snapshot_version_policy"],
+		RegistryFingerprint:   snapshot.Metadata["registry_fingerprint"],
+		Validation: ExportValidationReport{
+			Valid:                   true,
+			ProjectCount:            len(r.Projects),
+			APIKeyCount:             len(r.APIKeys),
+			CapabilityCount:         len(r.Capabilities),
+			ProviderCount:           len(r.Providers),
+			ActiveProviderCount:     len(activeProviders(r.Providers)),
+			CredentialMetadataCount: len(r.CredentialMetadata),
+		},
+	}
+	return snapshot, manifest, nil
 }
 
 func (r Registry) Fingerprint() (string, error) {

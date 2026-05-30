@@ -93,3 +93,26 @@ type RoutingSnapshot struct {
 	RoutingPolicy     RoutingPolicy     `json:"routing_policy"`
 	Metadata          map[string]string `json:"metadata,omitempty"`
 }
+
+type ExportArtifactManifest struct {
+	ArtifactVersion       string                 `json:"artifact_version"`
+	ExportedAt            time.Time              `json:"exported_at"`
+	RegistryStore         string                 `json:"registry_store"`
+	RegistrySource        string                 `json:"registry_source,omitempty"`
+	SnapshotFile          string                 `json:"snapshot_file"`
+	SnapshotVersion       string                 `json:"snapshot_version"`
+	SnapshotSource        string                 `json:"snapshot_source"`
+	SnapshotVersionPolicy string                 `json:"snapshot_version_policy"`
+	RegistryFingerprint   string                 `json:"registry_fingerprint"`
+	Validation            ExportValidationReport `json:"validation"`
+}
+
+type ExportValidationReport struct {
+	Valid                   bool `json:"valid"`
+	ProjectCount            int  `json:"project_count"`
+	APIKeyCount             int  `json:"api_key_count"`
+	CapabilityCount         int  `json:"capability_count"`
+	ProviderCount           int  `json:"provider_count"`
+	ActiveProviderCount     int  `json:"active_provider_count"`
+	CredentialMetadataCount int  `json:"credential_metadata_count"`
+}
