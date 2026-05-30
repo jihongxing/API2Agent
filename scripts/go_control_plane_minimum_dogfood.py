@@ -128,6 +128,10 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "control_plane_export_success": snapshot.exists(),
             "snapshot_check_passed": snapshot_check.returncode == 0
             and snapshot_check_report.get("passed") is True,
+            "snapshot_check_has_registry_fingerprint": isinstance(snapshot_check_report.get("registry_fingerprint"), str)
+            and snapshot_check_report.get("registry_fingerprint", "").startswith("sha256:"),
+            "snapshot_check_has_explicit_version_policy": snapshot_check_report.get("snapshot_version_policy")
+            == "explicit",
             "invalid_registry_rejected": invalid_export.returncode != 0
             and "references unknown project" in invalid_export.stderr,
             "health_snapshot_version_matches": health.get("snapshot_version") == "snapshot_control_plane_public_ip_v1",

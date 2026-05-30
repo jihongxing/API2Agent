@@ -10,17 +10,19 @@ import (
 )
 
 type Report struct {
-	SnapshotPath    string `json:"snapshot_path"`
-	SnapshotVersion string `json:"snapshot_version,omitempty"`
-	SnapshotSource  string `json:"snapshot_source,omitempty"`
-	SnapshotTTL     string `json:"snapshot_ttl,omitempty"`
-	CapabilityCount int    `json:"capability_count"`
-	ProviderCount   int    `json:"provider_count"`
-	RoutingStrategy string `json:"routing_strategy,omitempty"`
-	RoutingMode     string `json:"routing_mode,omitempty"`
-	Exporter        string `json:"exporter,omitempty"`
-	Passed          bool   `json:"passed"`
-	Error           string `json:"error,omitempty"`
+	SnapshotPath          string `json:"snapshot_path"`
+	SnapshotVersion       string `json:"snapshot_version,omitempty"`
+	SnapshotSource        string `json:"snapshot_source,omitempty"`
+	SnapshotTTL           string `json:"snapshot_ttl,omitempty"`
+	CapabilityCount       int    `json:"capability_count"`
+	ProviderCount         int    `json:"provider_count"`
+	RoutingStrategy       string `json:"routing_strategy,omitempty"`
+	RoutingMode           string `json:"routing_mode,omitempty"`
+	Exporter              string `json:"exporter,omitempty"`
+	RegistryFingerprint   string `json:"registry_fingerprint,omitempty"`
+	SnapshotVersionPolicy string `json:"snapshot_version_policy,omitempty"`
+	Passed                bool   `json:"passed"`
+	Error                 string `json:"error,omitempty"`
 }
 
 func main() {
@@ -55,6 +57,8 @@ func run(snapshotPath string) (Report, error) {
 	report.RoutingStrategy = snapshot.RoutingPolicy.Strategy
 	report.RoutingMode = snapshot.RoutingPolicy.RoutingMode
 	report.Exporter = snapshot.Metadata["exporter"]
+	report.RegistryFingerprint = snapshot.Metadata["registry_fingerprint"]
+	report.SnapshotVersionPolicy = snapshot.Metadata["snapshot_version_policy"]
 
 	if _, err := snapshot.TTLDuration(); err != nil {
 		return report, err

@@ -434,6 +434,12 @@ Go Control Plane Minimum v0
   - `registry.FileStore` 是当前 local implementation。
   - `api2agent-controlplane export-snapshot` 现在通过 store interface 加载 registry state。
   - 未来 hosted phases 可以增加 Postgres-backed store，而不改变 snapshot export semantics。
+- Control Plane Snapshot Versioning Policy v0 已完成：
+  - snapshots 继续要求显式 `snapshot.version`。
+  - exported snapshots 包含 `snapshot_version_policy=explicit`。
+  - exported snapshots 包含确定性的 `registry_fingerprint=sha256:<hash>` metadata。
+  - 相同 registry content 的 fingerprint 稳定，registry content 变化时 fingerprint 会变化。
+  - `api2agent-snapshot-check` 会报告 version policy 和 registry fingerprint metadata。
 
 ## 9. Marketplace 是后面的结果
 

@@ -34,6 +34,12 @@ func TestExportSnapshotFromRegistry(t *testing.T) {
 	if snapshot.Metadata["exporter"] != "api2agent-control-plane-minimum-v0" {
 		t.Fatalf("unexpected metadata: %#v", snapshot.Metadata)
 	}
+	if !strings.HasPrefix(snapshot.Metadata["registry_fingerprint"], "sha256:") {
+		t.Fatalf("expected registry fingerprint metadata, got %#v", snapshot.Metadata)
+	}
+	if snapshot.Metadata["snapshot_version_policy"] != "explicit" {
+		t.Fatalf("expected explicit snapshot version policy, got %#v", snapshot.Metadata)
+	}
 }
 
 func TestWriteSnapshotFile(t *testing.T) {
@@ -72,6 +78,29 @@ func TestValidateRejectsProviderCapabilityVersionMismatch(t *testing.T) {
 
 	if _, err := reg.ExportSnapshot(); err == nil {
 		t.Fatalf("expected validation error")
+	}
+}
+
+func TestRegistryFingerprintIsStableAndChangesWithRegistryContent(t *testing.T) {
+	reg := loadValidRegistry(t)
+	first, err := reg.Fingerprint()
+	if err != nil {
+		t.Fatalf("fingerprint registry: %v", err)
+	}
+	second, err := reg.Fingerprint()
+	if err != nil {
+		t.Fatalf("fingerprint registry again: %v", err)
+	}
+	if first != second {
+		t.Fatalf("expected stable fingerprint, got %q and %q", first, second)
+	}
+	reg.Providers[0].ProviderVersion = "2.0.0"
+	changed, err := reg.Fingerprint()
+	if err != nil {
+		t.Fatalf("fingerprint changed registry: %v", err)
+	}
+	if changed == first {
+		t.Fatalf("expected fingerprint to change after registry content changed")
 	}
 }
 

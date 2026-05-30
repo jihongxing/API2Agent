@@ -434,6 +434,12 @@ Current Phase 6 progress:
   - `registry.FileStore` is the current local implementation.
   - `api2agent-controlplane export-snapshot` now loads registry state through the store interface.
   - future hosted phases can add a Postgres-backed store without changing snapshot export semantics.
+- Control Plane Snapshot Versioning Policy v0 is complete:
+  - snapshots continue to require explicit `snapshot.version`.
+  - exported snapshots include `snapshot_version_policy=explicit`.
+  - exported snapshots include deterministic `registry_fingerprint=sha256:<hash>` metadata.
+  - registry fingerprints are stable for identical registry content and change when registry content changes.
+  - `api2agent-snapshot-check` reports version policy and registry fingerprint metadata.
 
 ## 9. Marketplace Is Later
 

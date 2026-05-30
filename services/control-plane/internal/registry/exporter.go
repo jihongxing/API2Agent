@@ -1,6 +1,8 @@
 package registry
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -24,6 +26,10 @@ func (r Registry) ExportSnapshot() (RoutingSnapshot, error) {
 	if err := r.Validate(); err != nil {
 		return RoutingSnapshot{}, err
 	}
+	fingerprint, err := r.Fingerprint()
+	if err != nil {
+		return RoutingSnapshot{}, err
+	}
 	source := r.Snapshot.Source
 	if source == "" {
 		source = "pull"
@@ -37,9 +43,23 @@ func (r Registry) ExportSnapshot() (RoutingSnapshot, error) {
 		Providers:         activeProviders(r.Providers),
 		RoutingPolicy:     defaultRoutingPolicy(r.RoutingPolicy),
 		Metadata: map[string]string{
-			"exporter": "api2agent-control-plane-minimum-v0",
+			"exporter":                "api2agent-control-plane-minimum-v0",
+			"registry_fingerprint":    fingerprint,
+			"snapshot_version_policy": "explicit",
 		},
 	}, nil
+}
+
+func (r Registry) Fingerprint() (string, error) {
+	if err := r.Validate(); err != nil {
+		return "", err
+	}
+	data, err := json.Marshal(r)
+	if err != nil {
+		return "", fmt.Errorf("encode registry fingerprint input: %w", err)
+	}
+	sum := sha256.Sum256(data)
+	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func (r Registry) Validate() error {

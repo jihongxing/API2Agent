@@ -45,6 +45,8 @@ Control Plane 导出了一个 snapshot：
 
 - `snapshot_version = snapshot_control_plane_public_ip_v1`
 - `snapshot_source = pull`
+- `snapshot_version_policy = explicit`
+- `registry_fingerprint = sha256:<hash>`
 - 一个 capability
 - 一个 active provider
 - 一个 credential metadata entry
@@ -80,6 +82,8 @@ Control Plane registry -> versioned snapshot export -> Data Plane consumption
 {
   "control_plane_export_success": true,
   "snapshot_check_passed": true,
+  "snapshot_check_has_registry_fingerprint": true,
+  "snapshot_check_has_explicit_version_policy": true,
   "invalid_registry_rejected": true,
   "health_snapshot_version_matches": true,
   "response_success": true,

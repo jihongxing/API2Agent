@@ -101,6 +101,7 @@ All notable API2Agent changes will be documented in this file.
 - Control Plane registry validation for uniqueness, references, routing policy, snapshot metadata, provider metadata, and credential metadata scopes.
 - Go Data Plane `api2agent-snapshot-check` command for Control Plane snapshot compatibility gates.
 - Control Plane `registry.Store` abstraction with local file-backed implementation.
+- Control Plane snapshot versioning metadata with explicit version policy and deterministic registry fingerprints.
 - Go Control Plane minimum dogfood script and bilingual report.
 - Go Data Plane credential config dogfood script and bilingual report.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
@@ -152,6 +153,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane minimum dogfood passed invalid-registry rejection before snapshot export.
 - Go Control Plane minimum dogfood passed snapshot compatibility check before Data Plane execution.
 - Go Control Plane export path uses the registry store boundary.
+- Go Control Plane snapshot exports include stable registry fingerprints and explicit version policy metadata.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
 - Full test suite: `143 passed`.

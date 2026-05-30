@@ -719,6 +719,7 @@ Go Control Plane Minimum v0 - complete
 Control Plane Registry Validation v0 - complete
 Control Plane Snapshot Compatibility Gate v0 - complete
 Control Plane Registry Store v0 - complete
+Control Plane Snapshot Versioning Policy v0 - complete
 Next: choose the next Phase 6 local Control Plane slice
 ```
 
