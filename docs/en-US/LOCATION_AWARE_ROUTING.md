@@ -159,5 +159,5 @@ Near-term implementation should stay focused:
 1. Define region-aware usage fields. Done.
 2. Extend provider metadata with region information. Done.
 3. Define the decision dataset contract. Done.
-4. Add a region-aware routing strategy.
-5. Dogfood with same capability, different provider regions, different outcomes.
+4. Add a region-aware routing strategy. Done as `region_aware_latency` v0.
+5. Dogfood with same capability, different provider regions, different outcomes. Started with local routing dogfood; next step is real/simulated latency snapshots.

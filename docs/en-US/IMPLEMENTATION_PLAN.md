@@ -271,11 +271,14 @@ Current implementation:
 - New strategic priority: maximize real execution data and minimize API/provider onboarding cost.
 - New routing requirement: location-aware execution and region-aware latency.
 - Region-aware usage schema, provider metadata, and decision dataset contract are implemented locally.
+- `region_aware_latency` routing strategy is implemented.
+- `api2agent route` and `api2agent call` accept `--client-region`.
+- routing decisions persist `client_region`.
 
 Next engineering task:
 
 ```text
-Region-aware routing strategy v0
+Region-aware routing dogfood: same capability, different regions
 ```
 
 ## 9. Marketplace Is Later

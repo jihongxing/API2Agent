@@ -16,6 +16,7 @@ Routing Policy v0 定义 API2Agent 如何为一个 capability 选择 provider ca
   "capability_id": "image_generation",
   "strategy": "balanced",
   "preset": "reliability_first",
+  "client_region": "cn",
   "selected_provider_id": "provider_a",
   "ranked_provider_ids": ["provider_a", "provider_b"],
   "metrics": [],
@@ -39,8 +40,30 @@ Routing v0 支持：
 - `random`
 - `lowest_cost`
 - `lowest_latency`
+- `region_aware_latency`
 - `highest_success_rate`
 - `balanced`
+
+`region_aware_latency` v0 使用 `client_region`、provider `regions` 和 `geo_affinity`。
+
+Ranking order：
+
+1. `regions` 包含 `client_region` 的 providers
+2. `geo_affinity=global` 的 providers
+3. `geo_affinity=unknown` 的 providers
+4. 其他 providers
+
+同一个 region rank 内，策略会优先使用 matching client-region latency metrics，其次使用 aggregate latency metrics，最后是 no-metric fallback。
+
+CLI：
+
+```bash
+api2agent route capability-registry.json \
+  --capability-id weather.current.get \
+  --strategy region_aware_latency \
+  --client-region cn \
+  --db api2agent-usage.sqlite
+```
 
 ## 4. Policy Presets
 
@@ -64,7 +87,6 @@ api2agent route capability-registry.json \
 
 ## 5. 当前限制
 
-- 还没有 routing execution loop。
-- 还没有 failover execution。
 - success/cost/latency 之外还没有质量评估。
-- 还没有 safety、region、compliance、provider allowlists 等 policy constraints。
+- `region_aware_latency` 是 v0 heuristic，不是 active probing。
+- 还没有 safety、compliance、provider allowlists 等 policy constraints。

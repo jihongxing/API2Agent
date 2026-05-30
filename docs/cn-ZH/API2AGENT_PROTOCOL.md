@@ -281,11 +281,24 @@ Routing 为 capability 选择 provider candidate。
 - `capability_id`
 - `strategy`
 - `preset`
+- `client_region`
 - `selected_provider_id`
 - `ranked_provider_ids`
 - `metrics`
 - `failover_policy`
 - `created_at`
+
+稳定 routing strategies：
+
+- `first`
+- `random`
+- `lowest_cost`
+- `lowest_latency`
+- `region_aware_latency`
+- `highest_success_rate`
+- `balanced`
+
+`client_region` 是 optional。strategy 为 `region_aware_latency` 时，routing 会结合它、provider `regions`、provider `geo_affinity`，以及可用的 client-region latency metrics。
 
 Routing 必须 policy-driven and auditable。
 
@@ -500,7 +513,7 @@ usage event
 - failure count
 - error type distribution
 
-未来 routing 可以变成 context-aware，但 v0.1 只要求 aggregate provider metrics。
+未来 routing 可以变成 context-aware。v0.1 支持 aggregate provider metrics 和第一版 region-aware latency heuristic。
 
 ## 15. 当前实现覆盖
 
@@ -526,11 +539,16 @@ usage event
 - Credential Schema v0.1 models
 - local credential resolver
 - generated package execution 的 credential reference attribution
+- proxy-side credential injection 和 config-based credential resolution
+- credential policy、scope、lifecycle 和 audit reporting
+- region-aware usage schema
+- provider region metadata
+- local decision dataset contract
+- 带 optional `client_region` 的 `region_aware_latency` routing strategy
 
 尚未实现：
 
 - full identity layer
-- proxy-side credential injection
 - credential vault
 - hosted control plane
 - provider onboarding workflow

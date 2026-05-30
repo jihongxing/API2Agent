@@ -281,11 +281,24 @@ Stable routing decision fields:
 - `capability_id`
 - `strategy`
 - `preset`
+- `client_region`
 - `selected_provider_id`
 - `ranked_provider_ids`
 - `metrics`
 - `failover_policy`
 - `created_at`
+
+Stable routing strategies:
+
+- `first`
+- `random`
+- `lowest_cost`
+- `lowest_latency`
+- `region_aware_latency`
+- `highest_success_rate`
+- `balanced`
+
+`client_region` is optional. When strategy is `region_aware_latency`, routing uses it with provider `regions`, provider `geo_affinity`, and client-region latency metrics when available.
 
 Routing must remain policy-driven and auditable.
 
@@ -500,7 +513,7 @@ Minimum metrics:
 - failure count
 - error type distribution
 
-Future routing can become context-aware, but v0.1 only requires aggregate provider metrics.
+Future routing can become context-aware. v0.1 supports aggregate provider metrics and the first region-aware latency heuristic.
 
 ## 15. Current Implementation Coverage
 
@@ -526,11 +539,16 @@ Implemented:
 - Credential Schema v0.1 models
 - local credential resolver
 - credential reference attribution for generated package execution
+- proxy-side credential injection and config-based credential resolution
+- credential policy, scope, lifecycle, and audit reporting
+- region-aware usage schema
+- provider region metadata
+- local decision dataset contract
+- `region_aware_latency` routing strategy with optional `client_region`
 
 Not yet implemented:
 
 - full identity layer
-- proxy-side credential injection
 - credential vault
 - hosted control plane
 - provider onboarding workflow

@@ -37,6 +37,9 @@ def rank_providers(
     if policy.strategy == "lowest_latency":
         return sorted(candidates, key=lambda candidate: _latency(candidate, metrics_by_provider))
 
+    if policy.strategy == "region_aware_latency":
+        return sorted(candidates, key=lambda candidate: _region_aware_latency(candidate, metrics, policy.client_region))
+
     if policy.strategy == "highest_success_rate":
         return sorted(
             candidates,
@@ -61,6 +64,40 @@ def _latency(candidate: ProviderCandidate, metrics: dict[str, MetricsSnapshot]) 
     if snapshot and snapshot.total_calls:
         return snapshot.average_latency_ms
     return float("inf")
+
+
+def _region_aware_latency(
+    candidate: ProviderCandidate,
+    metrics: list[MetricsSnapshot],
+    client_region: str | None,
+) -> tuple[int, float]:
+    matching_metrics = [
+        item
+        for item in metrics
+        if item.provider_id == candidate.provider_id
+        and item.total_calls
+        and (client_region is None or item.client_region == client_region)
+    ]
+    if matching_metrics:
+        return (_region_rank(candidate, client_region), min(item.average_latency_ms for item in matching_metrics))
+
+    provider_metrics = [item for item in metrics if item.provider_id == candidate.provider_id and item.total_calls]
+    if provider_metrics:
+        return (_region_rank(candidate, client_region), min(item.average_latency_ms for item in provider_metrics))
+
+    return (_region_rank(candidate, client_region), float("inf"))
+
+
+def _region_rank(candidate: ProviderCandidate, client_region: str | None) -> int:
+    if not client_region:
+        return 0
+    if client_region in candidate.regions:
+        return 0
+    if candidate.geo_affinity == "global":
+        return 1
+    if candidate.geo_affinity == "unknown":
+        return 2
+    return 3
 
 
 def _cost(candidate: ProviderCandidate, metrics: dict[str, MetricsSnapshot]) -> float:

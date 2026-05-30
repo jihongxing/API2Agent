@@ -52,6 +52,9 @@ All notable API2Agent changes will be documented in this file.
 - Credential lifecycle metadata for status, expiry, and rotation audit hints.
 - Credential audit reporting in `api2agent usage --credential-audit`.
 - Location-aware usage schema, provider region metadata, and decision dataset contract.
+- Region-aware routing strategy `region_aware_latency`.
+- `--client-region` support for `api2agent route` and `api2agent call`.
+- Routing decision persistence for `client_region`.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -81,7 +84,8 @@ All notable API2Agent changes will be documented in this file.
 - Authenticated proxy credential dogfooded against real httpbin bearer auth.
 - Location-aware routing strategy documented.
 - Location-aware schema dogfooded across usage storage, proxy events, provider metadata, and decision dataset records.
-- Full test suite: `136 passed`.
+- Region-aware routing strategy dogfooded with same-capability, different-region providers.
+- Full test suite: `139 passed`.
 
 ### Planned Next
 

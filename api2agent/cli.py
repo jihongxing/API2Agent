@@ -651,6 +651,7 @@ def route(
         "--exclude-shadow-metrics",
         help="Exclude shadow execution events from routing metrics.",
     ),
+    client_region: Optional[str] = typer.Option(None, "--client-region", help="Client region for region-aware routing."),
     json_output: bool = typer.Option(False, "--json", help="Print raw routing result JSON."),
 ) -> None:
     """Select a provider candidate for a capability using observed metrics."""
@@ -668,6 +669,8 @@ def route(
     except Exception as exc:
         label = preset or strategy
         raise typer.BadParameter(f"Invalid routing policy: {label}") from exc
+    if client_region:
+        policy.client_region = client_region
 
     store = UsageStore(db)
     metrics = store.metrics_for_capability(capability_id, include_shadow=not exclude_shadow_metrics)
@@ -677,6 +680,7 @@ def route(
         capability_id=capability_id,
         strategy=policy.strategy,
         preset=preset,
+        client_region=policy.client_region,
         selected_provider_id=selected.provider_id if selected else None,
         ranked_provider_ids=[provider.provider_id for provider in ranked],
         metrics=metrics,
@@ -688,6 +692,7 @@ def route(
         "capability_id": capability_id,
         "strategy": policy.strategy,
         "preset": preset,
+        "client_region": policy.client_region,
         "weights": policy.weights,
         "selected": selected.model_dump(mode="json") if selected else None,
         "ranked_provider_ids": [provider.provider_id for provider in ranked],
@@ -706,6 +711,8 @@ def route(
     typer.echo(f"Strategy: {policy.strategy}")
     if preset:
         typer.echo(f"Preset: {preset}")
+    if policy.client_region:
+        typer.echo(f"Client region: {policy.client_region}")
     typer.echo(f"Selected provider: {selected.provider_id}")
     typer.echo(f"Tool: {selected.tool_id}")
     if result["ranked_provider_ids"]:
@@ -747,6 +754,7 @@ def call(
         "--exclude-shadow-metrics",
         help="Exclude shadow execution events from routing metrics.",
     ),
+    client_region: Optional[str] = typer.Option(None, "--client-region", help="Client region for region-aware routing."),
     json_output: bool = typer.Option(False, "--json", help="Print raw call result JSON."),
 ) -> None:
     """Route and execute a capability through a local generated provider package."""
@@ -776,6 +784,8 @@ def call(
     except Exception as exc:
         label = preset or strategy
         raise typer.BadParameter(f"Invalid routing policy: {label}") from exc
+    if client_region:
+        policy.client_region = client_region
 
     result = execute_capability(
         providers=providers,

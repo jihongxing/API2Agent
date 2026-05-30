@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Region-aware routing strategy v0
+Region-aware routing dogfood: same capability, different regions
 ```
 
 Current implementation result:
@@ -510,6 +510,9 @@ Current implementation result:
 - usage events and SQLite storage now support optional region and latency breakdown fields.
 - provider candidates now support `regions` and `geo_affinity`.
 - `DecisionDatasetRecord` defines the first local decision dataset contract.
+- `region_aware_latency` routing strategy now ranks providers by client-region affinity and latency metrics.
+- `api2agent route` and `api2agent call` now accept `--client-region`.
+- routing decisions now persist `client_region` for audit and decision-dataset use.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
@@ -604,8 +607,8 @@ Acceptance test set:
 
 Next strategic design requirements:
 
-- define region-aware routing strategy v0
-- decide how client region is supplied in CLI/SDK/proxy paths
+- dogfood one same-capability, different-region provider registry
+- record selected provider, ranked providers, and persisted `client_region`
 - decide how provider region is selected when a provider supports multiple regions
 - design active probing before implementing automated geo routing
 

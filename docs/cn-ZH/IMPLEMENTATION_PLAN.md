@@ -271,11 +271,14 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - 新战略优先级：最大化真实执行数据，并最小化 API/provider onboarding cost。
 - 新 routing requirement：location-aware execution 和 region-aware latency。
 - Region-aware usage schema、provider metadata 和 decision dataset contract 已在本地实现。
+- `region_aware_latency` routing strategy 已实现。
+- `api2agent route` 和 `api2agent call` 支持 `--client-region`。
+- routing decisions 会持久化 `client_region`。
 
 下一项工程任务：
 
 ```text
-Region-aware routing strategy v0
+Region-aware routing dogfood: same capability, different regions
 ```
 
 ## 9. Marketplace 是后面的结果

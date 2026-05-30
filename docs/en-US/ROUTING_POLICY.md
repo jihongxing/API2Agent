@@ -16,6 +16,7 @@ Every routing selection should be representable as a routing decision event:
   "capability_id": "image_generation",
   "strategy": "balanced",
   "preset": "reliability_first",
+  "client_region": "cn",
   "selected_provider_id": "provider_a",
   "ranked_provider_ids": ["provider_a", "provider_b"],
   "metrics": [],
@@ -39,8 +40,30 @@ Routing v0 supports:
 - `random`
 - `lowest_cost`
 - `lowest_latency`
+- `region_aware_latency`
 - `highest_success_rate`
 - `balanced`
+
+`region_aware_latency` v0 uses `client_region`, provider `regions`, and `geo_affinity`.
+
+Ranking order:
+
+1. providers whose `regions` contain `client_region`
+2. providers with `geo_affinity=global`
+3. providers with `geo_affinity=unknown`
+4. other providers
+
+Within the same region rank, the strategy uses matching client-region latency metrics when available, then aggregate latency metrics, then no-metric fallback.
+
+CLI:
+
+```bash
+api2agent route capability-registry.json \
+  --capability-id weather.current.get \
+  --strategy region_aware_latency \
+  --client-region cn \
+  --db api2agent-usage.sqlite
+```
 
 ## 4. Policy Presets
 
@@ -64,7 +87,6 @@ api2agent route capability-registry.json \
 
 ## 5. Current Limitations
 
-- No routing execution loop yet.
-- No failover execution yet.
 - No quality evaluation beyond success/cost/latency.
-- No policy constraints for safety, region, compliance, or provider allowlists.
+- `region_aware_latency` is a v0 heuristic, not active probing.
+- No policy constraints for safety, compliance, or provider allowlists.

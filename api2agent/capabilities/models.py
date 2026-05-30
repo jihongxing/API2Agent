@@ -62,9 +62,11 @@ class RoutingPolicy(BaseModel):
         "random",
         "lowest_cost",
         "lowest_latency",
+        "region_aware_latency",
         "highest_success_rate",
         "balanced",
     ] = "balanced"
+    client_region: str | None = None
     weights: dict[str, float] = Field(
         default_factory=lambda: {
             "success_rate": 0.5,
@@ -94,6 +96,7 @@ class RoutingDecision(BaseModel):
     capability_id: str
     strategy: str
     preset: str | None = None
+    client_region: str | None = None
     selected_provider_id: str | None = None
     ranked_provider_ids: list[str] = Field(default_factory=list)
     metrics: list[MetricsSnapshot] = Field(default_factory=list)

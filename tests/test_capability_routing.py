@@ -43,6 +43,101 @@ def test_route_selects_highest_success_rate_from_metrics() -> None:
     assert [provider.provider_id for provider in ranked] == ["b", "a"]
 
 
+def test_region_aware_latency_prefers_client_region_provider() -> None:
+    providers = [
+        ProviderCandidate(
+            id="weather_us",
+            capability_id="weather.current.get",
+            provider_id="weather_us",
+            tool_id="get",
+            regions=["us-east"],
+            geo_affinity="regional",
+        ),
+        ProviderCandidate(
+            id="weather_cn",
+            capability_id="weather.current.get",
+            provider_id="weather_cn",
+            tool_id="get",
+            regions=["cn"],
+            geo_affinity="regional",
+        ),
+    ]
+    metrics = [
+        MetricsSnapshot(
+            capability_id="weather.current.get",
+            provider_id="weather_us",
+            total_calls=10,
+            average_latency_ms=40,
+        ),
+        MetricsSnapshot(
+            capability_id="weather.current.get",
+            provider_id="weather_cn",
+            total_calls=10,
+            average_latency_ms=120,
+        ),
+    ]
+
+    ranked = rank_providers(
+        providers,
+        metrics,
+        RoutingPolicy(strategy="region_aware_latency", client_region="cn"),
+    )
+
+    assert [provider.provider_id for provider in ranked] == ["weather_cn", "weather_us"]
+
+
+def test_region_aware_latency_uses_matching_region_metrics() -> None:
+    providers = [
+        ProviderCandidate(
+            id="weather_cn_slow",
+            capability_id="weather.current.get",
+            provider_id="weather_cn_slow",
+            tool_id="get",
+            regions=["cn"],
+            geo_affinity="regional",
+        ),
+        ProviderCandidate(
+            id="weather_cn_fast",
+            capability_id="weather.current.get",
+            provider_id="weather_cn_fast",
+            tool_id="get",
+            regions=["cn"],
+            geo_affinity="regional",
+        ),
+    ]
+    metrics = [
+        MetricsSnapshot(
+            capability_id="weather.current.get",
+            provider_id="weather_cn_slow",
+            client_region="us-east",
+            total_calls=10,
+            average_latency_ms=30,
+        ),
+        MetricsSnapshot(
+            capability_id="weather.current.get",
+            provider_id="weather_cn_slow",
+            client_region="cn",
+            total_calls=10,
+            average_latency_ms=90,
+        ),
+        MetricsSnapshot(
+            capability_id="weather.current.get",
+            provider_id="weather_cn_fast",
+            client_region="cn",
+            total_calls=10,
+            average_latency_ms=60,
+        ),
+    ]
+
+    ranked = rank_providers(
+        providers,
+        metrics,
+        RoutingPolicy(strategy="region_aware_latency", client_region="cn"),
+    )
+
+    assert ranked[0].provider_id == "weather_cn_fast"
+
+
 def test_reliability_first_preset_prefers_success_rate() -> None:
     providers = [
         ProviderCandidate(id="fast", capability_id="image_generation", provider_id="fast", tool_id="generate", estimated_cost=0.01),
@@ -246,6 +341,61 @@ def test_route_command_supports_policy_preset(tmp_path) -> None:
     assert payload["preset"] == "reliability_first"
     assert payload["selected"]["provider_id"] == "reliable"
     assert payload["decision"]["preset"] == "reliability_first"
+
+
+def test_route_command_supports_region_aware_latency(tmp_path) -> None:
+    registry = tmp_path / "registry.json"
+    registry.write_text(
+        json.dumps(
+            {
+                "providers": [
+                    {
+                        "id": "weather_us",
+                        "capability_id": "weather.current.get",
+                        "provider_id": "weather_us",
+                        "tool_id": "get",
+                        "regions": ["us-east"],
+                        "geo_affinity": "regional",
+                    },
+                    {
+                        "id": "weather_cn",
+                        "capability_id": "weather.current.get",
+                        "provider_id": "weather_cn",
+                        "tool_id": "get",
+                        "regions": ["cn"],
+                        "geo_affinity": "regional",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "route",
+            str(registry),
+            "--capability-id",
+            "weather.current.get",
+            "--strategy",
+            "region_aware_latency",
+            "--client-region",
+            "cn",
+            "--db",
+            str(tmp_path / "usage.sqlite"),
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    stored_decision = UsageStore(tmp_path / "usage.sqlite").get_routing_decision(payload["decision"]["id"])
+
+    assert payload["client_region"] == "cn"
+    assert payload["selected"]["provider_id"] == "weather_cn"
+    assert payload["decision"]["client_region"] == "cn"
+    assert stored_decision is not None
+    assert stored_decision.client_region == "cn"
 
 
 def test_route_command_rejects_invalid_registry_schema(tmp_path) -> None:

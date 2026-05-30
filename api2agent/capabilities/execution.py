@@ -42,6 +42,7 @@ def execute_capability(
         capability_id=capability_id,
         strategy=(policy.strategy if policy else "balanced"),
         preset=preset,
+        client_region=policy.client_region if policy else None,
         selected_provider_id=selected.provider_id if selected else None,
         ranked_provider_ids=[provider.provider_id for provider in ranked],
         metrics=metrics,

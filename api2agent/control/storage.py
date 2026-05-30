@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS routing_decisions (
   capability_id TEXT NOT NULL,
   strategy TEXT NOT NULL,
   preset TEXT,
+  client_region TEXT,
   selected_provider_id TEXT,
   ranked_provider_ids TEXT NOT NULL,
   metrics TEXT NOT NULL,
@@ -78,6 +79,7 @@ class UsageStore:
             self._ensure_usage_column(connection, "latency_provider_ms", "REAL")
             self._ensure_usage_column(connection, "latency_overhead_ms", "REAL")
             self._ensure_routing_decision_column(connection, "failover_policy", "TEXT")
+            self._ensure_routing_decision_column(connection, "client_region", "TEXT")
 
     def record(self, event: UsageEvent) -> UsageEvent:
         data = event.model_dump(mode="json")
@@ -161,10 +163,10 @@ class UsageStore:
             connection.execute(
                 """
                 INSERT OR REPLACE INTO routing_decisions (
-                  id, project_id, capability_id, strategy, preset,
+                  id, project_id, capability_id, strategy, preset, client_region,
                   selected_provider_id, ranked_provider_ids, metrics, failover_policy, created_at
                 ) VALUES (
-                  :id, :project_id, :capability_id, :strategy, :preset,
+                  :id, :project_id, :capability_id, :strategy, :preset, :client_region,
                   :selected_provider_id, :ranked_provider_ids, :metrics, :failover_policy, :created_at
                 )
                 """,

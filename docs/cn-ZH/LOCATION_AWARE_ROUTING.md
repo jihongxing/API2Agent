@@ -159,5 +159,5 @@ Usage logs 不够。
 1. 定义 region-aware usage fields。已完成。
 2. 为 provider metadata 增加 region information。已完成。
 3. 定义 decision dataset contract。已完成。
-4. 增加 region-aware routing strategy。
-5. 用 same capability、different provider regions、different outcomes 做 dogfood。
+4. 增加 region-aware routing strategy。已作为 `region_aware_latency` v0 完成。
+5. 用 same capability、different provider regions、different outcomes 做 dogfood。已完成 local routing dogfood；下一步补真实/模拟 latency snapshots。
