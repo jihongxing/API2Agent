@@ -41,8 +41,47 @@ type ExecuteResponse struct {
 	Error             *protocol.ErrorRecord `json:"error,omitempty"`
 }
 
+type HealthResponse struct {
+	Status            string     `json:"status"`
+	SchemaVersion     string     `json:"schema_version"`
+	SnapshotVersion   string     `json:"snapshot_version,omitempty"`
+	SnapshotFetchedAt *time.Time `json:"snapshot_fetched_at,omitempty"`
+	SnapshotTTL       string     `json:"snapshot_ttl,omitempty"`
+	SnapshotExpiresAt *time.Time `json:"snapshot_expires_at,omitempty"`
+	SnapshotExpired   *bool      `json:"snapshot_expired,omitempty"`
+	SnapshotSource    string     `json:"snapshot_source,omitempty"`
+}
+
 func (h Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/v1/execute", h.Execute)
+	mux.HandleFunc("/healthz", h.Healthz)
+}
+
+func (h Handler) Healthz(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed")
+		return
+	}
+	response := HealthResponse{
+		Status:        "ok",
+		SchemaVersion: protocol.SchemaVersion,
+	}
+	if h.Snapshot == nil {
+		response.Status = "degraded"
+		writeJSON(w, http.StatusOK, response)
+		return
+	}
+	response.SnapshotVersion = h.Snapshot.SnapshotVersion
+	response.SnapshotFetchedAt = &h.Snapshot.SnapshotFetchedAt
+	response.SnapshotTTL = h.Snapshot.SnapshotTTL
+	response.SnapshotSource = h.Snapshot.SnapshotSource
+	if expiresAt, err := h.Snapshot.ExpiresAt(); err == nil {
+		response.SnapshotExpiresAt = expiresAt
+	}
+	if expired, err := h.Snapshot.IsExpired(time.Now().UTC()); err == nil {
+		response.SnapshotExpired = &expired
+	}
+	writeJSON(w, http.StatusOK, response)
 }
 
 func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +206,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		Cost:  protocol.CostProfile{EstimatedCost: &estimatedCost, CostSource: &costSource},
 		Error: errRecord,
 		RequestMetadata: map[string]any{
-			"snapshot_version":            h.Snapshot.SnapshotVersion,
+			"snapshot_version":            snapshotVersion(h.Snapshot),
 			"execution_timeout_budget_ms": req.TimeoutBudgetMS,
 			"attempt_timeout_policy":      "fixed",
 		},
@@ -189,7 +228,7 @@ func (h Handler) Execute(w http.ResponseWriter, r *http.Request) {
 		CapabilityID:      req.CapabilityID,
 		RoutingStrategy:   decisionResult.Decision.Strategy,
 		RoutingContext: map[string]any{
-			"snapshot_version": h.Snapshot.SnapshotVersion,
+			"snapshot_version": snapshotVersion(h.Snapshot),
 			"routing_mode":     decisionResult.Decision.RoutingMode,
 		},
 		SelectedProviderID:     decisionResult.Decision.SelectedProviderID,
@@ -231,7 +270,7 @@ func (h Handler) writeFailedDecision(w http.ResponseWriter, ctx context.Context,
 		Identity:        request.Identity,
 		CapabilityID:    request.CapabilityID,
 		RoutingStrategy: "none",
-		RoutingContext:  map[string]any{"snapshot_version": h.Snapshot.SnapshotVersion},
+		RoutingContext:  map[string]any{"snapshot_version": snapshotVersion(h.Snapshot)},
 		Outcome:         "failure",
 		UsageEventIDs:   []string{},
 		CreatedAt:       time.Now().UTC(),
@@ -239,7 +278,7 @@ func (h Handler) writeFailedDecision(w http.ResponseWriter, ctx context.Context,
 	if decision != nil {
 		decisionLog.RoutingDecisionID = &decision.ID
 	}
-	_, _ = h.Events.Write(ctx, "decision_log", decisionLog)
+	_, _ = h.Events.Write(ctx, "decision_log", &decisionLog)
 	writeJSON(w, status, ExecuteResponse{
 		RequestID:         request.ID,
 		RoutingDecisionID: routeID,
@@ -254,6 +293,13 @@ func validBearer(header, expected string) bool {
 		return false
 	}
 	return strings.TrimSpace(strings.TrimPrefix(header, prefix)) == expected
+}
+
+func snapshotVersion(snapshot *snapshots.Snapshot) string {
+	if snapshot == nil {
+		return ""
+	}
+	return snapshot.SnapshotVersion
 }
 
 func mapAdapterError(err error) *protocol.ErrorRecord {

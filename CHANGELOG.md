@@ -68,6 +68,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane Skeleton plan covering `/v1/execute`, local snapshots, deterministic routing, ipify adapter, event writer, timeout budgets, and dual-run compatibility.
 - Go Data Plane Skeleton implementation with `/v1/execute`, static snapshot loading, deterministic routing, ipify adapter, JSONL event writer, and golden path Go tests.
 - Go/Python dual-run dogfood for `network.public_ip.get` with matching normalized output and Go execution graph events.
+- Go Data Plane Skeleton hardening with `/healthz`, snapshot TTL helpers, bearer auth regression tests, timeout error mapping, missing-adapter failure events, and event sequence checks.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -98,8 +99,10 @@ All notable API2Agent changes will be documented in this file.
 - Location-aware routing strategy documented.
 - Location-aware schema dogfooded across usage storage, proxy events, provider metadata, and decision dataset records.
 - Region-aware routing strategy dogfooded with same-capability, different-region providers.
+- Go Data Plane hardening tests for health metadata, project-key auth, timeout usage errors, and failed decision logging.
 - Full test suite: `143 passed`.
 
 ### Planned Next
 
-- Decide when capability naming moves from warning to hard enforcement.
+- Go Data Plane protocol conformance checks against the v0.2 schema snapshot.
+- Go Data Plane real-provider retry/failover dogfood.

@@ -308,11 +308,15 @@ Current implementation:
 - Go Data Plane Skeleton implementation is present under `services/data-plane`.
 - Go/Python dual-run dogfood passed for `network.public_ip.get`.
 - Python is frozen as a reference implementation and local dogfood harness, not the production data plane.
+- Go Data Plane Skeleton hardening is complete:
+  - `/healthz` exposes protocol and snapshot metadata.
+  - snapshot TTL parsing and expiration helpers are implemented.
+  - project-key bearer auth, timeout failure mapping, missing-adapter failed decisions, and event sequence IDs are covered by Go tests.
 
 Next engineering task:
 
 ```text
-Go Data Plane Skeleton hardening
+Go Data Plane protocol conformance checks and retry/failover dogfood
 ```
 
 ## 9. Marketplace Is Later

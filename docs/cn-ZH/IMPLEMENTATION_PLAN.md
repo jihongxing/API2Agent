@@ -308,11 +308,15 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Go Data Plane Skeleton implementation 已位于 `services/data-plane`。
 - Go/Python dual-run dogfood 已通过，覆盖 `network.public_ip.get`。
 - Python 冻结为 reference implementation 和 local dogfood harness，不作为 production data plane。
+- Go Data Plane Skeleton hardening 已完成：
+  - `/healthz` 暴露 protocol 和 snapshot metadata。
+  - snapshot TTL parsing 和 expiration helpers 已实现。
+  - project-key bearer auth、timeout failure mapping、missing-adapter failed decisions 和 event sequence IDs 已有 Go tests 覆盖。
 
 下一项工程任务：
 
 ```text
-Go Data Plane Skeleton hardening
+Go Data Plane protocol conformance checks and retry/failover dogfood
 ```
 
 ## 9. Marketplace 是后面的结果

@@ -66,3 +66,37 @@ func LoadFile(path string) (*Snapshot, error) {
 	}
 	return &snapshot, nil
 }
+
+func (s Snapshot) TTLDuration() (time.Duration, error) {
+	if s.SnapshotTTL == "" {
+		return 0, nil
+	}
+	duration, err := time.ParseDuration(s.SnapshotTTL)
+	if err != nil {
+		return 0, fmt.Errorf("parse snapshot_ttl: %w", err)
+	}
+	return duration, nil
+}
+
+func (s Snapshot) ExpiresAt() (*time.Time, error) {
+	duration, err := s.TTLDuration()
+	if err != nil {
+		return nil, err
+	}
+	if duration == 0 || s.SnapshotFetchedAt.IsZero() {
+		return nil, nil
+	}
+	expiresAt := s.SnapshotFetchedAt.Add(duration)
+	return &expiresAt, nil
+}
+
+func (s Snapshot) IsExpired(now time.Time) (bool, error) {
+	expiresAt, err := s.ExpiresAt()
+	if err != nil {
+		return false, err
+	}
+	if expiresAt == nil {
+		return false, nil
+	}
+	return !now.Before(*expiresAt), nil
+}

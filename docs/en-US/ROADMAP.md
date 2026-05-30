@@ -110,6 +110,7 @@ Implemented:
 - Go Data Plane Skeleton plan
 - Go Data Plane Skeleton implementation under `services/data-plane`
 - Go/Python dual-run dogfood for `network.public_ip.get`
+- Go Data Plane Skeleton hardening with health, auth, timeout, snapshot TTL, and failure-event tests
 
 Not implemented yet:
 
@@ -517,7 +518,7 @@ Production Architecture RFC
 Immediate next task:
 
 ```text
-Go Data Plane Skeleton hardening
+Go Data Plane protocol conformance checks and real-provider retry/failover dogfood
 ```
 
 Current implementation result:
@@ -647,8 +648,8 @@ Acceptance test set:
 
 Next strategic design requirements:
 
-- define Python reference implementation migration path
-- prepare Go Data Plane Skeleton plan
+- add protocol conformance checks for Go Data Plane v0.2 records
+- dogfood Go retry/failover behavior with controlled provider failures
 
 ## 8.7 Phase 5.7: Architecture Definition Phase
 
@@ -687,6 +688,13 @@ Exit criteria:
 - production architecture responsibilities are explicit
 - Data Plane technology direction is chosen
 - Control Plane technology direction is chosen
+
+Current implementation gate:
+
+```text
+Go Data Plane Skeleton hardening - complete
+Next: Go Data Plane protocol conformance + retry/failover dogfood
+```
 
 ## 9. Phase 6: Hosted Control Plane
 
