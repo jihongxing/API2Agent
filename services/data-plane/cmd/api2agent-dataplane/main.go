@@ -22,6 +22,7 @@ func main() {
 		log.Fatalf("create event writer: %v", err)
 	}
 	registry := adapters.NewRegistry()
+	registry.Register("httpbin", adapters.HttpbinIPAdapter{})
 	registry.Register("ipify", adapters.IpifyAdapter{})
 
 	mux := http.NewServeMux()

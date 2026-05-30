@@ -114,6 +114,7 @@ Implemented:
 - Go Data Plane protocol conformance checks against the v0.2 schema snapshot
 - Go Data Plane retry/failover execution and controlled failover dogfood
 - Go Data Plane env credential resolution skeleton and controlled credential dogfood
+- Go Data Plane durable event ingestion and real external provider retry dogfood
 
 Not implemented yet:
 
@@ -521,7 +522,7 @@ Production Architecture RFC
 Immediate next task:
 
 ```text
-Choose the next Go Data Plane migration slice: credential resolution, durable event ingestion, or real external provider retry dogfood
+Complete durable event ingestion first, then run real external provider retry dogfood
 ```
 
 Current implementation result:
@@ -566,6 +567,8 @@ Current implementation result:
 - credential audit CLI dogfood completed; see `docs/en-US/CREDENTIAL_AUDIT_CLI_DOGFOOD_REPORT.md`.
 - authenticated proxy credential dogfood completed; see `docs/en-US/AUTHENTICATED_PROXY_CREDENTIAL_DOGFOOD_REPORT.md`.
 - location-aware schema dogfood completed; see `docs/en-US/LOCATION_AWARE_SCHEMA_DOGFOOD_REPORT.md`.
+- Go Data Plane durable event ingestion completed; see `docs/en-US/GO_DATAPLANE_DURABLE_EVENTS_DOGFOOD_REPORT.md`.
+- Go Data Plane real external provider retry dogfood completed; see `docs/en-US/GO_DATAPLANE_REAL_EXTERNAL_PROVIDER_RETRY_DOGFOOD_REPORT.md`.
 
 Implementation checklist:
 
@@ -652,7 +655,7 @@ Acceptance test set:
 Next strategic design requirements:
 
 - promote Go protocol conformance helper into a reusable validator
-- choose between durable event ingestion and real external provider retry dogfood
+- choose the next Go Data Plane production hardening slice
 
 ## 8.7 Phase 5.7: Architecture Definition Phase
 
@@ -698,7 +701,9 @@ Current implementation gate:
 Go Data Plane Skeleton hardening - complete
 Go Data Plane protocol conformance + retry/failover dogfood - complete
 Go Data Plane env credential resolution skeleton - complete
-Next: choose durable event ingestion or real external provider retry dogfood
+Go Data Plane durable event ingestion - complete
+Go Data Plane real external provider retry dogfood - complete
+Next: choose next Go Data Plane production hardening slice
 ```
 
 ## 9. Phase 6: Hosted Control Plane

@@ -323,11 +323,23 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - usage events 只记录 `credential_reference` 和 redacted credential metadata。
   - env secret 缺失会在 provider forwarding 前失败，并写入 failed UsageEvent。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_CREDENTIAL_DOGFOOD_REPORT.md`。
+- Go Data Plane durable event ingestion 已完成：
+  - JSONL event writer 会在返回前对每条 event 执行 fsync。
+  - writer 启动时会从已有 `events.jsonl` 恢复下一个 event sequence ID。
+  - 已损坏的 event log 会让 writer 启动失败，而不是静默重置 sequence state。
+  - restart dogfood 在两次 Data Plane 进程运行中产出了单调递增的 sequence IDs `1..8`。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_DURABLE_EVENTS_DOGFOOD_REPORT.md`。
+- Go Data Plane real external provider retry dogfood 已完成：
+  - `httpbin/status/500` 会写入失败的第一条 `UsageEvent`。
+  - `httpbin/ip` 作为 fallback attempt 成功，并返回标准化 `{"ip": ...}` 输出。
+  - `DecisionLog` 记录最终成功，并引用两次 usage attempts。
+  - dogfood 也记录了本地 Go runtime 访问 `api.ipify.org` fallback 被断开的失败经验，说明外部 API 可用性必须从真实 execution runtime 测量。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_REAL_EXTERNAL_PROVIDER_RETRY_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Choose the next Go Data Plane migration slice: durable event ingestion or real external provider retry dogfood
+Choose the next Go Data Plane production hardening slice
 ```
 
 ## 9. Marketplace 是后面的结果

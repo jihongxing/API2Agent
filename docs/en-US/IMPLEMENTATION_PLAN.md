@@ -323,11 +323,23 @@ Current implementation:
   - usage events record `credential_reference` and redacted credential metadata only.
   - missing env secrets fail before provider forwarding and still write a failed UsageEvent.
   - see `docs/en-US/GO_DATAPLANE_CREDENTIAL_DOGFOOD_REPORT.md`.
+- Go Data Plane durable event ingestion is complete:
+  - JSONL event writer fsyncs each event before returning.
+  - writer startup recovers the next event sequence ID from existing `events.jsonl`.
+  - corrupt existing event logs fail startup instead of silently resetting sequence state.
+  - restart dogfood produced monotonic sequence IDs `1..8` across two Data Plane process runs.
+  - see `docs/en-US/GO_DATAPLANE_DURABLE_EVENTS_DOGFOOD_REPORT.md`.
+- Go Data Plane real external provider retry dogfood is complete:
+  - `httpbin/status/500` writes a failed first `UsageEvent`.
+  - `httpbin/ip` succeeds as the fallback attempt and returns normalized `{"ip": ...}` output.
+  - `DecisionLog` records success and references both usage attempts.
+  - the dogfood also captured a failed `api.ipify.org` fallback attempt from the local Go runtime, proving external API availability must be measured from the actual execution runtime.
+  - see `docs/en-US/GO_DATAPLANE_REAL_EXTERNAL_PROVIDER_RETRY_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Choose the next Go Data Plane migration slice: durable event ingestion or real external provider retry dogfood
+Choose the next Go Data Plane production hardening slice
 ```
 
 ## 9. Marketplace Is Later
