@@ -13,7 +13,18 @@ OpenAPI / curl
   -> generated MCP server
 ```
 
-This proves local usability. The next strategic build target is controlled execution through API2Agent Proxy.
+This proved local usability and the first controlled execution loop.
+
+Current phase:
+
+```text
+Python MVP freeze
+  -> Protocol v0.2 contract freeze
+  -> Production Architecture RFC
+  -> Control Plane / Data Plane split
+```
+
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. It should not expand into the long-term hosted data plane.
 
 ## 2. Current Repository Structure
 
@@ -57,6 +68,15 @@ docs/
 - tool filtering / selection
 - bilingual docs
 - open-core license
+- control layer MVP
+- capability/provider/routing model
+- usage, ledger, replay, shadow, and golden trace
+- credential orchestration MVP
+- region-aware routing and provider-region selection
+- decision dataset seed
+- MVP exit review
+- Architecture Definition Phase documentation
+- API2Agent Protocol v0.2 planning document
 
 ## 4. Remaining Tooling Reliability Work
 
@@ -276,11 +296,15 @@ Current implementation:
 - routing decisions persist `client_region`.
 - routing decisions persist deterministic `selected_provider_region`.
 - generated package usage events record derived `provider_region`.
+- Python MVP has reached its documented exit criteria.
+- Architecture Definition Phase is active.
+- Protocol v0.2 freeze planning is documented.
+- Python is frozen as a reference implementation and local dogfood harness, not the production data plane.
 
 Next engineering task:
 
 ```text
-Active probing design v0
+Protocol v0.2 contract freeze
 ```
 
 ## 9. Marketplace Is Later

@@ -2,6 +2,14 @@
 
 状态：draft
 
+当前阶段说明：
+
+- Python MVP exit review：`docs/cn-ZH/MVP_EXIT_REVIEW.md`
+- Architecture Definition Phase：`docs/cn-ZH/ARCHITECTURE_DEFINITION_PHASE.md`
+- Protocol v0.2 freeze plan：`docs/cn-ZH/API2AGENT_PROTOCOL_V0_2_PLAN.md`
+
+本文档描述当前可运行的 v0.1 protocol baseline。v0.2 会先冻结 production-facing contract，再进入 production data plane reimplementation。
+
 ## 1. 目的
 
 API2Agent Protocol 定义 API 如何变成可靠、可审计、可路由的 Agent capabilities。

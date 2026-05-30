@@ -9,7 +9,16 @@ API2Agent 当前使用 Python 做本地 compiler 和 MVP 生成 runtime。
 ```text
 Product goal: language-neutral, model-neutral, runtime-neutral
 Current MVP: Python compiler and generated Python MCP runtime
+Next phase: Architecture Definition before production reimplementation
 ```
+
+Python 现在是 reference implementation 和 local dogfood harness。它不应该成为长期 hosted data plane。
+
+详见：
+
+- `docs/cn-ZH/MVP_EXIT_REVIEW.md`
+- `docs/cn-ZH/ARCHITECTURE_DEFINITION_PHASE.md`
+- `docs/cn-ZH/API2AGENT_PROTOCOL_V0_2_PLAN.md`
 
 ## 2. 更新后的架构方向
 

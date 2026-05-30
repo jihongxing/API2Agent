@@ -26,6 +26,12 @@ Agent request -> SDK call -> Adapter -> Real API -> Normalized output -> Usage -
 API2Agent
 ```
 
+当前阶段：
+
+```text
+Architecture Definition Phase
+```
+
 战略判断：
 
 > API2Agent 起步是本地 Agent capability compiler，之后演进为 Agent 访问 API-backed capabilities 的 control、metrics、routing 和 reliable execution layer。
@@ -93,6 +99,9 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - generated package execution 的 credential injection patches
 - credential-safe usage attribution and replay
 - capability source boundary document
+- MVP exit review
+- Architecture Definition Phase document
+- API2Agent Protocol v0.2 plan
 
 尚未实现：
 
@@ -493,7 +502,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Active probing design v0
+Protocol v0.2 contract freeze
 ```
 
 当前实现结果：
@@ -623,10 +632,44 @@ Active probing design v0
 
 下一步战略设计要求：
 
-- dogfood 一个 same-capability、different-region provider registry
-- 记录 selected provider、ranked providers 和持久化后的 `client_region`
-- 在实现 automated geo routing 前，先设计 active probing
-- 用 same-capability providers dogfood active probe snapshots
+- finalise Protocol v0.2 fields
+- 定义 Control Plane vs Data Plane responsibilities
+- 输出 Production Architecture RFC
+- 决定长期 Data Plane runtime
+- 定义 Python reference implementation migration path
+
+## 8.7 Phase 5.7：Architecture Definition Phase
+
+状态：active。
+
+目标：
+
+在继续实现前，冻结 protocol 和 production architecture。
+
+范围：
+
+- Protocol v0.2 contract freeze
+- Production Architecture RFC
+- Control Plane vs Data Plane boundary
+- data model finalization
+- long-term runtime and language decision
+- Python MVP migration path
+
+禁止扩展：
+
+- 不加新的 Python runtime features
+- 不做 marketplace UI
+- 不做 billing
+- 不做 non-API capability source runtimes
+- 不做 hosted SaaS productization
+
+退出标准：
+
+- `docs/cn-ZH/API2AGENT_PROTOCOL_V0_2_PLAN.md` 完成
+- `docs/cn-ZH/ARCHITECTURE_DEFINITION_PHASE.md` 完成
+- production architecture responsibilities 明确
+- Data Plane technology direction 已选择
+- Control Plane technology direction 已选择
 
 ## 9. Phase 6：Hosted Control Plane
 

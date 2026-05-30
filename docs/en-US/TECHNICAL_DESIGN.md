@@ -9,7 +9,16 @@ This is an implementation path, not the product boundary.
 ```text
 Product goal: language-neutral, model-neutral, runtime-neutral
 Current MVP: Python compiler and generated Python MCP runtime
+Next phase: Architecture Definition before production reimplementation
 ```
+
+Python is now the reference implementation and local dogfood harness. It should not become the long-term hosted data plane.
+
+See:
+
+- `docs/en-US/MVP_EXIT_REVIEW.md`
+- `docs/en-US/ARCHITECTURE_DEFINITION_PHASE.md`
+- `docs/en-US/API2AGENT_PROTOCOL_V0_2_PLAN.md`
 
 ## 2. Updated Architecture Direction
 

@@ -13,7 +13,18 @@ OpenAPI / curl
   -> generated MCP server
 ```
 
-这证明本地可用性。下一个战略构建目标是通过 API2Agent Proxy 实现 controlled execution。
+这已经证明了本地可用性和第一条 controlled execution loop。
+
+当前阶段：
+
+```text
+Python MVP freeze
+  -> Protocol v0.2 contract freeze
+  -> Production Architecture RFC
+  -> Control Plane / Data Plane split
+```
+
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness，不应该继续扩展成长远 hosted data plane。
 
 ## 2. 当前仓库结构
 
@@ -57,6 +68,15 @@ docs/
 - tool filtering / selection
 - bilingual docs
 - open-core license
+- control layer MVP
+- capability/provider/routing model
+- usage、ledger、replay、shadow 和 golden trace
+- credential orchestration MVP
+- region-aware routing 和 provider-region selection
+- decision dataset seed
+- MVP exit review
+- Architecture Definition Phase documentation
+- API2Agent Protocol v0.2 planning document
 
 ## 4. 剩余 Tooling Reliability 工作
 
@@ -276,11 +296,15 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - routing decisions 会持久化 `client_region`。
 - routing decisions 会持久化确定性的 `selected_provider_region`。
 - generated package usage events 会记录推导后的 `provider_region`。
+- Python MVP 已达到文档化退出标准。
+- Architecture Definition Phase 已启动。
+- Protocol v0.2 freeze planning 已文档化。
+- Python 冻结为 reference implementation 和 local dogfood harness，不作为 production data plane。
 
 下一项工程任务：
 
 ```text
-Active probing design v0
+Protocol v0.2 contract freeze
 ```
 
 ## 9. Marketplace 是后面的结果

@@ -26,6 +26,12 @@ Current build target:
 API2Agent
 ```
 
+Current phase:
+
+```text
+Architecture Definition Phase
+```
+
 Strategic thesis:
 
 > API2Agent starts as a local Agent capability compiler, then becomes the control, metrics, routing, and reliable execution layer for Agent access to API-backed capabilities.
@@ -93,6 +99,9 @@ Implemented:
 - credential injection patches for generated package execution
 - credential-safe usage attribution and replay
 - capability source boundary document
+- MVP exit review
+- Architecture Definition Phase document
+- API2Agent Protocol v0.2 plan
 
 Not implemented yet:
 
@@ -493,7 +502,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Active probing design v0
+Protocol v0.2 contract freeze
 ```
 
 Current implementation result:
@@ -623,10 +632,44 @@ Acceptance test set:
 
 Next strategic design requirements:
 
-- dogfood one same-capability, different-region provider registry
-- record selected provider, ranked providers, and persisted `client_region`
-- design active probing before implementing automated geo routing
-- dogfood active probe snapshots against same-capability providers
+- finalize Protocol v0.2 fields
+- define Control Plane vs Data Plane responsibilities
+- produce Production Architecture RFC
+- decide long-term data plane runtime
+- define Python reference implementation migration path
+
+## 8.7 Phase 5.7: Architecture Definition Phase
+
+Status: active.
+
+Goal:
+
+Freeze the protocol and production architecture before adding more implementation.
+
+Scope:
+
+- Protocol v0.2 contract freeze
+- Production Architecture RFC
+- Control Plane vs Data Plane boundary
+- data model finalization
+- long-term runtime and language decision
+- Python MVP migration path
+
+Do not expand:
+
+- no new Python runtime features
+- no marketplace UI
+- no billing
+- no non-API capability source runtimes
+- no hosted SaaS productization
+
+Exit criteria:
+
+- `docs/en-US/API2AGENT_PROTOCOL_V0_2_PLAN.md` is complete
+- `docs/en-US/ARCHITECTURE_DEFINITION_PHASE.md` is complete
+- production architecture responsibilities are explicit
+- Data Plane technology direction is chosen
+- Control Plane technology direction is chosen
 
 ## 9. Phase 6: Hosted Control Plane
 
