@@ -308,7 +308,7 @@ Current implementation:
 Next engineering task:
 
 ```text
-Python reference migration plan
+Go Data Plane Skeleton plan
 ```
 
 ## 9. Marketplace Is Later

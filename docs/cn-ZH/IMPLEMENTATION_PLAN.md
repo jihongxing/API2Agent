@@ -308,7 +308,7 @@ Credential orchestration 在 billing 和 marketplace 之前。
 下一项工程任务：
 
 ```text
-Python reference migration plan
+Go Data Plane Skeleton plan
 ```
 
 ## 9. Marketplace 是后面的结果

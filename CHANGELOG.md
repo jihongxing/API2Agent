@@ -64,6 +64,7 @@ All notable API2Agent changes will be documented in this file.
 - API2Agent Protocol v0.2 frozen contract and machine-readable schema snapshot.
 - API2Agent Protocol v0.2 hardening for request context, versioned definitions, metrics windows, routing plan vs observation split, execution properties, credential resolution strategy, and error scope.
 - Production Architecture RFC with Go Data Plane, Go Control Plane backend, Python reference boundaries, storage ownership, deployment phases, and v0.3 architecture inputs.
+- Python reference migration plan documenting the hot-path to reference-path transition.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
