@@ -108,6 +108,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane manual snapshot reload policy with `API2AGENT_SNAPSHOT_RELOAD_POLICY=manual`.
 - Go Data Plane `/v1/admin/reload-snapshot` endpoint and reload metadata in `/healthz`.
 - Go Data Plane reload failure semantics that keep the previous snapshot active and return retryable `SNAPSHOT_RELOAD_FAILED` metadata.
+- Go Data Plane `snapshot_reload_event` audit events for failed and successful manual snapshot reloads.
 - Go Control Plane minimum dogfood script and bilingual report.
 - Go Data Plane credential config dogfood script and bilingual report.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
@@ -164,10 +165,11 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane snapshot distribution dogfood passed with `API2AGENT_SNAPSHOT` pointed at a local distribution directory.
 - Go Data Plane snapshot reload dogfood passed with v1 startup, v2 distribution publish, manual reload, and v2 routing/usage attribution.
 - Go Data Plane reload failure dogfood passed with broken `current.json`, v1 retained, and later v2 reload success.
+- Go Data Plane snapshot reload audit dogfood passed with failure/success audit events before the execution graph.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
 - Full test suite: `143 passed`.
 
 ### Planned Next
 
-- Control Plane Snapshot Reload Audit Events v0.
+- Control Plane Snapshot Version Compatibility Guard v0.

@@ -79,6 +79,7 @@ snapshot 包含：
 - 将 `current.json` 解析到已发布 artifact snapshot
 - 通过 `API2AGENT_SNAPSHOT=<distribution_dir>` 加载了 distributed snapshot
 - 拒绝损坏的 reload，同时保持 v1 active
+- 为 failed 和 successful reload attempts 写入 reload audit events
 - 通过 `POST /v1/admin/reload-snapshot` 从 v1 reload 到 v2
 - 在 `/healthz` 返回同一个 snapshot version
 - 执行了 `network.public_ip.get`
@@ -118,9 +119,11 @@ Control Plane registry -> snapshot artifact export -> local distribution current
   "failed_reload_rejected": true,
   "failed_reload_kept_previous_snapshot": true,
   "health_after_failed_reload_still_v1": true,
+  "failed_reload_audit_event_recorded": true,
   "reload_response_success": true,
   "reload_previous_snapshot_version_matches": true,
   "reload_snapshot_version_matches": true,
+  "successful_reload_audit_event_recorded": true,
   "distribution_current_after_reload_points_to_v2": true,
   "distribution_v2_artifact_snapshot_exists": true,
   "snapshot_check_passed": true,

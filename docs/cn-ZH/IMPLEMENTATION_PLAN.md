@@ -467,6 +467,13 @@ Go Control Plane Minimum v0
   - 失败 reload 返回 `SNAPSHOT_RELOAD_FAILED`、`reloaded=false`、`kept_snapshot_version`、当前 `snapshot_resolved_to` 和 retryable error metadata。
   - 失败 reload 后 `/healthz` 仍然停留在 previous snapshot。
   - cross-plane dogfood 证明损坏的 `current.json` 失败后保持 v1 active，随后 valid v2 publish 和 reload 可以成功。
+- Control Plane Snapshot Reload Audit Events v0 已完成：
+  - Data Plane 会为 failed 和 successful reload attempts 写入 `snapshot_reload_event`。
+  - successful reload 会先写 audit event，再替换 active snapshot。
+  - failed reload 会写 audit event，并保持 previous snapshot active。
+  - reload audit events 与 execution events 共享同一个 append-only event stream 和 event sequence IDs。
+  - cross-plane dogfood 验证 failed reload audit、successful reload audit 和 execution graph ordering。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_RELOAD_AUDIT_DOGFOOD_REPORT.md`。
 
 ## 9. Marketplace 是后面的结果
 

@@ -79,6 +79,7 @@ The data plane then:
 - resolved `current.json` to the published artifact snapshot
 - loaded the distributed snapshot through `API2AGENT_SNAPSHOT=<distribution_dir>`
 - rejected a broken reload while keeping v1 active
+- wrote reload audit events for failed and successful reload attempts
 - reloaded from v1 to v2 through `POST /v1/admin/reload-snapshot`
 - reported the same snapshot version in `/healthz`
 - executed `network.public_ip.get`
@@ -118,9 +119,11 @@ Control Plane registry -> snapshot artifact export -> local distribution current
   "failed_reload_rejected": true,
   "failed_reload_kept_previous_snapshot": true,
   "health_after_failed_reload_still_v1": true,
+  "failed_reload_audit_event_recorded": true,
   "reload_response_success": true,
   "reload_previous_snapshot_version_matches": true,
   "reload_snapshot_version_matches": true,
+  "successful_reload_audit_event_recorded": true,
   "distribution_current_after_reload_points_to_v2": true,
   "distribution_v2_artifact_snapshot_exists": true,
   "snapshot_check_passed": true,

@@ -169,6 +169,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                 proc.kill()
 
         events = read_jsonl(event_dir / "events.jsonl")
+        reload_events = [event["record"] for event in events if event["event_type"] == "snapshot_reload_event"]
         usage = next((event["record"] for event in events if event["event_type"] == "usage_event"), {})
         routing_decision = next((event["record"] for event in events if event["event_type"] == "routing_decision"), {})
         checks = {
@@ -194,11 +195,17 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             == "snapshot_control_plane_public_ip_v1",
             "health_after_failed_reload_still_v1": health_after_failed_reload.get("snapshot_version")
             == "snapshot_control_plane_public_ip_v1",
+            "failed_reload_audit_event_recorded": len(reload_events) >= 1
+            and reload_events[0].get("outcome") == "failure"
+            and reload_events[0].get("kept_snapshot_version") == "snapshot_control_plane_public_ip_v1",
             "reload_response_success": reload_response.get("reloaded") is True,
             "reload_previous_snapshot_version_matches": reload_response.get("previous_snapshot_version")
             == "snapshot_control_plane_public_ip_v1",
             "reload_snapshot_version_matches": reload_response.get("snapshot_version")
             == "snapshot_control_plane_public_ip_v2",
+            "successful_reload_audit_event_recorded": len(reload_events) >= 2
+            and reload_events[1].get("outcome") == "success"
+            and reload_events[1].get("target_snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "distribution_current_after_reload_points_to_v2": current_pointer_after_reload.get("snapshot_file")
             == "artifacts/snapshot_control_plane_public_ip_v2/snapshot.json",
             "distribution_v2_artifact_snapshot_exists": (
@@ -218,6 +225,8 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "usage_has_attempt_id": (usage.get("request_metadata") or {}).get("attempt_id") == usage.get("id"),
             "routing_snapshot_version_matches": routing_decision.get("snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "event_order_is_graph": [event["event_type"] for event in events] == [
+                "snapshot_reload_event",
+                "snapshot_reload_event",
                 "request_context",
                 "routing_decision",
                 "usage_event",

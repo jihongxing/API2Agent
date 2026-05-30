@@ -39,12 +39,14 @@ The cross-plane dogfood now verifies:
 3. `/healthz` reports `snapshot_control_plane_public_ip_v1`.
 4. Dogfood points `current.json` at a missing snapshot and calls `POST /v1/admin/reload-snapshot`.
 5. The failed reload returns `SNAPSHOT_RELOAD_FAILED`, `reloaded=false`, and `kept_snapshot_version=snapshot_control_plane_public_ip_v1`.
-6. `/healthz` still reports `snapshot_control_plane_public_ip_v1`.
-7. Control Plane exports and publishes snapshot v2 into the same distribution directory.
-8. Data Plane receives `POST /v1/admin/reload-snapshot`.
-9. `/healthz` reports `snapshot_control_plane_public_ip_v2`.
-10. `/v1/execute` succeeds.
-11. RoutingDecision and UsageEvent record `snapshot_control_plane_public_ip_v2`.
+6. A failed `snapshot_reload_event` is written.
+7. `/healthz` still reports `snapshot_control_plane_public_ip_v1`.
+8. Control Plane exports and publishes snapshot v2 into the same distribution directory.
+9. Data Plane receives `POST /v1/admin/reload-snapshot`.
+10. A successful `snapshot_reload_event` is written before the active snapshot is swapped.
+11. `/healthz` reports `snapshot_control_plane_public_ip_v2`.
+12. `/v1/execute` succeeds.
+13. RoutingDecision and UsageEvent record `snapshot_control_plane_public_ip_v2`.
 
 ## Checks
 
@@ -54,9 +56,11 @@ The cross-plane dogfood now verifies:
   "failed_reload_rejected": true,
   "failed_reload_kept_previous_snapshot": true,
   "health_after_failed_reload_still_v1": true,
+  "failed_reload_audit_event_recorded": true,
   "reload_response_success": true,
   "reload_previous_snapshot_version_matches": true,
   "reload_snapshot_version_matches": true,
+  "successful_reload_audit_event_recorded": true,
   "distribution_current_after_reload_points_to_v2": true,
   "distribution_v2_artifact_snapshot_exists": true,
   "routing_snapshot_version_matches": true
@@ -70,3 +74,5 @@ Snapshot Refresh / Reload Policy v0 passed.
 This keeps the production default conservative while giving local Control Plane / Data Plane dogfood a concrete reload mechanism.
 
 Reload Failure Semantics v0 also passed: failed reload does not swap the active snapshot, and the failure response is machine-readable and retryable.
+
+Reload Audit Events v0 also passed: failed and successful reload attempts are written into the append-only event stream.

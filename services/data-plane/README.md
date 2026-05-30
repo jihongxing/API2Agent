@@ -43,7 +43,7 @@ Environment variables:
 
 - `API2AGENT_DATAPLANE_ADDR`
 - `API2AGENT_SNAPSHOT` accepts a bare snapshot file, a distribution directory containing `current.json`, or a direct `current.json` pointer.
-- `API2AGENT_SNAPSHOT_RELOAD_POLICY` defaults to `startup_only`; set `manual` to enable `POST /v1/admin/reload-snapshot`. Failed reloads keep the previous snapshot active.
+- `API2AGENT_SNAPSHOT_RELOAD_POLICY` defaults to `startup_only`; set `manual` to enable `POST /v1/admin/reload-snapshot`. Failed reloads keep the previous snapshot active, and reload attempts write `snapshot_reload_event` audit records.
 - `API2AGENT_EVENT_DIR`
 - `API2AGENT_PROJECT_KEY`
 - `API2AGENT_PROJECT_QUOTA`

@@ -467,6 +467,13 @@ Current Phase 6 progress:
   - failed reload returns `SNAPSHOT_RELOAD_FAILED`, `reloaded=false`, `kept_snapshot_version`, current `snapshot_resolved_to`, and retryable error metadata.
   - `/healthz` remains on the previous snapshot after a failed reload.
   - cross-plane dogfood proves broken `current.json` failure keeps v1 active, then valid v2 publish and reload succeeds.
+- Control Plane Snapshot Reload Audit Events v0 is complete:
+  - Data Plane writes `snapshot_reload_event` for failed and successful reload attempts.
+  - successful reload writes the audit event before swapping the active snapshot.
+  - failed reload writes an audit event while keeping the previous snapshot active.
+  - reload audit events share the same append-only event stream and event sequence IDs as execution events.
+  - cross-plane dogfood verifies failed reload audit, successful reload audit, and execution graph ordering.
+  - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_RELOAD_AUDIT_DOGFOOD_REPORT.md`.
 
 ## 9. Marketplace Is Later
 

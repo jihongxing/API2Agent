@@ -57,6 +57,15 @@ func (s *SnapshotStore) Snapshot() *snapshots.Snapshot {
 }
 
 func (s *SnapshotStore) Reload(now time.Time) (*snapshots.Snapshot, string, error) {
+	snapshot, resolvedTo, err := s.LoadCandidate()
+	if err != nil {
+		return nil, "", err
+	}
+	s.Swap(snapshot, resolvedTo, now)
+	return snapshot, resolvedTo, nil
+}
+
+func (s *SnapshotStore) LoadCandidate() (*snapshots.Snapshot, string, error) {
 	if s == nil {
 		return nil, "", errors.New("snapshot store is not configured")
 	}
@@ -68,12 +77,15 @@ func (s *SnapshotStore) Reload(now time.Time) (*snapshots.Snapshot, string, erro
 	if err != nil {
 		return nil, "", err
 	}
+	return snapshot, resolvedTo, nil
+}
+
+func (s *SnapshotStore) Swap(snapshot *snapshots.Snapshot, resolvedTo string, now time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.snapshot = snapshot
 	s.LoadedAt = now.UTC()
 	s.resolvedTo = resolvedTo
-	return snapshot, resolvedTo, nil
 }
 
 func (s *SnapshotStore) Metadata() (time.Time, string) {
@@ -208,6 +220,26 @@ type ReloadSnapshotResponse struct {
 	Error                   *protocol.ErrorRecord `json:"error,omitempty"`
 }
 
+type SnapshotReloadAuditEvent struct {
+	ID                      string                `json:"id"`
+	SchemaVersion           string                `json:"schema_version"`
+	Outcome                 string                `json:"outcome"`
+	ReloadPolicy            string                `json:"reload_policy"`
+	PreviousSnapshotVersion string                `json:"previous_snapshot_version,omitempty"`
+	TargetSnapshotVersion   string                `json:"target_snapshot_version,omitempty"`
+	KeptSnapshotVersion     string                `json:"kept_snapshot_version,omitempty"`
+	SnapshotPath            string                `json:"snapshot_path,omitempty"`
+	PreviousResolvedTo      string                `json:"previous_resolved_to,omitempty"`
+	TargetResolvedTo        string                `json:"target_resolved_to,omitempty"`
+	Error                   *protocol.ErrorRecord `json:"error,omitempty"`
+	EventSequenceID         int64                 `json:"event_sequence_id,omitempty"`
+	CreatedAt               time.Time             `json:"created_at"`
+}
+
+func (e *SnapshotReloadAuditEvent) SetEventSequenceID(sequenceID int64) {
+	e.EventSequenceID = sequenceID
+}
+
 func (h Handler) currentSnapshot() *snapshots.Snapshot {
 	if h.SnapshotStore != nil {
 		return h.SnapshotStore.Snapshot()
@@ -235,12 +267,31 @@ func (h Handler) ReloadSnapshot(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "SNAPSHOT_RELOAD_DISABLED", "platform", "snapshot reload policy is startup_only")
 		return
 	}
+	if h.SnapshotStore == nil {
+		writeError(w, http.StatusInternalServerError, "SNAPSHOT_RELOAD_FAILED", "platform", "snapshot store is not configured")
+		return
+	}
 	previousVersion := snapshotVersion(h.currentSnapshot())
-	loadedAt := time.Now().UTC()
-	snapshot, resolvedTo, err := h.SnapshotStore.Reload(loadedAt)
+	currentLoadedAt, currentResolvedTo := h.SnapshotStore.Metadata()
+	createdAt := time.Now().UTC()
+	snapshot, resolvedTo, err := h.SnapshotStore.LoadCandidate()
 	if err != nil {
-		currentLoadedAt, currentResolvedTo := h.SnapshotStore.Metadata()
 		record := errorRecord("SNAPSHOT_RELOAD_FAILED", "platform", err.Error(), true)
+		auditEvent := SnapshotReloadAuditEvent{
+			ID:                      routing.NewID("snapshot_reload"),
+			SchemaVersion:           protocol.SchemaVersion,
+			Outcome:                 "failure",
+			ReloadPolicy:            h.reloadPolicy(),
+			PreviousSnapshotVersion: previousVersion,
+			KeptSnapshotVersion:     previousVersion,
+			SnapshotPath:            h.SnapshotStore.Path,
+			PreviousResolvedTo:      currentResolvedTo,
+			Error:                   record,
+			CreatedAt:               createdAt,
+		}
+		if !h.writeEvent(w, r.Context(), "snapshot_reload_event", &auditEvent) {
+			return
+		}
 		writeJSON(w, http.StatusServiceUnavailable, ReloadSnapshotResponse{
 			Reloaded:                false,
 			PreviousSnapshotVersion: previousVersion,
@@ -253,6 +304,23 @@ func (h Handler) ReloadSnapshot(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	auditEvent := SnapshotReloadAuditEvent{
+		ID:                      routing.NewID("snapshot_reload"),
+		SchemaVersion:           protocol.SchemaVersion,
+		Outcome:                 "success",
+		ReloadPolicy:            h.reloadPolicy(),
+		PreviousSnapshotVersion: previousVersion,
+		TargetSnapshotVersion:   snapshot.SnapshotVersion,
+		SnapshotPath:            h.SnapshotStore.Path,
+		PreviousResolvedTo:      currentResolvedTo,
+		TargetResolvedTo:        resolvedTo,
+		CreatedAt:               createdAt,
+	}
+	if !h.writeEvent(w, r.Context(), "snapshot_reload_event", &auditEvent) {
+		return
+	}
+	loadedAt := time.Now().UTC()
+	h.SnapshotStore.Swap(snapshot, resolvedTo, loadedAt)
 	writeJSON(w, http.StatusOK, ReloadSnapshotResponse{
 		Reloaded:                true,
 		PreviousSnapshotVersion: previousVersion,
