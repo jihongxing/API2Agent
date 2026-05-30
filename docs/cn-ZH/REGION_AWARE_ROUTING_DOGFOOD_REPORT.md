@@ -30,6 +30,7 @@ Routing policy：
 
 - 选择 `weather_cn`
 - 在 routing decision 中持久化 `client_region=cn`
+- 推导 `selected_provider_region=cn`
 
 ## 结果
 
@@ -38,17 +39,18 @@ Routing policy：
 - 没有 region-specific metrics 时，会 fallback 到 aggregate latency metrics。
 - `api2agent route --client-region cn --strategy region_aware_latency --json` 返回 `weather_cn`。
 - 存储后的 routing decision 保留了 `client_region=cn`。
+- 存储后的 routing decision 保留了 `selected_provider_region=cn`。
 - `api2agent call --client-region` 现在也会把相同 policy 带入 execution decision。
 - route/call 现在会从 local usage store 读取 aggregate metrics 和 matching client-region metrics。
 
 ## 测试
 
 ```text
-pytest tests/test_capability_routing.py tests/test_control_layer.py
-37 passed
+pytest tests/test_capability_routing.py tests/test_capability_execution.py tests/test_sdk_core_loop.py tests/test_control_layer.py
+61 passed
 
 pytest
-141 passed
+143 passed
 ```
 
 ## 产品认知

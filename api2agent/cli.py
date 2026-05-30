@@ -11,7 +11,7 @@ from api2agent.capabilities.failover import build_failover_policy
 from api2agent.capabilities.execution import execute_capability
 from api2agent.capabilities.policies import routing_policy_preset
 from api2agent.capabilities.registry import capability_naming_warnings, load_provider_registry, provider_package_warnings
-from api2agent.capabilities.routing import rank_providers, select_provider
+from api2agent.capabilities.routing import rank_providers, select_provider, select_provider_region
 from api2agent.control.models import UsageEvent
 from api2agent.control.proxy import run_proxy_server
 from api2agent.control.storage import UsageStore
@@ -686,6 +686,7 @@ def route(
         preset=preset,
         client_region=policy.client_region,
         selected_provider_id=selected.provider_id if selected else None,
+        selected_provider_region=select_provider_region(selected, policy.client_region) if selected else None,
         ranked_provider_ids=[provider.provider_id for provider in ranked],
         metrics=metrics,
     )

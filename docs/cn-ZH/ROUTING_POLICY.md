@@ -18,6 +18,7 @@ Routing Policy v0 定义 API2Agent 如何为一个 capability 选择 provider ca
   "preset": "reliability_first",
   "client_region": "cn",
   "selected_provider_id": "provider_a",
+  "selected_provider_region": "cn",
   "ranked_provider_ids": ["provider_a", "provider_b"],
   "metrics": [],
   "created_at": "2026-05-30T00:00:00Z"
@@ -54,6 +55,8 @@ Ranking order：
 4. 其他 providers
 
 同一个 region rank 内，策略会优先使用 matching client-region latency metrics，其次使用 aggregate latency metrics，最后是 no-metric fallback。
+
+选中 provider 之后，API2Agent 会确定性推导 `selected_provider_region`：优先匹配 `client_region`，然后是 `global`，再是 `geo_affinity`，最后 fallback 到 provider 声明的第一个 region。
 
 CLI：
 

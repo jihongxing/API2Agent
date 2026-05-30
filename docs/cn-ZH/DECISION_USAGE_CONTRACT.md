@@ -21,7 +21,9 @@
 - `capability_id`
 - `strategy`
 - `preset`
+- `client_region`
 - `selected_provider_id`
+- `selected_provider_region`
 - `ranked_provider_ids`
 - `metrics`
 - `failover_policy`
@@ -46,6 +48,7 @@
 - `project_id`
 - `capability_id`
 - `provider_id`
+- `provider_region`
 - `tool_id`
 - `method`
 - `path`

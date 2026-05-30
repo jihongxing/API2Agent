@@ -274,11 +274,13 @@ Current implementation:
 - `region_aware_latency` routing strategy is implemented.
 - `api2agent route` and `api2agent call` accept `--client-region`.
 - routing decisions persist `client_region`.
+- routing decisions persist deterministic `selected_provider_region`.
+- generated package usage events record derived `provider_region`.
 
 Next engineering task:
 
 ```text
-Region-aware routing dogfood: same capability, different regions
+Active probing design v0
 ```
 
 ## 9. Marketplace Is Later

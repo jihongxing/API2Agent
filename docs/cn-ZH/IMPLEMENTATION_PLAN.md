@@ -274,11 +274,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - `region_aware_latency` routing strategy 已实现。
 - `api2agent route` 和 `api2agent call` 支持 `--client-region`。
 - routing decisions 会持久化 `client_region`。
+- routing decisions 会持久化确定性的 `selected_provider_region`。
+- generated package usage events 会记录推导后的 `provider_region`。
 
 下一项工程任务：
 
 ```text
-Region-aware routing dogfood: same capability, different regions
+Active probing design v0
 ```
 
 ## 9. Marketplace 是后面的结果

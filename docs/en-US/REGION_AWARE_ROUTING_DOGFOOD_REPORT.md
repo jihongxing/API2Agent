@@ -30,6 +30,7 @@ Expected outcome:
 
 - select `weather_cn`
 - persist `client_region=cn` in the routing decision
+- derive `selected_provider_region=cn`
 
 ## Results
 
@@ -38,17 +39,18 @@ Expected outcome:
 - aggregate latency metrics are used as fallback when region-specific metrics are unavailable.
 - `api2agent route --client-region cn --strategy region_aware_latency --json` returned `weather_cn`.
 - the stored routing decision preserved `client_region=cn`.
+- the stored routing decision preserved `selected_provider_region=cn`.
 - `api2agent call --client-region` now carries the same policy into execution decisions.
 - route/call now load both aggregate metrics and matching client-region metrics from the local usage store.
 
 ## Tests
 
 ```text
-pytest tests/test_capability_routing.py tests/test_control_layer.py
-37 passed
+pytest tests/test_capability_routing.py tests/test_capability_execution.py tests/test_sdk_core_loop.py tests/test_control_layer.py
+61 passed
 
 pytest
-141 passed
+143 passed
 ```
 
 ## Product Learning

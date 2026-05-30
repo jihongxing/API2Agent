@@ -92,6 +92,17 @@ Stable `geo_affinity` values:
 - `cn-only`
 - `unknown`
 
+## Provider Region Selection
+
+When one provider supports multiple regions, API2Agent v0 selects the provider region deterministically:
+
+1. prefer the `client_region` when the provider declares it
+2. prefer explicit `global`
+3. infer `global` from `geo_affinity=global`
+4. infer `cn` from `geo_affinity=cn-only`
+5. fallback to the first declared provider region
+6. otherwise leave `selected_provider_region` empty
+
 ## Routing Implication
 
 Latency should become region-aware:

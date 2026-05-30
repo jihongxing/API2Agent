@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Region-aware routing dogfood: same capability, different regions
+Active probing design v0
 ```
 
 当前实现结果：
@@ -515,6 +515,8 @@ Region-aware routing dogfood: same capability, different regions
 - routing decisions 现在会持久化 `client_region`，用于 audit 和 decision dataset。
 - `run_region_aware_routing_benchmark` 现在会返回 routing decision 和 decision-dataset record。
 - route/call 现在会为 `region_aware_latency` 读取 aggregate metrics 和 matching client-region metrics。
+- routing decisions 现在会持久化确定性的 `selected_provider_region`。
+- generated package usage events 现在会记录推导后的 `provider_region`。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 - proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
@@ -611,8 +613,8 @@ Region-aware routing dogfood: same capability, different regions
 
 - dogfood 一个 same-capability、different-region provider registry
 - 记录 selected provider、ranked providers 和持久化后的 `client_region`
-- 决定 provider 支持多个 regions 时如何选择 provider region
 - 在实现 automated geo routing 前，先设计 active probing
+- 用 same-capability providers dogfood active probe snapshots
 
 ## 9. Phase 6：Hosted Control Plane
 

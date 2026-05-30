@@ -18,6 +18,7 @@ Every routing selection should be representable as a routing decision event:
   "preset": "reliability_first",
   "client_region": "cn",
   "selected_provider_id": "provider_a",
+  "selected_provider_region": "cn",
   "ranked_provider_ids": ["provider_a", "provider_b"],
   "metrics": [],
   "created_at": "2026-05-30T00:00:00Z"
@@ -54,6 +55,8 @@ Ranking order:
 4. other providers
 
 Within the same region rank, the strategy uses matching client-region latency metrics when available, then aggregate latency metrics, then no-metric fallback.
+
+After selecting a provider, API2Agent derives `selected_provider_region` deterministically: match `client_region` when possible, then `global`, then `geo_affinity`, then the first declared provider region.
 
 CLI:
 

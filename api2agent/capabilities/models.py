@@ -48,6 +48,7 @@ class DecisionDatasetRecord(BaseModel):
     api2agent_region: str | None = None
     candidate_provider_ids: list[str] = Field(default_factory=list)
     selected_provider_id: str | None = None
+    selected_provider_region: str | None = None
     routing_strategy: str
     success: bool = False
     latency_total_ms: float | None = None
@@ -98,6 +99,7 @@ class RoutingDecision(BaseModel):
     preset: str | None = None
     client_region: str | None = None
     selected_provider_id: str | None = None
+    selected_provider_region: str | None = None
     ranked_provider_ids: list[str] = Field(default_factory=list)
     metrics: list[MetricsSnapshot] = Field(default_factory=list)
     failover_policy: FailoverPolicy | None = None

@@ -12,6 +12,20 @@ def select_provider(
     return ranked[0] if ranked else None
 
 
+def select_provider_region(candidate: ProviderCandidate, client_region: str | None = None) -> str | None:
+    if client_region and client_region in candidate.regions:
+        return client_region
+    if "global" in candidate.regions:
+        return "global"
+    if candidate.geo_affinity == "global":
+        return "global"
+    if candidate.geo_affinity == "cn-only":
+        return "cn"
+    if candidate.regions:
+        return candidate.regions[0]
+    return None
+
+
 def rank_providers(
     candidates: list[ProviderCandidate],
     metrics: list[MetricsSnapshot],

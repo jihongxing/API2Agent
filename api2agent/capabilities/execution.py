@@ -9,7 +9,7 @@ from typing import Any
 from api2agent.capabilities.failover import build_failover_policy, should_failover
 from api2agent.capabilities.models import FailoverPolicy, ProviderCandidate, RoutingDecision, RoutingPolicy
 from api2agent.capabilities.normalization import OutputNormalizationError, normalize_output
-from api2agent.capabilities.routing import rank_providers, select_provider
+from api2agent.capabilities.routing import rank_providers, select_provider, select_provider_region
 from api2agent.control.models import UsageEvent
 from api2agent.control.storage import UsageStore
 from api2agent.credentials.models import CredentialDefinition, CredentialInjectionPatch, CredentialResolutionRequest
@@ -48,6 +48,9 @@ def execute_capability(
         preset=preset,
         client_region=policy.client_region if policy else None,
         selected_provider_id=selected.provider_id if selected else None,
+        selected_provider_region=select_provider_region(selected, policy.client_region if policy else None)
+        if selected
+        else None,
         ranked_provider_ids=[provider.provider_id for provider in ranked],
         metrics=metrics,
         failover_policy=effective_failover_policy,
@@ -313,6 +316,7 @@ def _record_usage_event(
                 "credential": result.get("credential_metadata"),
             },
             credential_reference=result.get("credential_reference"),
+            provider_region=select_provider_region(provider, decision.client_region),
             provider_runtime_reference=f"local_package:{provider.metadata.get('package_dir')}",
         )
     )

@@ -92,6 +92,17 @@ Provider registry entries 现在可以包含：
 - `cn-only`
 - `unknown`
 
+## Provider Region Selection
+
+当一个 provider 支持多个 regions 时，API2Agent v0 使用确定性规则选择 provider region：
+
+1. provider 声明了 `client_region` 时，优先使用它
+2. 优先使用显式 `global`
+3. 从 `geo_affinity=global` 推导 `global`
+4. 从 `geo_affinity=cn-only` 推导 `cn`
+5. fallback 到 provider 声明的第一个 region
+6. 否则 `selected_provider_region` 留空
+
 ## Routing Implication
 
 Latency 应变成 region-aware：

@@ -27,7 +27,7 @@ pytest
 Expected:
 
 ```text
-141 passed
+143 passed
 ```
 
 ## 2. First SDK Call

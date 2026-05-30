@@ -8,7 +8,7 @@ from api2agent.capabilities.models import (
 )
 from api2agent.capabilities.normalization import OutputNormalizationError, normalize_output
 from api2agent.capabilities.policies import routing_policy_preset
-from api2agent.capabilities.routing import rank_providers, select_provider
+from api2agent.capabilities.routing import rank_providers, select_provider, select_provider_region
 
 
 def __getattr__(name: str):
@@ -31,4 +31,5 @@ __all__ = [
     "routing_policy_preset",
     "rank_providers",
     "select_provider",
+    "select_provider_region",
 ]

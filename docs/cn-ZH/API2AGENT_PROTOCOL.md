@@ -283,6 +283,7 @@ Routing 为 capability 选择 provider candidate。
 - `preset`
 - `client_region`
 - `selected_provider_id`
+- `selected_provider_region`
 - `ranked_provider_ids`
 - `metrics`
 - `failover_policy`
@@ -299,6 +300,15 @@ Routing 为 capability 选择 provider candidate。
 - `balanced`
 
 `client_region` 是 optional。strategy 为 `region_aware_latency` 时，routing 会结合它、provider `regions`、provider `geo_affinity`，以及可用的 client-region latency metrics。
+
+`selected_provider_region` 由确定性规则推导：
+
+1. 如果 selected provider `regions` 包含 `client_region`，使用 `client_region`
+2. 使用显式声明的 `global`
+3. 使用 `geo_affinity=global`
+4. `geo_affinity=cn-only` 时使用 `cn`
+5. 使用 provider 声明的第一个 region
+6. 否则留空
 
 Routing 必须 policy-driven and auditable。
 
@@ -545,6 +555,7 @@ usage event
 - provider region metadata
 - local decision dataset contract
 - 带 optional `client_region` 的 `region_aware_latency` routing strategy
+- deterministic selected provider-region semantics
 
 尚未实现：
 

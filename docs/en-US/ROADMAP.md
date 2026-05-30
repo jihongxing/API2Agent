@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Region-aware routing dogfood: same capability, different regions
+Active probing design v0
 ```
 
 Current implementation result:
@@ -515,6 +515,8 @@ Current implementation result:
 - routing decisions now persist `client_region` for audit and decision-dataset use.
 - `run_region_aware_routing_benchmark` now returns a routing decision and decision-dataset record.
 - route/call now load aggregate plus matching client-region metrics for `region_aware_latency`.
+- routing decisions now persist deterministic `selected_provider_region`.
+- generated package usage events now record derived `provider_region`.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
@@ -611,8 +613,8 @@ Next strategic design requirements:
 
 - dogfood one same-capability, different-region provider registry
 - record selected provider, ranked providers, and persisted `client_region`
-- decide how provider region is selected when a provider supports multiple regions
 - design active probing before implementing automated geo routing
+- dogfood active probe snapshots against same-capability providers
 
 ## 9. Phase 6: Hosted Control Plane
 

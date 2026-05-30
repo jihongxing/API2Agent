@@ -21,7 +21,9 @@ The following `decision` fields are stable:
 - `capability_id`
 - `strategy`
 - `preset`
+- `client_region`
 - `selected_provider_id`
+- `selected_provider_region`
 - `ranked_provider_ids`
 - `metrics`
 - `failover_policy`
@@ -46,6 +48,7 @@ The following `usage_events[]` fields are stable:
 - `project_id`
 - `capability_id`
 - `provider_id`
+- `provider_region`
 - `tool_id`
 - `method`
 - `path`

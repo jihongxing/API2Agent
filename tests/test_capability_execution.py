@@ -72,6 +72,7 @@ def test_execute_capability_selects_provider_and_normalizes_output(tmp_path) -> 
         capability_id="public_ip_lookup",
         provider_id="ipify",
         tool_id="get",
+        regions=["us-east", "cn"],
         output_mapping={"ip": "$.ip"},
         metadata={"package_dir": str(package_dir)},
     )
@@ -82,7 +83,7 @@ def test_execute_capability_selects_provider_and_normalizes_output(tmp_path) -> 
         capability_id="public_ip_lookup",
         params={},
         store=store,
-        policy=RoutingPolicy(strategy="first"),
+        policy=RoutingPolicy(strategy="first", client_region="cn"),
         preset="test_preset",
     )
 
@@ -93,13 +94,16 @@ def test_execute_capability_selects_provider_and_normalizes_output(tmp_path) -> 
     assert result["attempts"][0]["ok"] is True
     assert result["routing_decision"]["failover_policy"]["enabled"] is False
     assert result["routing_decision"]["selected_provider_id"] == "ipify"
+    assert result["routing_decision"]["selected_provider_region"] == "cn"
     assert result["routing_decision"]["preset"] == "test_preset"
     stored_decision = store.get_routing_decision(result["routing_decision"]["id"])
     usage_events = store.usage_for_routing_decision(result["routing_decision"]["id"])
     assert stored_decision is not None
     assert stored_decision.selected_provider_id == "ipify"
+    assert stored_decision.selected_provider_region == "cn"
     assert len(usage_events) == 1
     assert usage_events[0].provider_id == "ipify"
+    assert usage_events[0].provider_region == "cn"
     assert usage_events[0].success is True
 
 

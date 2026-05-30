@@ -478,5 +478,7 @@ def test_region_aware_routing_benchmark_returns_decision_dataset() -> None:
     assert result["selected_provider_id"] == "weather_cn"
     assert result["ranked_provider_ids"] == ["weather_cn", "weather_us"]
     assert result["routing_decision"]["client_region"] == "cn"
+    assert result["routing_decision"]["selected_provider_region"] == "cn"
     assert result["decision_dataset_record"]["client_region"] == "cn"
     assert result["decision_dataset_record"]["selected_provider_id"] == "weather_cn"
+    assert result["decision_dataset_record"]["selected_provider_region"] == "cn"

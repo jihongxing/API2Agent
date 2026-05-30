@@ -27,7 +27,7 @@ pytest
 期望结果：
 
 ```text
-141 passed
+143 passed
 ```
 
 ## 2. 第一次 SDK 调用

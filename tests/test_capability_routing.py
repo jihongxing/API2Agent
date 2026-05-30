@@ -7,7 +7,7 @@ from api2agent.capabilities.models import DecisionDatasetRecord, MetricsSnapshot
 from api2agent.capabilities.policies import routing_policy_preset
 from api2agent.capabilities.naming import is_alpha_capability_id
 from api2agent.capabilities.registry import PROVIDER_REGISTRY_CONTRACT_VERSION, load_provider_registry
-from api2agent.capabilities.routing import rank_providers, select_provider
+from api2agent.capabilities.routing import rank_providers, select_provider, select_provider_region
 from api2agent.cli import app
 from api2agent.control.models import UsageEvent
 from api2agent.control.storage import UsageStore
@@ -136,6 +136,41 @@ def test_region_aware_latency_uses_matching_region_metrics() -> None:
     )
 
     assert ranked[0].provider_id == "weather_cn_fast"
+
+
+def test_select_provider_region_prefers_client_region() -> None:
+    provider = ProviderCandidate(
+        id="multi_region",
+        capability_id="weather.current.get",
+        provider_id="multi_region",
+        tool_id="get",
+        regions=["us-east", "cn"],
+        geo_affinity="regional",
+    )
+
+    assert select_provider_region(provider, "cn") == "cn"
+
+
+def test_select_provider_region_falls_back_deterministically() -> None:
+    global_provider = ProviderCandidate(
+        id="global_provider",
+        capability_id="weather.current.get",
+        provider_id="global_provider",
+        tool_id="get",
+        regions=[],
+        geo_affinity="global",
+    )
+    regional_provider = ProviderCandidate(
+        id="regional_provider",
+        capability_id="weather.current.get",
+        provider_id="regional_provider",
+        tool_id="get",
+        regions=["us-east", "eu-west"],
+        geo_affinity="regional",
+    )
+
+    assert select_provider_region(global_provider, "cn") == "global"
+    assert select_provider_region(regional_provider, "cn") == "us-east"
 
 
 def test_reliability_first_preset_prefers_success_rate() -> None:
@@ -394,8 +429,10 @@ def test_route_command_supports_region_aware_latency(tmp_path) -> None:
     assert payload["client_region"] == "cn"
     assert payload["selected"]["provider_id"] == "weather_cn"
     assert payload["decision"]["client_region"] == "cn"
+    assert payload["decision"]["selected_provider_region"] == "cn"
     assert stored_decision is not None
     assert stored_decision.client_region == "cn"
+    assert stored_decision.selected_provider_region == "cn"
 
 
 def test_route_command_uses_region_specific_metrics(tmp_path) -> None:
@@ -496,9 +533,11 @@ def test_route_command_uses_region_specific_metrics(tmp_path) -> None:
 
     assert payload["selected"]["provider_id"] == "weather_b"
     assert payload["decision"]["client_region"] == "cn"
+    assert payload["decision"]["selected_provider_region"] == "cn"
     assert any(metric["client_region"] == "cn" for metric in payload["metrics"])
     assert stored_decision is not None
     assert stored_decision.client_region == "cn"
+    assert stored_decision.selected_provider_region == "cn"
 
 
 def test_route_command_rejects_invalid_registry_schema(tmp_path) -> None:
@@ -570,6 +609,7 @@ def test_decision_dataset_record_contract() -> None:
         api2agent_region="ap-east",
         candidate_provider_ids=["weather_us", "weather_cn"],
         selected_provider_id="weather_cn",
+        selected_provider_region="cn",
         routing_strategy="balanced",
         success=True,
         latency_total_ms=40,
@@ -582,6 +622,7 @@ def test_decision_dataset_record_contract() -> None:
     assert payload["api2agent_region"] == "ap-east"
     assert payload["candidate_provider_ids"] == ["weather_us", "weather_cn"]
     assert payload["selected_provider_id"] == "weather_cn"
+    assert payload["selected_provider_region"] == "cn"
     assert payload["latency_total_ms"] == 40
 
 

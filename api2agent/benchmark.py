@@ -8,7 +8,7 @@ from api2agent.capabilities.models import (
     RoutingDecision,
     RoutingPolicy,
 )
-from api2agent.capabilities.routing import rank_providers
+from api2agent.capabilities.routing import rank_providers, select_provider_region
 from api2agent.sdk import call
 
 
@@ -75,6 +75,7 @@ def run_region_aware_routing_benchmark(
         strategy=policy.strategy,
         client_region=client_region,
         selected_provider_id=selected.provider_id if selected else None,
+        selected_provider_region=select_provider_region(selected, client_region) if selected else None,
         ranked_provider_ids=[provider.provider_id for provider in ranked],
         metrics=metric_list,
     )
@@ -87,6 +88,7 @@ def run_region_aware_routing_benchmark(
         client_region=client_region,
         candidate_provider_ids=[provider.provider_id for provider in provider_list],
         selected_provider_id=selected.provider_id if selected else None,
+        selected_provider_region=select_provider_region(selected, client_region) if selected else None,
         routing_strategy=policy.strategy,
         success=selected is not None,
         latency_total_ms=selected_latency,

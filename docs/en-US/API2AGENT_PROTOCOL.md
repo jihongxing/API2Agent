@@ -283,6 +283,7 @@ Stable routing decision fields:
 - `preset`
 - `client_region`
 - `selected_provider_id`
+- `selected_provider_region`
 - `ranked_provider_ids`
 - `metrics`
 - `failover_policy`
@@ -299,6 +300,15 @@ Stable routing strategies:
 - `balanced`
 
 `client_region` is optional. When strategy is `region_aware_latency`, routing uses it with provider `regions`, provider `geo_affinity`, and client-region latency metrics when available.
+
+`selected_provider_region` is derived deterministically:
+
+1. use `client_region` when it is listed in the selected provider `regions`
+2. use explicit `global`
+3. use `geo_affinity=global`
+4. use `cn` for `geo_affinity=cn-only`
+5. use the first declared provider region
+6. otherwise leave it empty
 
 Routing must remain policy-driven and auditable.
 
@@ -545,6 +555,7 @@ Implemented:
 - provider region metadata
 - local decision dataset contract
 - `region_aware_latency` routing strategy with optional `client_region`
+- deterministic selected provider-region semantics
 
 Not yet implemented:
 
