@@ -8,6 +8,12 @@ Build:
 go test ./...
 ```
 
+Registry source:
+
+- `registry.Store` is the Control Plane state boundary.
+- `registry.FileStore` is the current local implementation.
+- Future hosted phases can add a Postgres-backed store without changing snapshot export semantics.
+
 Export a routing snapshot:
 
 ```bash

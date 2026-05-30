@@ -8,21 +8,6 @@ import (
 	"time"
 )
 
-func LoadFile(path string) (*Registry, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("read registry: %w", err)
-	}
-	var registry Registry
-	if err := json.Unmarshal(data, &registry); err != nil {
-		return nil, fmt.Errorf("decode registry: %w", err)
-	}
-	if err := registry.Validate(); err != nil {
-		return nil, err
-	}
-	return &registry, nil
-}
-
 func WriteSnapshotFile(path string, snapshot RoutingSnapshot) error {
 	data, err := json.MarshalIndent(snapshot, "", "  ")
 	if err != nil {

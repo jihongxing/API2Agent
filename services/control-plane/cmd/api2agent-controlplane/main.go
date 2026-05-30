@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -38,7 +39,8 @@ func exportSnapshot(args []string) error {
 	if *outputPath == "" {
 		return fmt.Errorf("--output is required")
 	}
-	reg, err := registry.LoadFile(*registryPath)
+	store := registry.NewFileStore(*registryPath)
+	reg, err := store.Load(context.Background())
 	if err != nil {
 		return err
 	}

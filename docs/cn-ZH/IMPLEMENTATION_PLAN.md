@@ -429,6 +429,11 @@ Go Control Plane Minimum v0
   - snapshot checker 会加载 exported snapshots、解析 TTL、校验 required capability/provider/routing fields，并输出 JSON report。
   - Control Plane minimum dogfood 现在会先用 `api2agent-snapshot-check` gate snapshot export，再进入 Data Plane execution。
   - 这可以防止 Control Plane/Data Plane contract 静默漂移。
+- Control Plane Registry Store v0 已完成：
+  - `registry.Store` 定义 Control Plane state source boundary。
+  - `registry.FileStore` 是当前 local implementation。
+  - `api2agent-controlplane export-snapshot` 现在通过 store interface 加载 registry state。
+  - 未来 hosted phases 可以增加 Postgres-backed store，而不改变 snapshot export semantics。
 
 ## 9. Marketplace 是后面的结果
 

@@ -429,6 +429,11 @@ Current Phase 6 progress:
   - the snapshot checker loads exported snapshots, parses TTL, validates required capability/provider/routing fields, and reports JSON.
   - Control Plane minimum dogfood now gates snapshot export with `api2agent-snapshot-check` before Data Plane execution.
   - this protects the Control Plane/Data Plane contract from silent drift.
+- Control Plane Registry Store v0 is complete:
+  - `registry.Store` defines the Control Plane state source boundary.
+  - `registry.FileStore` is the current local implementation.
+  - `api2agent-controlplane export-snapshot` now loads registry state through the store interface.
+  - future hosted phases can add a Postgres-backed store without changing snapshot export semantics.
 
 ## 9. Marketplace Is Later
 
