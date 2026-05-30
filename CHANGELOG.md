@@ -58,6 +58,7 @@ All notable API2Agent changes will be documented in this file.
 - Region-aware routing benchmark helper and decision dataset artifact.
 - Region-specific usage metrics loading for `region_aware_latency`.
 - Deterministic selected provider-region semantics in routing decisions and usage events.
+- Capability source boundary documentation for API-first MVP and future non-API adapters.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 

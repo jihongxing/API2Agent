@@ -15,6 +15,14 @@ Current MVP: Python compiler and generated Python MCP runtime
 
 架构现在分成两个主要平面。
 
+Capability source 边界：
+
+- 当前 MVP source type 是 `api`。
+- 未来 source types 可以包括 `workflow`、`local_function`、`cli`、`database`、`human` 和 `agent`。
+- 每一种 source 都必须被适配成 API-like capability execution unit，形式是 `input -> execution -> output`。
+- API2Agent 不能变成 workflow engine、script runtime、database runtime 或 agent framework。
+- 详见 `docs/cn-ZH/CAPABILITY_SOURCES.md`。
+
 ### Local Tooling Plane
 
 ```text

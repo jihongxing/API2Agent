@@ -30,6 +30,10 @@ Strategic thesis:
 
 > API2Agent starts as a local Agent capability compiler, then becomes the control, metrics, routing, and reliable execution layer for Agent access to API-backed capabilities.
 
+Capability source boundary:
+
+> v0.1-alpha is API-first. Long term, API2Agent may support any source that can be adapted into `input -> execution -> output`, but non-API sources enter only as future adapters after API execution is reliable. See `docs/en-US/CAPABILITY_SOURCES.md`.
+
 v0.1-alpha product hook:
 
 ```text
@@ -88,9 +92,11 @@ Implemented:
 - local Credential Resolver
 - credential injection patches for generated package execution
 - credential-safe usage attribution and replay
+- capability source boundary document
 
 Not implemented yet:
 
+- non-API capability source adapters
 - hard enforcement of capability naming rule
 - endpoint-level auth
 - base URL override
@@ -103,6 +109,12 @@ Not implemented yet:
 
 Explicitly out of current API2Agent scope:
 
+- workflow engine execution
+- local function runtime
+- arbitrary script sandbox
+- database runtime
+- human task routing
+- agent-as-provider execution
 - marketplace UI
 - marketplace search
 - provider revenue share

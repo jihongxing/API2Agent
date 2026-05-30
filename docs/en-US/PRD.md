@@ -4,6 +4,8 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
+MVP is API-first. The long-term boundary is broader: any source that can be represented as `input -> execution -> output` may eventually become an Agent-callable capability through an adapter. See `docs/en-US/CAPABILITY_SOURCES.md`.
+
 The project starts as an Agent capability compiler:
 
 ```text
@@ -23,6 +25,7 @@ The current product mandate is API2Agent itself:
 - make capabilities comparable and routable
 - maximize real execution data
 - minimize API/provider onboarding cost
+- keep API onboarding first while preserving future source-neutral capability execution
 
 The long-term product can become larger:
 
@@ -32,7 +35,7 @@ Agent request
   -> Routing Layer
   -> Credential Orchestration
   -> API2Agent Proxy
-  -> third-party API / workflow
+  -> API-like capability execution unit
   -> metrics, quota, pricing
 ```
 

@@ -12,6 +12,7 @@
 - 为什么 proxy 和 usage tracking 重要
 - 什么是 Capability Layer
 - 什么是 Routing Layer
+- 为什么 MVP 是 API-first，但长期抽象是 source-neutral
 - 为什么 marketplace 不会从数据里自动长出来
 
 ## 2. 核心战略转向
@@ -23,6 +24,12 @@ API2Agent 起步是：
 但它应该演进为：
 
 > Agent 调用、比较、路由并可靠执行 API-backed capabilities 的基础设施层。
+
+长期来看，这个边界会更大：
+
+> Agent 执行任何可被适配成 `input -> execution -> output` 的外部 capability source 的基础设施层。
+
+Capability source 边界详见 `docs/cn-ZH/CAPABILITY_SOURCES.md`。
 
 简化成一句：
 

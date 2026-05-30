@@ -12,6 +12,7 @@ It answers:
 - Why proxy and usage tracking matter
 - What Capability Layer means
 - What Routing Layer means
+- Why MVP is API-first but the long-term abstraction is source-neutral
 - Why marketplace does not emerge automatically from data
 
 ## 2. The Core Strategic Shift
@@ -23,6 +24,12 @@ API2Agent starts as:
 But it should evolve into:
 
 > The infrastructure layer for Agents to call, compare, route to, and reliably execute API-backed capabilities.
+
+Long term, this becomes broader:
+
+> The infrastructure layer for Agents to execute any external capability source that can be adapted into `input -> execution -> output`.
+
+See `docs/en-US/CAPABILITY_SOURCES.md` for the source boundary.
 
 The short version:
 

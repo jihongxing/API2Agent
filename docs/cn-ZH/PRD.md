@@ -4,6 +4,8 @@
 
 API2Agent 是把 API 转化成 Agent-callable capabilities 的中立基础设施。
 
+MVP 坚持 API-first。长期边界更大：任何能被表示为 `input -> execution -> output` 的来源，未来都可以通过 adapter 变成 Agent-callable capability。详见 `docs/cn-ZH/CAPABILITY_SOURCES.md`。
+
 项目从 Agent capability compiler 开始：
 
 ```text
@@ -23,6 +25,7 @@ OpenAPI / curl
 - 让 capabilities 可比较、可路由
 - 最大化真实执行数据
 - 最小化 API/provider 接入成本
+- 坚持 API onboarding first，同时为未来 source-neutral capability execution 预留抽象
 
 长期产品可以变得更大：
 
@@ -32,7 +35,7 @@ Agent request
   -> Routing Layer
   -> Credential Orchestration
   -> API2Agent Proxy
-  -> third-party API / workflow
+  -> API-like capability execution unit
   -> metrics, quota, pricing
 ```
 

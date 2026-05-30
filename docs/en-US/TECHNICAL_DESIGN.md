@@ -15,6 +15,14 @@ Current MVP: Python compiler and generated Python MCP runtime
 
 The architecture now has two major planes.
 
+Capability source boundary:
+
+- Current MVP source type is `api`.
+- Future source types can include `workflow`, `local_function`, `cli`, `database`, `human`, and `agent`.
+- Every source must be adapted into an API-like capability execution unit with `input -> execution -> output`.
+- API2Agent must not become the workflow engine, script runtime, database runtime, or agent framework.
+- See `docs/en-US/CAPABILITY_SOURCES.md`.
+
 ### Local Tooling Plane
 
 ```text

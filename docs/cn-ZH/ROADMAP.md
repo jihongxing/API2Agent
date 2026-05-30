@@ -30,6 +30,10 @@ API2Agent
 
 > API2Agent 起步是本地 Agent capability compiler，之后演进为 Agent 访问 API-backed capabilities 的 control、metrics、routing 和 reliable execution layer。
 
+Capability source 边界：
+
+> v0.1-alpha 坚持 API-first。长期来看，API2Agent 可以支持任何能被适配成 `input -> execution -> output` 的来源，但非 API sources 只能在 API execution 可靠之后作为 future adapters 进入。详见 `docs/cn-ZH/CAPABILITY_SOURCES.md`。
+
 v0.1-alpha 产品抓手：
 
 ```text
@@ -88,9 +92,11 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 - local Credential Resolver
 - generated package execution 的 credential injection patches
 - credential-safe usage attribution and replay
+- capability source boundary document
 
 尚未实现：
 
+- non-API capability source adapters
 - hard enforcement of capability naming rule
 - endpoint-level auth
 - base URL override
@@ -103,6 +109,12 @@ Marketplace 是远期可选结果。它不是当前产品，不是当前 MVP，�
 
 当前 API2Agent 范围明确不包含：
 
+- workflow engine execution
+- local function runtime
+- arbitrary script sandbox
+- database runtime
+- human task routing
+- agent-as-provider execution
 - marketplace UI
 - marketplace search
 - provider revenue share

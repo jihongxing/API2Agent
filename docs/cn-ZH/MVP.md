@@ -21,6 +21,13 @@ MVP-2 证明 API2Agent 可以观测和控制执行路径，这是 billing、rout
 
 MVP-2.5 证明 API2Agent 可以归因 API execution rights，而不是直接变成 payment system。
 
+Capability source 边界：
+
+- MVP 只支持 API sources：OpenAPI、curl、HTTP/REST。
+- MVP 必须保持 execution abstraction 能兼容未来非 API sources。
+- Workflow、local function、CLI、database、human、agent-as-provider sources 都不在 MVP 范围内。
+- 详见 `docs/cn-ZH/CAPABILITY_SOURCES.md`。
+
 ## 2. 当前实现状态
 
 MVP-1 状态：已实现。
@@ -63,6 +70,8 @@ Credential orchestration 状态：schema、resolver、generated package injectio
 > Payment、full billing、routing、marketplace 不在 MVP 内。Proxy、usage events、quota 在 MVP-2 内。
 
 > Credential schema 和 local resolver 属于 MVP-2.5，因为 credential ownership 是 API2Agent 成为 billing-ready infrastructure 的前置条件。
+
+> Workflow engines、local function runtimes、script sandboxes、database runtimes、human task routing、agent-as-provider execution 都不在 MVP 内。它们只能在 API execution 可靠之后作为 future source adapters 进入。
 
 ## 4. MVP 命令
 

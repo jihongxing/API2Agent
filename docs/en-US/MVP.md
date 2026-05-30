@@ -21,6 +21,13 @@ MVP-2 proves that API2Agent can observe and control the execution path, which is
 
 MVP-2.5 proves that API2Agent can attribute API execution rights without becoming a payment system.
 
+Capability source boundary:
+
+- MVP supports API sources only: OpenAPI, curl, HTTP/REST.
+- MVP must keep the execution abstraction compatible with future non-API sources.
+- Workflow, local function, CLI, database, human, and agent-as-provider sources are out of MVP scope.
+- See `docs/en-US/CAPABILITY_SOURCES.md`.
+
 ## 2. Current Implementation Status
 
 MVP-1 status: implemented.
@@ -63,6 +70,8 @@ Strategic boundary:
 > Payment, full billing, routing, and marketplace are not in MVP. Proxy, usage events, and quota are in MVP-2.
 
 > Credential schema and local resolver are MVP-2.5 because credential ownership is required before API2Agent can become billing-ready infrastructure.
+
+> Workflow engines, local function runtimes, script sandboxes, database runtimes, human task routing, and agent-as-provider execution are not in MVP. They are future source adapters only after API execution is reliable.
 
 ## 4. MVP Commands
 
