@@ -386,12 +386,26 @@ Current implementation:
   - attempt ids and parent ids are also present in safe request metadata.
   - `DecisionLog.routing_context.attempt_chain` records ordered attempt correlation.
   - controlled and real external retry dogfoods validate the attempt chain.
+- Go Data Plane Milestone Closeout + Phase 6 Readiness Review is complete:
+  - local Go Data Plane execution and observability primitive is closed.
+  - Phase 6 is approved to begin as a local Go Control Plane minimum.
+  - readiness is conditional: no hosted public alpha, billing, or marketplace yet.
+  - see `docs/en-US/GO_DATAPLANE_MILESTONE_CLOSEOUT.md`.
 
 Next engineering task:
 
 ```text
-Choose the next Go Data Plane production hardening slice
+Go Control Plane Minimum v0
 ```
+
+Initial scope:
+
+1. Project model
+2. API2Agent project API key model
+3. Capability registry model
+4. Provider registry model
+5. Credential metadata model without secret storage
+6. Routing snapshot export format consumed by the existing Go Data Plane
 
 ## 9. Marketplace Is Later
 

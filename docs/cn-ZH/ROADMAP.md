@@ -714,28 +714,56 @@ Project Quota Gate v0 - complete
 Go Data Plane Credential Config v0 - complete
 Go Data Plane Credential Audit Metadata v0 - complete
 Execution Event Ordering / Attempt Correlation v0 - complete
-Next: 选择下一项 Go Data Plane production hardening slice
+Go Data Plane Milestone Closeout + Phase 6 Readiness Review - complete
+Next: Go Control Plane Minimum v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：计划中。
+状态：可以从 local Go Control Plane minimum 开始。
 
 目标：
 
 把 local proxy concepts 迁移到 hosted service。
 
-范围：
+立即本地范围：
 
-- hosted proxy endpoint
+- 先实现 local Go Control Plane model layer
+- 生成可被 Go Data Plane 消费的 routing snapshot export
 - project identity
 - API keys for proxy access
+
+立即入口任务：
+
+```text
+Go Control Plane Minimum v0
+```
+
+范围：
+
+1. Project model
+2. API2Agent project API key model
+3. Capability registry model
+4. Provider registry model
+5. Credential metadata model，不包含 secret storage
+6. Routing snapshot export format，供现有 Go Data Plane 消费
+
+退出标准：
+
+- Control Plane 可以生成 versioned local snapshot。
+- Go Data Plane 可以使用 Control Plane code 生成的 snapshot 执行。
+- 现有 Data Plane dogfoods 继续通过。
+- 不包含 hosted deployment、billing 或 marketplace 工作。
+
+后续 hosted 范围：
+
+- hosted proxy endpoint
 - durable database
 - multi-project usage isolation
 - hosted usage reporting
 - basic credential vault
 
-退出标准：
+Hosted 退出标准：
 
 - 外部用户可以让 generated calls 通过 hosted proxy
 - hosted usage metrics 可靠

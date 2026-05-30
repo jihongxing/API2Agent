@@ -714,28 +714,56 @@ Project Quota Gate v0 - complete
 Go Data Plane Credential Config v0 - complete
 Go Data Plane Credential Audit Metadata v0 - complete
 Execution Event Ordering / Attempt Correlation v0 - complete
-Next: choose the next Go Data Plane production hardening slice
+Go Data Plane Milestone Closeout + Phase 6 Readiness Review - complete
+Next: Go Control Plane Minimum v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: planned.
+Status: ready to begin as local Go Control Plane minimum.
 
 Goal:
 
 Move local proxy concepts into a hosted service.
 
-Scope:
+Immediate local scope:
 
-- hosted proxy endpoint
+- local Go Control Plane model layer first
+- routing snapshot export consumed by the Go Data Plane
 - project identity
 - API keys for proxy access
+
+Immediate entry slice:
+
+```text
+Go Control Plane Minimum v0
+```
+
+Scope:
+
+1. Project model
+2. API2Agent project API key model
+3. Capability registry model
+4. Provider registry model
+5. Credential metadata model without secret storage
+6. Routing snapshot export format consumed by the existing Go Data Plane
+
+Exit criteria:
+
+- Control Plane can produce a versioned local snapshot.
+- Go Data Plane can execute using a snapshot produced by Control Plane code.
+- Existing Data Plane dogfoods continue to pass.
+- No hosted deployment, billing, or marketplace work is included.
+
+Later hosted scope:
+
+- hosted proxy endpoint
 - durable database
 - multi-project usage isolation
 - hosted usage reporting
 - basic credential vault
 
-Exit criteria:
+Hosted exit criteria:
 
 - external user can route generated calls through hosted proxy
 - hosted usage metrics are reliable

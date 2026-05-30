@@ -386,12 +386,26 @@ Credential orchestration 在 billing 和 marketplace 之前。
   - attempt id 和 parent id 也会进入 safe request metadata。
   - `DecisionLog.routing_context.attempt_chain` 会记录有序的 attempt correlation。
   - controlled 和 real external retry dogfoods 都会校验 attempt chain。
+- Go Data Plane Milestone Closeout + Phase 6 Readiness Review 已完成：
+  - local Go Data Plane execution and observability primitive 已收口。
+  - Phase 6 可以从 local Go Control Plane minimum 开始。
+  - readiness 是有条件的：还不进入 hosted public alpha、billing 或 marketplace。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_MILESTONE_CLOSEOUT.md`。
 
 下一项工程任务：
 
 ```text
-选择下一项 Go Data Plane production hardening slice
+Go Control Plane Minimum v0
 ```
+
+初始范围：
+
+1. Project model
+2. API2Agent project API key model
+3. Capability registry model
+4. Provider registry model
+5. Credential metadata model，不包含 secret storage
+6. Routing snapshot export format，供现有 Go Data Plane 消费
 
 ## 9. Marketplace 是后面的结果
 
