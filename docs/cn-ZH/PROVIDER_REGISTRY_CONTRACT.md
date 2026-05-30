@@ -37,8 +37,19 @@
 - `provider_id`
 - `tool_id`
 - `estimated_cost`
+- `regions`
+- `geo_affinity`
 - `output_mapping`
 - `metadata`
+
+`regions` 是 optional，默认是空 list。
+
+稳定 `geo_affinity` values：
+
+- `global`
+- `regional`
+- `cn-only`
+- `unknown`
 
 ## 稳定 Metadata 字段
 
@@ -60,6 +71,8 @@
       "provider_id": "ipify",
       "tool_id": "get",
       "estimated_cost": 0.001,
+      "regions": ["global"],
+      "geo_affinity": "global",
       "output_mapping": {
         "ip": "$.ip"
       },

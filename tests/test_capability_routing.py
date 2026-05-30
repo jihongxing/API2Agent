@@ -3,7 +3,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from api2agent.capabilities.models import MetricsSnapshot, ProviderCandidate, RoutingPolicy
+from api2agent.capabilities.models import DecisionDatasetRecord, MetricsSnapshot, ProviderCandidate, RoutingPolicy
 from api2agent.capabilities.policies import routing_policy_preset
 from api2agent.capabilities.naming import is_alpha_capability_id
 from api2agent.capabilities.registry import PROVIDER_REGISTRY_CONTRACT_VERSION, load_provider_registry
@@ -291,6 +291,45 @@ def test_provider_registry_fixture_uses_stable_contract() -> None:
     assert registry.contract_version == PROVIDER_REGISTRY_CONTRACT_VERSION
     assert [provider.provider_id for provider in registry.providers] == ["ipify", "httpbin"]
     assert registry.providers[0].metadata["package_dir"] == ".dogfood/ipify"
+
+
+def test_provider_candidate_supports_region_metadata() -> None:
+    provider = ProviderCandidate(
+        id="weather_cn",
+        capability_id="weather.current.get",
+        provider_id="weather_cn",
+        tool_id="get_current_weather",
+        regions=["cn"],
+        geo_affinity="regional",
+    )
+
+    assert provider.regions == ["cn"]
+    assert provider.geo_affinity == "regional"
+
+
+def test_decision_dataset_record_contract() -> None:
+    record = DecisionDatasetRecord(
+        request_id="req_123",
+        routing_decision_id="decision_123",
+        project_id="local",
+        capability_id="weather.current.get",
+        client_region="cn",
+        api2agent_region="ap-east",
+        candidate_provider_ids=["weather_us", "weather_cn"],
+        selected_provider_id="weather_cn",
+        routing_strategy="balanced",
+        success=True,
+        latency_total_ms=40,
+        estimated_cost=0.001,
+    )
+
+    payload = record.model_dump(mode="json")
+
+    assert payload["client_region"] == "cn"
+    assert payload["api2agent_region"] == "ap-east"
+    assert payload["candidate_provider_ids"] == ["weather_us", "weather_cn"]
+    assert payload["selected_provider_id"] == "weather_cn"
+    assert payload["latency_total_ms"] == 40
 
 
 def test_registry_command_inspects_provider_registry_fixture() -> None:

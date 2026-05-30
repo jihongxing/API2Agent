@@ -37,8 +37,19 @@ The following provider fields are stable:
 - `provider_id`
 - `tool_id`
 - `estimated_cost`
+- `regions`
+- `geo_affinity`
 - `output_mapping`
 - `metadata`
+
+`regions` is optional and defaults to an empty list.
+
+Stable `geo_affinity` values:
+
+- `global`
+- `regional`
+- `cn-only`
+- `unknown`
 
 ## Stable Metadata Fields
 
@@ -60,6 +71,8 @@ Additional metadata fields may be added later.
       "provider_id": "ipify",
       "tool_id": "get",
       "estimated_cost": 0.001,
+      "regions": ["global"],
+      "geo_affinity": "global",
       "output_mapping": {
         "ip": "$.ip"
       },

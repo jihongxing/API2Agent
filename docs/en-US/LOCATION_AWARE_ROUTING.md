@@ -46,7 +46,7 @@ total_latency =
   + api2agent_overhead
 ```
 
-v0.1 can continue storing `latency_ms`, but the next schema iteration should add room for this breakdown.
+v0.1 still keeps `latency_ms` as the stable aggregate field. The local schema now also supports optional breakdown fields for future routing.
 
 ## Region Model
 
@@ -59,7 +59,7 @@ Minimum region vocabulary:
 - `cn`
 - `unknown`
 
-Future usage events should include:
+Usage events can now include:
 
 ```json
 {
@@ -75,7 +75,7 @@ Future usage events should include:
 
 ## Provider Metadata
 
-Provider registry entries should eventually include:
+Provider registry entries can now include:
 
 ```json
 {
@@ -156,7 +156,8 @@ The stronger target is:
 
 Near-term implementation should stay focused:
 
-1. Add schema fields for region-aware usage.
-2. Extend provider metadata with region information.
-3. Add a region-aware routing strategy.
-4. Dogfood with same capability, different provider regions, different outcomes.
+1. Define region-aware usage fields. Done.
+2. Extend provider metadata with region information. Done.
+3. Define the decision dataset contract. Done.
+4. Add a region-aware routing strategy.
+5. Dogfood with same capability, different provider regions, different outcomes.

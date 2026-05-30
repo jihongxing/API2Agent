@@ -21,6 +21,13 @@ CREATE TABLE IF NOT EXISTS usage_events (
   status_code INTEGER,
   success INTEGER NOT NULL,
   latency_ms REAL NOT NULL,
+  client_region TEXT,
+  api2agent_region TEXT,
+  provider_region TEXT,
+  latency_total_ms REAL,
+  latency_network_ms REAL,
+  latency_provider_ms REAL,
+  latency_overhead_ms REAL,
   estimated_cost REAL NOT NULL,
   error_type TEXT,
   request_metadata TEXT,
@@ -63,6 +70,13 @@ class UsageStore:
             self._ensure_usage_column(connection, "credential_reference", "TEXT")
             self._ensure_usage_column(connection, "provider_runtime_reference", "TEXT")
             self._ensure_usage_column(connection, "is_golden", "INTEGER NOT NULL DEFAULT 0")
+            self._ensure_usage_column(connection, "client_region", "TEXT")
+            self._ensure_usage_column(connection, "api2agent_region", "TEXT")
+            self._ensure_usage_column(connection, "provider_region", "TEXT")
+            self._ensure_usage_column(connection, "latency_total_ms", "REAL")
+            self._ensure_usage_column(connection, "latency_network_ms", "REAL")
+            self._ensure_usage_column(connection, "latency_provider_ms", "REAL")
+            self._ensure_usage_column(connection, "latency_overhead_ms", "REAL")
             self._ensure_routing_decision_column(connection, "failover_policy", "TEXT")
 
     def record(self, event: UsageEvent) -> UsageEvent:
@@ -73,11 +87,15 @@ class UsageStore:
                 INSERT INTO usage_events (
                   id, routing_decision_id, execution_mode, project_id, capability_id, provider_id, tool_id,
                   method, path, status_code, success, latency_ms,
+                  client_region, api2agent_region, provider_region,
+                  latency_total_ms, latency_network_ms, latency_provider_ms, latency_overhead_ms,
                   estimated_cost, error_type, request_metadata, credential_reference,
                   provider_runtime_reference, is_golden, created_at
                 ) VALUES (
                   :id, :routing_decision_id, :execution_mode, :project_id, :capability_id, :provider_id, :tool_id,
                   :method, :path, :status_code, :success, :latency_ms,
+                  :client_region, :api2agent_region, :provider_region,
+                  :latency_total_ms, :latency_network_ms, :latency_provider_ms, :latency_overhead_ms,
                   :estimated_cost, :error_type, :request_metadata, :credential_reference,
                   :provider_runtime_reference, :is_golden, :created_at
                 )

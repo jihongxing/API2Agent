@@ -352,6 +352,80 @@ def test_usage_store_gets_usage_event_by_id(tmp_path: Path) -> None:
     assert stored.provider_runtime_reference == "test:runtime"
 
 
+def test_usage_store_persists_region_latency_fields(tmp_path: Path) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+    store.record(
+        UsageEvent(
+            id="event_region",
+            project_id="local",
+            capability_id="weather.current.get",
+            provider_id="weather_cn",
+            tool_id="get_current_weather",
+            method="GET",
+            path="/weather",
+            status_code=200,
+            success=True,
+            latency_ms=42,
+            client_region="cn",
+            api2agent_region="ap-east",
+            provider_region="cn",
+            latency_total_ms=42,
+            latency_network_ms=10,
+            latency_provider_ms=25,
+            latency_overhead_ms=7,
+        )
+    )
+
+    stored = store.get_usage_event("event_region")
+
+    assert stored is not None
+    assert stored.client_region == "cn"
+    assert stored.api2agent_region == "ap-east"
+    assert stored.provider_region == "cn"
+    assert stored.latency_total_ms == 42
+    assert stored.latency_network_ms == 10
+    assert stored.latency_provider_ms == 25
+    assert stored.latency_overhead_ms == 7
+
+
+def test_proxy_call_records_region_latency_contract(tmp_path: Path) -> None:
+    store = UsageStore(tmp_path / "usage.sqlite")
+
+    def fake_forwarder(method, url, options):
+        return httpx.Response(200, json={"ok": True})
+
+    status, result = execute_proxy_call(
+        {
+            "project_id": "local",
+            "routing_decision_id": "decision_region",
+            "capability_id": "weather.current.get",
+            "provider_id": "weather_cn",
+            "tool_id": "get_current_weather",
+            "client_region": "cn",
+            "api2agent_region": "ap-east",
+            "provider_region": "cn",
+            "latency_network_ms": 10,
+            "latency_provider_ms": 20,
+            "latency_overhead_ms": 5,
+            "request": {"method": "GET", "url": "https://api.example.com/weather"},
+        },
+        store=store,
+        forwarder=fake_forwarder,
+    )
+
+    event = store.usage_for_routing_decision("decision_region")[0]
+
+    assert status == 200
+    assert result["ok"] is True
+    assert event.client_region == "cn"
+    assert event.api2agent_region == "ap-east"
+    assert event.provider_region == "cn"
+    assert event.latency_total_ms is not None
+    assert event.latency_network_ms == 10
+    assert event.latency_provider_ms == 20
+    assert event.latency_overhead_ms == 5
+
+
 def test_usage_store_marks_golden_event(tmp_path: Path) -> None:
     store = UsageStore(tmp_path / "usage.sqlite")
     store.record(

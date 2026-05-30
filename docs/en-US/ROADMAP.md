@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Location-aware routing schema and decision dataset contract
+Region-aware routing strategy v0
 ```
 
 Current implementation result:
@@ -507,6 +507,9 @@ Current implementation result:
 - the local BYOK loop now covers config credential resolution, auth injection, usage ledger, and audit CLI.
 - strategic priority increased for owning real execution data and minimizing API/provider onboarding cost.
 - location-aware execution is now a Phase 6+ routing requirement; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
+- usage events and SQLite storage now support optional region and latency breakdown fields.
+- provider candidates now support `regions` and `geo_affinity`.
+- `DecisionDatasetRecord` defines the first local decision dataset contract.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
@@ -515,6 +518,7 @@ Current implementation result:
 - credential lifecycle dogfood completed; see `docs/en-US/CREDENTIAL_LIFECYCLE_DOGFOOD_REPORT.md`.
 - credential audit CLI dogfood completed; see `docs/en-US/CREDENTIAL_AUDIT_CLI_DOGFOOD_REPORT.md`.
 - authenticated proxy credential dogfood completed; see `docs/en-US/AUTHENTICATED_PROXY_CREDENTIAL_DOGFOOD_REPORT.md`.
+- location-aware schema dogfood completed; see `docs/en-US/LOCATION_AWARE_SCHEMA_DOGFOOD_REPORT.md`.
 
 Implementation checklist:
 
@@ -600,10 +604,9 @@ Acceptance test set:
 
 Next strategic design requirements:
 
-- define `client_region`, `api2agent_region`, and `provider_region`
-- split latency into total, network, provider processing, and API2Agent overhead where measurable
-- extend provider metadata with regions and `geo_affinity`
-- define the decision dataset contract beyond raw usage logs
+- define region-aware routing strategy v0
+- decide how client region is supplied in CLI/SDK/proxy paths
+- decide how provider region is selected when a provider supports multiple regions
 - design active probing before implementing automated geo routing
 
 ## 9. Phase 6: Hosted Control Plane

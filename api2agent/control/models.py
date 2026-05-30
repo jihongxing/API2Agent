@@ -18,6 +18,13 @@ class UsageEvent(BaseModel):
     status_code: int | None = None
     success: bool = False
     latency_ms: float = 0.0
+    client_region: str | None = None
+    api2agent_region: str | None = None
+    provider_region: str | None = None
+    latency_total_ms: float | None = None
+    latency_network_ms: float | None = None
+    latency_provider_ms: float | None = None
+    latency_overhead_ms: float | None = None
     estimated_cost: float = 0.0
     error_type: str | None = None
     request_metadata: dict[str, Any] | None = None
@@ -58,5 +65,11 @@ class ProxyRequest(BaseModel):
     provider_id: str
     tool_id: str
     estimated_cost: float = 0.0
+    client_region: str | None = None
+    api2agent_region: str | None = None
+    provider_region: str | None = None
+    latency_network_ms: float | None = None
+    latency_provider_ms: float | None = None
+    latency_overhead_ms: float | None = None
     request: dict[str, Any]
     credential: dict[str, Any] | None = None

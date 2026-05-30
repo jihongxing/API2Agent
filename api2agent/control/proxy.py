@@ -52,6 +52,7 @@ def execute_proxy_call(
             status_code=429,
             success=False,
             latency_ms=0.0,
+            **_region_latency_fields(proxy_request, latency_total_ms=0.0),
             estimated_cost=0.0,
             error_type="quota_exceeded",
             request_metadata=_safe_request_metadata(
@@ -88,6 +89,7 @@ def execute_proxy_call(
             status_code=401,
             success=False,
             latency_ms=0.0,
+            **_region_latency_fields(proxy_request, latency_total_ms=0.0),
             estimated_cost=0.0,
             error_type=resolved_credential.error_type or "credential_resolution_failed",
             request_metadata=_safe_request_metadata(
@@ -146,6 +148,7 @@ def execute_proxy_call(
             status_code=response.status_code,
             success=response.is_success,
             latency_ms=latency_ms,
+            **_region_latency_fields(proxy_request, latency_total_ms=latency_ms),
             estimated_cost=proxy_request.estimated_cost,
             error_type=None if response.is_success else "http_status",
             request_metadata=_safe_request_metadata(
@@ -188,6 +191,7 @@ def execute_proxy_call(
             path=path,
             success=False,
             latency_ms=latency_ms,
+            **_region_latency_fields(proxy_request, latency_total_ms=latency_ms),
             estimated_cost=0.0,
             error_type="http_error",
             request_metadata=_safe_request_metadata(
@@ -266,6 +270,18 @@ def _redact_headers(headers: dict[str, Any]) -> dict[str, Any]:
     return {
         key: "[REDACTED]" if str(key).lower() in sensitive else value
         for key, value in headers.items()
+    }
+
+
+def _region_latency_fields(proxy_request: ProxyRequest, latency_total_ms: float) -> dict[str, Any]:
+    return {
+        "client_region": proxy_request.client_region,
+        "api2agent_region": proxy_request.api2agent_region,
+        "provider_region": proxy_request.provider_region,
+        "latency_total_ms": latency_total_ms,
+        "latency_network_ms": proxy_request.latency_network_ms,
+        "latency_provider_ms": proxy_request.latency_provider_ms,
+        "latency_overhead_ms": proxy_request.latency_overhead_ms,
     }
 
 

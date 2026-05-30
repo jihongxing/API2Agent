@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Location-aware routing schema and decision dataset contract
+Region-aware routing strategy v0
 ```
 
 当前实现结果：
@@ -507,6 +507,9 @@ Location-aware routing schema and decision dataset contract
 - local BYOK loop 现在覆盖 config credential resolution、auth injection、usage ledger 和 audit CLI。
 - 战略优先级已经提高：拥有真实执行数据、最小化 API/provider onboarding cost。
 - location-aware execution 现在是 Phase 6+ routing requirement；详见 `docs/cn-ZH/LOCATION_AWARE_ROUTING.md`。
+- usage events 和 SQLite storage 现在支持 optional region 和 latency breakdown fields。
+- provider candidates 现在支持 `regions` 和 `geo_affinity`。
+- `DecisionDatasetRecord` 定义了第一版 local decision dataset contract。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 - proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
@@ -515,6 +518,7 @@ Location-aware routing schema and decision dataset contract
 - credential lifecycle dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_LIFECYCLE_DOGFOOD_REPORT.md`。
 - credential audit CLI dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_AUDIT_CLI_DOGFOOD_REPORT.md`。
 - authenticated proxy credential dogfood 已完成；详见 `docs/cn-ZH/AUTHENTICATED_PROXY_CREDENTIAL_DOGFOOD_REPORT.md`。
+- location-aware schema dogfood 已完成；详见 `docs/cn-ZH/LOCATION_AWARE_SCHEMA_DOGFOOD_REPORT.md`。
 
 实施 checklist：
 
@@ -600,10 +604,9 @@ Location-aware routing schema and decision dataset contract
 
 下一步战略设计要求：
 
-- 定义 `client_region`、`api2agent_region` 和 `provider_region`
-- 在可测量时，把 latency 拆成 total、network、provider processing 和 API2Agent overhead
-- 为 provider metadata 增加 regions 和 `geo_affinity`
-- 定义超过 raw usage logs 的 decision dataset contract
+- 定义 region-aware routing strategy v0
+- 决定 client region 在 CLI/SDK/proxy paths 中如何传入
+- 决定 provider 支持多个 regions 时如何选择 provider region
 - 在实现 automated geo routing 前，先设计 active probing
 
 ## 9. Phase 6：Hosted Control Plane

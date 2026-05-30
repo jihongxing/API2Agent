@@ -46,7 +46,7 @@ total_latency =
   + api2agent_overhead
 ```
 
-v0.1 可以继续保存 `latency_ms`，但下一版 schema 应该为这套拆分留出字段。
+v0.1 仍然保留 `latency_ms` 作为稳定 aggregate field。Local schema 现在也支持 optional breakdown fields，为未来 routing 做准备。
 
 ## Region Model
 
@@ -59,7 +59,7 @@ v0.1 可以继续保存 `latency_ms`，但下一版 schema 应该为这套拆分
 - `cn`
 - `unknown`
 
-未来 usage events 应包含：
+Usage events 现在可以包含：
 
 ```json
 {
@@ -75,7 +75,7 @@ v0.1 可以继续保存 `latency_ms`，但下一版 schema 应该为这套拆分
 
 ## Provider Metadata
 
-Provider registry entries 未来应该包含：
+Provider registry entries 现在可以包含：
 
 ```json
 {
@@ -156,7 +156,8 @@ Usage logs 不够。
 
 近期实现应保持聚焦：
 
-1. 为 region-aware usage 增加 schema fields。
-2. 为 provider metadata 增加 region information。
-3. 增加 region-aware routing strategy。
-4. 用 same capability、different provider regions、different outcomes 做 dogfood。
+1. 定义 region-aware usage fields。已完成。
+2. 为 provider metadata 增加 region information。已完成。
+3. 定义 decision dataset contract。已完成。
+4. 增加 region-aware routing strategy。
+5. 用 same capability、different provider regions、different outcomes 做 dogfood。

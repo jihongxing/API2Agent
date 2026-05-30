@@ -270,11 +270,12 @@ Current implementation:
 - Real authenticated proxy credential dogfood passed against httpbin bearer auth.
 - New strategic priority: maximize real execution data and minimize API/provider onboarding cost.
 - New routing requirement: location-aware execution and region-aware latency.
+- Region-aware usage schema, provider metadata, and decision dataset contract are implemented locally.
 
 Next engineering task:
 
 ```text
-Location-aware routing schema and decision dataset contract
+Region-aware routing strategy v0
 ```
 
 ## 9. Marketplace Is Later

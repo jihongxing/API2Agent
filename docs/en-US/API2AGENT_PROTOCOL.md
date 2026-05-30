@@ -366,7 +366,7 @@ Planned execution modes:
 
 `replay` events are audit/debug records. They are excluded from default routing metrics.
 
-Future region-aware usage fields:
+Optional region-aware usage fields:
 
 - `client_region`
 - `api2agent_region`
@@ -376,7 +376,7 @@ Future region-aware usage fields:
 - `latency_provider_ms`
 - `latency_overhead_ms`
 
-These fields are not required in v0.1. They are reserved for location-aware routing and decision dataset work.
+These fields are optional in v0.1. They are now part of the local schema and reserved for location-aware routing and decision dataset work.
 
 ## 12. Ledger Contract
 

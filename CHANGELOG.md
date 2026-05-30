@@ -51,6 +51,7 @@ All notable API2Agent changes will be documented in this file.
 - Credential scope matching for provider, capability, tool, and wildcard access.
 - Credential lifecycle metadata for status, expiry, and rotation audit hints.
 - Credential audit reporting in `api2agent usage --credential-audit`.
+- Location-aware usage schema, provider region metadata, and decision dataset contract.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
 - Bilingual documentation under `docs/en-US` and `docs/cn-ZH`.
 
@@ -79,7 +80,8 @@ All notable API2Agent changes will be documented in this file.
 - Credential audit CLI dogfooded with JSON/text output and allowlisted metadata.
 - Authenticated proxy credential dogfooded against real httpbin bearer auth.
 - Location-aware routing strategy documented.
-- Full test suite: `132 passed`.
+- Location-aware schema dogfooded across usage storage, proxy events, provider metadata, and decision dataset records.
+- Full test suite: `136 passed`.
 
 ### Planned Next
 
