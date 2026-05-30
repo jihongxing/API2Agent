@@ -481,7 +481,7 @@ Do not expand:
 Immediate next task:
 
 ```text
-Credential orchestration milestone closeout and Phase 6 readiness review
+Location-aware routing schema and decision dataset contract
 ```
 
 Current implementation result:
@@ -505,6 +505,8 @@ Current implementation result:
 - credential audit output uses an allowlist and groups credential-related failures.
 - authenticated proxy credential dogfood passed against the real `https://httpbin.org/bearer` API.
 - the local BYOK loop now covers config credential resolution, auth injection, usage ledger, and audit CLI.
+- strategic priority increased for owning real execution data and minimizing API/provider onboarding cost.
+- location-aware execution is now a Phase 6+ routing requirement; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 - credential resolver dogfood completed; see `docs/en-US/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`.
 - proxy credential injection dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`.
 - proxy credential config dogfood completed; see `docs/en-US/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`.
@@ -595,6 +597,14 @@ Acceptance test set:
 - usage CLI prints credential audit text without raw secrets
 - authenticated real API dogfood returns provider `authenticated=true`
 - credential audit CLI reports the real API event without raw token leakage
+
+Next strategic design requirements:
+
+- define `client_region`, `api2agent_region`, and `provider_region`
+- split latency into total, network, provider processing, and API2Agent overhead where measurable
+- extend provider metadata with regions and `geo_affinity`
+- define the decision dataset contract beyond raw usage logs
+- design active probing before implementing automated geo routing
 
 ## 9. Phase 6: Hosted Control Plane
 

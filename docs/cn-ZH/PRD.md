@@ -19,7 +19,10 @@ OpenAPI / curl
 - 可靠执行 generated capabilities
 - 让调用经过可观测控制点
 - 收集 success、cost、latency 数据
+- 长期收集 region-aware latency 和 routing data
 - 让 capabilities 可比较、可路由
+- 最大化真实执行数据
+- 最小化 API/provider 接入成本
 
 长期产品可以变得更大：
 
@@ -53,8 +56,15 @@ alpha 产品抓手是 Reliability + Observability：
 
 - provider 失败时可以 fail over
 - 按 success、cost、latency 比较 providers
+- 有 location data 时，按 region-aware latency 比较 providers
 - 每个 attempt 都进入 ledger
 - 让失败调用可 replay、可 debug
+
+战略权重更新：
+
+- API2Agent 应该拥有最多真实执行数据。
+- API2Agent 应该具备最低 API onboarding cost。
+- 这两个目标是 routing quality 形成护城河的飞轮。
 
 API2Agent 不只是 “Agent 时代的 Stainless”。Stainless 帮人类用 SDK 调 API，API2Agent 应该帮 Agent 通过中立基础设施选择和执行能力。
 
@@ -163,8 +173,20 @@ Capability: text_to_speech
 - failover
 - quota-aware routing
 - policy-aware routing
+- future location-aware routing
 
 Routing 是 API2Agent 的决策引擎。
+
+Location-aware routing 是未来 routing requirement，不是 v0.1 requirement。速度应建模为：
+
+```text
+total_latency =
+  network_rtt
+  + provider_processing_latency
+  + api2agent_overhead
+```
+
+详见 `docs/cn-ZH/LOCATION_AWARE_ROUTING.md`。
 
 ### Layer 6：远期 Marketplace Layer
 

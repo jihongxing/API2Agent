@@ -9,6 +9,8 @@ All notable API2Agent changes will be documented in this file.
 - Defined API2Agent v0.1-alpha as a local Agent API execution and observability layer.
 - Chose Reliability + Observability as the alpha product hook.
 - Kept marketplace explicitly out of the current implementation scope.
+- Increased strategic priority for real execution data and lowest API/provider onboarding cost.
+- Added location-aware execution as a future routing requirement.
 
 ### Added
 
@@ -76,6 +78,7 @@ All notable API2Agent changes will be documented in this file.
 - Credential lifecycle dogfooded across disabled, expired, and active credentials.
 - Credential audit CLI dogfooded with JSON/text output and allowlisted metadata.
 - Authenticated proxy credential dogfooded against real httpbin bearer auth.
+- Location-aware routing strategy documented.
 - Full test suite: `132 passed`.
 
 ### Planned Next

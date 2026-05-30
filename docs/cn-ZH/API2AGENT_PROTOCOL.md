@@ -366,6 +366,18 @@ Usage event 记录 execution attempt。
 
 `replay` events 是 audit/debug records。默认不进入 routing metrics。
 
+Future region-aware usage fields：
+
+- `client_region`
+- `api2agent_region`
+- `provider_region`
+- `latency_total_ms`
+- `latency_network_ms`
+- `latency_provider_ms`
+- `latency_overhead_ms`
+
+这些字段在 v0.1 不要求实现。它们为 location-aware routing 和 decision dataset 工作预留。
+
 ## 12. Ledger Contract
 
 Ledger rows 聚合 usage events。

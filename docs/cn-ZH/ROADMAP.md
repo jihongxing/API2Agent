@@ -481,7 +481,7 @@ capability registry JSON
 立即下一步任务：
 
 ```text
-Credential orchestration milestone closeout and Phase 6 readiness review
+Location-aware routing schema and decision dataset contract
 ```
 
 当前实现结果：
@@ -505,6 +505,8 @@ Credential orchestration milestone closeout and Phase 6 readiness review
 - credential audit output 使用 allowlist，并聚合 credential-related failures。
 - authenticated proxy credential dogfood 已通过真实 `https://httpbin.org/bearer` API 验证。
 - local BYOK loop 现在覆盖 config credential resolution、auth injection、usage ledger 和 audit CLI。
+- 战略优先级已经提高：拥有真实执行数据、最小化 API/provider onboarding cost。
+- location-aware execution 现在是 Phase 6+ routing requirement；详见 `docs/cn-ZH/LOCATION_AWARE_ROUTING.md`。
 - credential resolver dogfood 已完成；详见 `docs/cn-ZH/CREDENTIAL_RESOLVER_DOGFOOD_REPORT.md`。
 - proxy credential injection dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_INJECTION_DOGFOOD_REPORT.md`。
 - proxy credential config dogfood 已完成；详见 `docs/cn-ZH/PROXY_CREDENTIAL_CONFIG_DOGFOOD_REPORT.md`。
@@ -595,6 +597,14 @@ Credential orchestration milestone closeout and Phase 6 readiness review
 - usage CLI 可以打印 credential audit text，且不暴露 raw secrets
 - authenticated real API dogfood 返回 provider `authenticated=true`
 - credential audit CLI 可以报告 real API event，且不泄漏 raw token
+
+下一步战略设计要求：
+
+- 定义 `client_region`、`api2agent_region` 和 `provider_region`
+- 在可测量时，把 latency 拆成 total、network、provider processing 和 API2Agent overhead
+- 为 provider metadata 增加 regions 和 `geo_affinity`
+- 定义超过 raw usage logs 的 decision dataset contract
+- 在实现 automated geo routing 前，先设计 active probing
 
 ## 9. Phase 6：Hosted Control Plane
 

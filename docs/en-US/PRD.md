@@ -19,7 +19,10 @@ The current product mandate is API2Agent itself:
 - execute generated capabilities reliably
 - route calls through an observable control point
 - collect success, cost, and latency data
+- collect region-aware latency and routing data over time
 - make capabilities comparable and routable
+- maximize real execution data
+- minimize API/provider onboarding cost
 
 The long-term product can become larger:
 
@@ -53,8 +56,15 @@ The alpha product hook is Reliability + Observability:
 
 - fail over when a provider fails
 - compare providers by success, cost, and latency
+- compare providers by region-aware latency when location data exists
 - keep a ledger of every attempt
 - make failures replayable and debuggable
+
+Strategic weight update:
+
+- API2Agent should own the most real execution data.
+- API2Agent should have the lowest possible API onboarding cost.
+- These two goals are the flywheel that makes routing quality defensible.
 
 API2Agent is not just "Stainless for Agents." Stainless helps humans call APIs through SDKs. API2Agent should help Agents choose and execute capabilities through a neutral infrastructure layer.
 
@@ -163,8 +173,20 @@ Strategies:
 - failover
 - quota-aware routing
 - policy-aware routing
+- future location-aware routing
 
 Routing is the decision engine for API2Agent.
+
+Location-aware routing is a future routing requirement, not a v0.1 requirement. It should model speed as:
+
+```text
+total_latency =
+  network_rtt
+  + provider_processing_latency
+  + api2agent_overhead
+```
+
+See `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
 ### Layer 6: Far-Term Marketplace Layer
 

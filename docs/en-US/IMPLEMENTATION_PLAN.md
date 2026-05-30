@@ -268,11 +268,13 @@ Current implementation:
 - Disabled and expired credentials fail with redacted machine-readable errors.
 - Usage CLI can print secret-safe credential audit events and failure counts.
 - Real authenticated proxy credential dogfood passed against httpbin bearer auth.
+- New strategic priority: maximize real execution data and minimize API/provider onboarding cost.
+- New routing requirement: location-aware execution and region-aware latency.
 
 Next engineering task:
 
 ```text
-Credential orchestration milestone closeout and Phase 6 readiness review
+Location-aware routing schema and decision dataset contract
 ```
 
 ## 9. Marketplace Is Later

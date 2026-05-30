@@ -2,7 +2,9 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: build API2Agent itself: compiler, capability package, proxy, metrics, routing, and execution reliability.
+Current focus: build API2Agent itself: compiler, capability package, proxy, metrics, routing, credential orchestration, and execution reliability.
+
+Strategic priority: maximize real execution data while keeping API/provider onboarding cost as low as possible. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
 v0.1-alpha positioning:
 

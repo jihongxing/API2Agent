@@ -268,11 +268,13 @@ Credential orchestration 在 billing 和 marketplace 之前。
 - Disabled 和 expired credentials 会返回 redacted machine-readable errors。
 - Usage CLI 可以打印 secret-safe credential audit events 和 failure counts。
 - Real authenticated proxy credential dogfood 已通过 httpbin bearer auth 验证。
+- 新战略优先级：最大化真实执行数据，并最小化 API/provider onboarding cost。
+- 新 routing requirement：location-aware execution 和 region-aware latency。
 
 下一项工程任务：
 
 ```text
-Credential orchestration milestone closeout and Phase 6 readiness review
+Location-aware routing schema and decision dataset contract
 ```
 
 ## 9. Marketplace 是后面的结果
