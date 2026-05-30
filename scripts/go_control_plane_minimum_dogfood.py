@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -161,12 +162,19 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                 cwd=dp_dir.parent,
                 check=True,
             )
-            force_snapshot_schema_version(artifact_dir_v3 / "snapshot.json", "api2agent.protocol.v9")
             subprocess.run(
                 [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v3), "--distribution-dir", str(distribution_dir)],
                 cwd=dp_dir.parent,
                 check=True,
             )
+            force_snapshot_schema_version(
+                distribution_dir
+                / "artifacts"
+                / "snapshot_control_plane_public_ip_v3"
+                / "snapshot.json",
+                "api2agent.protocol.v9",
+            )
+            refresh_distribution_snapshot_digest(distribution_dir, "snapshot_control_plane_public_ip_v3")
             incompatible_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
             health_after_incompatible_reload = get_json(f"http://127.0.0.1:{port}/healthz")
             registry_v4 = write_registry(
@@ -192,6 +200,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                 / "snapshot.json",
                 "registry_fingerprint",
             )
+            refresh_distribution_snapshot_digest(distribution_dir, "snapshot_control_plane_public_ip_v4")
             manifest_consistency_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
             health_after_manifest_consistency_reload = get_json(f"http://127.0.0.1:{port}/healthz")
             registry_v5 = write_registry(
@@ -214,6 +223,50 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                 text=True,
             )
             current_pointer_after_manifest_mismatch_publish = read_json(distribution_dir / "current.json")
+            registry_v6 = write_registry(
+                scenario_dir / "registry-v6.json",
+                f"http://127.0.0.1:{provider_server.server_port}",
+                "snapshot_control_plane_public_ip_v6",
+            )
+            artifact_dir_v6 = scenario_dir / "artifact-v6-content-digest"
+            subprocess.run(
+                [str(cp_exe), "export-artifact", "--registry", str(registry_v6), "--output-dir", str(artifact_dir_v6)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v6), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            append_file_whitespace(
+                distribution_dir
+                / "artifacts"
+                / "snapshot_control_plane_public_ip_v6"
+                / "snapshot.json"
+            )
+            content_digest_reload = post_json_allow_error(f"http://127.0.0.1:{port}/v1/admin/reload-snapshot", {})
+            health_after_content_digest_reload = get_json(f"http://127.0.0.1:{port}/healthz")
+            registry_v7 = write_registry(
+                scenario_dir / "registry-v7.json",
+                f"http://127.0.0.1:{provider_server.server_port}",
+                "snapshot_control_plane_public_ip_v7",
+            )
+            artifact_dir_v7 = scenario_dir / "artifact-v7-content-digest-mismatch"
+            subprocess.run(
+                [str(cp_exe), "export-artifact", "--registry", str(registry_v7), "--output-dir", str(artifact_dir_v7)],
+                cwd=dp_dir.parent,
+                check=True,
+            )
+            append_file_whitespace(artifact_dir_v7 / "snapshot.json")
+            content_digest_publish = subprocess.run(
+                [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir_v7), "--distribution-dir", str(distribution_dir)],
+                cwd=dp_dir.parent,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            current_pointer_after_content_digest_publish = read_json(distribution_dir / "current.json")
             response = post_json(
                 f"http://127.0.0.1:{port}/v1/execute",
                 {
@@ -306,6 +359,21 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
                 "snapshot_version"
             )
             == "snapshot_control_plane_public_ip_v4",
+            "content_digest_reload_rejected": content_digest_reload.get("status_code") == 503
+            and content_digest_reload.get("reloaded") is False,
+            "content_digest_reload_kept_v2": content_digest_reload.get("kept_snapshot_version")
+            == "snapshot_control_plane_public_ip_v2",
+            "content_digest_reload_audit_event_recorded": len(reload_events) >= 5
+            and reload_events[4].get("outcome") == "failure"
+            and reload_events[4].get("kept_snapshot_version") == "snapshot_control_plane_public_ip_v2",
+            "health_after_content_digest_reload_still_v2": health_after_content_digest_reload.get("snapshot_version")
+            == "snapshot_control_plane_public_ip_v2",
+            "content_digest_publish_rejected": content_digest_publish.returncode != 0
+            and "manifest snapshot_digest" in content_digest_publish.stderr,
+            "content_digest_publish_did_not_advance_current": current_pointer_after_content_digest_publish.get(
+                "snapshot_version"
+            )
+            == "snapshot_control_plane_public_ip_v6",
             "distribution_current_after_reload_points_to_v2": current_pointer_after_reload.get("snapshot_file")
             == "artifacts/snapshot_control_plane_public_ip_v2/snapshot.json",
             "distribution_v2_artifact_snapshot_exists": (
@@ -327,6 +395,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "usage_has_attempt_id": (usage.get("request_metadata") or {}).get("attempt_id") == usage.get("id"),
             "routing_snapshot_version_matches": routing_decision.get("snapshot_version") == "snapshot_control_plane_public_ip_v2",
             "event_order_is_graph": [event["event_type"] for event in events] == [
+                "snapshot_reload_event",
                 "snapshot_reload_event",
                 "snapshot_reload_event",
                 "snapshot_reload_event",
@@ -359,6 +428,11 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "manifest_mismatch_publish_exit_code": manifest_mismatch_publish.returncode,
             "manifest_mismatch_publish_error": manifest_mismatch_publish.stderr.strip(),
             "current_pointer_after_manifest_mismatch_publish": current_pointer_after_manifest_mismatch_publish,
+            "content_digest_reload": content_digest_reload,
+            "health_after_content_digest_reload": health_after_content_digest_reload,
+            "content_digest_publish_exit_code": content_digest_publish.returncode,
+            "content_digest_publish_error": content_digest_publish.stderr.strip(),
+            "current_pointer_after_content_digest_publish": current_pointer_after_content_digest_publish,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,
@@ -463,6 +537,29 @@ def force_manifest_registry_fingerprint(path: Path, registry_fingerprint: str) -
     data = read_json(path)
     data["registry_fingerprint"] = registry_fingerprint
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def refresh_distribution_snapshot_digest(distribution_dir: Path, snapshot_version: str) -> None:
+    snapshot_path = distribution_dir / "artifacts" / snapshot_version / "snapshot.json"
+    digest = sha256_file(snapshot_path)
+    manifest_path = distribution_dir / "artifacts" / snapshot_version / "manifest.json"
+    manifest = read_json(manifest_path)
+    manifest["snapshot_digest"] = digest
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    current_path = distribution_dir / "current.json"
+    current = read_json(current_path)
+    if current.get("snapshot_version") == snapshot_version:
+        current["snapshot_digest"] = digest
+        current_path.write_text(json.dumps(current, indent=2), encoding="utf-8")
+
+
+def sha256_file(path: Path) -> str:
+    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def append_file_whitespace(path: Path) -> None:
+    data = path.read_bytes()
+    path.write_bytes(data + b"\n")
 
 
 def parse_json_report(completed: subprocess.CompletedProcess[str]) -> dict:

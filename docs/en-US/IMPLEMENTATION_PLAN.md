@@ -493,11 +493,17 @@ Current Phase 6 progress:
   - publish-time manifest mismatch is rejected before advancing `current.json`.
   - reload-time distribution tampering is rejected while the previous active snapshot remains serving.
   - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_MANIFEST_CONSISTENCY_DOGFOOD_REPORT.md`.
+- Control Plane Snapshot Artifact Content Digest Guard v0 is complete:
+  - Control Plane artifact manifests now include `snapshot_digest=sha256:<hash>`.
+  - distribution `current.json` carries the same snapshot digest for pointer-level audit.
+  - Control Plane rejects artifact publish when `snapshot.json` file bytes do not match the manifest digest.
+  - Data Plane rejects distributed snapshot reload when file bytes no longer match the manifest/current digest.
+  - see `docs/en-US/GO_DATAPLANE_SNAPSHOT_CONTENT_DIGEST_DOGFOOD_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Control Plane Snapshot Artifact Content Digest Guard v0
+Control Plane Snapshot Artifact Path Safety Guard v0
 ```
 
 ## 9. Marketplace Is Later

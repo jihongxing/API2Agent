@@ -30,6 +30,9 @@ func ReadManifestFile(path string) (ExportArtifactManifest, error) {
 	if manifest.SnapshotVersionPolicy == "" {
 		return ExportArtifactManifest{}, fmt.Errorf("manifest snapshot_version_policy is required")
 	}
+	if manifest.SnapshotDigest == "" {
+		return ExportArtifactManifest{}, fmt.Errorf("manifest snapshot_digest is required")
+	}
 	return manifest, nil
 }
 
@@ -45,6 +48,13 @@ func ReadArtifactDir(dir string) (RoutingSnapshot, ExportArtifactManifest, error
 	}
 	if err := ValidateArtifactConsistency(snapshot, manifest); err != nil {
 		return RoutingSnapshot{}, ExportArtifactManifest{}, err
+	}
+	fileDigest, err := FileDigest(snapshotPath)
+	if err != nil {
+		return RoutingSnapshot{}, ExportArtifactManifest{}, err
+	}
+	if manifest.SnapshotDigest != fileDigest {
+		return RoutingSnapshot{}, ExportArtifactManifest{}, fmt.Errorf("manifest snapshot_digest %q does not match snapshot file digest %q", manifest.SnapshotDigest, fileDigest)
 	}
 	return snapshot, manifest, nil
 }
@@ -101,6 +111,7 @@ func PublishArtifactDir(sourceArtifactDir string, distributionDir string, publis
 		ManifestFile:          filepath.ToSlash(filepath.Join(relativeArtifactDir, "manifest.json")),
 		RegistryFingerprint:   manifest.RegistryFingerprint,
 		SnapshotVersionPolicy: manifest.SnapshotVersionPolicy,
+		SnapshotDigest:        manifest.SnapshotDigest,
 		SourceArtifactDir:     sourceArtifactDir,
 	}
 	if err := os.MkdirAll(distributionDir, 0o755); err != nil {

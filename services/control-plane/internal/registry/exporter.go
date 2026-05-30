@@ -14,15 +14,43 @@ import (
 const ProtocolSchemaVersion = "api2agent.protocol.v0.2"
 
 func WriteSnapshotFile(path string, snapshot RoutingSnapshot) error {
-	data, err := json.MarshalIndent(snapshot, "", "  ")
+	data, err := EncodeSnapshot(snapshot)
 	if err != nil {
 		return fmt.Errorf("encode snapshot: %w", err)
 	}
-	data = append(data, '\n')
 	if err := os.WriteFile(path, data, 0o644); err != nil {
 		return fmt.Errorf("write snapshot: %w", err)
 	}
 	return nil
+}
+
+func EncodeSnapshot(snapshot RoutingSnapshot) ([]byte, error) {
+	data, err := json.MarshalIndent(snapshot, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return append(data, '\n'), nil
+}
+
+func SnapshotDigest(snapshot RoutingSnapshot) (string, error) {
+	data, err := EncodeSnapshot(snapshot)
+	if err != nil {
+		return "", fmt.Errorf("encode snapshot digest input: %w", err)
+	}
+	return digestBytes(data), nil
+}
+
+func FileDigest(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("read digest input: %w", err)
+	}
+	return digestBytes(data), nil
+}
+
+func digestBytes(data []byte) string {
+	sum := sha256.Sum256(data)
+	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
 func ReadSnapshotFile(path string) (RoutingSnapshot, error) {
@@ -81,6 +109,9 @@ func ValidateArtifactConsistency(snapshot RoutingSnapshot, manifest ExportArtifa
 	if manifest.SnapshotVersionPolicy == "" {
 		return fmt.Errorf("manifest snapshot_version_policy is required")
 	}
+	if manifest.SnapshotDigest == "" {
+		return fmt.Errorf("manifest snapshot_digest is required")
+	}
 	if manifest.SnapshotVersion != snapshot.SnapshotVersion {
 		return fmt.Errorf("manifest snapshot_version %q does not match snapshot snapshot_version %q", manifest.SnapshotVersion, snapshot.SnapshotVersion)
 	}
@@ -92,6 +123,13 @@ func ValidateArtifactConsistency(snapshot RoutingSnapshot, manifest ExportArtifa
 	}
 	if manifest.SnapshotVersionPolicy != snapshot.Metadata["snapshot_version_policy"] {
 		return fmt.Errorf("manifest snapshot_version_policy %q does not match snapshot metadata.snapshot_version_policy %q", manifest.SnapshotVersionPolicy, snapshot.Metadata["snapshot_version_policy"])
+	}
+	expectedDigest, err := SnapshotDigest(snapshot)
+	if err != nil {
+		return err
+	}
+	if manifest.SnapshotDigest != expectedDigest {
+		return fmt.Errorf("manifest snapshot_digest %q does not match snapshot digest %q", manifest.SnapshotDigest, expectedDigest)
 	}
 	return nil
 }
@@ -130,6 +168,10 @@ func (r Registry) ExportArtifact(exportedAt time.Time, registryStore string, reg
 	if err != nil {
 		return RoutingSnapshot{}, ExportArtifactManifest{}, err
 	}
+	snapshotDigest, err := SnapshotDigest(snapshot)
+	if err != nil {
+		return RoutingSnapshot{}, ExportArtifactManifest{}, err
+	}
 	manifest := ExportArtifactManifest{
 		ArtifactVersion:       "api2agent.snapshot_artifact.v0",
 		ExportedAt:            exportedAt.UTC(),
@@ -140,6 +182,7 @@ func (r Registry) ExportArtifact(exportedAt time.Time, registryStore string, reg
 		SnapshotSource:        snapshot.SnapshotSource,
 		SnapshotVersionPolicy: snapshot.Metadata["snapshot_version_policy"],
 		RegistryFingerprint:   snapshot.Metadata["registry_fingerprint"],
+		SnapshotDigest:        snapshotDigest,
 		Validation: ExportValidationReport{
 			Valid:                   true,
 			ProjectCount:            len(r.Projects),

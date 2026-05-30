@@ -159,6 +159,7 @@ func TestLoadSnapshotFromDistributionDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read source snapshot: %v", err)
 	}
+	digest := digestBytes(data)
 	if err := os.WriteFile(filepath.Join(artifactDir, "snapshot.json"), data, 0o644); err != nil {
 		t.Fatalf("write distributed snapshot: %v", err)
 	}
@@ -168,7 +169,8 @@ func TestLoadSnapshotFromDistributionDirectory(t *testing.T) {
   "snapshot_version": "snapshot_control_plane_public_ip_v1",
   "snapshot_source": "pull",
   "registry_fingerprint": "sha256:test-control-plane-public-ip",
-  "snapshot_version_policy": "explicit"
+  "snapshot_version_policy": "explicit",
+  "snapshot_digest": "` + digest + `"
 }`)
 	if err := os.WriteFile(filepath.Join(artifactDir, "manifest.json"), manifest, 0o644); err != nil {
 		t.Fatalf("write distributed manifest: %v", err)
@@ -179,7 +181,8 @@ func TestLoadSnapshotFromDistributionDirectory(t *testing.T) {
   "snapshot_file": "artifacts/snapshot_control_plane_public_ip_v1/snapshot.json",
   "manifest_file": "artifacts/snapshot_control_plane_public_ip_v1/manifest.json",
   "registry_fingerprint": "sha256:test-control-plane-public-ip",
-  "snapshot_version_policy": "explicit"
+  "snapshot_version_policy": "explicit",
+  "snapshot_digest": "` + digest + `"
 }`)
 	if err := os.WriteFile(filepath.Join(distributionDir, "current.json"), pointer, 0o644); err != nil {
 		t.Fatalf("write current pointer: %v", err)
@@ -205,6 +208,7 @@ func TestLoadSnapshotFromDistributionDirectoryRejectsManifestSnapshotMismatch(t 
 	if err != nil {
 		t.Fatalf("read source snapshot: %v", err)
 	}
+	digest := digestBytes(data)
 	if err := os.WriteFile(filepath.Join(artifactDir, "snapshot.json"), data, 0o644); err != nil {
 		t.Fatalf("write distributed snapshot: %v", err)
 	}
@@ -214,7 +218,8 @@ func TestLoadSnapshotFromDistributionDirectoryRejectsManifestSnapshotMismatch(t 
   "snapshot_version": "snapshot_control_plane_public_ip_v1",
   "snapshot_source": "pull",
   "registry_fingerprint": "sha256:other",
-  "snapshot_version_policy": "explicit"
+  "snapshot_version_policy": "explicit",
+  "snapshot_digest": "` + digest + `"
 }`)
 	if err := os.WriteFile(filepath.Join(artifactDir, "manifest.json"), manifest, 0o644); err != nil {
 		t.Fatalf("write distributed manifest: %v", err)
@@ -225,7 +230,8 @@ func TestLoadSnapshotFromDistributionDirectoryRejectsManifestSnapshotMismatch(t 
   "snapshot_file": "artifacts/snapshot_control_plane_public_ip_v1/snapshot.json",
   "manifest_file": "artifacts/snapshot_control_plane_public_ip_v1/manifest.json",
   "registry_fingerprint": "sha256:other",
-  "snapshot_version_policy": "explicit"
+  "snapshot_version_policy": "explicit",
+  "snapshot_digest": "` + digest + `"
 }`)
 	if err := os.WriteFile(filepath.Join(distributionDir, "current.json"), pointer, 0o644); err != nil {
 		t.Fatalf("write current pointer: %v", err)
@@ -236,6 +242,55 @@ func TestLoadSnapshotFromDistributionDirectoryRejectsManifestSnapshotMismatch(t 
 		t.Fatalf("expected manifest consistency failure")
 	}
 	if want := "distribution manifest registry_fingerprint"; !strings.Contains(err.Error(), want) {
+		t.Fatalf("expected error containing %q, got %q", want, err.Error())
+	}
+}
+
+func TestLoadSnapshotFromDistributionDirectoryRejectsSnapshotDigestMismatch(t *testing.T) {
+	source := filepath.Join("..", "..", "testdata", "snapshots", "control-plane-public-ip.json")
+	distributionDir := t.TempDir()
+	artifactDir := filepath.Join(distributionDir, "artifacts", "snapshot_control_plane_public_ip_v1")
+	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
+		t.Fatalf("create artifact dir: %v", err)
+	}
+	data, err := os.ReadFile(source)
+	if err != nil {
+		t.Fatalf("read source snapshot: %v", err)
+	}
+	digest := digestBytes(data)
+	if err := os.WriteFile(filepath.Join(artifactDir, "snapshot.json"), append(data, '\n'), 0o644); err != nil {
+		t.Fatalf("write tampered snapshot: %v", err)
+	}
+	manifest := []byte(`{
+  "artifact_version": "api2agent.snapshot_artifact.v0",
+  "snapshot_file": "snapshot.json",
+  "snapshot_version": "snapshot_control_plane_public_ip_v1",
+  "snapshot_source": "pull",
+  "registry_fingerprint": "sha256:test-control-plane-public-ip",
+  "snapshot_version_policy": "explicit",
+  "snapshot_digest": "` + digest + `"
+}`)
+	if err := os.WriteFile(filepath.Join(artifactDir, "manifest.json"), manifest, 0o644); err != nil {
+		t.Fatalf("write distributed manifest: %v", err)
+	}
+	pointer := []byte(`{
+  "distribution_version": "api2agent.snapshot_distribution.v0",
+  "snapshot_version": "snapshot_control_plane_public_ip_v1",
+  "snapshot_file": "artifacts/snapshot_control_plane_public_ip_v1/snapshot.json",
+  "manifest_file": "artifacts/snapshot_control_plane_public_ip_v1/manifest.json",
+  "registry_fingerprint": "sha256:test-control-plane-public-ip",
+  "snapshot_version_policy": "explicit",
+  "snapshot_digest": "` + digest + `"
+}`)
+	if err := os.WriteFile(filepath.Join(distributionDir, "current.json"), pointer, 0o644); err != nil {
+		t.Fatalf("write current pointer: %v", err)
+	}
+
+	_, err = LoadFile(distributionDir)
+	if err == nil {
+		t.Fatalf("expected snapshot digest consistency failure")
+	}
+	if want := "distribution manifest snapshot_digest"; !strings.Contains(err.Error(), want) {
 		t.Fatalf("expected error containing %q, got %q", want, err.Error())
 	}
 }

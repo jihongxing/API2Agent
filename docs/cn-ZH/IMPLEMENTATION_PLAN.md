@@ -493,11 +493,17 @@ Go Control Plane Minimum v0
   - publish-time manifest mismatch 会在推进 `current.json` 前被拒绝。
   - reload-time distribution tampering 会被拒绝，previous active snapshot 继续 serving。
   - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_MANIFEST_CONSISTENCY_DOGFOOD_REPORT.md`。
+- Control Plane Snapshot Artifact Content Digest Guard v0 已完成：
+  - Control Plane artifact manifests 现在包含 `snapshot_digest=sha256:<hash>`。
+  - distribution `current.json` 会携带同一个 snapshot digest，用于 pointer-level audit。
+  - `snapshot.json` 文件字节不匹配 manifest digest 时，Control Plane 会拒绝 artifact publish。
+  - 文件字节不再匹配 manifest/current digest 时，Data Plane 会拒绝 distributed snapshot reload。
+  - 详见 `docs/cn-ZH/GO_DATAPLANE_SNAPSHOT_CONTENT_DIGEST_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Control Plane Snapshot Artifact Content Digest Guard v0
+Control Plane Snapshot Artifact Path Safety Guard v0
 ```
 
 ## 9. Marketplace 是后面的结果

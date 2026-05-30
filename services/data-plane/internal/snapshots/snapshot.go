@@ -1,6 +1,8 @@
 package snapshots
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -63,6 +65,7 @@ type DistributionPointer struct {
 	ManifestFile          string `json:"manifest_file,omitempty"`
 	RegistryFingerprint   string `json:"registry_fingerprint,omitempty"`
 	SnapshotVersionPolicy string `json:"snapshot_version_policy,omitempty"`
+	SnapshotDigest        string `json:"snapshot_digest,omitempty"`
 }
 
 type DistributionManifest struct {
@@ -71,6 +74,7 @@ type DistributionManifest struct {
 	SnapshotSource        string `json:"snapshot_source,omitempty"`
 	RegistryFingerprint   string `json:"registry_fingerprint,omitempty"`
 	SnapshotVersionPolicy string `json:"snapshot_version_policy,omitempty"`
+	SnapshotDigest        string `json:"snapshot_digest,omitempty"`
 }
 
 func LoadFile(path string) (*Snapshot, error) {
@@ -195,6 +199,9 @@ func validateDistributionManifest(pointer DistributionPointer, manifestPath stri
 	if manifest.SnapshotVersionPolicy == "" {
 		return fmt.Errorf("distribution manifest snapshot_version_policy is required")
 	}
+	if manifest.SnapshotDigest == "" {
+		return fmt.Errorf("distribution manifest snapshot_digest is required")
+	}
 	manifestSnapshotPath := filepath.FromSlash(manifest.SnapshotFile)
 	if !filepath.IsAbs(manifestSnapshotPath) {
 		manifestSnapshotPath = filepath.Join(filepath.Dir(manifestPath), manifestSnapshotPath)
@@ -211,9 +218,16 @@ func validateDistributionManifest(pointer DistributionPointer, manifestPath stri
 	if pointer.SnapshotVersionPolicy != "" && manifest.SnapshotVersionPolicy != pointer.SnapshotVersionPolicy {
 		return fmt.Errorf("distribution manifest snapshot_version_policy %q does not match pointer snapshot_version_policy %q", manifest.SnapshotVersionPolicy, pointer.SnapshotVersionPolicy)
 	}
+	if pointer.SnapshotDigest != "" && manifest.SnapshotDigest != pointer.SnapshotDigest {
+		return fmt.Errorf("distribution manifest snapshot_digest %q does not match pointer snapshot_digest %q", manifest.SnapshotDigest, pointer.SnapshotDigest)
+	}
 	snapshotData, err := os.ReadFile(snapshotPath)
 	if err != nil {
 		return fmt.Errorf("read distribution snapshot: %w", err)
+	}
+	snapshotDigest := digestBytes(snapshotData)
+	if manifest.SnapshotDigest != snapshotDigest {
+		return fmt.Errorf("distribution manifest snapshot_digest %q does not match snapshot file digest %q", manifest.SnapshotDigest, snapshotDigest)
 	}
 	var snapshot Snapshot
 	if err := json.Unmarshal(snapshotData, &snapshot); err != nil {
@@ -229,6 +243,11 @@ func validateDistributionManifest(pointer DistributionPointer, manifestPath stri
 		return fmt.Errorf("distribution manifest snapshot_version_policy %q does not match snapshot metadata.snapshot_version_policy %q", manifest.SnapshotVersionPolicy, snapshot.Metadata["snapshot_version_policy"])
 	}
 	return nil
+}
+
+func digestBytes(data []byte) string {
+	sum := sha256.Sum256(data)
+	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
 func (s Snapshot) TTLDuration() (time.Duration, error) {

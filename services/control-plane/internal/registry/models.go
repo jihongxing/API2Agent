@@ -104,6 +104,7 @@ type ExportArtifactManifest struct {
 	SnapshotSource        string                 `json:"snapshot_source"`
 	SnapshotVersionPolicy string                 `json:"snapshot_version_policy"`
 	RegistryFingerprint   string                 `json:"registry_fingerprint"`
+	SnapshotDigest        string                 `json:"snapshot_digest"`
 	Validation            ExportValidationReport `json:"validation"`
 }
 
@@ -126,5 +127,6 @@ type SnapshotDistributionPointer struct {
 	ManifestFile          string    `json:"manifest_file"`
 	RegistryFingerprint   string    `json:"registry_fingerprint"`
 	SnapshotVersionPolicy string    `json:"snapshot_version_policy"`
+	SnapshotDigest        string    `json:"snapshot_digest"`
 	SourceArtifactDir     string    `json:"source_artifact_dir,omitempty"`
 }

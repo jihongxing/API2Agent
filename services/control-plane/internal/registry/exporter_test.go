@@ -94,6 +94,9 @@ func TestExportArtifactManifest(t *testing.T) {
 	if manifest.RegistryFingerprint != snapshot.Metadata["registry_fingerprint"] {
 		t.Fatalf("manifest fingerprint mismatch: %#v vs %#v", manifest, snapshot.Metadata)
 	}
+	if !strings.HasPrefix(manifest.SnapshotDigest, "sha256:") {
+		t.Fatalf("expected snapshot digest, got %#v", manifest)
+	}
 	if manifest.Validation.ActiveProviderCount != 1 || !manifest.Validation.Valid {
 		t.Fatalf("unexpected validation report: %#v", manifest.Validation)
 	}
@@ -161,6 +164,9 @@ func TestPublishArtifactDir(t *testing.T) {
 	if pointer.SnapshotFile != "artifacts/snapshot_control_plane_public_ip_v1/snapshot.json" {
 		t.Fatalf("unexpected snapshot file reference: %q", pointer.SnapshotFile)
 	}
+	if pointer.SnapshotDigest != manifest.SnapshotDigest {
+		t.Fatalf("unexpected snapshot digest: %#v vs %#v", pointer, manifest)
+	}
 	if _, err := os.Stat(filepath.Join(distributionDir, "current.json")); err != nil {
 		t.Fatalf("expected current pointer: %v", err)
 	}
@@ -193,6 +199,35 @@ func TestPublishArtifactDirRejectsManifestSnapshotFingerprintMismatch(t *testing
 	}
 	if !strings.Contains(err.Error(), "manifest registry_fingerprint") {
 		t.Fatalf("expected registry fingerprint mismatch error, got %q", err.Error())
+	}
+}
+
+func TestPublishArtifactDirRejectsSnapshotDigestMismatch(t *testing.T) {
+	reg := loadValidRegistry(t)
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+	artifactDir := filepath.Join(t.TempDir(), "artifact")
+	if err := WriteArtifactDir(artifactDir, snapshot, manifest); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+	snapshotPath := filepath.Join(artifactDir, "snapshot.json")
+	data, err := os.ReadFile(snapshotPath)
+	if err != nil {
+		t.Fatalf("read snapshot: %v", err)
+	}
+	data = append(data, '\n')
+	if err := os.WriteFile(snapshotPath, data, 0o644); err != nil {
+		t.Fatalf("tamper snapshot: %v", err)
+	}
+
+	_, err = PublishArtifactDir(artifactDir, t.TempDir(), time.Date(2026, 5, 30, 4, 5, 6, 0, time.UTC))
+	if err == nil {
+		t.Fatalf("expected snapshot digest failure")
+	}
+	if !strings.Contains(err.Error(), "manifest snapshot_digest") {
+		t.Fatalf("expected snapshot digest mismatch error, got %q", err.Error())
 	}
 }
 

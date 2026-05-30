@@ -728,7 +728,8 @@ Control Plane Snapshot Reload Audit Events v0 - complete
 Control Plane Snapshot Version Compatibility Guard v0 - complete
 Control Plane Snapshot Strict Metadata Requirement v0 - complete
 Control Plane Snapshot Metadata Manifest Consistency Guard v0 - complete
-Next: Control Plane Snapshot Artifact Content Digest Guard v0
+Control Plane Snapshot Artifact Content Digest Guard v0 - complete
+Next: Control Plane Snapshot Artifact Path Safety Guard v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
