@@ -446,6 +446,14 @@ Current Phase 6 progress:
   - the manifest records artifact version, export time, registry store/source, snapshot file/version/source, snapshot version policy, registry fingerprint, and validation summary.
   - Control Plane minimum dogfood verifies manifest existence, snapshot reference, registry fingerprint agreement with `api2agent-snapshot-check`, and valid registry validation summary before Data Plane execution.
   - this creates the local artifact boundary needed before snapshot distribution.
+- Control Plane Snapshot Distribution Stub v0 is complete:
+  - `api2agent-controlplane publish-artifact` publishes an artifact directory into a local distribution directory.
+  - distribution layout is `current.json` plus `artifacts/<snapshot_version>/snapshot.json` and `artifacts/<snapshot_version>/manifest.json`.
+  - `current.json` records distribution version, publish time, snapshot version, artifact file references, registry fingerprint, and snapshot version policy.
+  - Go Data Plane snapshot loading now accepts a bare snapshot file, a distribution directory containing `current.json`, or a direct `current.json` path.
+  - `api2agent-snapshot-check` can validate a distribution directory because it uses the same snapshot resolver.
+  - cross-plane dogfood proves `Control Plane registry -> artifact export -> local distribution publish -> Data Plane execute`.
+  - see `docs/en-US/GO_CONTROL_PLANE_SNAPSHOT_DISTRIBUTION_DOGFOOD_REPORT.md`.
 
 ## 9. Marketplace Is Later
 

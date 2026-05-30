@@ -116,3 +116,15 @@ type ExportValidationReport struct {
 	ActiveProviderCount     int  `json:"active_provider_count"`
 	CredentialMetadataCount int  `json:"credential_metadata_count"`
 }
+
+type SnapshotDistributionPointer struct {
+	DistributionVersion   string    `json:"distribution_version"`
+	PublishedAt           time.Time `json:"published_at"`
+	SnapshotVersion       string    `json:"snapshot_version"`
+	ArtifactDir           string    `json:"artifact_dir"`
+	SnapshotFile          string    `json:"snapshot_file"`
+	ManifestFile          string    `json:"manifest_file"`
+	RegistryFingerprint   string    `json:"registry_fingerprint"`
+	SnapshotVersionPolicy string    `json:"snapshot_version_policy"`
+	SourceArtifactDir     string    `json:"source_artifact_dir,omitempty"`
+}

@@ -42,7 +42,7 @@ Example request:
 Environment variables:
 
 - `API2AGENT_DATAPLANE_ADDR`
-- `API2AGENT_SNAPSHOT`
+- `API2AGENT_SNAPSHOT` accepts a bare snapshot file, a distribution directory containing `current.json`, or a direct `current.json` pointer.
 - `API2AGENT_EVENT_DIR`
 - `API2AGENT_PROJECT_KEY`
 - `API2AGENT_PROJECT_QUOTA`

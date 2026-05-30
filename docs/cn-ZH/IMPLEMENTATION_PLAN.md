@@ -446,6 +446,14 @@ Go Control Plane Minimum v0
   - manifest 记录 artifact version、export time、registry store/source、snapshot file/version/source、snapshot version policy、registry fingerprint 和 validation summary。
   - Control Plane minimum dogfood 会在 Data Plane execution 前验证 manifest 存在、manifest 引用 snapshot、registry fingerprint 与 `api2agent-snapshot-check` 一致，以及 registry validation summary 有效。
   - 这为后续 snapshot distribution 建立了 local artifact boundary。
+- Control Plane Snapshot Distribution Stub v0 已完成：
+  - `api2agent-controlplane publish-artifact` 会将 artifact 目录发布到 local distribution 目录。
+  - distribution layout 是 `current.json` 加 `artifacts/<snapshot_version>/snapshot.json` 和 `artifacts/<snapshot_version>/manifest.json`。
+  - `current.json` 记录 distribution version、publish time、snapshot version、artifact file references、registry fingerprint 和 snapshot version policy。
+  - Go Data Plane snapshot loading 现在支持裸 snapshot 文件、包含 `current.json` 的 distribution 目录，或直接传入 `current.json` 路径。
+  - `api2agent-snapshot-check` 可以校验 distribution 目录，因为它使用同一个 snapshot resolver。
+  - cross-plane dogfood 证明 `Control Plane registry -> artifact export -> local distribution publish -> Data Plane execute`。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_SNAPSHOT_DISTRIBUTION_DOGFOOD_REPORT.md`。
 
 ## 9. Marketplace 是后面的结果
 

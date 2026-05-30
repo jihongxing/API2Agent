@@ -73,15 +73,22 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
         registry = write_registry(scenario_dir / "registry.json", f"http://127.0.0.1:{provider_server.server_port}")
         invalid_registry = write_invalid_registry(scenario_dir / "invalid-registry.json", f"http://127.0.0.1:{provider_server.server_port}")
         artifact_dir = scenario_dir / "artifact"
+        distribution_dir = scenario_dir / "distribution"
         subprocess.run(
             [str(cp_exe), "export-artifact", "--registry", str(registry), "--output-dir", str(artifact_dir)],
             cwd=dp_dir.parent,
             check=True,
         )
+        subprocess.run(
+            [str(cp_exe), "publish-artifact", "--artifact-dir", str(artifact_dir), "--distribution-dir", str(distribution_dir)],
+            cwd=dp_dir.parent,
+            check=True,
+        )
         snapshot = artifact_dir / "snapshot.json"
         manifest = read_json(artifact_dir / "manifest.json")
+        current_pointer = read_json(distribution_dir / "current.json")
         snapshot_check = subprocess.run(
-            [str(snapshot_check_exe), "--snapshot", str(snapshot)],
+            [str(snapshot_check_exe), "--snapshot", str(distribution_dir)],
             cwd=dp_dir,
             check=False,
             capture_output=True,
@@ -100,7 +107,7 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
         env = os.environ.copy()
         env["API2AGENT_DATAPLANE_ADDR"] = f"127.0.0.1:{port}"
         env["API2AGENT_EVENT_DIR"] = str(event_dir)
-        env["API2AGENT_SNAPSHOT"] = str(snapshot)
+        env["API2AGENT_SNAPSHOT"] = str(distribution_dir)
         proc = subprocess.Popen([str(dp_exe)], cwd=dp_dir, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             wait_for_port(port)
@@ -133,6 +140,14 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "manifest_fingerprint_matches_snapshot_check": manifest.get("registry_fingerprint")
             == snapshot_check_report.get("registry_fingerprint"),
             "manifest_validation_valid": (manifest.get("validation") or {}).get("valid") is True,
+            "distribution_current_exists": (distribution_dir / "current.json").exists(),
+            "distribution_current_points_to_snapshot": current_pointer.get("snapshot_file")
+            == "artifacts/snapshot_control_plane_public_ip_v1/snapshot.json",
+            "distribution_current_fingerprint_matches_manifest": current_pointer.get("registry_fingerprint")
+            == manifest.get("registry_fingerprint"),
+            "distribution_artifact_snapshot_exists": (
+                distribution_dir / "artifacts" / "snapshot_control_plane_public_ip_v1" / "snapshot.json"
+            ).exists(),
             "snapshot_check_passed": snapshot_check.returncode == 0
             and snapshot_check_report.get("passed") is True,
             "snapshot_check_has_registry_fingerprint": isinstance(snapshot_check_report.get("registry_fingerprint"), str)
@@ -161,6 +176,8 @@ def run_scenario(*, tmp: Path, cp_exe: Path, dp_exe: Path, snapshot_check_exe: P
             "invalid_registry_error": invalid_export.stderr.strip(),
             "artifact_dir": str(artifact_dir),
             "manifest": manifest,
+            "distribution_dir": str(distribution_dir),
+            "current_pointer": current_pointer,
             "snapshot_check": snapshot_check_report,
             "snapshot_path": str(snapshot),
             "health": health,

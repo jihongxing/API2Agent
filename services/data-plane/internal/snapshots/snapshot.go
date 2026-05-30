@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -53,8 +54,20 @@ type FailoverPolicy struct {
 	AttemptTimeoutPolicy string   `json:"attempt_timeout_policy,omitempty"`
 }
 
+type DistributionPointer struct {
+	DistributionVersion string `json:"distribution_version"`
+	SnapshotVersion     string `json:"snapshot_version"`
+	SnapshotFile        string `json:"snapshot_file"`
+	ManifestFile        string `json:"manifest_file,omitempty"`
+	RegistryFingerprint string `json:"registry_fingerprint,omitempty"`
+}
+
 func LoadFile(path string) (*Snapshot, error) {
-	data, err := os.ReadFile(path)
+	resolvedPath, err := ResolvePath(path)
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(resolvedPath)
 	if err != nil {
 		return nil, fmt.Errorf("read snapshot: %w", err)
 	}
@@ -75,6 +88,45 @@ func LoadFile(path string) (*Snapshot, error) {
 		snapshot.RoutingPolicy.RoutingMode = "deterministic"
 	}
 	return &snapshot, nil
+}
+
+func ResolvePath(path string) (string, error) {
+	if path == "" {
+		return "", fmt.Errorf("snapshot path is required")
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", fmt.Errorf("stat snapshot path: %w", err)
+	}
+	if info.IsDir() {
+		return resolveDistributionPointer(filepath.Join(path, "current.json"), path)
+	}
+	if filepath.Base(path) == "current.json" {
+		return resolveDistributionPointer(path, filepath.Dir(path))
+	}
+	return path, nil
+}
+
+func resolveDistributionPointer(path string, baseDir string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("read distribution pointer: %w", err)
+	}
+	var pointer DistributionPointer
+	if err := json.Unmarshal(data, &pointer); err != nil {
+		return "", fmt.Errorf("decode distribution pointer: %w", err)
+	}
+	if pointer.SnapshotFile == "" {
+		return "", fmt.Errorf("distribution pointer snapshot_file is required")
+	}
+	if pointer.SnapshotVersion == "" {
+		return "", fmt.Errorf("distribution pointer snapshot_version is required")
+	}
+	snapshotPath := filepath.FromSlash(pointer.SnapshotFile)
+	if !filepath.IsAbs(snapshotPath) {
+		snapshotPath = filepath.Join(baseDir, snapshotPath)
+	}
+	return snapshotPath, nil
 }
 
 func (s Snapshot) TTLDuration() (time.Duration, error) {

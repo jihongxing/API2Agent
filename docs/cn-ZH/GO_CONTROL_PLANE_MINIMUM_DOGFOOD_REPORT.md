@@ -4,7 +4,7 @@
 
 ## 目标
 
-验证新的最小 Go Control Plane 是否可以导出 versioned routing snapshot artifact，并且现有 Go Data Plane 可以在不修改 snapshot loader 的情况下直接消费。
+验证新的最小 Go Control Plane 是否可以导出 versioned routing snapshot artifact，发布到本地 distribution 目录，并让现有 Go Data Plane 消费 distribution `current.json` 指针。
 
 本报告也验证 invalid registry relationships 会在 snapshot export 前被拒绝。
 
@@ -46,6 +46,12 @@ Control Plane 导出了一个 artifact 目录：
 - `snapshot.json`
 - `manifest.json`
 
+随后 Control Plane 将 artifact 发布到 distribution 目录：
+
+- `current.json`
+- `artifacts/snapshot_control_plane_public_ip_v1/snapshot.json`
+- `artifacts/snapshot_control_plane_public_ip_v1/manifest.json`
+
 manifest 记录了：
 
 - `snapshot_version = snapshot_control_plane_public_ip_v1`
@@ -67,8 +73,9 @@ snapshot 包含：
 
 - 验证 manifest 引用了导出的 snapshot
 - 验证 manifest registry fingerprint 与 snapshot compatibility checker 一致
-- 通过 `api2agent-snapshot-check` 接受了导出的 snapshot
-- 加载了导出的 snapshot
+- 通过 `api2agent-snapshot-check` 接受了 distribution 目录
+- 将 `current.json` 解析到已发布 artifact snapshot
+- 通过 `API2AGENT_SNAPSHOT=<distribution_dir>` 加载了 distributed snapshot
 - 在 `/healthz` 返回同一个 snapshot version
 - 执行了 `network.public_ip.get`
 - 返回了本地 provider 的 fixed public IP
@@ -87,7 +94,7 @@ Go Control Plane Minimum v0 通过。
 这证明了 Phase 6 的第一条边界：
 
 ```text
-Control Plane registry -> snapshot artifact export -> compatibility gate -> Data Plane consumption
+Control Plane registry -> snapshot artifact export -> local distribution current pointer -> compatibility gate -> Data Plane consumption
 ```
 
 ## 检查项
@@ -99,6 +106,10 @@ Control Plane registry -> snapshot artifact export -> compatibility gate -> Data
   "manifest_references_snapshot": true,
   "manifest_fingerprint_matches_snapshot_check": true,
   "manifest_validation_valid": true,
+  "distribution_current_exists": true,
+  "distribution_current_points_to_snapshot": true,
+  "distribution_current_fingerprint_matches_manifest": true,
+  "distribution_artifact_snapshot_exists": true,
   "snapshot_check_passed": true,
   "snapshot_check_has_registry_fingerprint": true,
   "snapshot_check_has_explicit_version_policy": true,

@@ -38,3 +38,19 @@ The artifact contains:
 - `manifest.json`
 
 The manifest records the artifact version, registry source, snapshot version policy, registry fingerprint, and validation summary.
+
+Publish a snapshot artifact to a local distribution directory:
+
+```bash
+go run ./cmd/api2agent-controlplane publish-artifact \
+  --artifact-dir artifact \
+  --distribution-dir distribution
+```
+
+The distribution contains:
+
+- `current.json`
+- `artifacts/<snapshot_version>/snapshot.json`
+- `artifacts/<snapshot_version>/manifest.json`
+
+The Go Data Plane can load the distribution by setting `API2AGENT_SNAPSHOT` to the distribution directory.

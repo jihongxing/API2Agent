@@ -4,7 +4,7 @@ Date: 2026-05-30
 
 ## Goal
 
-Verify that the new minimum Go Control Plane can export a versioned routing snapshot artifact that the existing Go Data Plane can consume without code changes in the Data Plane snapshot loader.
+Verify that the new minimum Go Control Plane can export a versioned routing snapshot artifact, publish it to a local distribution directory, and have the existing Go Data Plane consume the distribution `current.json` pointer.
 
 This report also verifies that invalid registry relationships are rejected before snapshot export.
 
@@ -46,6 +46,12 @@ The control plane exported an artifact directory with:
 - `snapshot.json`
 - `manifest.json`
 
+The control plane then published that artifact into a distribution directory with:
+
+- `current.json`
+- `artifacts/snapshot_control_plane_public_ip_v1/snapshot.json`
+- `artifacts/snapshot_control_plane_public_ip_v1/manifest.json`
+
 The manifest recorded:
 
 - `snapshot_version = snapshot_control_plane_public_ip_v1`
@@ -67,8 +73,9 @@ The data plane then:
 
 - verified the manifest references the exported snapshot
 - verified the manifest registry fingerprint matches the snapshot compatibility checker
-- accepted the exported snapshot through `api2agent-snapshot-check`
-- loaded the exported snapshot
+- accepted the distribution directory through `api2agent-snapshot-check`
+- resolved `current.json` to the published artifact snapshot
+- loaded the distributed snapshot through `API2AGENT_SNAPSHOT=<distribution_dir>`
 - reported the same snapshot version in `/healthz`
 - executed `network.public_ip.get`
 - returned the fixed public IP from the local provider
@@ -87,7 +94,7 @@ Go Control Plane Minimum v0 passed.
 This proves the first Phase 6 boundary:
 
 ```text
-Control Plane registry -> snapshot artifact export -> compatibility gate -> Data Plane consumption
+Control Plane registry -> snapshot artifact export -> local distribution current pointer -> compatibility gate -> Data Plane consumption
 ```
 
 ## Checks
@@ -99,6 +106,10 @@ Control Plane registry -> snapshot artifact export -> compatibility gate -> Data
   "manifest_references_snapshot": true,
   "manifest_fingerprint_matches_snapshot_check": true,
   "manifest_validation_valid": true,
+  "distribution_current_exists": true,
+  "distribution_current_points_to_snapshot": true,
+  "distribution_current_fingerprint_matches_manifest": true,
+  "distribution_artifact_snapshot_exists": true,
   "snapshot_check_passed": true,
   "snapshot_check_has_registry_fingerprint": true,
   "snapshot_check_has_explicit_version_policy": true,

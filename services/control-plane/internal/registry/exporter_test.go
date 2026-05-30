@@ -115,6 +115,43 @@ func TestWriteArtifactDir(t *testing.T) {
 	}
 }
 
+func TestPublishArtifactDir(t *testing.T) {
+	reg := loadValidRegistry(t)
+	snapshot, manifest, err := reg.ExportArtifact(time.Date(2026, 5, 30, 1, 2, 3, 0, time.UTC), "file", "registry.json")
+	if err != nil {
+		t.Fatalf("export artifact: %v", err)
+	}
+	artifactDir := filepath.Join(t.TempDir(), "artifact")
+	if err := WriteArtifactDir(artifactDir, snapshot, manifest); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+
+	distributionDir := t.TempDir()
+	pointer, err := PublishArtifactDir(artifactDir, distributionDir, time.Date(2026, 5, 30, 4, 5, 6, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("publish artifact: %v", err)
+	}
+
+	if pointer.DistributionVersion != "api2agent.snapshot_distribution.v0" {
+		t.Fatalf("unexpected distribution version: %q", pointer.DistributionVersion)
+	}
+	if pointer.SnapshotVersion != snapshot.SnapshotVersion {
+		t.Fatalf("unexpected snapshot version: %#v", pointer)
+	}
+	if pointer.SnapshotFile != "artifacts/snapshot_control_plane_public_ip_v1/snapshot.json" {
+		t.Fatalf("unexpected snapshot file reference: %q", pointer.SnapshotFile)
+	}
+	if _, err := os.Stat(filepath.Join(distributionDir, "current.json")); err != nil {
+		t.Fatalf("expected current pointer: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(distributionDir, "artifacts", snapshot.SnapshotVersion, "snapshot.json")); err != nil {
+		t.Fatalf("expected published snapshot: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(distributionDir, "artifacts", snapshot.SnapshotVersion, "manifest.json")); err != nil {
+		t.Fatalf("expected published manifest: %v", err)
+	}
+}
+
 func TestValidateRejectsProviderCapabilityVersionMismatch(t *testing.T) {
 	reg, err := LoadFile(filepath.Join("..", "..", "testdata", "registry", "network.public_ip.get.json"))
 	if err != nil {

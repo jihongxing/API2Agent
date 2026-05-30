@@ -103,6 +103,8 @@ All notable API2Agent changes will be documented in this file.
 - Control Plane `registry.Store` abstraction with local file-backed implementation.
 - Control Plane snapshot versioning metadata with explicit version policy and deterministic registry fingerprints.
 - Control Plane snapshot artifact export with `snapshot.json` and `manifest.json`.
+- Control Plane local snapshot distribution publishing with `current.json` and versioned artifact directories.
+- Go Data Plane snapshot resolver support for distribution directories and direct `current.json` pointers.
 - Go Control Plane minimum dogfood script and bilingual report.
 - Go Data Plane credential config dogfood script and bilingual report.
 - Dogfood reports for compiler, proxy, routing, ledger, failover, benchmark, and SDK failover.
@@ -156,10 +158,11 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane export path uses the registry store boundary.
 - Go Control Plane snapshot exports include stable registry fingerprints and explicit version policy metadata.
 - Go Control Plane minimum dogfood verifies the snapshot artifact manifest before Data Plane execution.
+- Go Control Plane snapshot distribution dogfood passed with `API2AGENT_SNAPSHOT` pointed at a local distribution directory.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
 - Full test suite: `143 passed`.
 
 ### Planned Next
 
-- Control Plane Snapshot Distribution Stub v0.
+- Control Plane Snapshot Refresh / Reload Policy v0.
