@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Closeout Complete
+Agent Capability Compiler OpenAPI Response Shape Documentation Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI response shape documentation design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI response shape documentation implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Design v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Design v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -915,11 +915,16 @@ Current Phase 6 progress:
   - remaining risks are pragmatic branch matching, bounded mapping resolution, sparse response documentation, advisory diagnostics, and no runtime branch validation.
   - the next OpenAPI hardening task is response shape documentation design.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler OpenAPI Response Shape Documentation Design v0 is complete:
+  - current response documentation baseline and gaps are documented.
+  - additive response metadata, extraction rules, status categories, README/inspect summaries, diagnostics, tests, dogfood, and non-goals are defined.
+  - the next OpenAPI hardening task is response shape documentation implementation.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Design v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0
 ```
 
 References:
@@ -961,6 +966,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`
 
 ## 9. Marketplace Is Later
 

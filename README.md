@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: design richer OpenAPI response shape documentation after closing discriminator handling; next work remains API-first and out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
+Current focus: implement richer OpenAPI response shape documentation after completing the design; next work remains API-first and out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
@@ -88,6 +88,7 @@ English:
 - [Agent Capability Compiler OpenAPI Discriminator Handling Design](docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md)
 - [Agent Capability Compiler OpenAPI Discriminator Handling Implementation Report](docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md)
 - [Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review](docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md)
+- [Agent Capability Compiler OpenAPI Response Shape Documentation Design](docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md)
 - [Stage Consolidation Before Import/Replace](docs/en-US/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
 - [Persistent Registry Import/Replace Transaction Design](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
 - [Persistent Registry Import/Replace CLI Implementation Report](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)
@@ -184,6 +185,7 @@ English:
 - [Agent Capability Compiler OpenAPI Discriminator Handling Design](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md)
 - [Agent Capability Compiler OpenAPI Discriminator Handling Implementation 报告](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md)
 - [Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md)
+- [Agent Capability Compiler OpenAPI Response Shape Documentation Design](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md)
 - [Import/Replace 前阶段总结与加固](docs/cn-ZH/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
 - [Persistent Registry Import/Replace Transaction Design](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
 - [Persistent Registry Import/Replace CLI Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)
