@@ -294,11 +294,12 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI Discriminator Handling implemented with discriminator-aware summaries, mapping-driven examples, schema hints, diagnostics, OpenAI tool schema preservation, fixtures, and local dogfood.
 - Agent Capability Compiler OpenAPI Discriminator Handling closeout completed; discriminator handling can close and the next OpenAPI hardening design target is response shape documentation.
 - Agent Capability Compiler OpenAPI Response Shape Documentation design completed with response extraction metadata, status categories, README/inspect response summaries, diagnostics, tests, dogfood, and non-goals.
+- Agent Capability Compiler OpenAPI Response Shape Documentation implemented with additive response metadata, deterministic content selection, README/inspect response summaries, diagnostics, fixture coverage, and local dogfood.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
-- Full test suite: `197 passed`.
+- Full test suite: `201 passed`.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0.
+- Agent Capability Compiler OpenAPI Response Shape Documentation Closeout + Phase Review v0.

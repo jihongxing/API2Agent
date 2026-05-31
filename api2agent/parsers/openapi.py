@@ -518,18 +518,13 @@ def _extract_request_body(raw_body: Any, document: dict[str, Any]) -> RequestBod
         return None
 
     content = raw_body.get("content") or {}
-    json_content = content.get("application/json")
-    if not isinstance(json_content, dict):
-        for _, candidate in content.items():
-            if isinstance(candidate, dict):
-                json_content = candidate
-                break
-    if not isinstance(json_content, dict):
+    content_type, json_content, _content_types = _select_content(content)
+    if not content_type or not isinstance(json_content, dict):
         return None
 
     return RequestBody(
         required=bool(raw_body.get("required")),
-        content_type="application/json" if "application/json" in content else next(iter(content.keys()), "application/json"),
+        content_type=content_type,
         schema=_resolve_schema(document, json_content.get("schema") or {}),
         example=_extract_example_value(json_content.get("example")),
         examples=_extract_examples(json_content.get("examples")),
@@ -543,21 +538,43 @@ def _extract_responses(raw_responses: dict[str, Any], document: dict[str, Any]) 
         if not isinstance(raw_response, dict):
             continue
 
-        schema: dict[str, Any] = {}
         content = raw_response.get("content") or {}
-        json_content = content.get("application/json")
-        if isinstance(json_content, dict):
-            schema = _resolve_schema(document, json_content.get("schema") or {})
+        content_type, selected_content, content_types = _select_content(content)
+        schema: dict[str, Any] = {}
+        example: Any | None = None
+        examples: list[Any] = []
+        if isinstance(selected_content, dict):
+            schema = _resolve_schema(document, selected_content.get("schema") or {})
+            example = _extract_example_value(selected_content.get("example"))
+            examples = _extract_examples(selected_content.get("examples"))
 
         responses.append(
             ResponseShape(
                 status_code=str(status_code),
                 description=raw_response.get("description"),
+                content_type=content_type,
+                content_types=content_types,
                 schema=schema,
+                example=example,
+                examples=examples,
             )
         )
 
     return responses
+
+
+def _select_content(content: Any) -> tuple[str | None, dict[str, Any] | None, list[str]]:
+    if not isinstance(content, dict) or not content:
+        return None, None, []
+
+    content_types = [str(key) for key in content]
+    if isinstance(content.get("application/json"), dict):
+        return "application/json", content["application/json"], content_types
+
+    for content_type, candidate in content.items():
+        if isinstance(candidate, dict):
+            return str(content_type), candidate, content_types
+    return None, None, content_types
 
 
 def _resolve_refs(document: dict[str, Any], value: Any, seen: frozenset[str] = frozenset()) -> Any:

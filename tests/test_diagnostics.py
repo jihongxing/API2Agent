@@ -193,3 +193,18 @@ def test_diagnose_reports_discriminator_hints() -> None:
     assert "discriminator_without_polymorphism" in finding_ids
     assert "discriminator_mapping_unresolved" in finding_ids
     assert "discriminator_branch_without_tag" in finding_ids
+
+
+def test_diagnose_reports_response_shape_documentation_hints() -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/response_shapes.yaml"))
+    diagnostics = diagnose_capability(capability)
+    finding_ids = {finding["id"] for finding in diagnostics["findings"]}
+
+    assert "response_schema_present" in finding_ids
+    assert "response_example_present" in finding_ids
+    assert "response_without_schema" in finding_ids
+    assert "success_response_without_schema" in finding_ids
+    assert "error_response_schema_present" in finding_ids
+    assert "default_response_present" in finding_ids
+    assert "multiple_response_content_types" in finding_ids
+    assert "response_polymorphic_schema" in finding_ids

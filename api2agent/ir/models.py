@@ -77,7 +77,11 @@ class RequestBody(BaseModel):
 class ResponseShape(BaseModel):
     status_code: str
     description: str | None = None
+    content_type: str | None = None
+    content_types: list[str] = Field(default_factory=list)
     schema_: dict[str, Any] = Field(default_factory=dict, alias="schema")
+    example: Any | None = None
+    examples: list[Any] = Field(default_factory=list)
 
     model_config = {"populate_by_name": True}
 

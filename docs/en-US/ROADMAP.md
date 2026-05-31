@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Design Complete
+Agent Capability Compiler OpenAPI Response Shape Documentation Implementation Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Response Shape Documentation Closeout + Phase Review v0.
 
 Scope:
 
@@ -1066,6 +1066,14 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`
+
+Completed Agent capability compiler OpenAPI response shape documentation implementation result:
+
+- additive response metadata, deterministic content selection, README/inspect response summaries, diagnostics, fixture coverage, and local dogfood are implemented.
+- generated runner behavior remains unchanged, and old capability JSON without response metadata remains valid.
+- local response-shape dogfood passed, and the full Python suite passed with 201 tests.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`.
 
 Completed Agent capability compiler OpenAPI response shape documentation design result:
 

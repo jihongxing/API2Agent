@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from api2agent.ir.models import AuthConfig, Capability, RequestBody, ResponseShape, SafetyLevel, Tool
+from api2agent.response_docs import is_no_body_status, response_category, response_has_example
 from api2agent.schema_shaping import schema_hint_counts, schema_paths_with_hint
 
 
@@ -364,10 +365,117 @@ def _request_body_findings(tool: Tool, request_body: RequestBody) -> list[dict[s
 
 def _response_schema_findings(tool: Tool, response: ResponseShape) -> list[dict[str, Any]]:
     schema = response.schema_ or {}
-    if not schema:
-        return []
-
     findings: list[dict[str, Any]] = []
+    status_code = response.status_code
+    category = response_category(status_code)
+    evidence = {
+        "status_code": status_code,
+        "category": category,
+        "content_type": response.content_type,
+    }
+
+    if schema:
+        findings.append(
+            _finding(
+                "response_schema_present",
+                "info",
+                "schema",
+                "Response includes a documented schema.",
+                _tool_location(tool),
+                "Review generated response summaries before wiring this package into an Agent.",
+                evidence,
+            )
+        )
+    else:
+        findings.append(
+            _finding(
+                "response_without_schema",
+                "info",
+                "schema",
+                "Response has no documented schema.",
+                _tool_location(tool),
+                "Add a response schema in the source OpenAPI document when callers need to understand returned data.",
+                evidence,
+            )
+        )
+        if category == "success" and not is_no_body_status(status_code):
+            findings.append(
+                _finding(
+                    "success_response_without_schema",
+                    "warning",
+                    "schema",
+                    "Success response has no documented schema.",
+                    _tool_location(tool),
+                    "Add a success response schema so generated docs can show Agents what a successful call returns.",
+                    evidence,
+                )
+            )
+
+    if response_has_example(response):
+        findings.append(
+            _finding(
+                "response_example_present",
+                "info",
+                "schema",
+                "Response includes source examples.",
+                _tool_location(tool),
+                "Use response examples to verify generated docs explain returned payloads clearly.",
+                {**evidence, "example_count": len(response.examples) + (1 if response.example is not None else 0)},
+            )
+        )
+    if category in {"client_error", "server_error"} and schema:
+        findings.append(
+            _finding(
+                "error_response_schema_present",
+                "info",
+                "schema",
+                "Error response includes a structured schema.",
+                _tool_location(tool),
+                "Expose structured error bodies in generated docs so Agents can interpret failures.",
+                evidence,
+            )
+        )
+    if category == "default":
+        findings.append(
+            _finding(
+                "default_response_present",
+                "info",
+                "schema",
+                "OpenAPI source includes a default response.",
+                _tool_location(tool),
+                "Document default responses as catch-all outcomes for Agent planning.",
+                evidence,
+            )
+        )
+    if len(response.content_types) > 1:
+        findings.append(
+            _finding(
+                "multiple_response_content_types",
+                "info",
+                "schema",
+                "Response offers multiple content types; generation selected one deterministically.",
+                _tool_location(tool),
+                "Review selected response content type before relying on generated response docs.",
+                {**evidence, "content_types": response.content_types},
+            )
+        )
+
+    if not schema:
+        return findings
+
+    if any(key in schema for key in ("oneOf", "anyOf")):
+        findings.append(
+            _finding(
+                "response_polymorphic_schema",
+                "info",
+                "schema",
+                "Response schema contains oneOf/anyOf polymorphism.",
+                _tool_location(tool),
+                "Review response summaries and discriminator diagnostics for polymorphic outputs.",
+                evidence,
+            )
+        )
+
     write_only_paths = schema_paths_with_hint(schema, "write_only")
     if write_only_paths:
         findings.append(

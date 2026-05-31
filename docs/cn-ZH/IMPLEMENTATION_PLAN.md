@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Design Complete
+Agent Capability Compiler OpenAPI Response Shape Documentation Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI response shape documentation implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI response shape documentation closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -920,11 +920,16 @@ Go Control Plane Minimum v0
   - additive response metadata、extraction rules、status categories、README/inspect summaries、diagnostics、tests、dogfood 和 non-goals 已定义。
   - 下一项 OpenAPI hardening task 是 response shape documentation implementation。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`。
+- Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0 已完成：
+  - additive response metadata、deterministic content selection、README/inspect response summaries、diagnostics、fixture coverage 和 local dogfood 已实现。
+  - generated runner behavior 保持 unchanged，old capability JSON without response metadata 仍然 valid。
+  - local response-shape dogfood 已通过，full Python suite 以 201 tests 通过。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Closeout + Phase Review v0
 ```
 
 参考：
@@ -967,6 +972,7 @@ Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace 是后面的结果
 

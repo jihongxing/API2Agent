@@ -28,6 +28,7 @@ from api2agent.generators.package import generate_package
 from api2agent.parsers.curl import parse_curl
 from api2agent.parsers.openapi import parse_openapi_file
 from api2agent.replay import can_execute_replay, execute_replay
+from api2agent.response_docs import format_response_summary, response_category_counts
 from api2agent.schema_shaping import SchemaDirection, merge_schema_hint_counts, schema_hint_counts, summarize_schema
 
 app = typer.Typer(help="Turn APIs into verified Agent capability packages.")
@@ -303,6 +304,11 @@ def inspect(
             typer.echo(
                 "Schema hints: "
                 + ", ".join(f"{key}={value}" for key, value in summary["schema_hints"].items())
+            )
+        if summary["response_categories"]:
+            typer.echo(
+                "Response categories: "
+                + ", ".join(f"{key}={value}" for key, value in summary["response_categories"].items())
             )
         if len(tools) > LARGE_PACKAGE_TOOL_WARNING_THRESHOLD:
             typer.echo(
@@ -1124,6 +1130,7 @@ def _tool_summary(tools: list[dict]) -> dict:
     tag_counts: dict[str, int] = {}
     prefix_counts: dict[str, int] = {}
     schema_hints: dict[str, int] = {}
+    response_categories: dict[str, int] = {}
     for tool in tools:
         safety = str(tool.get("safety") or "unknown")
         safety_counts[safety] = safety_counts.get(safety, 0) + 1
@@ -1137,12 +1144,15 @@ def _tool_summary(tools: list[dict]) -> dict:
         schema_counts = _tool_schema_hint_counts(tool)
         for key, value in schema_counts.items():
             schema_hints[key] = schema_hints.get(key, 0) + value
+        for key, value in response_category_counts(tool.get("responses") or []).items():
+            response_categories[key] = response_categories.get(key, 0) + value
 
     return {
         "safety_counts": _ordered_counts(safety_counts),
         "top_tags": _top_counts(tag_counts, label_key="tag"),
         "top_path_prefixes": _top_counts(prefix_counts, label_key="prefix"),
         "schema_hints": dict(sorted(schema_hints.items())),
+        "response_categories": dict(sorted(response_categories.items())),
     }
 
 
@@ -1231,6 +1241,16 @@ def _format_tool_details(tool: dict) -> list[str]:
     if request_body:
         required = " required" if request_body.get("required") else ""
         details.append(f"body: {_format_schema(request_body.get('schema') or {}, direction='request')}{required}")
+
+    responses = tool.get("responses") or []
+    if responses:
+        details.append(
+            "responses: "
+            + "; ".join(
+                format_response_summary(response, include_description=False, include_example=False)
+                for response in responses[:5]
+            )
+        )
 
     return details
 

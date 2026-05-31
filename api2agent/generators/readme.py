@@ -2,6 +2,7 @@ import json
 
 from api2agent.generators.examples import example_for_parameter, example_for_request_body, example_value
 from api2agent.ir.models import Capability
+from api2agent.response_docs import format_response_summaries
 from api2agent.schema_shaping import SchemaDirection, summarize_schema
 
 
@@ -157,6 +158,11 @@ def _format_tool(tool) -> str:
         if tool.request_body.example is not None or tool.request_body.examples or _schema_has_example(tool.request_body.schema_):
             example = f" example={example_for_request_body(tool.request_body)}"
         lines.append(f"  - body: {_format_schema(tool.request_body.schema_, direction='request')}{required}{example}")
+
+    if tool.responses:
+        lines.append("  - responses:")
+        for summary in format_response_summaries(tool.responses):
+            lines.append(f"    - {summary}")
 
     return "\n".join(lines)
 

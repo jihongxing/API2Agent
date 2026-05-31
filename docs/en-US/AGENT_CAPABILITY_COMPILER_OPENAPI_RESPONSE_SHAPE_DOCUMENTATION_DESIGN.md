@@ -108,6 +108,7 @@ Add only optional response metadata if needed:
 
 ```text
 ResponseShape.content_type: str | None = None
+ResponseShape.content_types: list[str] = []
 ResponseShape.example: Any | None = None
 ResponseShape.examples: list[Any] = []
 ```

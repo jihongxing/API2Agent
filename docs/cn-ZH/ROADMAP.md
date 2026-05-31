@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Design Complete
+Agent Capability Compiler OpenAPI Response Shape Documentation Implementation Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Response Shape Documentation Implementation v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Response Shape Documentation Closeout + Phase Review v0。
 
 范围：
 
@@ -1066,6 +1066,14 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`
+
+已完成 Agent capability compiler OpenAPI response shape documentation implementation 结果：
+
+- additive response metadata、deterministic content selection、README/inspect response summaries、diagnostics、fixture coverage 和 local dogfood 已实现。
+- generated runner behavior 保持 unchanged，old capability JSON without response metadata 仍然 valid。
+- local response-shape dogfood 已通过，full Python suite 以 201 tests 通过。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`。
 
 已完成 Agent capability compiler OpenAPI response shape documentation design 结果：
 

@@ -569,6 +569,20 @@ def test_inspect_command_prints_discriminator_hints(tmp_path) -> None:
     assert "body: oneOf[discriminator=method: card=>CardPayment | bank_transfer=>BankTransfer | cash=>CashPayment] required" in result.output
 
 
+def test_inspect_command_prints_response_shape_details(tmp_path) -> None:
+    package_dir = generate_package(parse_openapi_file(Path("tests/fixtures/openapi/response_shapes.yaml")), tmp_path / "package")
+
+    result = runner.invoke(app, ["inspect", str(package_dir)])
+
+    assert result.exit_code == 0
+    assert "Response categories:" in result.output
+    assert "client_error=" in result.output
+    assert "success=" in result.output
+    assert "responses: 200 success application/json object {id:string readOnly, name:string}" in result.output
+    assert "204 success no documented body" in result.output
+    assert "default default application/json object {error:string, code:string?}" in result.output
+
+
 def test_ledger_command_prints_json_rows(tmp_path) -> None:
     db = tmp_path / "usage.sqlite"
     store = UsageStore(db)

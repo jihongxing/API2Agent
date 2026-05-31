@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: Response Shapes API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+paths:
+  /items/{item_id}:
+    get:
+      operationId: getItemResponseShape
+      summary: Fetch an item with documented responses.
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+              example:
+                id: item_123
+                name: Demo
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalid:
+                  value:
+                    error: invalid_request
+                    code: invalid
+        default:
+          description: Default error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /jobs:
+    post:
+      operationId: startJobResponseShape
+      summary: Start an async job.
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json: {}
+        "404":
+          description: Missing job target
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+            text/plain:
+              schema:
+                type: string
+  /search:
+    get:
+      operationId: searchResponseShape
+      summary: Search with polymorphic results.
+      responses:
+        "200":
+          description: Search result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResult"
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        password:
+          type: string
+          writeOnly: true
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+    SearchResult:
+      oneOf:
+        - title: SearchHit
+          type: object
+          required:
+            - kind
+            - id
+          properties:
+            kind:
+              type: string
+              enum:
+                - hit
+            id:
+              type: string
+        - title: SearchEmpty
+          type: object
+          required:
+            - kind
+          properties:
+            kind:
+              type: string
+              enum:
+                - empty
+      discriminator:
+        propertyName: kind
+        mapping:
+          hit: "#/components/schemas/SearchHit"
+          empty: "#/components/schemas/SearchEmpty"

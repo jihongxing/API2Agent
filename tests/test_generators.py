@@ -146,6 +146,22 @@ def test_discriminator_shaping_affects_readme_examples_and_openai_tools(tmp_path
     assert body_schema["oneOf"][0]["properties"]["token"]["writeOnly"] is True
 
 
+def test_response_shape_documentation_affects_readme(tmp_path: Path) -> None:
+    capability = parse_openapi_file(FIXTURES / "response_shapes.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+
+    assert "  - responses:" in readme
+    assert "200 success application/json object {id:string readOnly, name:string}" in readme
+    assert 'example={"id": "item_123", "name": "Demo"} - OK' in readme
+    assert "204 success no documented body - No Content" in readme
+    assert "400 client_error application/json object {error:string, code:string?}" in readme
+    assert "default default application/json object {error:string, code:string?}" in readme
+    assert "202 success application/json undocumented schema - Accepted" in readme
+    assert "password:string" not in readme
+
+
 def test_generate_package_refuses_non_empty_output_without_force(tmp_path: Path) -> None:
     capability = parse_openapi_file(FIXTURES / "basic.yaml")
     output_dir = tmp_path / "api2agent-output"

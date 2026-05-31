@@ -210,6 +210,37 @@ def test_preserves_openapi_discriminator_metadata() -> None:
     assert "propertyName" not in broken.request_body.schema_["discriminator"]
 
 
+def test_preserves_openapi_response_shape_metadata() -> None:
+    capability = parse_openapi_file(FIXTURES / "response_shapes.yaml")
+    tools = {tool.name: tool for tool in capability.tools}
+
+    get_item = tools["get_item_response_shape"]
+    ok_response = get_item.responses[0]
+    assert ok_response.status_code == "200"
+    assert ok_response.content_type == "application/json"
+    assert ok_response.content_types == ["application/json"]
+    assert ok_response.example == {"id": "item_123", "name": "Demo"}
+    assert ok_response.schema_["properties"]["password"]["writeOnly"] is True
+
+    bad_request = get_item.responses[2]
+    assert bad_request.status_code == "400"
+    assert bad_request.examples == [{"error": "invalid_request", "code": "invalid"}]
+
+    start_job = tools["start_job_response_shape"]
+    accepted = start_job.responses[0]
+    assert accepted.status_code == "202"
+    assert accepted.content_type == "application/json"
+    assert accepted.schema_ == {}
+
+    missing = start_job.responses[1]
+    assert missing.content_type == "application/json"
+    assert missing.content_types == ["application/json", "text/plain"]
+
+    legacy = type(ok_response).model_validate({"status_code": "200", "schema": {"type": "object"}})
+    assert legacy.content_type is None
+    assert legacy.examples == []
+
+
 def test_preserves_openapi_security_requirement_combinations() -> None:
     capability = parse_openapi_file(FIXTURES / "security_combinations.yaml")
     tools = {tool.name: tool for tool in capability.tools}
