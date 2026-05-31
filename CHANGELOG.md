@@ -298,6 +298,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI Response Shape Documentation closeout completed; response shape documentation can close and the next OpenAPI hardening design target is bounded JSON Schema keyword coverage.
 - Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage design completed with Tier 1 display/example keywords, Tier 2 diagnostics-only keywords, compatibility strategy, generated artifact effects, tests, dogfood, and non-goals.
 - Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage implemented with compact keyword summaries, deterministic keyword-hint examples, inspect schema hint counts, diagnostics for visible and advanced keywords, fixture coverage, and local dogfood.
+- Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage closeout completed; bounded keyword coverage can close and the next compiler hardening target is real-spec calibration design.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -305,4 +306,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0.
+- Agent Capability Compiler OpenAPI Real-Spec Calibration Design v0.

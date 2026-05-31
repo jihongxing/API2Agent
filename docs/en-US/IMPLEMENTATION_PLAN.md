@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI JSON Schema keyword coverage closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI real-spec calibration design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Design v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -940,11 +940,16 @@ Current Phase 6 progress:
   - raw schema compatibility remains intact, and Tier 2 advanced keywords are diagnosed rather than treated as validator semantics.
   - the full Python suite passed with 205 tests.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_IMPLEMENTATION_REPORT.md`.
+- Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0 is complete:
+  - bounded keyword coverage is accepted as complete.
+  - remaining risks are bounded keyword semantics, heuristic examples, summary density, advisory diagnostics, and OpenAPI 3.1 dialect nuance.
+  - the next compiler hardening task is OpenAPI real-spec calibration design.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Design v0
 ```
 
 References:

@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI JSON Schema keyword coverage closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI real-spec calibration design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -940,11 +940,16 @@ Go Control Plane Minimum v0
   - raw schema compatibility 保持 intact，Tier 2 advanced keywords 会被诊断，而不是被当作 validator semantics 处理。
   - full Python suite 已通过 205 tests。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_IMPLEMENTATION_REPORT.md`。
+- Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0 已完成：
+  - bounded keyword coverage 被接受为 complete。
+  - remaining risks 是 bounded keyword semantics、heuristic examples、summary density、advisory diagnostics 和 OpenAPI 3.1 dialect nuance。
+  - 下一项 compiler hardening task 是 OpenAPI real-spec calibration design。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Design v0
 ```
 
 参考：
