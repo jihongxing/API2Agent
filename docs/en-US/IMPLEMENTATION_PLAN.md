@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Closeout Complete
+Agent Capability Compiler OpenAPI Server Handling Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI server handling design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI server handling implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Design v0
+Agent Capability Compiler OpenAPI Server Handling Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Design v0
+Agent Capability Compiler OpenAPI Server Handling Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -868,11 +868,16 @@ Current Phase 6 progress:
   - remaining risks are multi-credential proxy product semantics, OAuth metadata-only behavior, coarse API key env naming, and complex server layouts in real specs.
   - the next OpenAPI hardening task is server handling design.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler OpenAPI Server Handling Design v0 is complete:
+  - current server handling baseline and gaps are documented.
+  - additive IR metadata, deterministic selection rules, relative server URL policy, profile hints, generated artifact effects, tests, dogfood, and non-goals are defined.
+  - the next OpenAPI hardening task is server handling implementation.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Design v0
+Agent Capability Compiler OpenAPI Server Handling Implementation v0
 ```
 
 References:
@@ -905,6 +910,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`
 
 ## 9. Marketplace Is Later
 

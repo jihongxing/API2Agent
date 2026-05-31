@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Closeout Complete
+Agent Capability Compiler OpenAPI Server Handling Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI server handling design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI server handling implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Design v0
+Agent Capability Compiler OpenAPI Server Handling Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Design v0
+Agent Capability Compiler OpenAPI Server Handling Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -868,11 +868,16 @@ Go Control Plane Minimum v0
   - remaining risks 是 multi-credential proxy product semantics、OAuth metadata-only behavior、coarse API key env naming 和 real specs 中的 complex server layouts。
   - 下一项 OpenAPI hardening task 是 server handling design。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md`。
+- Agent Capability Compiler OpenAPI Server Handling Design v0 已完成：
+  - current server handling baseline 和 gaps 已文档化。
+  - additive IR metadata、deterministic selection rules、relative server URL policy、profile hints、generated artifact effects、tests、dogfood 和 non-goals 已定义。
+  - 下一项 OpenAPI hardening task 是 server handling implementation。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Design v0
+Agent Capability Compiler OpenAPI Server Handling Implementation v0
 ```
 
 参考：
@@ -905,6 +910,7 @@ Agent Capability Compiler OpenAPI Server Handling Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`
 
 ## 9. Marketplace 是后面的结果
 
