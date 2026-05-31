@@ -302,6 +302,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI Real-Spec Calibration design completed with corpus slots, metric contract, status thresholds, harness behavior, artifact strategy, tests, dogfood, and API-first non-goals.
 - Agent Capability Compiler OpenAPI Real-Spec Calibration Harness implemented with local offline calibration script, purpose-labeled corpus cases, machine-readable result artifact, status classification, fixture/synthetic-large coverage, and dogfood.
 - Agent Capability Compiler OpenAPI Real-Spec Calibration Harness closeout completed; the harness can close and the next evidence-driven compiler target is diagnostics score calibration design.
+- Agent Capability Compiler Diagnostics Score Calibration design completed with compatibility strategy, finding impact classes, initial impact mapping, metadata penalty cap, score breakdown shape, tests, dogfood, and non-goals.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -309,4 +310,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler Diagnostics Score Calibration Design v0.
+- Agent Capability Compiler Diagnostics Score Calibration Implementation v0.

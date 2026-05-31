@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout Complete
+Agent Capability Compiler Diagnostics Score Calibration Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 diagnostics score calibration design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 diagnostics score calibration implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Design v0
+Agent Capability Compiler Diagnostics Score Calibration Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Design v0
+Agent Capability Compiler Diagnostics Score Calibration Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -957,11 +957,15 @@ Go Control Plane Minimum v0
   - local calibration harness 被接受为 complete。
   - 第一个 evidence-driven next gap 是 metadata-rich packages 的 diagnostics score calibration。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`。
+- Agent Capability Compiler Diagnostics Score Calibration Design v0 已完成：
+  - scoring weakness、compatibility strategy、impact classes、initial mapping、score formula、metadata cap、score breakdown、calibration expectations、tests、dogfood 和 non-goals 已定义。
+  - 下一项 compiler hardening task 是 diagnostics score calibration implementation。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Design v0
+Agent Capability Compiler Diagnostics Score Calibration Implementation v0
 ```
 
 参考：

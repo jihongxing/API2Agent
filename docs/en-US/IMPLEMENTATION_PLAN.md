@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout Complete
+Agent Capability Compiler Diagnostics Score Calibration Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is diagnostics score calibration design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is diagnostics score calibration implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Design v0
+Agent Capability Compiler Diagnostics Score Calibration Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Design v0
+Agent Capability Compiler Diagnostics Score Calibration Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -957,11 +957,15 @@ Current Phase 6 progress:
   - the local calibration harness is accepted as complete.
   - the first evidence-driven next gap is diagnostics score calibration for metadata-rich packages.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler Diagnostics Score Calibration Design v0 is complete:
+  - scoring weakness, compatibility strategy, impact classes, initial mapping, score formula, metadata cap, score breakdown, calibration expectations, tests, dogfood, and non-goals are defined.
+  - the next compiler hardening task is diagnostics score calibration implementation.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Design v0
+Agent Capability Compiler Diagnostics Score Calibration Implementation v0
 ```
 
 References:

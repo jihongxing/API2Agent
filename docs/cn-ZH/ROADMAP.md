@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout Complete
+Agent Capability Compiler Diagnostics Score Calibration Design Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Design v0
+Agent Capability Compiler Diagnostics Score Calibration Implementation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler Diagnostics Score Calibration Design v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler Diagnostics Score Calibration Implementation v0。
 
 范围：
 
@@ -1074,6 +1074,13 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_DESIGN.md`
+
+已完成 Agent capability compiler diagnostics score calibration design 结果：
+
+- scoring weakness、compatibility strategy、impact classes、initial mapping、score formula、metadata cap、score breakdown、calibration expectations、tests、dogfood 和 non-goals 已定义。
+- 下一项 compiler hardening task 是 diagnostics score calibration implementation。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_DESIGN.md`。
 
 已完成 Agent capability compiler OpenAPI real-spec calibration harness closeout 结果：
 
