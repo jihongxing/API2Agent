@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Hosted Admin Trusted Gateway Service Dogfood Complete
+Hosted Admin Trusted Gateway Service Dogfood Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is complete, and the current Go Control Plane gate is closeout of the trusted-gateway hosted admin service dogfood.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is complete, and the current Go Control Plane gate is production boundary design for the trusted-gateway hosted admin path.
 
 Implementation language decision:
 
@@ -778,11 +778,16 @@ Current Phase 6 progress:
   - Postgres audit and idempotency records preserve trusted principal evidence.
   - dogfood fixed import/replace audit metadata to include hosted principal evidence.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`.
+- Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0 is complete:
+  - the Control Plane-side hosted trusted-gateway path can pause.
+  - remaining gateway, secret-rotation, permission-source, header-stripping, and tenant-partitioning risks are documented.
+  - the next task is production gateway boundary design.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 ```
 
 References:
@@ -798,6 +803,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace Is Later
 

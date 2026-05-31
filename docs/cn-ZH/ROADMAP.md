@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Hosted Admin Trusted Gateway Service Dogfood Complete
+Hosted Admin Trusted Gateway Service Dogfood Closeout Complete
 ```
 
 战略判断：
@@ -787,6 +787,7 @@ Go Control Plane Hosted Admin Authenticator Integration Design v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0 - complete
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0 - complete
 ```
 
 ## 8.8 Phase 5.8：Tooling Re-entry Phase
@@ -938,7 +939,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -995,29 +996,30 @@ Go Control Plane Hosted Admin Authenticator Integration Design v0
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0
 Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 ```
 
-这现在是 hosted trusted-gateway service dogfood 完成后的下一项工程任务。
+这现在是 hosted trusted-gateway service dogfood closeout 完成后的下一项工程任务。
 
 范围：
 
-1. 对照 authenticator design review hosted/trusted-gateway dogfood results。
-2. 确认 audit 和 idempotency identity evidence 对本 slice 足够。
-3. 记录 residual gateway、permission-source、secret-rotation 和 tenant-partitioning risks。
+1. 设计 production gateway-to-Control-Plane trust boundary。
+2. 定义 trusted header strip/rewrite rules、gateway secret rotation 和 permission claim issuance assumptions。
+3. 定义 deployment、observability、failure semantics 和后续 implementation test requirements。
 4. 不实现 public CRUD、automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- trusted-gateway service dogfood acceptance criteria 已 review。
-- import/replace audit metadata fix 已纳入 phase judgment。
-- remaining hosted deployment risks 已文档化。
-- 下一项 hosted Control Plane readiness gap 明确。
+- production gateway boundary 在 implementation 前完成文档化。
+- secret rotation 和 trusted header requirements 明确。
+- permission issuance 和 audit evidence contracts 明确。
+- 后续 implementation 和 dogfood requirements 已命名。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：
@@ -1033,6 +1035,16 @@ Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase R
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
+
+已完成 hosted trusted-gateway service dogfood closeout 结果：
+
+- Control Plane 侧 hosted trusted-gateway admin path 可以暂停。
+- service dogfood acceptance criteria 已通过真实 HTTP 和 live Postgres 验证。
+- import/replace audit metadata 现在包含 hosted principal evidence。
+- remaining production gateway、secret rotation、permission-source、header-stripping 和 tenant-partitioning risks 已文档化。
+- 下一项最高信号任务是 production gateway boundary design。
+- 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 hosted trusted-gateway service dogfood 结果：
 

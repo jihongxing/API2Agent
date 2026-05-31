@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Admin Trusted Gateway Service Dogfood Complete
+Hosted Admin Trusted Gateway Service Dogfood Closeout Complete
 ```
 
 Strategic thesis:
@@ -787,6 +787,7 @@ Go Control Plane Hosted Admin Authenticator Integration Design v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0 - complete
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0 - complete
 ```
 
 ## 8.8 Phase 5.8: Tooling Re-entry Phase
@@ -938,7 +939,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -995,29 +996,30 @@ Go Control Plane Hosted Admin Authenticator Integration Design v0
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0
 Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 ```
 
-This is now the next engineering task after hosted trusted-gateway service dogfood is complete.
+This is now the next engineering task after hosted trusted-gateway service dogfood closeout is complete.
 
 Scope:
 
-1. Review the hosted/trusted-gateway dogfood results against the authenticator design.
-2. Confirm audit and idempotency identity evidence is sufficient for this slice.
-3. Capture residual gateway, permission-source, secret-rotation, and tenant-partitioning risks.
+1. Design the production gateway-to-Control-Plane trust boundary.
+2. Define trusted header strip/rewrite rules, gateway secret rotation, and permission claim issuance assumptions.
+3. Define deployment, observability, failure semantics, and later implementation test requirements.
 4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- trusted-gateway service dogfood acceptance criteria are reviewed.
-- the import/replace audit metadata fix is accounted for in phase judgment.
-- remaining hosted deployment risks are documented.
-- the next hosted Control Plane readiness gap is explicit.
+- production gateway boundary is documented before implementation.
+- secret rotation and trusted header requirements are explicit.
+- permission issuance and audit evidence contracts are explicit.
+- later implementation and dogfood requirements are named.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1033,6 +1035,16 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
+
+Completed hosted trusted-gateway service dogfood closeout result:
+
+- the Control Plane-side hosted trusted-gateway admin path can pause.
+- service dogfood acceptance criteria passed against real HTTP and live Postgres.
+- import/replace audit metadata now includes hosted principal evidence.
+- remaining production gateway, secret rotation, permission-source, header-stripping, and tenant-partitioning risks are documented.
+- next highest-signal task is production gateway boundary design.
+- See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed hosted trusted-gateway service dogfood result:
 
