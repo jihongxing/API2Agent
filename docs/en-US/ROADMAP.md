@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout Complete
+Agent Capability Compiler OpenAPI Generic Example Reduction Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Generic Example Reduction Design v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Generic Example Reduction Implementation v0.
 
 Scope:
 
@@ -1080,12 +1080,18 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_DESIGN.md`
+
+Completed Agent capability compiler OpenAPI generic example reduction design result:
+
+- deterministic name-aware fallback rules, priority preservation for source/schema hints, object field context threading, calibration generic example metrics, tests, dogfood, and non-goals are defined.
+- the next compiler hardening task is OpenAPI generic example reduction implementation.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_DESIGN.md`.
 
 Completed Agent capability compiler OpenAPI summary noise reduction closeout result:
 
 - v0 summary budgets are accepted as sufficient for the current corpus.
 - remaining risks are opinionated text-output budgets, large README tool sections, advisory repeated diagnostic groups, generic first-call params, and fixture-heavy corpus coverage.
-- the next compiler hardening task is OpenAPI generic example reduction design.
 - See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed Agent capability compiler OpenAPI summary noise reduction implementation result:

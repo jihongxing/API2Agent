@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout Complete
+Agent Capability Compiler OpenAPI Generic Example Reduction Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI generic example reduction design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI generic example reduction implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -984,11 +984,15 @@ Current Phase 6 progress:
   - remaining risks are opinionated text-output budgets, large README tool sections, advisory repeated diagnostic groups, generic first-call params, and fixture-heavy corpus coverage.
   - the next compiler hardening task is OpenAPI generic example reduction design.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler OpenAPI Generic Example Reduction Design v0 is complete:
+  - deterministic name-aware fallback rules, priority preservation for source/schema hints, object field context threading, calibration generic example metrics, tests, dogfood, and non-goals are defined.
+  - the next compiler hardening task is OpenAPI generic example reduction implementation.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Implementation v0
 ```
 
 References:
