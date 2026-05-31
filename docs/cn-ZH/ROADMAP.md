@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Hosted Control Plane Pause + Agent Compiler Re-entry Complete
+Agent Capability Compiler Expansion Design Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Expansion Design v0
+Agent Capability Compiler Quality Diagnostics v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1055,6 +1055,15 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
+
+已完成 Agent capability compiler expansion design 结果：
+
+- quality diagnostics 被选为第一项 compiler expansion implementation slice。
+- design 覆盖 generate、diagnose 和 inspect workflows。
+- `diagnostics.json`、finding ids、severity/status semantics、scoring、tests 和 dogfood 已定义。
+- implementation 保持 API-first，不引入 workflow、marketplace、vault、billing、hosted public CRUD 或 production gateway work。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`。
 
 已完成 hosted Control Plane pause + Agent compiler re-entry 结果：
 

@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Hosted Control Plane Pause + Agent Compiler Re-entry Complete
+Agent Capability Compiler Expansion Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 Agent capability compiler expansion design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 Agent capability compiler quality diagnostics implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler Expansion Design v0
+Agent Capability Compiler Quality Diagnostics v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Expansion Design v0
+Agent Capability Compiler Quality Diagnostics v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -821,11 +821,16 @@ Go Control Plane Minimum v0
   - immediate next focus 回到 API-first Agent capability compiler expansion。
   - 推荐扩展 tracks 是 capability quality diagnostics、OpenAPI real-world hardening、curl instant onboarding 和 observable execution defaults。
   - 详见 `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`。
+- Agent Capability Compiler Expansion Design v0 已完成：
+  - quality diagnostics 被选为第一项 compiler expansion implementation slice。
+  - target generate/diagnose/inspect workflows 已定义。
+  - `diagnostics.json` contract、initial finding set、scoring heuristic、tests、dogfood 和 non-goals 已文档化。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Expansion Design v0
+Agent Capability Compiler Quality Diagnostics v0
 ```
 
 参考：
@@ -849,6 +854,7 @@ Agent Capability Compiler Expansion Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 
 ## 9. Marketplace 是后面的结果
 

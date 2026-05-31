@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Control Plane Pause + Agent Compiler Re-entry Complete
+Agent Capability Compiler Expansion Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler Expansion Design v0
+Agent Capability Compiler Quality Diagnostics v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1055,6 +1055,15 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
+
+Completed Agent capability compiler expansion design result:
+
+- quality diagnostics is selected as the first compiler expansion implementation slice.
+- the design covers generate, diagnose, and inspect workflows.
+- `diagnostics.json`, finding ids, severity/status semantics, scoring, tests, and dogfood are defined.
+- implementation remains API-first and does not introduce workflow, marketplace, vault, billing, hosted public CRUD, or production gateway work.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`.
 
 Completed hosted Control Plane pause + Agent compiler re-entry result:
 
