@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation Implementation Complete
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI examples/defaults propagation closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI security requirement combinations design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -847,11 +847,16 @@ Current Phase 6 progress:
   - README first-call commands, parameter/body details, smoke tests, and manual write tests now use source examples/defaults/enums before generic fallbacks.
   - local generated-runner dogfood passed for read and opt-in write calls against a safe loopback target.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_IMPLEMENTATION_REPORT.md`.
+- Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0 is complete:
+  - examples/defaults propagation is accepted as complete.
+  - remaining risks are conservative deep schema coverage, diagnostics not yet scoring example quality, complex real-spec example objects, and unresolved OpenAPI auth semantics.
+  - the next OpenAPI hardening task is security requirement combinations design.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
 ```
 
 References:
@@ -880,6 +885,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace Is Later
 
