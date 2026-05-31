@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation Complete
+Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Generic Example Reduction Design v0。
 
 范围：
 
@@ -1079,12 +1079,19 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`
+
+已完成 Agent capability compiler OpenAPI summary noise reduction closeout 结果：
+
+- v0 summary budgets 对当前 corpus 被接受为 sufficient。
+- remaining risks 是 opinionated text-output budgets、large README tool sections、advisory repeated diagnostic groups、generic first-call params 和 fixture-heavy corpus coverage。
+- 下一项 compiler hardening task 是 OpenAPI generic example reduction design。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 Agent capability compiler OpenAPI summary noise reduction implementation 结果：
 
 - compact inspect aggregate rendering、representative response previews、line clipping、grouped diagnostics text、README package overview/key caveats、calibration summary-density metrics、regression coverage 和 dogfood 已实现。
 - full Python suite 已通过 213 tests。
-- 下一项 compiler hardening task 是 OpenAPI summary noise reduction closeout。
 - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_IMPLEMENTATION_REPORT.md`。
 
 已完成 Agent capability compiler OpenAPI summary noise reduction design 结果：

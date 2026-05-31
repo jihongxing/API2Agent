@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation Complete
+Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI summary noise reduction closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI generic example reduction design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -979,11 +979,16 @@ Go Control Plane Minimum v0
   - compact inspect aggregate rendering、representative response previews、line clipping、grouped diagnostics text、README package overview/key caveats、calibration summary-density metrics、regression coverage 和 dogfood 已实现。
   - full Python suite 已通过 213 tests。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_IMPLEMENTATION_REPORT.md`。
+- Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0 已完成：
+  - v0 summary budgets 对当前 corpus 被接受为 sufficient。
+  - remaining risks 是 opinionated text-output budgets、large README tool sections、advisory repeated diagnostic groups、generic first-call params 和 fixture-heavy corpus coverage。
+  - 下一项 compiler hardening task 是 OpenAPI generic example reduction design。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
 ```
 
 参考：

@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation Complete
+Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI summary noise reduction closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI generic example reduction design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -979,11 +979,16 @@ Current Phase 6 progress:
   - compact inspect aggregate rendering, representative response previews, line clipping, grouped diagnostics text, README package overview/key caveats, calibration summary-density metrics, regression coverage, and dogfood are implemented.
   - the full Python suite passed with 213 tests.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_IMPLEMENTATION_REPORT.md`.
+- Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0 is complete:
+  - v0 summary budgets are accepted as sufficient for the current corpus.
+  - remaining risks are opinionated text-output budgets, large README tool sections, advisory repeated diagnostic groups, generic first-call params, and fixture-heavy corpus coverage.
+  - the next compiler hardening task is OpenAPI generic example reduction design.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Generic Example Reduction Design v0
 ```
 
 References:

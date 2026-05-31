@@ -307,6 +307,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler Diagnostics Score Calibration closeout completed; the calibrated score profile can close and the next evidence-driven compiler target is OpenAPI summary noise reduction design.
 - Agent Capability Compiler OpenAPI Summary Noise Reduction design completed with noise taxonomy, bounded summary budgets, risk-first rendering order, repeated finding folding, README/inspect/diagnostics text effects, calibration summary-density metrics, tests, dogfood, and non-goals.
 - Agent Capability Compiler OpenAPI Summary Noise Reduction implemented with compact inspect aggregate rendering, representative response previews, line clipping, grouped diagnostics text, README package overview/key caveats, calibration summary-density metrics, regression coverage, and dogfood.
+- Agent Capability Compiler OpenAPI Summary Noise Reduction closeout completed; v0 summary budgets can close and the next evidence-driven compiler target is generic example reduction design.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -314,4 +315,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0.
+- Agent Capability Compiler OpenAPI Generic Example Reduction Design v0.
