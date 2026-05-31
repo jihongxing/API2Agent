@@ -2,6 +2,7 @@ import json
 
 from api2agent.generators.examples import example_for_parameter, example_for_request_body, example_value
 from api2agent.ir.models import Capability
+from api2agent.schema_shaping import SchemaDirection, summarize_schema
 
 
 def render_readme(capability: Capability, diagnostics: dict | None = None) -> str:
@@ -155,7 +156,7 @@ def _format_tool(tool) -> str:
         example = ""
         if tool.request_body.example is not None or tool.request_body.examples or _schema_has_example(tool.request_body.schema_):
             example = f" example={example_for_request_body(tool.request_body)}"
-        lines.append(f"  - body: {_format_schema(tool.request_body.schema_)}{required}{example}")
+        lines.append(f"  - body: {_format_schema(tool.request_body.schema_, direction='request')}{required}{example}")
 
     return "\n".join(lines)
 
@@ -242,25 +243,8 @@ def _format_parameter(parameter) -> str:
     return f"{parameter.name} {_format_schema(parameter.schema_)}{required}{example}"
 
 
-def _format_schema(schema: dict) -> str:
-    schema_type = schema.get("type")
-    if schema_type == "object":
-        properties = schema.get("properties") or {}
-        if not properties:
-            return "object"
-        fields = ", ".join(f"{name}:{_format_schema(value)}" for name, value in properties.items())
-        return f"object {{{fields}}}"
-    if schema_type == "array":
-        return f"array[{_format_schema(schema.get('items') or {})}]"
-    if "oneOf" in schema:
-        return "oneOf[" + " | ".join(_format_schema(item) for item in schema["oneOf"]) + "]"
-    if "anyOf" in schema:
-        return "anyOf[" + " | ".join(_format_schema(item) for item in schema["anyOf"]) + "]"
-
-    label = str(schema_type or "unknown")
-    if "default" in schema:
-        label += f" default={schema['default']}"
-    return label
+def _format_schema(schema: dict, *, direction: SchemaDirection = "neutral") -> str:
+    return summarize_schema(schema, direction=direction)
 
 
 def _example_params(tool) -> dict:

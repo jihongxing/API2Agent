@@ -61,7 +61,7 @@ def test_generated_readme_includes_parameter_and_body_details(tmp_path: Path) ->
 
     assert "query: verbose string default=true" in readme
     assert "header: X-Trace-Id string default=trace-123" in readme
-    assert "body: object {name:string, active:boolean} required" in readme
+    assert "body: object {name:string?, active:boolean?} required" in readme
     assert "'body': {'name': 'example', 'active': True}" in readme
     assert "api2agent test . --tool" in readme
 
@@ -107,6 +107,26 @@ def test_generated_readme_lists_openapi_server_choices(tmp_path: Path) -> None:
     assert "`https://staging.example.com/v1` (document hints=staging)" in readme
     assert "`/api/v3` (document relative hints=relative)" in readme
     assert "`get_admin`: GET /admin [read] [auth: inherit] [server: path]" in readme
+
+
+def test_schema_shaping_affects_readme_examples_and_openai_tools(tmp_path: Path) -> None:
+    capability = parse_openapi_file(FIXTURES / "schema_shaping.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+    manual_write_test = (output_dir / "manual_write_test.py").read_text(encoding="utf-8")
+    tools_json = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert "body: object {name:string, nickname:string nullable?, password:string writeOnly" in readme
+    assert "labels:object map[string]?" in readme
+    assert "loose:array[unknown]?" in readme
+    assert "id:string" not in readme.split("body: ", 1)[1].split("\n", 1)[0]
+    assert "'body': {'name': 'example', 'password': 'example'}" in manual_write_test
+
+    body_schema = tools_json[0]["function"]["parameters"]["properties"]["body"]
+    assert "id" not in body_schema["properties"]
+    assert body_schema["required"] == ["name", "password"]
+    assert "password" in body_schema["properties"]
 
 
 def test_generate_package_refuses_non_empty_output_without_force(tmp_path: Path) -> None:

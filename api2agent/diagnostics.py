@@ -5,7 +5,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from api2agent.ir.models import AuthConfig, Capability, RequestBody, SafetyLevel, Tool
+from api2agent.ir.models import AuthConfig, Capability, RequestBody, ResponseShape, SafetyLevel, Tool
+from api2agent.schema_shaping import schema_hint_counts, schema_paths_with_hint
 
 
 DIAGNOSTICS_CONTRACT_VERSION = "api2agent.capability_diagnostics.v0"
@@ -302,6 +303,10 @@ def _tool_findings(tool: Tool) -> list[dict[str, Any]]:
 
     if tool.request_body is not None:
         findings.extend(_request_body_findings(tool, tool.request_body))
+    for response in tool.responses:
+        findings.extend(_response_schema_findings(tool, response))
+    for parameter in tool.parameters:
+        findings.extend(_schema_complexity_findings(tool, parameter.schema_ or {}, f"parameter:{parameter.name}"))
 
     if tool.auth is not None:
         if tool.auth.type == "unknown":
@@ -338,6 +343,108 @@ def _request_body_findings(tool: Tool, request_body: RequestBody) -> list[dict[s
                 _tool_location(tool),
                 "Add object properties to the source schema so generated tools expose clearer inputs.",
                 {"content_type": request_body.content_type},
+            )
+        )
+    read_only_paths = schema_paths_with_hint(schema, "read_only")
+    if read_only_paths:
+        findings.append(
+            _finding(
+                "read_only_request_fields",
+                "info",
+                "schema",
+                "Request body schema includes read-only fields that should not be requested from users.",
+                _tool_location(tool),
+                "Use request-direction schema shaping so generated Agent inputs omit server-generated fields.",
+                {"content_type": request_body.content_type, "paths": read_only_paths},
+            )
+        )
+    findings.extend(_schema_complexity_findings(tool, schema, "request_body"))
+    return findings
+
+
+def _response_schema_findings(tool: Tool, response: ResponseShape) -> list[dict[str, Any]]:
+    schema = response.schema_ or {}
+    if not schema:
+        return []
+
+    findings: list[dict[str, Any]] = []
+    write_only_paths = schema_paths_with_hint(schema, "write_only")
+    if write_only_paths:
+        findings.append(
+            _finding(
+                "write_only_response_fields",
+                "info",
+                "schema",
+                "Response schema includes write-only fields that should not be shown as returned values.",
+                _tool_location(tool),
+                "Use response-direction schema shaping so response summaries do not imply secrets are returned.",
+                {"status_code": response.status_code, "paths": write_only_paths},
+            )
+        )
+    findings.extend(_schema_complexity_findings(tool, schema, f"response:{response.status_code}"))
+    return findings
+
+
+def _schema_complexity_findings(tool: Tool, schema: dict[str, Any], label: str) -> list[dict[str, Any]]:
+    if not schema:
+        return []
+
+    counts = schema_hint_counts(schema)
+    findings: list[dict[str, Any]] = []
+    hint_specs = [
+        (
+            "nullable",
+            "nullable_fields_present",
+            "info",
+            "Schema includes nullable fields.",
+            "Review generated examples and docs so Agent prompts handle nullability deliberately.",
+        ),
+        (
+            "maps",
+            "additional_properties_present",
+            "info",
+            "Schema uses additionalProperties map/object semantics.",
+            "Review map-shaped inputs and outputs before exposing this package to an Agent.",
+        ),
+        (
+            "nested_polymorphic",
+            "nested_polymorphic_schema",
+            "info",
+            "Schema contains nested oneOf/anyOf branches.",
+            "Keep generated summaries bounded and add source examples for polymorphic shapes when possible.",
+        ),
+        (
+            "arrays_without_items",
+            "array_without_item_schema",
+            "warning",
+            "Schema contains an array without an item schema.",
+            "Add items to the source schema so generated examples and tools know the array element shape.",
+        ),
+        (
+            "large_objects",
+            "large_object_schema",
+            "info",
+            "Schema contains a large object shape.",
+            "Consider examples/defaults or endpoint filtering if Agent input selection becomes noisy.",
+        ),
+    ]
+
+    for hint, finding_id, severity, message, recommendation in hint_specs:
+        if not counts.get(hint):
+            continue
+        findings.append(
+            _finding(
+                finding_id,
+                severity,
+                "schema",
+                message,
+                _tool_location(tool),
+                recommendation,
+                {
+                    "schema": label,
+                    "count": counts[hint],
+                    "paths": schema_paths_with_hint(schema, hint)[:10],
+                },
             )
         )
     return findings

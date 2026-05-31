@@ -167,3 +167,16 @@ def test_diagnose_reports_openapi_server_metadata() -> None:
     assert "server_variables_present" in finding_ids
     assert "path_server_override" in finding_ids
     assert "operation_server_override" in finding_ids
+
+
+def test_diagnose_reports_schema_shaping_hints() -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/schema_shaping.yaml"))
+    diagnostics = diagnose_capability(capability)
+    finding_ids = {finding["id"] for finding in diagnostics["findings"]}
+
+    assert "nullable_fields_present" in finding_ids
+    assert "read_only_request_fields" in finding_ids
+    assert "write_only_response_fields" in finding_ids
+    assert "additional_properties_present" in finding_ids
+    assert "nested_polymorphic_schema" in finding_ids
+    assert "array_without_item_schema" in finding_ids

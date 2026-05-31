@@ -171,6 +171,27 @@ def test_preserves_openapi_examples_and_defaults() -> None:
     assert update_order.request_body.schema_["properties"]["status"]["enum"][0] == "shipped"
 
 
+def test_preserves_schema_shaping_source_metadata() -> None:
+    capability = parse_openapi_file(FIXTURES / "schema_shaping.yaml")
+    tool = capability.tools[0]
+
+    assert tool.request_body is not None
+    schema = tool.request_body.schema_
+    assert schema["properties"]["id"]["readOnly"] is True
+    assert schema["properties"]["password"]["writeOnly"] is True
+    assert schema["properties"]["nickname"]["nullable"] is True
+    assert schema["properties"]["labels"]["additionalProperties"]["type"] == "string"
+    assert schema["properties"]["loose"]["type"] == "array"
+    assert schema["required"] == ["id", "name", "password"]
+
+    mode_schema = tool.parameters[0].schema_
+    assert mode_schema["type"] == ["string", "null"]
+
+    response_schema = tool.responses[0].schema_
+    assert response_schema["properties"]["password"]["writeOnly"] is True
+    assert response_schema["properties"]["status"]["type"] == ["string", "null"]
+
+
 def test_preserves_openapi_security_requirement_combinations() -> None:
     capability = parse_openapi_file(FIXTURES / "security_combinations.yaml")
     tools = {tool.name: tool for tool in capability.tools}

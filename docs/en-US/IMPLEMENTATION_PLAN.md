@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design Complete
+Agent Capability Compiler OpenAPI Schema Shaping Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI schema shaping implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI schema shaping closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
+Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
+Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -889,11 +889,17 @@ Current Phase 6 progress:
   - additive compatibility strategy, direction-aware request/response shaping, nullable/readOnly/writeOnly/additionalProperties/array/polymorphism policies, generated artifact effects, diagnostics, tests, dogfood, and non-goals are defined.
   - the next OpenAPI hardening task is schema shaping implementation.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`.
+- Agent Capability Compiler OpenAPI Schema Shaping Implementation v0 is complete:
+  - direction-aware schema helpers are implemented without required IR changes.
+  - README, inspect, OpenAI tools schema, examples, and diagnostics now use shaped schema summaries and request-body filtering.
+  - nullable, readOnly/writeOnly, additionalProperties, array, polymorphism, and required/optional cases have fixtures and regression tests.
+  - local schema-shaping dogfood passed, and the full Python suite passed with 193 tests.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
+Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
 ```
 
 References:
@@ -930,6 +936,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace Is Later
 

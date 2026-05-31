@@ -485,7 +485,7 @@ def test_inspect_command_prints_parameter_and_body_details(tmp_path) -> None:
     assert result.exit_code == 0
     assert "query: verbose string default=true" in result.output
     assert "header: X-Trace-Id string default=trace-123" in result.output
-    assert "body: object {name:string, active:boolean} required" in result.output
+    assert "body: object {name:string?, active:boolean?} required" in result.output
 
 
 def test_inspect_command_truncates_large_tool_lists(tmp_path) -> None:
@@ -544,6 +544,18 @@ def test_inspect_command_prints_server_summary(tmp_path) -> None:
     assert result.exit_code == 0
     assert "Servers: 3 hints=production,relative,staging" in result.output
     assert "get_admin: GET /admin [read] required=none base=https://admin.example.com server=path" in result.output
+
+
+def test_inspect_command_prints_schema_shaping_hints(tmp_path) -> None:
+    package_dir = generate_package(parse_openapi_file(Path("tests/fixtures/openapi/schema_shaping.yaml")), tmp_path / "package")
+
+    result = runner.invoke(app, ["inspect", str(package_dir)])
+
+    assert result.exit_code == 0
+    assert "Schema hints:" in result.output
+    assert "nullable=" in result.output
+    assert "maps=" in result.output
+    assert "body: object {name:string, nickname:string nullable?, password:string writeOnly" in result.output
 
 
 def test_ledger_command_prints_json_rows(tmp_path) -> None:

@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design Complete
+Agent Capability Compiler OpenAPI Schema Shaping Implementation Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
+Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Schema Shaping Implementation v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0。
 
 范围：
 
@@ -1060,6 +1060,15 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`
+
+已完成 Agent capability compiler OpenAPI schema shaping implementation 结果：
+
+- direction-aware schema helpers 已实现，未增加 required IR changes。
+- generated README、inspect、OpenAI tools schema、examples 和 diagnostics 现在使用 shaped schema summaries 和 request-body filtering。
+- nullable、readOnly/writeOnly、additionalProperties、array、polymorphism 和 required/optional cases 已由 fixtures 和 regression tests 覆盖。
+- local schema-shaping dogfood 已通过，full Python suite 以 193 tests 通过。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`。
 
 已完成 Agent capability compiler OpenAPI schema shaping design 结果：
 

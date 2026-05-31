@@ -1,6 +1,7 @@
 from typing import Any
 
 from api2agent.ir.models import Capability, Tool
+from api2agent.schema_shaping import shape_schema
 
 
 def to_openai_tools(capability: Capability) -> list[dict[str, Any]]:
@@ -22,14 +23,14 @@ def _tool_parameters(tool: Tool) -> dict[str, Any]:
     required: list[str] = []
 
     for parameter in tool.parameters:
-        properties[parameter.name] = parameter.schema_ or {"type": "string"}
+        properties[parameter.name] = dict(parameter.schema_ or {"type": "string"})
         if parameter.description:
             properties[parameter.name]["description"] = parameter.description
         if parameter.required:
             required.append(parameter.name)
 
     if tool.request_body is not None:
-        properties["body"] = tool.request_body.schema_ or {"type": "object"}
+        properties["body"] = shape_schema(tool.request_body.schema_ or {"type": "object"}, direction="request")
         if tool.request_body.required:
             required.append("body")
 
@@ -39,4 +40,3 @@ def _tool_parameters(tool: Tool) -> dict[str, Any]:
         "required": required,
         "additionalProperties": False,
     }
-

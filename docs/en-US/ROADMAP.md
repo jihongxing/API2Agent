@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design Complete
+Agent Capability Compiler OpenAPI Schema Shaping Implementation Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
+Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Schema Shaping Implementation v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0.
 
 Scope:
 
@@ -1060,6 +1060,15 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`
+
+Completed Agent capability compiler OpenAPI schema shaping implementation result:
+
+- direction-aware schema helpers are implemented without required IR changes.
+- generated README, inspect, OpenAI tools schema, examples, and diagnostics now use shaped schema summaries and request-body filtering.
+- nullable, readOnly/writeOnly, additionalProperties, array, polymorphism, and required/optional cases are covered by fixtures and regression tests.
+- local schema-shaping dogfood passed, and the full Python suite passed with 193 tests.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`.
 
 Completed Agent capability compiler OpenAPI schema shaping design result:
 

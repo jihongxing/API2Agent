@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from api2agent.ir.models import Parameter, RequestBody
+from api2agent.schema_shaping import shape_schema
 
 
 def example_for_parameter(parameter: Parameter) -> Any:
@@ -29,7 +30,7 @@ def example_for_request_body(request_body: RequestBody) -> Any:
     )
     if ok:
         return value
-    return example_value(request_body.schema_, required_only=True)
+    return example_value(shape_schema(request_body.schema_, direction="request"), required_only=True)
 
 
 def example_value(schema: dict, *, required_only: bool = False) -> Any:
@@ -42,7 +43,7 @@ def example_value(schema: dict, *, required_only: bool = False) -> Any:
     if ok:
         return value
 
-    schema_type = schema.get("type")
+    schema_type = _primary_type(schema)
     if schema_type == "object":
         properties = schema.get("properties") or {}
         required = set(schema.get("required") or [])
@@ -54,7 +55,8 @@ def example_value(schema: dict, *, required_only: bool = False) -> Any:
         }
         return selected or {}
     if schema_type == "array":
-        return [example_value(schema.get("items") or {})]
+        items = schema.get("items")
+        return [example_value(items)] if isinstance(items, dict) else []
     if schema_type == "integer":
         return 1
     if schema_type == "number":
@@ -62,6 +64,14 @@ def example_value(schema: dict, *, required_only: bool = False) -> Any:
     if schema_type == "boolean":
         return True
     return "example"
+
+
+def _primary_type(schema: dict) -> str | None:
+    schema_type = schema.get("type")
+    if isinstance(schema_type, list):
+        non_null = [item for item in schema_type if item != "null"]
+        return str(non_null[0]) if non_null else "null"
+    return str(schema_type) if schema_type is not None else None
 
 
 def _first_present(*values: Any) -> tuple[Any, bool]:

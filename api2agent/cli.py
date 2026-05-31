@@ -28,6 +28,7 @@ from api2agent.generators.package import generate_package
 from api2agent.parsers.curl import parse_curl
 from api2agent.parsers.openapi import parse_openapi_file
 from api2agent.replay import can_execute_replay, execute_replay
+from api2agent.schema_shaping import SchemaDirection, merge_schema_hint_counts, schema_hint_counts, summarize_schema
 
 app = typer.Typer(help="Turn APIs into verified Agent capability packages.")
 LARGE_PACKAGE_TOOL_WARNING_THRESHOLD = 50
@@ -297,6 +298,11 @@ def inspect(
             typer.echo(
                 "Top path prefixes: "
                 + ", ".join(f"{item['prefix']}({item['count']})" for item in summary["top_path_prefixes"])
+            )
+        if summary["schema_hints"]:
+            typer.echo(
+                "Schema hints: "
+                + ", ".join(f"{key}={value}" for key, value in summary["schema_hints"].items())
             )
         if len(tools) > LARGE_PACKAGE_TOOL_WARNING_THRESHOLD:
             typer.echo(
@@ -1117,6 +1123,7 @@ def _tool_summary(tools: list[dict]) -> dict:
     safety_counts: dict[str, int] = {}
     tag_counts: dict[str, int] = {}
     prefix_counts: dict[str, int] = {}
+    schema_hints: dict[str, int] = {}
     for tool in tools:
         safety = str(tool.get("safety") or "unknown")
         safety_counts[safety] = safety_counts.get(safety, 0) + 1
@@ -1127,11 +1134,15 @@ def _tool_summary(tools: list[dict]) -> dict:
 
         prefix = _path_prefix(str(tool.get("path") or ""))
         prefix_counts[prefix] = prefix_counts.get(prefix, 0) + 1
+        schema_counts = _tool_schema_hint_counts(tool)
+        for key, value in schema_counts.items():
+            schema_hints[key] = schema_hints.get(key, 0) + value
 
     return {
         "safety_counts": _ordered_counts(safety_counts),
         "top_tags": _top_counts(tag_counts, label_key="tag"),
         "top_path_prefixes": _top_counts(prefix_counts, label_key="prefix"),
+        "schema_hints": dict(sorted(schema_hints.items())),
     }
 
 
@@ -1219,7 +1230,7 @@ def _format_tool_details(tool: dict) -> list[str]:
     request_body = tool.get("request_body") or {}
     if request_body:
         required = " required" if request_body.get("required") else ""
-        details.append(f"body: {_format_schema(request_body.get('schema') or {})}{required}")
+        details.append(f"body: {_format_schema(request_body.get('schema') or {}, direction='request')}{required}")
 
     return details
 
@@ -1229,25 +1240,20 @@ def _format_parameter(parameter: dict) -> str:
     return f"{parameter.get('name')} {_format_schema(parameter.get('schema') or {})}{required}"
 
 
-def _format_schema(schema: dict) -> str:
-    schema_type = schema.get("type")
-    if schema_type == "object":
-        properties = schema.get("properties") or {}
-        if not properties:
-            return "object"
-        fields = ", ".join(f"{name}:{_format_schema(value)}" for name, value in properties.items())
-        return f"object {{{fields}}}"
-    if schema_type == "array":
-        return f"array[{_format_schema(schema.get('items') or {})}]"
-    if "oneOf" in schema:
-        return "oneOf[" + " | ".join(_format_schema(item) for item in schema["oneOf"]) + "]"
-    if "anyOf" in schema:
-        return "anyOf[" + " | ".join(_format_schema(item) for item in schema["anyOf"]) + "]"
+def _format_schema(schema: dict, *, direction: SchemaDirection = "neutral") -> str:
+    return summarize_schema(schema, direction=direction)
 
-    label = str(schema_type or "unknown")
-    if "default" in schema:
-        label += f" default={schema['default']}"
-    return label
+
+def _tool_schema_hint_counts(tool: dict) -> dict[str, int]:
+    counts: list[dict[str, int]] = []
+    for parameter in tool.get("parameters") or []:
+        counts.append(schema_hint_counts(parameter.get("schema") or {}))
+    request_body = tool.get("request_body") or {}
+    if request_body:
+        counts.append(schema_hint_counts(request_body.get("schema") or {}))
+    for response in tool.get("responses") or []:
+        counts.append(schema_hint_counts(response.get("schema") or {}))
+    return merge_schema_hint_counts(*counts)
 
 
 def _format_optional_ms(value: object) -> str:
