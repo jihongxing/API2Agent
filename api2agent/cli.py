@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import os
 import subprocess
 import sys
 from typing import Optional
@@ -12,6 +13,7 @@ from api2agent.capabilities.execution import execute_capability
 from api2agent.capabilities.policies import routing_policy_preset
 from api2agent.capabilities.registry import capability_naming_warnings, load_provider_registry, provider_package_warnings
 from api2agent.capabilities.routing import rank_providers, select_provider, select_provider_region
+from api2agent.benchmark import run_generated_package_latency_benchmark
 from api2agent.control.models import UsageEvent
 from api2agent.control.proxy import run_proxy_server
 from api2agent.control.storage import UsageStore
@@ -22,6 +24,7 @@ from api2agent.parsers.openapi import parse_openapi_file
 from api2agent.replay import can_execute_replay, execute_replay
 
 app = typer.Typer(help="Turn APIs into verified Agent capability packages.")
+LARGE_PACKAGE_TOOL_WARNING_THRESHOLD = 50
 DECISION_USAGE_CONTRACT_VERSION = "decision_usage.v0.1"
 REPLAY_CONTRACT_VERSION = "replay.v0.1"
 GOLDEN_TRACE_CONTRACT_VERSION = "golden_trace.v0.1"
@@ -101,6 +104,11 @@ def generate(
         "--max-tools",
         help="Keep at most this many tools after other filters.",
     ),
+    provider_region: Optional[str] = typer.Option(
+        None,
+        "--provider-region",
+        help="Optional provider region metadata for generated packages, e.g. us-east or cn.",
+    ),
 ) -> None:
     """Generate an Agent Capability Package."""
     if spec is None and not curl:
@@ -112,14 +120,27 @@ def generate(
     if max_tools is not None and max_tools < 1:
         raise typer.BadParameter("--max-tools must be greater than 0.")
 
-    capability = parse_curl(curl, name=name) if curl else parse_openapi_file(spec, name=name)
     filters = ToolFilter(
         include_tags=include_tag,
         include_paths=include_path,
         include_operations=include_operation,
         max_tools=max_tools,
     )
-    capability = filter_capability(capability, filters)
+    source_kind = "curl" if curl else "openapi"
+    if curl:
+        capability = parse_curl(curl, name=name)
+        original_tool_count = len(capability.tools)
+        capability = filter_capability(capability, filters)
+    else:
+        capability = parse_openapi_file(spec, name=name, filters=filters)
+        original_tool_count = _openapi_original_tool_count_for_warning(spec, capability, filters)
+    if provider_region:
+        capability = capability.model_copy(
+            update={
+                "provider_region": provider_region,
+                "provider_regions": [provider_region],
+            }
+        )
     if not capability.tools:
         raise typer.BadParameter("No tools matched the selected filters.")
 
@@ -129,16 +150,91 @@ def generate(
         raise typer.BadParameter(str(exc)) from exc
 
     typer.echo(f"Generated capability package: {result}")
+    for warning in _generation_warnings(source_kind, original_tool_count, len(capability.tools), filters):
+        typer.echo(warning)
 
 
 @app.command()
-def test(package_dir: Path = typer.Argument(..., help="Generated package directory.")) -> None:
-    """Run the generated smoke test."""
-    smoke_test = package_dir / "smoke_test.py"
-    if not smoke_test.exists():
-        raise typer.BadParameter(f"Smoke test not found: {smoke_test}")
+def test(
+    package_dir: Path = typer.Argument(..., help="Generated package directory."),
+    allow_write: bool = typer.Option(
+        False,
+        "--allow-write",
+        help="Explicitly run the generated manual write/delete test instead of the read-only smoke test.",
+    ),
+    tool_name: Optional[str] = typer.Option(
+        None,
+        "--tool",
+        help="Run a specific generated tool instead of the default smoke/manual test.",
+    ),
+    params: str = typer.Option("{}", "--params", help="JSON object with params for --tool."),
+) -> None:
+    """Run the generated smoke test, or an explicit manual write test."""
+    if tool_name is not None:
+        _run_specific_package_tool(package_dir, tool_name=tool_name, params=params, allow_write=allow_write)
+        return
 
-    result = subprocess.run([sys.executable, str(smoke_test.name)], cwd=package_dir)
+    test_file = package_dir / ("manual_write_test.py" if allow_write else "smoke_test.py")
+    if not test_file.exists():
+        raise typer.BadParameter(f"Test file not found: {test_file}")
+
+    env = None
+    if allow_write:
+        env = dict(os.environ)
+        env["API2AGENT_ALLOW_WRITE_TEST"] = "1"
+
+    result = subprocess.run([sys.executable, str(test_file.name)], cwd=package_dir, env=env)
+    if result.returncode != 0:
+        raise typer.Exit(result.returncode)
+
+
+def _run_specific_package_tool(
+    package_dir: Path,
+    *,
+    tool_name: str,
+    params: str,
+    allow_write: bool,
+) -> None:
+    capability_path = package_dir / "capability.json"
+    runner_path = package_dir / "runner.py"
+    if not capability_path.exists():
+        raise typer.BadParameter(f"Capability file not found: {capability_path}")
+    if not runner_path.exists():
+        raise typer.BadParameter(f"Runner file not found: {runner_path}")
+
+    try:
+        parsed_params = json.loads(params)
+    except json.JSONDecodeError as exc:
+        raise typer.BadParameter("--params must be valid JSON.") from exc
+    if not isinstance(parsed_params, dict):
+        raise typer.BadParameter("--params must be a JSON object.")
+
+    capability = json.loads(capability_path.read_text(encoding="utf-8"))
+    tool = next((item for item in capability.get("tools") or [] if item.get("name") == tool_name), None)
+    if tool is None:
+        raise typer.BadParameter(f"Tool not found: {tool_name}")
+
+    safety = tool.get("safety")
+    if safety in {"write", "delete"} and not allow_write:
+        raise typer.BadParameter("Write/delete tools require --allow-write.")
+
+    env = None
+    if allow_write:
+        env = dict(os.environ)
+        env["API2AGENT_ALLOW_WRITE_TEST"] = "1"
+
+    code = (
+        "import json, sys\n"
+        "from runner import execute_tool\n"
+        "result = execute_tool(sys.argv[1], json.loads(sys.argv[2]))\n"
+        "print(result)\n"
+        "raise SystemExit(0 if result.get('ok') else 1)\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code, tool_name, json.dumps(parsed_params)],
+        cwd=package_dir,
+        env=env,
+    )
     if result.returncode != 0:
         raise typer.Exit(result.returncode)
 
@@ -168,10 +264,32 @@ def inspect(
     typer.echo(f"Version: {capability.get('version', 'unknown')}")
     typer.echo(f"Base URL: {capability.get('base_url') or '(none)'}")
     typer.echo(f"Auth: {_format_auth(auth)}")
+    tools = capability.get("tools") or []
+    if tools:
+        summary = _tool_summary(tools)
+        typer.echo(f"Tool count: {len(tools)}")
+        typer.echo(
+            "Safety: "
+            + ", ".join(f"{key}={value}" for key, value in summary["safety_counts"].items())
+        )
+        if summary["top_tags"]:
+            typer.echo(
+                "Top tags: "
+                + ", ".join(f"{item['tag']}({item['count']})" for item in summary["top_tags"])
+            )
+        if summary["top_path_prefixes"]:
+            typer.echo(
+                "Top path prefixes: "
+                + ", ".join(f"{item['prefix']}({item['count']})" for item in summary["top_path_prefixes"])
+            )
+        if len(tools) > LARGE_PACKAGE_TOOL_WARNING_THRESHOLD:
+            typer.echo(
+                "Large package hint: regenerate with --include-tag, --include-path, "
+                "--include-operation, or --max-tools before wiring this into an Agent."
+            )
     typer.echo("")
     typer.echo("Tools:")
 
-    tools = capability.get("tools") or []
     if not tools:
         typer.echo("  (none)")
         return
@@ -306,6 +424,38 @@ def _credential_audit_payload(store: UsageStore, project_id: str | None, limit: 
     }
 
 
+def _generation_warnings(
+    source_kind: str,
+    original_tool_count: int,
+    generated_tool_count: int,
+    filters: ToolFilter,
+) -> list[str]:
+    if source_kind != "openapi" or generated_tool_count <= LARGE_PACKAGE_TOOL_WARNING_THRESHOLD:
+        return []
+
+    hint = (
+        "Warning: generated package contains "
+        f"{generated_tool_count} tools, which is likely too many for Agent tool selection. "
+        "Narrow the package with --include-tag, --include-path, --include-operation, or --max-tools."
+    )
+    if filters.is_empty:
+        return [hint]
+    return [
+        hint
+        + f" Filters reduced the source from {original_tool_count} to {generated_tool_count} tools; "
+        "consider narrowing further."
+    ]
+
+
+def _openapi_original_tool_count_for_warning(spec: Path, capability, filters: ToolFilter) -> int:
+    if filters.max_tools is not None and len(capability.tools) <= LARGE_PACKAGE_TOOL_WARNING_THRESHOLD:
+        return len(capability.tools)
+
+    from api2agent.parsers.openapi import count_openapi_operations_file
+
+    return count_openapi_operations_file(spec)
+
+
 def _is_credential_audit_event(event: UsageEvent) -> bool:
     return bool(event.credential_reference or event.error_type in CREDENTIAL_ERROR_TYPES)
 
@@ -364,6 +514,71 @@ def _print_credential_audit(payload: dict) -> None:
                 label_parts.append(f"expires_at={metadata['expires_at']}")
             if label_parts:
                 typer.echo("  Metadata: " + ", ".join(label_parts))
+
+
+@app.command("benchmark-package")
+def benchmark_package(
+    package_dir: Path = typer.Argument(..., help="Generated package directory containing runner.py and capability.json."),
+    tool_name: str = typer.Option(..., "--tool", help="Generated tool name to benchmark."),
+    params: str = typer.Option("{}", "--params", help="JSON object with tool params."),
+    iterations: int = typer.Option(3, "--iterations", help="Number of runs per enabled execution mode."),
+    proxy_url: Optional[str] = typer.Option(None, "--proxy-url", help="Optional API2Agent proxy URL for proxy-mode timing."),
+    direct: bool = typer.Option(True, "--direct/--no-direct", help="Run direct generated-package timing."),
+    project_id: Optional[str] = typer.Option(None, "--project-id", help="Project id used for proxy benchmark payloads."),
+    provider_id: Optional[str] = typer.Option(None, "--provider-id", help="Provider id used for proxy benchmark payloads."),
+    capability_id: Optional[str] = typer.Option(None, "--capability-id", help="Capability id used for proxy benchmark payloads."),
+    provider_region: Optional[str] = typer.Option(None, "--provider-region", help="Provider region override for proxy benchmark payloads."),
+    json_output: bool = typer.Option(False, "--json", help="Print raw benchmark JSON."),
+) -> None:
+    """Benchmark a generated package tool in direct and/or proxy mode."""
+    if iterations < 1:
+        raise typer.BadParameter("--iterations must be greater than 0.")
+    try:
+        parsed_params = json.loads(params)
+    except json.JSONDecodeError as exc:
+        raise typer.BadParameter("--params must be valid JSON.") from exc
+    if not isinstance(parsed_params, dict):
+        raise typer.BadParameter("--params must be a JSON object.")
+
+    env = {}
+    if project_id:
+        env["API2AGENT_PROJECT_ID"] = project_id
+    if provider_id:
+        env["API2AGENT_PROVIDER_ID"] = provider_id
+    if capability_id:
+        env["API2AGENT_CAPABILITY_ID"] = capability_id
+    if provider_region:
+        env["API2AGENT_PROVIDER_REGION"] = provider_region
+
+    try:
+        payload = run_generated_package_latency_benchmark(
+            package_dir=package_dir,
+            tool_name=tool_name,
+            params=parsed_params,
+            iterations=iterations,
+            direct=direct,
+            proxy_url=proxy_url,
+            env=env,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    if json_output:
+        typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+        return
+
+    capability = payload["capability"]
+    typer.echo(f"Package: {payload['package_dir']}")
+    typer.echo(f"Capability: {capability.get('name')}")
+    typer.echo(f"Provider region: {capability.get('provider_region') or '(none)'}")
+    typer.echo(f"Tool: {payload['tool']['name']}")
+    typer.echo(f"Iterations: {payload['iterations']}")
+    for mode, stats in payload["runs"].items():
+        typer.echo(f"{mode}:")
+        typer.echo(f"  Runs: {stats['runs']}")
+        typer.echo(f"  Success rate: {stats['success_rate']:.2%}")
+        typer.echo(f"  p50 latency: {_format_optional_ms(stats['p50_latency_ms'])}")
+        typer.echo(f"  p95 latency: {_format_optional_ms(stats['p95_latency_ms'])}")
 
 
 @app.command()
@@ -840,6 +1055,49 @@ def _format_auth(auth: dict) -> str:
     return f"{auth_type} via {header}, env={env}"
 
 
+def _tool_summary(tools: list[dict]) -> dict:
+    safety_counts: dict[str, int] = {}
+    tag_counts: dict[str, int] = {}
+    prefix_counts: dict[str, int] = {}
+    for tool in tools:
+        safety = str(tool.get("safety") or "unknown")
+        safety_counts[safety] = safety_counts.get(safety, 0) + 1
+
+        for tag in tool.get("tags") or []:
+            tag_label = str(tag)
+            tag_counts[tag_label] = tag_counts.get(tag_label, 0) + 1
+
+        prefix = _path_prefix(str(tool.get("path") or ""))
+        prefix_counts[prefix] = prefix_counts.get(prefix, 0) + 1
+
+    return {
+        "safety_counts": _ordered_counts(safety_counts),
+        "top_tags": _top_counts(tag_counts, label_key="tag"),
+        "top_path_prefixes": _top_counts(prefix_counts, label_key="prefix"),
+    }
+
+
+def _path_prefix(path: str) -> str:
+    parts = [part for part in path.split("/") if part]
+    if not parts:
+        return "/"
+    return "/" + parts[0]
+
+
+def _ordered_counts(counts: dict[str, int]) -> dict[str, int]:
+    order = ["read", "write", "delete", "unknown"]
+    ordered = {key: counts[key] for key in order if key in counts}
+    for key in sorted(counts):
+        if key not in ordered:
+            ordered[key] = counts[key]
+    return ordered
+
+
+def _top_counts(counts: dict[str, int], *, label_key: str, limit: int = 5) -> list[dict]:
+    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    return [{label_key: key, "count": value} for key, value in ranked[:limit]]
+
+
 def _missing_replay_fields(event: UsageEvent) -> list[str]:
     missing = []
     if not event.request_metadata:
@@ -921,6 +1179,12 @@ def _format_schema(schema: dict) -> str:
     if "default" in schema:
         label += f" default={schema['default']}"
     return label
+
+
+def _format_optional_ms(value: object) -> str:
+    if value is None:
+        return "(none)"
+    return f"{float(value):.2f} ms"
 
 
 if __name__ == "__main__":

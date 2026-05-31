@@ -47,13 +47,13 @@ def parse_curl(command: str | None, name: str | None = None) -> Capability:
     parsed = urlparse(url)
     base_url = f"{parsed.scheme}://{parsed.netloc}"
     path = parsed.path or "/"
-    capability_name = snake_name(name or parsed.netloc.split(".")[0] or "curl_api")
+    capability_name = snake_name(name or _capability_name_from_host(parsed.netloc) or "curl_api")
     auth = _auth_from_headers(headers, capability_name)
     parameters = _parameters_from_url(parsed.query) + _parameters_from_headers(headers)
     request_body = RequestBody(required=True, schema=_infer_schema(body)) if has_body else None
 
     tool = Tool(
-        name=snake_name(f"{method}_{path}"),
+        name=_tool_name(method, path, capability_name),
         method=method,
         path=path,
         description=f"{method} {path}",
@@ -69,6 +69,22 @@ def parse_curl(command: str | None, name: str | None = None) -> Capability:
         tools=[tool],
         source="curl",
     )
+
+
+def _tool_name(method: str, path: str, capability_name: str) -> str:
+    normalized_path = path.strip("/")
+    if not normalized_path:
+        return snake_name(f"{method}_{capability_name}")
+    return snake_name(f"{method}_{path}")
+
+
+def _capability_name_from_host(host: str) -> str:
+    labels = [label for label in host.split(".") if label]
+    if not labels:
+        return "curl_api"
+    if labels[0].lower() in {"api", "www"} and len(labels) > 1:
+        return f"{labels[1]}_{labels[0]}"
+    return labels[0]
 
 
 def _parameters_from_url(query: str) -> list[Parameter]:

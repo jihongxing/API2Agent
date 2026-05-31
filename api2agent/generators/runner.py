@@ -7,7 +7,6 @@ def render_runner(capability: Capability) -> str:
 
 import os
 import json
-from urllib.parse import urljoin
 
 import httpx
 from dotenv import load_dotenv
@@ -28,10 +27,13 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
     if missing:
         return {{"ok": False, "error": {{"type": "missing_parameters", "parameters": missing}}}}
 
-    url = _build_url(tool, params)
+    url_result = _build_url(tool, params)
+    if isinstance(url_result, dict) and "error" in url_result:
+        return {{"ok": False, "error": url_result["error"]}}
+    url = url_result
     proxy_url = os.getenv("API2AGENT_PROXY_URL")
     use_proxy = bool(proxy_url and proxy_url.startswith(("http://", "https://")))
-    auth_result = {{}} if use_proxy else _auth_headers()
+    auth_result = {{}} if use_proxy else _auth_headers(tool)
     if "error" in auth_result:
         return {{"ok": False, "error": auth_result["error"]}}
 
@@ -53,7 +55,7 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
     if tool.get("request_body") and "body" in params:
         request_kwargs["json"] = params["body"]
     if use_proxy:
-        return _proxy_call(tool, url, request_kwargs, proxy_url, _proxy_credential_intent())
+        return _proxy_call(tool, url, request_kwargs, proxy_url, _proxy_credential_intent(tool))
 
     _apply_credential_injection(request_kwargs)
 
@@ -100,6 +102,7 @@ def _proxy_call(
         "routing_decision_id": os.getenv("API2AGENT_ROUTING_DECISION_ID"),
         "capability_id": capability_id,
         "provider_id": provider_id,
+        "provider_region": _provider_region(),
         "tool_id": tool["name"],
         "estimated_cost": _estimated_cost(),
         "request": {{
@@ -150,8 +153,12 @@ def _estimated_cost() -> float:
         return 0.0
 
 
-def _proxy_credential_intent() -> dict | None:
-    auth = CAPABILITY.get("auth") or {{}}
+def _provider_region() -> str | None:
+    return os.getenv("API2AGENT_PROVIDER_REGION") or CAPABILITY.get("provider_region")
+
+
+def _proxy_credential_intent(tool: dict) -> dict | None:
+    auth = _tool_auth(tool)
     auth_type = auth.get("type")
     if auth_type not in {{"api_key", "bearer"}}:
         return None
@@ -209,15 +216,50 @@ def _find_tool(name: str) -> dict | None:
     return None
 
 
-def _build_url(tool: dict, params: dict) -> str:
+def _build_url(tool: dict, params: dict) -> str | dict:
     path = tool["path"]
     for parameter in tool.get("parameters", []):
         if parameter.get("location") == "path":
             value = _parameter_value(parameter, params)
             if value is not None:
                 path = path.replace("{{" + parameter["name"] + "}}", str(value))
-    base_url = tool.get("base_url") or CAPABILITY.get("base_url", "")
-    return urljoin(base_url, path)
+    base_url_result = _base_url(tool)
+    if isinstance(base_url_result, dict) and "error" in base_url_result:
+        return base_url_result
+    base_url = base_url_result
+    return _join_url(base_url, path)
+
+
+def _join_url(base_url: str, path: str) -> str:
+    if not base_url:
+        return path
+    return base_url.rstrip("/") + "/" + path.lstrip("/")
+
+
+def _base_url(tool: dict) -> str | dict:
+    tool_env = _tool_base_url_env(tool)
+    for env_name in [tool_env, "API2AGENT_BASE_URL"]:
+        raw = os.getenv(env_name)
+        if not raw:
+            continue
+        if not raw.startswith(("http://", "https://")):
+            return {{
+                "error": {{
+                    "type": "invalid_base_url_override",
+                    "message": f"Invalid base URL override in {{env_name}}. Expected http:// or https:// URL.",
+                    "env": env_name,
+                }}
+            }}
+        return raw
+    return tool.get("base_url") or CAPABILITY.get("base_url", "")
+
+
+def _tool_base_url_env(tool: dict) -> str:
+    suffix = "".join(
+        char.upper() if char.isalnum() else "_"
+        for char in str(tool.get("name") or "TOOL")
+    ).strip("_")
+    return f"API2AGENT_TOOL_BASE_URL_{{suffix or 'TOOL'}}"
 
 
 def _parameter_value(parameter: dict, params: dict):
@@ -230,9 +272,16 @@ def _parameter_value(parameter: dict, params: dict):
     return None
 
 
-def _auth_headers() -> dict:
-    auth = CAPABILITY.get("auth") or {{}}
-    if auth.get("type") == "none":
+def _tool_auth(tool: dict) -> dict:
+    tool_auth = tool.get("auth")
+    if tool_auth is not None:
+        return tool_auth
+    return CAPABILITY.get("auth") or {{}}
+
+
+def _auth_headers(tool: dict) -> dict:
+    auth = _tool_auth(tool)
+    if auth.get("type") in {"none", "unknown"}:
         return {{}}
     if _has_credential_injection():
         return {{}}

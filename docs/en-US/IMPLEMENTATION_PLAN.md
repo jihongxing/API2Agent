@@ -18,13 +18,36 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Python MVP freeze
-  -> Protocol v0.2 contract freeze
-  -> Production Architecture RFC
-  -> Control Plane / Data Plane split
+Admin Mutation Idempotency Store Design
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. It should not expand into the long-term hosted data plane.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is now complete, and the next implementation step is the Go Control Plane private admin import/replace endpoint closeout review.
+
+Implementation language decision:
+
+```text
+Python = Tooling reference implementation and local dogfood harness.
+Go = production Data Plane and Control Plane implementation.
+Protocol artifacts = language-neutral boundary.
+```
+
+See `docs/en-US/TOOLING_IMPLEMENTATION_LANGUAGE_DECISION.md`.
+
+Current Tooling Layer goals:
+
+1. more real execution data
+2. lower API/provider onboarding cost
+3. faster Agent API responses
+
+Current Tooling Layer constraints:
+
+- API-first
+- no workflow engine
+- no new non-API runtime
+- no marketplace
+- no billing
+- no vault
+- preserve proxy, usage, credential, replay, shadow, golden trace, and Protocol v0.2 compatibility
 
 ## 2. Current Repository Structure
 
@@ -80,15 +103,32 @@ docs/
 
 ## 4. Remaining Tooling Reliability Work
 
-These are still valuable, but they are no longer the strategic endpoint:
+The active Tooling Re-entry hardening backlog is complete, and the closeout review is complete.
 
-1. Endpoint-level auth
-2. Base URL override
-3. Manual write test path
-4. Better curl naming
-5. Large spec performance
+Recently completed:
 
-Do not expand into many new input formats before proxy and metrics exist.
+- Manual write test path
+- Large spec performance
+- Better curl naming residual review
+- Tooling Re-entry closeout review
+
+Do not expand into many new input formats. The current tooling expansion remains API-first: OpenAPI, curl, HTTP/REST, generated packages, generated runner, smoke test, and MCP server.
+
+Current re-entry plan:
+
+- see `docs/en-US/API2AGENT_TOOLING_REENTRY_REVIEW_AND_EXPANSION_PLAN.md`
+
+Next tooling task:
+
+```text
+none - Tooling Re-entry is paused after closeout
+```
+
+Next engineering task:
+
+```text
+Go Control Plane Private Admin Import/Replace Endpoint Implementation v0
+```
 
 ## 5. Next Major Build: Control Layer MVP
 
@@ -545,11 +585,198 @@ Current Phase 6 progress:
   - receipt farming and Edge-Mesh privacy requirements are captured as strategic constraints.
   - this does not change the current next task.
   - see `docs/en-US/CONTROL_RECEIPT_AND_TRUST_LAYER_STRATEGY.md`.
+- Go Control Plane Persistent Registry Store Schema v0 is complete:
+  - Postgres schema draft is added under `services/control-plane/schema/postgres`.
+  - schema tests cover required tables and critical constraints.
+  - `MapRegistryToPersistentRows` maps the existing file registry fixture into persistent row-shaped structs.
+  - `CanonicalRegistry` sorts persistent export inputs without mutating the source registry.
+  - `FileStore` remains the default runtime store.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_STORE_SCHEMA_REPORT.md`.
+- Go Control Plane Persistence Phase Review is complete:
+  - completed Data Plane and Control Plane local primitives are summarized.
+  - runtime persistence readiness is approved only for a narrow load-parity slice.
+  - active requirements are reaffirmed: API-first, snapshot-contract stability, no secrets in registry tables, and no marketplace/billing/vault scope.
+  - the next implementation slice is narrowed to `PostgresStore.Load(ctx)` parity.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENCE_PHASE_REVIEW.md`.
+- Go Control Plane PostgresStore Load Parity v0 is complete:
+  - `PostgresStore.Load(ctx)` reads persistent registry rows inside a read-only `REPEATABLE READ` transaction.
+  - persistent row loading rebuilds the same in-memory `Registry` shape used by `FileStore`.
+  - file-backed and Postgres-loaded registries produce equivalent snapshot contract output in tests.
+  - runtime store selection, Postgres driver wiring, and live DB dogfood are intentionally deferred.
+  - see `docs/en-US/GO_CONTROL_PLANE_POSTGRES_STORE_LOAD_PARITY_REPORT.md`.
+- Go Control Plane Persistent Store Runtime Wiring v0 is complete:
+  - `--registry-store file|postgres` and `--postgres-dsn` are wired into local commands.
+  - `pgx` stdlib driver support is added for explicit Postgres selection.
+  - `seed-postgres` imports a file registry into the persistent schema.
+  - `file` remains the default runtime store.
+  - live Postgres dogfood was completed with podman because Docker and host `psql` are not available in the current environment.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_STORE_RUNTIME_WIRING_REPORT.md`.
+- Go Control Plane Live Postgres Store Dogfood v0 is complete:
+  - podman provisioned a temporary Postgres-compatible database.
+  - schema application, seed import, file/postgres snapshot parity, CLI artifact export, service validation, and service artifact export passed.
+  - file-store and postgres-store snapshot output matched exactly for the existing fixture.
+  - see `docs/en-US/GO_CONTROL_PLANE_LIVE_POSTGRES_STORE_DOGFOOD_REPORT.md`.
+- Go Control Plane Persistent Export/Publish Audit Writes v0 is complete:
+  - Postgres runtime mode now attaches a persistent audit sink.
+  - service registry validation, artifact export, distribution publish, and current pointer reads write `admin_audit_events` when persistent audit is configured.
+  - successful artifact export writes `registry_revisions`.
+  - successful distribution publish writes `snapshot_artifact_publications`.
+  - live Postgres dogfood verified `admin_audit_events=4`, `registry_revisions=2`, and `snapshot_artifact_publications=1`.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_EXPORT_PUBLISH_AUDIT_REPORT.md`.
+- Go Control Plane Persistent Store Failure Semantics Hardening v0 is complete:
+  - Postgres-backed registry load failures now return `PERSISTENT_STORE_READ_FAILED` with HTTP 503, platform scope, and retryable semantics.
+  - file-store load failures remain `REGISTRY_INVALID` with HTTP 400, caller scope, and non-retryable semantics.
+  - successful admin operations fail closed with `AUDIT_WRITE_FAILED` when required persistent audit writes fail.
+  - failure-path admin audit writes remain best-effort so original errors are preserved.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_STORE_FAILURE_SEMANTICS_REPORT.md`.
+- Go Control Plane Persistent Registry Mutation Boundary Review v0 is complete:
+  - granular registry CRUD APIs are deferred.
+  - the next safe write-side path is a controlled full-registry import/replace transaction.
+  - mutable registry state is limited to `projects`, `api_keys`, `capabilities`, `providers`, `credential_metadata`, `routing_policies`, and `snapshot_configs`.
+  - `registry_revisions`, `snapshot_artifact_publications`, and `admin_audit_events` remain append-only evidence surfaces.
+  - transaction, audit, idempotency, failure, and rollback requirements are documented before implementation.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_MUTATION_BOUNDARY_REVIEW.md`.
+- API2Agent Tooling Re-entry Review + Tooling Expansion Plan v0 is complete:
+  - the project is returning to the Tooling Layer with Control/Data Plane constraints.
+  - current Tooling Layer goals are more real execution data, lower API/provider onboarding cost, and faster Agent API responses.
+  - current implementation remains API-first and explicitly does not become a workflow engine.
+  - Control Plane import/replace transaction design remains paused while tooling baseline audit runs.
+  - see `docs/en-US/API2AGENT_TOOLING_REENTRY_REVIEW_AND_EXPANSION_PLAN.md`.
+- API2Agent Tooling Baseline Audit v0 is complete:
+  - the reproducible audit script is available at `scripts/api2agent_tooling_baseline_audit.py`.
+  - curl generation and first direct call succeeded for ipify, Open-Meteo, GitHub repo read, and httpbin bearer.
+  - no-auth proxy execution succeeded for ipify, Open-Meteo, and GitHub repo read.
+  - GitHub REST OpenAPI generated successfully but exposed a 1186-tool unfiltered package risk.
+  - the next Tooling fix is narrowed to OpenAPI filtering and curl tool naming hardening.
+  - see `docs/en-US/API2AGENT_TOOLING_BASELINE_AUDIT_REPORT.md`.
+- API2Agent OpenAPI Filtering + curl Tool Naming Hardening v0 is complete:
+  - root-path curl tools now include capability intent.
+  - non-root curl naming remains path-based for backward compatibility.
+  - OpenAPI generation warns when oversized packages remain unbounded.
+  - targeted tests and the baseline audit script passed after the change.
+  - see `docs/en-US/API2AGENT_OPENAPI_FILTERING_CURL_NAMING_HARDENING_REPORT.md`.
+- Generated Package Region Metadata v0 is complete:
+  - `--provider-region` writes region metadata into generated `capability.json`.
+  - generated README files include provider region guidance.
+  - generated runners propagate provider-region intent to proxy payloads.
+  - region metadata dogfood passed with API-first scope.
+  - see `docs/en-US/API2AGENT_GENERATED_PACKAGE_REGION_METADATA_REPORT.md`.
+- Proxy-mode Credential Dogfood Expansion v0 is complete:
+  - `scripts/api2agent_proxy_credential_dogfood.py` runs a generated authenticated package through the local proxy.
+  - local credential config injects provider auth at the proxy without generated-package secrets.
+  - usage events preserve credential-safe attribution and provider-region metadata.
+  - see `docs/en-US/API2AGENT_PROXY_CREDENTIAL_DOGFOOD_EXPANSION_REPORT.md`.
+- Generated Package Latency Benchmark Helper v0 is complete:
+  - `run_generated_package_latency_benchmark` provides reusable direct/proxy generated-package timing.
+  - `api2agent benchmark-package` exposes p50/p95 latency for generated package tools.
+  - local dogfood verified direct/proxy timing, proxy usage ids, and provider-region attribution.
+  - see `docs/en-US/API2AGENT_GENERATED_PACKAGE_LATENCY_BENCHMARK_REPORT.md`.
+- Endpoint-level Auth Inference v0 is complete:
+  - OpenAPI mixed public/protected operations now generate endpoint-aware auth metadata.
+  - generated runners only require auth for tools whose operation needs it.
+  - proxy credential intent and local credential config selection are tool-specific for mixed-auth providers.
+  - local dogfood verified public/no-auth, bearer, and API key endpoints through direct and proxy execution.
+  - see `docs/en-US/API2AGENT_ENDPOINT_AUTH_INFERENCE_REPORT.md`.
+- Base URL Override v0 is complete:
+  - generated packages can override provider base URLs at runtime with `API2AGENT_BASE_URL`.
+  - generated packages can override one tool with `API2AGENT_TOOL_BASE_URL_<TOOL_NAME>`.
+  - direct and proxy execution share the same URL resolution semantics.
+  - local dogfood verified default, global override, tool-specific override, invalid override fail-fast, and proxy usage metadata.
+  - see `docs/en-US/API2AGENT_BASE_URL_OVERRIDE_REPORT.md`.
+- Manual Write Test Path v0 is complete:
+  - generated packages now include a guarded `manual_write_test.py`.
+  - default `api2agent test` remains read-only.
+  - `api2agent test --allow-write` explicitly opts into write/delete testing.
+  - local dogfood verified default no-write behavior, direct opt-in execution, proxy opt-in execution, and usage metadata preservation.
+  - see `docs/en-US/API2AGENT_MANUAL_WRITE_TEST_PATH_REPORT.md`.
+- Large Spec Performance v0 is complete:
+  - OpenAPI filters are applied during parsing instead of only after full tool construction.
+  - `api2agent inspect` prints large-package summaries and bounded tool lists.
+  - `api2agent test --tool ... --params ...` supports targeted generated read-tool checks.
+  - local dogfood verified a 1200-operation spec across unfiltered warning, bounded generation, inspect summary, and targeted execution.
+  - see `docs/en-US/API2AGENT_LARGE_SPEC_PERFORMANCE_REPORT.md`.
+- Better curl naming residual review v0 is complete:
+  - generic leading curl host labels such as `api` and `www` no longer produce vague default capability names.
+  - generated auth env names now inherit better capability intent, e.g. `GITHUB_API_TOKEN`.
+  - explicit `--name` and non-root path-based tool naming remain stable.
+  - local dogfood verified generic API subdomain, root-path inferred naming, explicit name override, and non-root path compatibility.
+  - see `docs/en-US/API2AGENT_CURL_NAMING_RESIDUAL_REVIEW.md`.
+- API2Agent Tooling Re-entry Closeout + Phase Review v0 is complete:
+  - Tooling Re-entry is judged ready to pause.
+  - acceptance criteria, validation, and remaining risks are documented.
+  - next engineering scope returns to Control Plane import/replace transaction design unless product requirements are updated first.
+  - see `docs/en-US/API2AGENT_TOOLING_REENTRY_CLOSEOUT_REVIEW.md`.
+- API2Agent Stage Consolidation Before Import/Replace v0 is complete:
+  - Tooling, Go Data Plane, and Go Control Plane persistent read/audit states are consolidated.
+  - entry gates for import/replace design are documented.
+  - invariant boundaries are reaffirmed before write-side design starts.
+  - see `docs/en-US/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md`.
+- Go Control Plane Persistent Registry Import/Replace Transaction Design v0 is complete:
+  - the first write-side operation is scoped to controlled full-registry import/replace.
+  - `seed-postgres` remains a dogfood helper, not the production mutation path.
+  - serializable transaction, advisory lock, idempotency, same-transaction audit, rollback, and snapshot boundary semantics are specified.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md`.
+- Go Control Plane Persistent Registry Import/Replace CLI Implementation v0 is complete:
+  - `api2agent-controlplane import-replace-postgres` is implemented as a narrow local/admin write path.
+  - `ReplacePersistentRegistry` covers serializable transaction, advisory lock, full mutable-table replacement, no-op detection, revision/audit writes, and rollback behavior.
+  - unit tests cover no-op, replacement, lock conflict, audit failure rollback, and transaction options.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md`.
+- Go Control Plane Persistent Registry Import/Replace Live Postgres Dogfood v0 is complete:
+  - live Postgres dogfood used podman.
+  - schema apply, seed, changed-registry import/replace, same-registry no-op, and snapshot export passed.
+  - persistent audit counts were asserted: `registry_revisions=2`, `admin_audit_events=2`, `providers=1`.
+  - see `docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_LIVE_POSTGRES_DOGFOOD_REPORT.md`.
+- Go Control Plane Import/Replace Closeout + Mutation API Readiness Review v0 is complete:
+  - local/admin CLI primitive is accepted as complete for the current write-side slice.
+  - readiness decision is design-only for a private admin endpoint.
+  - public CRUD and endpoint implementation remain deferred.
+  - see `docs/en-US/GO_CONTROL_PLANE_IMPORT_REPLACE_CLOSEOUT_MUTATION_API_READINESS_REVIEW.md`.
+- Go Control Plane Private Admin Import/Replace Endpoint Design v0 is complete:
+  - `POST /v1/admin/registry/import-replace` is the accepted private admin endpoint.
+  - the endpoint requires `Authorization`, `X-Request-ID`, and `Idempotency-Key`.
+  - the request body uses a wrapper object with `registry`, optional `source`, and reserved `dry_run=false`.
+  - FileStore remains unchanged; only Postgres mutation mode can run import/replace.
+  - response shape, request-size limit, error mapping, audit mapping, and implementation tests are documented.
+  - see `docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_DESIGN.md`.
+- Go Control Plane Private Admin Import/Replace Endpoint Implementation v0 is complete:
+  - `POST /v1/admin/registry/import-replace` is implemented behind the existing admin auth boundary.
+  - Postgres runtime wiring injects a narrow registry import replacer.
+  - FileStore/unconfigured mutation returns `REGISTRY_MUTATION_UNAVAILABLE`.
+  - changed registry returns `201`; same-fingerprint no-op returns `200`.
+  - required request headers, 2 MiB request-size limit, error mapping, and option propagation are covered by tests.
+  - see `docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_IMPLEMENTATION_REPORT.md`.
+- Go Control Plane Private Admin Import/Replace Endpoint Live Postgres Dogfood v0 is complete:
+  - live service dogfood used podman-backed Postgres.
+  - HTTP import/replace returned `201` with `noop=false`.
+  - repeated import returned `200` with `noop=true`.
+  - service validation/export saw the replaced registry and `httpbin_public_ip_v1` provider.
+  - persistent audit counts were asserted: `registry_revisions=3`, `admin_audit_events=4`, `providers=1`.
+  - see `docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_LIVE_POSTGRES_DOGFOOD_REPORT.md`.
+- Go Control Plane Private Admin Import/Replace Endpoint Closeout + Phase Review v0 is complete:
+  - design, implementation, and live dogfood are accepted as complete.
+  - the private admin write-side endpoint milestone can close.
+  - remaining risks are documented.
+  - the next safe proof is snapshot propagation from import/replace to Data Plane execution.
+  - see `docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_CLOSEOUT_PHASE_REVIEW.md`.
+- Go Control Plane Import/Replace Snapshot Propagation E2E Dogfood v0 is complete:
+  - HTTP import/replace changed the persistent registry provider to `httpbin_public_ip_v1`.
+  - Control Plane exported and published the replacement snapshot.
+  - Data Plane manual reload moved from `snapshot_propagation_ipify_v1` to `snapshot_propagation_httpbin_v2`.
+  - Data Plane execution returned replacement-provider output `{ "ip": "203.0.113.88" }`.
+  - usage and decision records attributed the replacement provider and snapshot version.
+  - persistent audit counts were asserted.
+  - see `docs/en-US/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_E2E_DOGFOOD_REPORT.md`.
+- Go Control Plane Import/Replace Snapshot Propagation Closeout + Phase Review v0 is complete:
+  - the manual propagation milestone can close.
+  - the architecture rule remains intact: Data Plane consumes immutable/versioned snapshots, not mutable Control Plane tables.
+  - remaining hosted-readiness risks are documented.
+  - the next task is narrowed to admin mutation idempotency store design.
+  - see `docs/en-US/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Persistent Registry Store Schema v0
+Go Control Plane Admin Mutation Idempotency Store Design v0
 ```
 
 ## 9. Marketplace Is Later

@@ -11,8 +11,9 @@ go test ./...
 Registry source:
 
 - `registry.Store` is the Control Plane state boundary.
-- `registry.FileStore` is the current local implementation.
-- Future hosted phases can add a Postgres-backed store without changing snapshot export semantics.
+- `registry.FileStore` remains the default local implementation.
+- `registry.PostgresStore` can be selected explicitly for read-side load parity.
+- Postgres runtime wiring is experimental and should be dogfooded before it becomes a default path.
 
 Export a routing snapshot:
 
@@ -22,7 +23,36 @@ go run ./cmd/api2agent-controlplane export-snapshot \
   --output snapshot.json
 ```
 
+To read from Postgres instead of a file registry, first apply the schema in `schema/postgres/001_persistent_registry_store.sql`, then seed the registry:
+
+```bash
+go run ./cmd/api2agent-controlplane seed-postgres \
+  --registry testdata/registry/network.public_ip.get.json \
+  --postgres-dsn "$API2AGENT_CONTROL_PLANE_POSTGRES_DSN"
+```
+
+Then select the store explicitly:
+
+```bash
+go run ./cmd/api2agent-controlplane export-snapshot \
+  --registry-store postgres \
+  --postgres-dsn "$API2AGENT_CONTROL_PLANE_POSTGRES_DSN" \
+  --output snapshot.json
+```
+
 The exported snapshot is compatible with the existing Go Data Plane snapshot loader.
+
+Replace the active persistent registry view from a validated registry document:
+
+```bash
+go run ./cmd/api2agent-controlplane import-replace-postgres \
+  --registry testdata/registry/network.public_ip.get.json \
+  --postgres-dsn "$API2AGENT_CONTROL_PLANE_POSTGRES_DSN" \
+  --actor-id local-admin \
+  --request-id local-import-replace
+```
+
+This command is a local/admin write path. It uses a serializable transaction, a registry-wide advisory lock, full mutable-table replacement, same-transaction revision/audit writes, and idempotent no-op behavior by registry fingerprint. It does not publish or reload snapshots.
 
 Export a snapshot artifact:
 
@@ -70,12 +100,50 @@ go run ./cmd/api2agent-controlplane serve \
   --addr 127.0.0.1:8081
 ```
 
+Postgres store selection for the service:
+
+```bash
+go run ./cmd/api2agent-controlplane serve \
+  --registry-store postgres \
+  --postgres-dsn "$API2AGENT_CONTROL_PLANE_POSTGRES_DSN" \
+  --admin-token local-dev-token \
+  --distribution-dir distribution \
+  --addr 127.0.0.1:8081
+```
+
+When the service runs with `--registry-store postgres`, successful admin operations also write persistent audit rows:
+
+- `POST /v1/admin/registry/validate` writes `admin_audit_events`.
+- `POST /v1/admin/snapshots/export-artifact` writes `registry_revisions` and `admin_audit_events`.
+- `POST /v1/admin/distribution/publish` writes `snapshot_artifact_publications` and `admin_audit_events`.
+- `GET /v1/admin/distribution/current` writes `admin_audit_events`.
+
+Successful operations fail closed with `AUDIT_WRITE_FAILED` if a required persistent audit write fails. File-store mode does not configure a persistent audit sink.
+
+Persistent-store read failures are reported as platform-side retryable errors:
+
+- `--registry-store postgres` load failures return `PERSISTENT_STORE_READ_FAILED` with HTTP 503.
+- file-store load/validation failures continue to return `REGISTRY_INVALID` with HTTP 400.
+
 Service endpoints:
 
 - `GET /healthz` is public and reports service, protocol, registry source, and distribution metadata.
 - `POST /v1/admin/registry/validate` validates the configured registry and returns a registry fingerprint.
+- `POST /v1/admin/registry/import-replace` replaces the Postgres-backed registry graph from a full registry document.
 - `POST /v1/admin/snapshots/export-artifact` writes a snapshot artifact to `output_dir`.
 - `POST /v1/admin/distribution/publish` publishes an artifact directory to the configured local distribution.
 - `GET /v1/admin/distribution/current` reads the configured distribution `current.json`.
 
 All `/v1/admin/*` endpoints require `Authorization: Bearer <admin-token>`.
+
+Private admin import/replace endpoint:
+
+- It is Postgres mutation only and reuses `ReplacePersistentRegistry`.
+- It requires `X-Request-ID` and `Idempotency-Key`.
+- It accepts a wrapper request body with `registry`, optional `source`, and reserved `dry_run=false`.
+- It does not export, publish, or reload snapshots.
+
+See `../../docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_DESIGN.md`.
+Implementation report: `../../docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_IMPLEMENTATION_REPORT.md`.
+Live dogfood report: `../../docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_LIVE_POSTGRES_DOGFOOD_REPORT.md`.
+Closeout review: `../../docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_CLOSEOUT_PHASE_REVIEW.md`.

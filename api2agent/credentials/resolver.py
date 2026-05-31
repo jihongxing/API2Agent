@@ -66,6 +66,7 @@ class LocalCredentialResolver:
             credential
             for credential in self.config_credentials
             if credential.provider_id == request.provider_id
+            and self._credential_matches_request(credential, request)
         ]
         if not matches:
             return None
@@ -79,6 +80,21 @@ class LocalCredentialResolver:
                 return credential
 
         return matches[0]
+
+    def _credential_matches_request(
+        self,
+        credential: CredentialDefinition,
+        request: CredentialResolutionRequest,
+    ) -> bool:
+        if request.auth_type != "none" and credential.auth_type != request.auth_type:
+            return False
+        if request.injection_mode != "none" and credential.injection_mode != request.injection_mode:
+            return False
+        if request.injection_name and credential.injection_name and credential.injection_name != request.injection_name:
+            return False
+        if request.injection_name and not credential.injection_name:
+            return False
+        return self._scope_allows(credential, request)
 
     def _secret_for(self, credential: CredentialDefinition) -> str | None:
         if credential.source == "none" or credential.auth_type == "none":

@@ -3,6 +3,7 @@ from typing import Any
 
 import yaml
 
+from api2agent.filters import ToolFilter
 from api2agent.ir.models import AuthConfig, Capability, Parameter, RequestBody, ResponseShape, Tool
 from api2agent.safety import classify_method
 from api2agent.utils.naming import env_name, snake_name
@@ -10,22 +11,28 @@ from api2agent.utils.naming import env_name, snake_name
 HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options"}
 
 
-def parse_openapi_file(path: Path, name: str | None = None) -> Capability:
+def parse_openapi_file(path: Path, name: str | None = None, filters: ToolFilter | None = None) -> Capability:
     with path.open("r", encoding="utf-8") as handle:
         document = yaml.safe_load(handle)
 
     if not isinstance(document, dict):
         raise ValueError(f"OpenAPI document must be an object: {path}")
 
-    return parse_openapi(document, name=name, source=str(path))
+    return parse_openapi(document, name=name, source=str(path), filters=filters)
 
 
-def parse_openapi(document: dict[str, Any], name: str | None = None, source: str | None = None) -> Capability:
+def parse_openapi(
+    document: dict[str, Any],
+    name: str | None = None,
+    source: str | None = None,
+    filters: ToolFilter | None = None,
+) -> Capability:
     info = document.get("info") or {}
     capability_name = snake_name(name or info.get("title") or "api")
     base_url = _first_server_url(document)
-    auth = _extract_auth(document, capability_name)
-    tools = _extract_tools(document, base_url)
+    schemes = _extract_security_schemes(document, capability_name)
+    auth = _extract_auth(document, capability_name, schemes)
+    tools = _extract_tools(document, base_url, auth, schemes, filters)
 
     return Capability(
         name=capability_name,
@@ -35,6 +42,31 @@ def parse_openapi(document: dict[str, Any], name: str | None = None, source: str
         tools=tools,
         source=source,
     )
+
+
+def count_openapi_operations_file(path: Path) -> int:
+    with path.open("r", encoding="utf-8") as handle:
+        document = yaml.safe_load(handle)
+
+    if not isinstance(document, dict):
+        raise ValueError(f"OpenAPI document must be an object: {path}")
+
+    return count_openapi_operations(document)
+
+
+def count_openapi_operations(document: dict[str, Any]) -> int:
+    count = 0
+    paths = document.get("paths") or {}
+    if not isinstance(paths, dict):
+        return 0
+
+    for path_item in paths.values():
+        if not isinstance(path_item, dict):
+            continue
+        for method, operation in path_item.items():
+            if method in HTTP_METHODS and isinstance(operation, dict):
+                count += 1
+    return count
 
 
 def _first_server_url(document: dict[str, Any]) -> str:
@@ -64,34 +96,67 @@ def _first_server_url_from(servers: Any) -> str | None:
     return url
 
 
-def _extract_auth(document: dict[str, Any], capability_name: str) -> AuthConfig:
+def _extract_security_schemes(document: dict[str, Any], capability_name: str) -> dict[str, AuthConfig]:
     schemes = ((document.get("components") or {}).get("securitySchemes") or {})
-    for scheme in schemes.values():
+    auth_by_scheme: dict[str, AuthConfig] = {}
+    for scheme_name, scheme in schemes.items():
         if not isinstance(scheme, dict):
             continue
 
         scheme_type = scheme.get("type")
         if scheme_type == "http" and str(scheme.get("scheme", "")).lower() == "bearer":
-            return AuthConfig(
+            auth_by_scheme[str(scheme_name)] = AuthConfig(
                 type="bearer",
                 env=env_name(f"{capability_name}_token"),
                 header="Authorization",
                 description=scheme.get("description"),
             )
+            continue
 
         if scheme_type == "apiKey" and scheme.get("in") == "header":
             header_name = str(scheme.get("name") or "X-API-Key")
-            return AuthConfig(
+            auth_by_scheme[str(scheme_name)] = AuthConfig(
                 type="api_key",
                 env=env_name(f"{capability_name}_api_key"),
                 header=header_name,
                 description=scheme.get("description"),
             )
+            continue
 
+        auth_by_scheme[str(scheme_name)] = AuthConfig(
+            type="unknown",
+            env=None,
+            header=None,
+            description=scheme.get("description"),
+        )
+
+    return auth_by_scheme
+
+
+def _extract_auth(
+    document: dict[str, Any],
+    capability_name: str,
+    schemes: dict[str, AuthConfig] | None = None,
+) -> AuthConfig:
+    schemes = schemes if schemes is not None else _extract_security_schemes(document, capability_name)
+    document_security = document.get("security")
+    document_auth = _auth_for_security(document_security, schemes)
+    if document_auth is not None:
+        return document_auth
+
+    for auth in schemes.values():
+        if auth.type != "unknown":
+            return auth
     return AuthConfig(type="none")
 
 
-def _extract_tools(document: dict[str, Any], default_base_url: str) -> list[Tool]:
+def _extract_tools(
+    document: dict[str, Any],
+    default_base_url: str,
+    capability_auth: AuthConfig,
+    schemes: dict[str, AuthConfig],
+    filters: ToolFilter | None = None,
+) -> list[Tool]:
     tools: list[Tool] = []
     paths = document.get("paths") or {}
 
@@ -106,6 +171,9 @@ def _extract_tools(document: dict[str, Any], default_base_url: str) -> list[Tool
             if method not in HTTP_METHODS or not isinstance(operation, dict):
                 continue
 
+            if not _matches_operation_filters(path, method, operation, filters):
+                continue
+
             operation = _resolve_refs(document, operation)
             operation_base_url = _first_server_url_from(operation.get("servers"))
             tool_base_url = operation_base_url or path_base_url
@@ -115,6 +183,7 @@ def _extract_tools(document: dict[str, Any], default_base_url: str) -> list[Tool
             operation_id = operation.get("operationId")
             tool_name = snake_name(operation_id or f"{method}_{path}")
             description = operation.get("summary") or operation.get("description") or f"{method.upper()} {path}"
+            tool_auth = _tool_auth_override(operation, capability_auth, schemes)
 
             tools.append(
                 Tool(
@@ -129,10 +198,89 @@ def _extract_tools(document: dict[str, Any], default_base_url: str) -> list[Tool
                     request_body=request_body,
                     responses=responses,
                     safety=classify_method(method),
+                    auth=tool_auth,
                 )
             )
+            if filters is not None and filters.max_tools is not None and len(tools) >= filters.max_tools:
+                return tools
 
     return tools
+
+
+def _matches_operation_filters(
+    path: str,
+    method: str,
+    operation: dict[str, Any],
+    filters: ToolFilter | None,
+) -> bool:
+    if filters is None or filters.is_empty:
+        return True
+
+    tags = {str(tag).lower() for tag in operation.get("tags") or []}
+    if filters.include_tags and not any(tag.lower() in tags for tag in filters.include_tags):
+        return False
+
+    if filters.include_paths and not any(_path_matches(path, pattern) for pattern in filters.include_paths):
+        return False
+
+    if filters.include_operations:
+        operation_id = operation.get("operationId")
+        tool_name = snake_name(str(operation_id) if operation_id else f"{method}_{path}")
+        operation_names = {tool_name}
+        if operation_id:
+            operation_names.add(str(operation_id))
+            operation_names.add(snake_name(str(operation_id)))
+        if not any(operation in operation_names or snake_name(operation) in operation_names for operation in filters.include_operations):
+            return False
+
+    return True
+
+
+def _path_matches(path: str, pattern: str) -> bool:
+    from fnmatch import fnmatch
+
+    if pattern == path:
+        return True
+    if any(marker in pattern for marker in "*?[]"):
+        return fnmatch(path, pattern)
+    return pattern in path
+
+
+def _tool_auth_override(
+    operation: dict[str, Any],
+    capability_auth: AuthConfig,
+    schemes: dict[str, AuthConfig],
+) -> AuthConfig | None:
+    if "security" not in operation:
+        return None
+
+    operation_auth = _auth_for_security(operation.get("security"), schemes)
+    if operation_auth is None:
+        return None
+    if operation_auth == capability_auth:
+        return None
+    return operation_auth
+
+
+def _auth_for_security(raw_security: Any, schemes: dict[str, AuthConfig]) -> AuthConfig | None:
+    if raw_security is None:
+        return None
+    if raw_security == []:
+        return AuthConfig(type="none")
+    if not isinstance(raw_security, list):
+        return None
+
+    for requirement in raw_security:
+        if not isinstance(requirement, dict):
+            continue
+        if not requirement:
+            return AuthConfig(type="none")
+        for scheme_name in requirement:
+            auth = schemes.get(str(scheme_name))
+            if auth is not None:
+                return auth
+
+    return None
 
 
 def _extract_parameters(raw_parameters: list[Any], document: dict[str, Any]) -> list[Parameter]:

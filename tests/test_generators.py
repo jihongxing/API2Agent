@@ -19,6 +19,7 @@ def test_generate_package(tmp_path: Path) -> None:
         "tools.json",
         "runner.py",
         "smoke_test.py",
+        "manual_write_test.py",
         "mcp_server.py",
         "auth.env.example",
     ]
@@ -31,6 +32,20 @@ def test_generate_package(tmp_path: Path) -> None:
 
     assert capability_json["name"] == "basic_api"
     assert tools_json[0]["function"]["name"] == "get_user"
+
+
+def test_generate_package_includes_guarded_manual_write_test(tmp_path: Path) -> None:
+    capability = parse_openapi_file(FIXTURES / "unsafe.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    smoke_test = (output_dir / "smoke_test.py").read_text(encoding="utf-8")
+    manual_write_test = (output_dir / "manual_write_test.py").read_text(encoding="utf-8")
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+
+    assert "No read-only endpoint was detected" in smoke_test
+    assert "API2AGENT_ALLOW_WRITE_TEST" in manual_write_test
+    assert 'execute_tool("create_order", {})' in manual_write_test
+    assert "api2agent test . --allow-write" in readme
 
 
 def test_generated_readme_includes_parameter_and_body_details(tmp_path: Path) -> None:
@@ -47,6 +62,7 @@ def test_generated_readme_includes_parameter_and_body_details(tmp_path: Path) ->
     assert "header: X-Trace-Id string default=trace-123" in readme
     assert "body: object {name:string, active:boolean} required" in readme
     assert "'body': {'name': 'example', 'active': True}" in readme
+    assert "api2agent test . --tool" in readme
 
 
 def test_generate_package_refuses_non_empty_output_without_force(tmp_path: Path) -> None:

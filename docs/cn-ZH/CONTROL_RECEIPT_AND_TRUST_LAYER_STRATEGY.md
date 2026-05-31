@@ -4,7 +4,7 @@
 
 状态：战略方向，不是当前 active implementation task
 
-判断：API2Agent 应该从 API-to-Agent tooling 演进为 controlled execution、receipt、routing 和 trust layer。这个策略不改变当前下一项工程任务，下一项仍然是 `Go Control Plane Persistent Registry Store Schema v0`。
+判断：API2Agent 应该从 API-to-Agent tooling 演进为 controlled execution、receipt、routing 和 trust layer。这个策略不覆盖当前 roadmap；persistent registry mutation boundary review 已完成，项目现在通过 API-first hardening tasks 重新进入 Tooling Layer。
 
 ## 1. 为什么重要
 
@@ -296,14 +296,16 @@ API2Agent must collect trustworthy execution metadata without always collecting 
 
 ## 10. Roadmap 影响
 
-这个策略应该影响未来 protocol 和 architecture 工作，但不应该打断当前 persistence roadmap。
+这个策略应该影响未来 protocol 和 architecture 工作，但不应该打断当前 Tooling Re-entry Phase。
 
 近期：
 
-- 继续 `Go Control Plane Persistent Registry Store Schema v0`
+- 继续 `Endpoint-level Auth Inference v0`
 - 保留 `UsageEvent`
 - 保留 `DecisionLog`
 - 保留当前 snapshot contract
+- 保持 API-first tooling 约束
+- 不做 workflow engine
 
 未来 protocol 工作：
 

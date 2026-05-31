@@ -33,6 +33,66 @@ def test_test_command_executes_smoke_test(tmp_path, monkeypatch) -> None:
     args, kwargs = fake_run.call_args
     assert args[0][-1] == "smoke_test.py"
     assert kwargs["cwd"] == package_dir
+    assert kwargs["env"] is None
+
+
+def test_test_command_allow_write_executes_manual_write_test(tmp_path, monkeypatch) -> None:
+    package_dir = tmp_path / "package"
+    package_dir.mkdir()
+    (package_dir / "manual_write_test.py").write_text("print('write')", encoding="utf-8")
+
+    fake_run = Mock(return_value=Mock(returncode=0))
+    monkeypatch.setattr("api2agent.cli.subprocess.run", fake_run)
+
+    result = runner.invoke(app, ["test", str(package_dir), "--allow-write"])
+
+    assert result.exit_code == 0
+    fake_run.assert_called_once()
+    args, kwargs = fake_run.call_args
+    assert args[0][-1] == "manual_write_test.py"
+    assert kwargs["cwd"] == package_dir
+    assert kwargs["env"]["API2AGENT_ALLOW_WRITE_TEST"] == "1"
+
+
+def test_test_command_can_execute_specific_read_tool(tmp_path, monkeypatch) -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/basic.yaml"))
+    package_dir = generate_package(capability, tmp_path / "package")
+
+    fake_run = Mock(return_value=Mock(returncode=0))
+    monkeypatch.setattr("api2agent.cli.subprocess.run", fake_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "test",
+            str(package_dir),
+            "--tool",
+            "get_user",
+            "--params",
+            '{"user_id": "123"}',
+        ],
+    )
+
+    assert result.exit_code == 0
+    args, kwargs = fake_run.call_args
+    assert args[0][1] == "-c"
+    assert args[0][-2] == "get_user"
+    assert json.loads(args[0][-1]) == {"user_id": "123"}
+    assert kwargs["cwd"] == package_dir
+    assert kwargs["env"] is None
+
+
+def test_test_command_blocks_specific_write_tool_without_allow_write(tmp_path, monkeypatch) -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/unsafe.yaml"))
+    package_dir = generate_package(capability, tmp_path / "package")
+    fake_run = Mock(return_value=Mock(returncode=0))
+    monkeypatch.setattr("api2agent.cli.subprocess.run", fake_run)
+
+    result = runner.invoke(app, ["test", str(package_dir), "--tool", "create_order"])
+
+    assert result.exit_code != 0
+    assert "Write/delete tools require --allow-write" in result.output
+    fake_run.assert_not_called()
 
 
 def test_proxy_command_passes_credential_config(tmp_path, monkeypatch) -> None:
@@ -63,6 +123,67 @@ def test_proxy_command_passes_credential_config(tmp_path, monkeypatch) -> None:
     assert captured["credential_config"] == config
     assert "Credential config:" in result.output
     assert "Proxy stopped." in result.output
+
+
+def test_benchmark_package_command_prints_json(tmp_path, monkeypatch) -> None:
+    package_dir = tmp_path / "package"
+    package_dir.mkdir()
+    captured = {}
+
+    def fake_benchmark(**kwargs):
+        captured.update(kwargs)
+        return {
+            "contract_version": "api2agent.generated_package_latency_benchmark.v0",
+            "package_dir": str(package_dir),
+            "capability": {
+                "name": "example_items",
+                "version": "0.1.0",
+                "provider_region": "us-east",
+                "provider_regions": ["us-east"],
+                "source": "curl",
+            },
+            "tool": {"name": "get_items", "method": "GET", "path": "/items"},
+            "iterations": 2,
+            "runs": {
+                "direct": {
+                    "runs": 2,
+                    "successful_runs": 2,
+                    "failed_runs": 0,
+                    "success_rate": 1.0,
+                    "p50_latency_ms": 10.0,
+                    "p95_latency_ms": 12.0,
+                    "results": [],
+                }
+            },
+        }
+
+    monkeypatch.setattr("api2agent.cli.run_generated_package_latency_benchmark", fake_benchmark)
+
+    result = runner.invoke(
+        app,
+        [
+            "benchmark-package",
+            str(package_dir),
+            "--tool",
+            "get_items",
+            "--iterations",
+            "2",
+            "--params",
+            '{"limit": 1}',
+            "--provider-region",
+            "us-east",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["contract_version"] == "api2agent.generated_package_latency_benchmark.v0"
+    assert captured["package_dir"] == package_dir
+    assert captured["tool_name"] == "get_items"
+    assert captured["params"] == {"limit": 1}
+    assert captured["iterations"] == 2
+    assert captured["env"]["API2AGENT_PROVIDER_REGION"] == "us-east"
 
 
 def test_generate_command_refuses_non_empty_output_without_force(tmp_path) -> None:
@@ -125,6 +246,148 @@ def test_generate_command_filters_tools_by_tag_and_max_tools(tmp_path) -> None:
     assert result.exit_code == 0
     capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
     assert [tool["name"] for tool in capability["tools"]] == ["list_repos"]
+
+
+def test_generate_command_applies_max_tools_during_openapi_parse(tmp_path) -> None:
+    paths = {
+        f"/items/{index}": {
+            "get": {
+                "operationId": f"getItem{index}",
+                "responses": {"200": {"description": "OK"}},
+            }
+        }
+        for index in range(120)
+    }
+    spec = tmp_path / "large.json"
+    spec.write_text(
+        json.dumps(
+            {
+                "openapi": "3.0.3",
+                "info": {"title": "Large API", "version": "1.0.0"},
+                "servers": [{"url": "https://api.example.com"}],
+                "paths": paths,
+            }
+        ),
+        encoding="utf-8",
+    )
+    output_dir = tmp_path / "api2agent-output"
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            str(spec),
+            "--max-tools",
+            "3",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    assert len(capability["tools"]) == 3
+
+
+def test_generate_command_writes_provider_region_metadata(tmp_path) -> None:
+    output_dir = tmp_path / "api2agent-output"
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            "--curl",
+            "curl https://api.example.com/items",
+            "--name",
+            "example_items",
+            "--provider-region",
+            "us-east",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    assert capability["provider_region"] == "us-east"
+    assert capability["provider_regions"] == ["us-east"]
+
+
+def test_generate_command_warns_for_large_unfiltered_openapi_package(tmp_path) -> None:
+    paths = {
+        f"/items/{index}": {
+            "get": {
+                "operationId": f"getItem{index}",
+                "responses": {"200": {"description": "OK"}},
+            }
+        }
+        for index in range(51)
+    }
+    spec = tmp_path / "large.json"
+    spec.write_text(
+        json.dumps(
+            {
+                "openapi": "3.0.3",
+                "info": {"title": "Large API", "version": "1.0.0"},
+                "servers": [{"url": "https://api.example.com"}],
+                "paths": paths,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            str(spec),
+            "--output",
+            str(tmp_path / "api2agent-output"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Warning: generated package contains 51 tools" in result.output
+    assert "--include-tag, --include-path, --include-operation, or --max-tools" in result.output
+
+
+def test_generate_command_does_not_warn_when_large_openapi_is_bounded_by_max_tools(tmp_path) -> None:
+    paths = {
+        f"/items/{index}": {
+            "get": {
+                "operationId": f"getItem{index}",
+                "responses": {"200": {"description": "OK"}},
+            }
+        }
+        for index in range(51)
+    }
+    spec = tmp_path / "large.json"
+    spec.write_text(
+        json.dumps(
+            {
+                "openapi": "3.0.3",
+                "info": {"title": "Large API", "version": "1.0.0"},
+                "servers": [{"url": "https://api.example.com"}],
+                "paths": paths,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            str(spec),
+            "--max-tools",
+            "5",
+            "--output",
+            str(tmp_path / "api2agent-output"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Warning: generated package contains" not in result.output
 
 
 def test_generate_command_fails_when_filters_match_no_tools(tmp_path) -> None:
@@ -236,6 +499,41 @@ def test_inspect_command_truncates_large_tool_lists(tmp_path) -> None:
     assert "list_users" in result.output
     assert "create_user" in result.output
     assert "list_repos" not in result.output
+
+
+def test_inspect_command_prints_large_package_summary(tmp_path) -> None:
+    paths = {
+        f"/repos/{index}": {
+            "get": {
+                "operationId": f"getRepo{index}",
+                "tags": ["repos"],
+                "responses": {"200": {"description": "OK"}},
+            }
+        }
+        for index in range(52)
+    }
+    spec = tmp_path / "large.json"
+    spec.write_text(
+        json.dumps(
+            {
+                "openapi": "3.0.3",
+                "info": {"title": "Large API", "version": "1.0.0"},
+                "servers": [{"url": "https://api.example.com"}],
+                "paths": paths,
+            }
+        ),
+        encoding="utf-8",
+    )
+    package_dir = generate_package(parse_openapi_file(spec), tmp_path / "package")
+
+    result = runner.invoke(app, ["inspect", str(package_dir), "--limit", "2"])
+
+    assert result.exit_code == 0
+    assert "Tool count: 52" in result.output
+    assert "Safety: read=52" in result.output
+    assert "Top tags: repos(52)" in result.output
+    assert "Top path prefixes: /repos(52)" in result.output
+    assert "Large package hint:" in result.output
 
 
 def test_ledger_command_prints_json_rows(tmp_path) -> None:

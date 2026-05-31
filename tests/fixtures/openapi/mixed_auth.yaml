@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: Mixed Auth API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    adminKey:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+security:
+  - bearerAuth: []
+paths:
+  /public:
+    get:
+      operationId: getPublic
+      summary: Fetch public data.
+      security: []
+      responses:
+        "200":
+          description: OK
+  /secure:
+    get:
+      operationId: getSecure
+      summary: Fetch protected data.
+      responses:
+        "200":
+          description: OK
+  /admin:
+    get:
+      operationId: getAdmin
+      summary: Fetch admin data.
+      security:
+        - adminKey: []
+      responses:
+        "200":
+          description: OK

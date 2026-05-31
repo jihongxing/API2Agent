@@ -1,4 +1,8 @@
+import importlib.util
+import os
+import sys
 from pathlib import Path
+from time import perf_counter
 from typing import Any, Iterable
 
 from api2agent.capabilities.models import (
@@ -106,6 +110,76 @@ def run_region_aware_routing_benchmark(
     }
 
 
+def run_generated_package_latency_benchmark(
+    *,
+    package_dir: Path | str,
+    tool_name: str,
+    params: dict[str, Any] | None = None,
+    iterations: int = 3,
+    direct: bool = True,
+    proxy_url: str | None = None,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    if iterations < 1:
+        raise ValueError("iterations must be greater than 0")
+    if not direct and not proxy_url:
+        raise ValueError("At least one of direct or proxy_url must be provided")
+
+    package_path = Path(package_dir)
+    capability = _load_capability(package_path)
+    tool = _find_generated_tool(capability, tool_name)
+    if tool is None:
+        raise ValueError(f"Unknown generated package tool: {tool_name}")
+
+    base_env = dict(env or {})
+    runs: dict[str, Any] = {}
+    if direct:
+        runs["direct"] = _benchmark_generated_mode(
+            package_path=package_path,
+            tool_name=tool_name,
+            params=params or {},
+            iterations=iterations,
+            env={key: value for key, value in base_env.items() if key != "API2AGENT_PROXY_URL"},
+        )
+    if proxy_url:
+        proxy_env = {
+            **base_env,
+            "API2AGENT_PROXY_URL": proxy_url,
+            "API2AGENT_PROVIDER_ID": base_env.get("API2AGENT_PROVIDER_ID") or capability.get("name", "unknown"),
+            "API2AGENT_CAPABILITY_ID": base_env.get("API2AGENT_CAPABILITY_ID") or capability.get("name", "unknown"),
+            "API2AGENT_PROVIDER_REGION": base_env.get("API2AGENT_PROVIDER_REGION")
+            or capability.get("provider_region")
+            or "",
+        }
+        proxy_env = {key: value for key, value in proxy_env.items() if value is not None}
+        runs["proxy"] = _benchmark_generated_mode(
+            package_path=package_path,
+            tool_name=tool_name,
+            params=params or {},
+            iterations=iterations,
+            env=proxy_env,
+        )
+
+    return {
+        "contract_version": "api2agent.generated_package_latency_benchmark.v0",
+        "package_dir": str(package_path),
+        "capability": {
+            "name": capability.get("name"),
+            "version": capability.get("version"),
+            "provider_region": capability.get("provider_region"),
+            "provider_regions": capability.get("provider_regions") or [],
+            "source": capability.get("source"),
+        },
+        "tool": {
+            "name": tool.get("name"),
+            "method": tool.get("method"),
+            "path": tool.get("path"),
+        },
+        "iterations": iterations,
+        "runs": runs,
+    }
+
+
 def _percentile(values: list[float], percentile: int) -> float:
     if not values:
         return 0.0
@@ -117,6 +191,98 @@ def _percentile(values: list[float], percentile: int) -> float:
     upper = min(lower + 1, len(ordered) - 1)
     weight = index - lower
     return ordered[lower] * (1 - weight) + ordered[upper] * weight
+
+
+def _load_capability(package_dir: Path) -> dict[str, Any]:
+    capability_path = package_dir / "capability.json"
+    if not capability_path.exists():
+        raise ValueError(f"Generated package capability.json not found: {capability_path}")
+    import json
+
+    payload = json.loads(capability_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Generated package capability.json must contain an object: {capability_path}")
+    return payload
+
+
+def _find_generated_tool(capability: dict[str, Any], tool_name: str) -> dict[str, Any] | None:
+    for tool in capability.get("tools") or []:
+        if tool.get("name") == tool_name:
+            return tool
+    return None
+
+
+def _benchmark_generated_mode(
+    *,
+    package_path: Path,
+    tool_name: str,
+    params: dict[str, Any],
+    iterations: int,
+    env: dict[str, str],
+) -> dict[str, Any]:
+    results = [
+        _execute_generated_tool(package_path=package_path, tool_name=tool_name, params=params, env=env)
+        for _ in range(iterations)
+    ]
+    successful = [item for item in results if item.get("ok")]
+    latencies = [float(item["latency_ms"]) for item in results if item.get("ok")]
+    return {
+        "runs": len(results),
+        "successful_runs": len(successful),
+        "failed_runs": len(results) - len(successful),
+        "success_rate": len(successful) / len(results) if results else 0.0,
+        "p50_latency_ms": round(_percentile(latencies, 50), 3) if latencies else None,
+        "p95_latency_ms": round(_percentile(latencies, 95), 3) if latencies else None,
+        "results": results,
+    }
+
+
+def _execute_generated_tool(
+    *,
+    package_path: Path,
+    tool_name: str,
+    params: dict[str, Any],
+    env: dict[str, str],
+) -> dict[str, Any]:
+    module = _load_runner_module(package_path)
+    old_env = os.environ.copy()
+    started = perf_counter()
+    try:
+        os.environ.clear()
+        os.environ.update(old_env)
+        os.environ.update(env)
+        result = module.execute_tool(tool_name, params)
+        latency_ms = (perf_counter() - started) * 1000
+        error = result.get("error") if isinstance(result, dict) else None
+        return {
+            "ok": bool(isinstance(result, dict) and result.get("ok")),
+            "status_code": result.get("status_code") if isinstance(result, dict) else None,
+            "latency_ms": round(latency_ms, 3),
+            "error_type": error.get("type") if isinstance(error, dict) else None,
+            "usage_event_id": result.get("usage_event_id") if isinstance(result, dict) else None,
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "status_code": None,
+            "latency_ms": round((perf_counter() - started) * 1000, 3),
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+        }
+    finally:
+        os.environ.clear()
+        os.environ.update(old_env)
+
+
+def _load_runner_module(package_dir: Path):
+    module_name = f"api2agent_benchmark_runner_{package_dir.name}_{id(package_dir)}_{len(sys.modules)}"
+    spec = importlib.util.spec_from_file_location(module_name, package_dir / "runner.py")
+    if spec is None or spec.loader is None:
+        raise ValueError(f"Generated package runner.py not found: {package_dir / 'runner.py'}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def _selected_latency(

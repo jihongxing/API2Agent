@@ -14,6 +14,36 @@ def test_parse_curl_bearer_and_path() -> None:
     assert capability.tools[0].safety == SafetyLevel.WRITE
 
 
+def test_parse_curl_root_path_uses_capability_intent_for_tool_name() -> None:
+    capability = parse_curl("curl https://api.ipify.org?format=json", name="ipify_public_ip")
+
+    assert capability.tools[0].name == "get_ipify_public_ip"
+
+
+def test_parse_curl_non_root_path_keeps_path_based_tool_name() -> None:
+    capability = parse_curl("curl https://api.example.com/items?format=json")
+
+    assert capability.name == "example_api"
+    assert capability.tools[0].name == "get_items"
+
+
+def test_parse_curl_skips_generic_api_subdomain_for_capability_name() -> None:
+    capability = parse_curl(
+        "curl https://api.github.com/rate_limit -H 'Authorization: Bearer token'"
+    )
+
+    assert capability.name == "github_api"
+    assert capability.auth.env == "GITHUB_API_TOKEN"
+    assert capability.tools[0].name == "get_rate_limit"
+
+
+def test_parse_curl_root_path_without_name_uses_inferred_host_intent() -> None:
+    capability = parse_curl("curl https://api.ipify.org?format=json")
+
+    assert capability.name == "ipify_api"
+    assert capability.tools[0].name == "get_ipify_api"
+
+
 def test_parse_curl_query_headers_and_json_body() -> None:
     capability = parse_curl(
         """curl 'https://api.example.com/items?verbose=true&limit=10' \

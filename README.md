@@ -2,9 +2,13 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: build API2Agent itself: compiler, capability package, proxy, metrics, routing, credential orchestration, and execution reliability.
+Current focus: design Admin Mutation Idempotency Store v0 for the Go Control Plane after the import/replace snapshot propagation milestone closed, without adding public CRUD, vault, billing, marketplace, automatic propagation, or workflow runtime scope.
 
-Strategic priority: maximize real execution data while keeping API/provider onboarding cost as low as possible. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
+Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
+
+Current implementation boundary: API-first. API2Agent supports OpenAPI/curl/HTTP APIs today and must not become a workflow engine.
+
+Implementation language boundary: Python remains the Tooling reference implementation and local dogfood harness; Go owns the production Data Plane and Control Plane direction. API2Agent's neutrality is protected by language-neutral protocol artifacts, not by treating Python as the only runtime.
 
 v0.1-alpha positioning:
 
@@ -53,6 +57,30 @@ English:
 - [v0.1-alpha Plan](docs/en-US/V0_1_ALPHA_PLAN.md)
 - [Technical Design](docs/en-US/TECHNICAL_DESIGN.md)
 - [Implementation Plan](docs/en-US/IMPLEMENTATION_PLAN.md)
+- [Tooling Re-entry Review + Expansion Plan](docs/en-US/API2AGENT_TOOLING_REENTRY_REVIEW_AND_EXPANSION_PLAN.md)
+- [Tooling Implementation Language Decision](docs/en-US/TOOLING_IMPLEMENTATION_LANGUAGE_DECISION.md)
+- [Tooling Baseline Audit Report](docs/en-US/API2AGENT_TOOLING_BASELINE_AUDIT_REPORT.md)
+- [Generated Package Region Metadata Report](docs/en-US/API2AGENT_GENERATED_PACKAGE_REGION_METADATA_REPORT.md)
+- [Proxy-mode Credential Dogfood Expansion Report](docs/en-US/API2AGENT_PROXY_CREDENTIAL_DOGFOOD_EXPANSION_REPORT.md)
+- [Generated Package Latency Benchmark Report](docs/en-US/API2AGENT_GENERATED_PACKAGE_LATENCY_BENCHMARK_REPORT.md)
+- [Endpoint-level Auth Inference Report](docs/en-US/API2AGENT_ENDPOINT_AUTH_INFERENCE_REPORT.md)
+- [Base URL Override Report](docs/en-US/API2AGENT_BASE_URL_OVERRIDE_REPORT.md)
+- [Manual Write Test Path Report](docs/en-US/API2AGENT_MANUAL_WRITE_TEST_PATH_REPORT.md)
+- [Large Spec Performance Report](docs/en-US/API2AGENT_LARGE_SPEC_PERFORMANCE_REPORT.md)
+- [curl Naming Residual Review](docs/en-US/API2AGENT_CURL_NAMING_RESIDUAL_REVIEW.md)
+- [Tooling Re-entry Closeout Review](docs/en-US/API2AGENT_TOOLING_REENTRY_CLOSEOUT_REVIEW.md)
+- [Stage Consolidation Before Import/Replace](docs/en-US/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
+- [Persistent Registry Import/Replace Transaction Design](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
+- [Persistent Registry Import/Replace CLI Implementation Report](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)
+- [Persistent Registry Import/Replace Live Postgres Dogfood Report](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_LIVE_POSTGRES_DOGFOOD_REPORT.md)
+- [Import/Replace Closeout + Mutation API Readiness Review](docs/en-US/GO_CONTROL_PLANE_IMPORT_REPLACE_CLOSEOUT_MUTATION_API_READINESS_REVIEW.md)
+- [Private Admin Import/Replace Endpoint Design](docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_DESIGN.md)
+- [Private Admin Import/Replace Endpoint Implementation Report](docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_IMPLEMENTATION_REPORT.md)
+- [Private Admin Import/Replace Endpoint Live Postgres Dogfood Report](docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_LIVE_POSTGRES_DOGFOOD_REPORT.md)
+- [Private Admin Import/Replace Endpoint Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_CLOSEOUT_PHASE_REVIEW.md)
+- [Import/Replace Snapshot Propagation E2E Dogfood Report](docs/en-US/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_E2E_DOGFOOD_REPORT.md)
+- [Import/Replace Snapshot Propagation Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_CLOSEOUT_PHASE_REVIEW.md)
+- [Next Session Handoff - 2026-06-01](docs/en-US/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/en-US/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/en-US/ROUTING_POLICY.md)
 - [Decision and Usage Contract](docs/en-US/DECISION_USAGE_CONTRACT.md)
@@ -88,6 +116,30 @@ English:
 - [v0.1-alpha 计划](docs/cn-ZH/V0_1_ALPHA_PLAN.md)
 - [技术方案](docs/cn-ZH/TECHNICAL_DESIGN.md)
 - [实施计划](docs/cn-ZH/IMPLEMENTATION_PLAN.md)
+- [Tooling Re-entry Review + Expansion Plan](docs/cn-ZH/API2AGENT_TOOLING_REENTRY_REVIEW_AND_EXPANSION_PLAN.md)
+- [Tooling 实现语言决策](docs/cn-ZH/TOOLING_IMPLEMENTATION_LANGUAGE_DECISION.md)
+- [Tooling Baseline Audit 报告](docs/cn-ZH/API2AGENT_TOOLING_BASELINE_AUDIT_REPORT.md)
+- [Generated Package Region Metadata 报告](docs/cn-ZH/API2AGENT_GENERATED_PACKAGE_REGION_METADATA_REPORT.md)
+- [Proxy-mode Credential Dogfood Expansion 报告](docs/cn-ZH/API2AGENT_PROXY_CREDENTIAL_DOGFOOD_EXPANSION_REPORT.md)
+- [Generated Package Latency Benchmark 报告](docs/cn-ZH/API2AGENT_GENERATED_PACKAGE_LATENCY_BENCHMARK_REPORT.md)
+- [Endpoint-level Auth Inference 报告](docs/cn-ZH/API2AGENT_ENDPOINT_AUTH_INFERENCE_REPORT.md)
+- [Base URL Override 报告](docs/cn-ZH/API2AGENT_BASE_URL_OVERRIDE_REPORT.md)
+- [Manual Write Test Path 报告](docs/cn-ZH/API2AGENT_MANUAL_WRITE_TEST_PATH_REPORT.md)
+- [Large Spec Performance 报告](docs/cn-ZH/API2AGENT_LARGE_SPEC_PERFORMANCE_REPORT.md)
+- [curl Naming Residual Review](docs/cn-ZH/API2AGENT_CURL_NAMING_RESIDUAL_REVIEW.md)
+- [Tooling Re-entry Closeout Review](docs/cn-ZH/API2AGENT_TOOLING_REENTRY_CLOSEOUT_REVIEW.md)
+- [Import/Replace 前阶段总结与加固](docs/cn-ZH/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
+- [Persistent Registry Import/Replace Transaction Design](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
+- [Persistent Registry Import/Replace CLI Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)
+- [Persistent Registry Import/Replace Live Postgres Dogfood 报告](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_LIVE_POSTGRES_DOGFOOD_REPORT.md)
+- [Import/Replace Closeout + Mutation API Readiness Review](docs/cn-ZH/GO_CONTROL_PLANE_IMPORT_REPLACE_CLOSEOUT_MUTATION_API_READINESS_REVIEW.md)
+- [Private Admin Import/Replace Endpoint Design](docs/cn-ZH/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_DESIGN.md)
+- [Private Admin Import/Replace Endpoint Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_IMPLEMENTATION_REPORT.md)
+- [Private Admin Import/Replace Endpoint Live Postgres Dogfood 报告](docs/cn-ZH/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_LIVE_POSTGRES_DOGFOOD_REPORT.md)
+- [Private Admin Import/Replace Endpoint Closeout + Phase Review](docs/cn-ZH/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_CLOSEOUT_PHASE_REVIEW.md)
+- [Import/Replace Snapshot Propagation E2E Dogfood 报告](docs/cn-ZH/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_E2E_DOGFOOD_REPORT.md)
+- [Import/Replace Snapshot Propagation Closeout + Phase Review](docs/cn-ZH/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_CLOSEOUT_PHASE_REVIEW.md)
+- [下一次会话交接 - 2026-06-01](docs/cn-ZH/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/cn-ZH/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/cn-ZH/ROUTING_POLICY.md)
 - [Decision and Usage Contract](docs/cn-ZH/DECISION_USAGE_CONTRACT.md)
@@ -201,7 +253,8 @@ api2agent generate api.github.com.json \
   --include-tag repos \
   --include-path /repos \
   --include-operation listRepos \
-  --max-tools 20
+  --max-tools 20 \
+  --provider-region us-east
 ```
 
 Filtering rules:
@@ -212,6 +265,8 @@ Filtering rules:
 - `--include-path` accepts exact paths, substrings, or glob patterns
 
 For large generated packages, `api2agent inspect` prints a bounded summary by default. Use `--all` to print every tool.
+
+`--provider-region` is optional metadata for generated packages. Generated runners pass it to the local proxy as `provider_region`, and `API2AGENT_PROVIDER_REGION` can override it at runtime.
 
 ## Proxy, Usage, And Routing
 

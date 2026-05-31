@@ -101,6 +101,52 @@ def test_execute_tool_reports_missing_auth(tmp_path, monkeypatch) -> None:
         sys.modules.pop("runner", None)
 
 
+def test_execute_tool_respects_endpoint_level_auth(tmp_path, monkeypatch) -> None:
+    capability = parse_openapi_file(FIXTURES / "mixed_auth.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = []
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+
+            def json(self):
+                return {"ok": True}
+
+        def fake_request(method, url, **kwargs):
+            captured.append({"method": method, "url": url, "kwargs": kwargs})
+            return FakeResponse()
+
+        monkeypatch.setattr(runner.httpx, "request", fake_request)
+        monkeypatch.setattr(
+            runner.os,
+            "getenv",
+            lambda key: "admin-secret" if key == "MIXED_AUTH_API_API_KEY" else None,
+        )
+
+        public_result = runner.execute_tool("get_public", {})
+        secure_result = runner.execute_tool("get_secure", {})
+        admin_result = runner.execute_tool("get_admin", {})
+
+        assert public_result["ok"] is True
+        assert captured[0]["url"] == "https://api.example.com/public"
+        assert captured[0]["kwargs"]["headers"] == {}
+
+        assert secure_result["ok"] is False
+        assert secure_result["error"]["type"] == "missing_auth"
+        assert secure_result["error"]["env"] == "MIXED_AUTH_API_TOKEN"
+
+        assert admin_result["ok"] is True
+        assert captured[1]["url"] == "https://api.example.com/admin"
+        assert captured[1]["kwargs"]["headers"] == {"X-Admin-Key": "admin-secret"}
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
 def test_execute_tool_reports_http_status(tmp_path, monkeypatch) -> None:
     capability = parse_openapi_file(FIXTURES / "body_query_header.yaml")
     output_dir = generate_package(capability, tmp_path / "api2agent-output")
@@ -114,7 +160,7 @@ def test_execute_tool_reports_http_status(tmp_path, monkeypatch) -> None:
             def json(self):
                 return {"message": "unauthorized"}
 
-        monkeypatch.setattr(runner.os, "getenv", lambda key: "secret-token")
+        monkeypatch.setenv(runner.CAPABILITY["auth"]["env"], "secret-token")
         monkeypatch.setattr(runner.httpx, "request", lambda *args, **kwargs: FakeResponse())
 
         result = runner.execute_tool("create_item", {"item_id": "123", "body": {"name": "demo"}})
@@ -151,7 +197,88 @@ def test_execute_tool_uses_tool_level_base_url(tmp_path, monkeypatch) -> None:
         result = runner.execute_tool("get_admin", {})
 
         assert result["ok"] is True
-        assert captured["url"] == "https://admin.example.com/admin"
+        assert captured["url"] == "https://admin.example.com/v2/admin"
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_execute_tool_uses_global_base_url_override(tmp_path, monkeypatch) -> None:
+    capability = parse_curl("curl https://api.example.com/items")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+
+            def json(self):
+                return {"ok": True}
+
+        def fake_request(method, url, **kwargs):
+            captured["url"] = url
+            return FakeResponse()
+
+        monkeypatch.setenv("API2AGENT_BASE_URL", "http://127.0.0.1:9001")
+        monkeypatch.setattr(runner.httpx, "request", fake_request)
+
+        result = runner.execute_tool("get_items", {})
+
+        assert result["ok"] is True
+        assert captured["url"] == "http://127.0.0.1:9001/items"
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_execute_tool_uses_tool_base_url_override_before_global(tmp_path, monkeypatch) -> None:
+    capability = parse_curl("curl https://api.example.com/items")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+
+            def json(self):
+                return {"ok": True}
+
+        def fake_request(method, url, **kwargs):
+            captured["url"] = url
+            return FakeResponse()
+
+        monkeypatch.setenv("API2AGENT_BASE_URL", "http://127.0.0.1:9001")
+        monkeypatch.setenv("API2AGENT_TOOL_BASE_URL_GET_ITEMS", "http://127.0.0.1:9002")
+        monkeypatch.setattr(runner.httpx, "request", fake_request)
+
+        result = runner.execute_tool("get_items", {})
+
+        assert result["ok"] is True
+        assert captured["url"] == "http://127.0.0.1:9002/items"
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_execute_tool_rejects_invalid_base_url_override(tmp_path, monkeypatch) -> None:
+    capability = parse_curl("curl https://api.example.com/items")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        monkeypatch.setenv("API2AGENT_BASE_URL", "localhost:9001")
+
+        result = runner.execute_tool("get_items", {})
+
+        assert result["ok"] is False
+        assert result["error"]["type"] == "invalid_base_url_override"
+        assert result["error"]["env"] == "API2AGENT_BASE_URL"
     finally:
         sys.path.remove(str(output_dir))
         sys.modules.pop("runner", None)
@@ -224,7 +351,9 @@ def test_execute_tool_applies_credential_injection_patch(tmp_path, monkeypatch) 
 
 
 def test_execute_tool_can_call_api2agent_proxy(tmp_path, monkeypatch) -> None:
-    capability = parse_openapi_file(FIXTURES / "body_query_header.yaml")
+    capability = parse_openapi_file(FIXTURES / "body_query_header.yaml").model_copy(
+        update={"provider_region": "us-east", "provider_regions": ["us-east"]}
+    )
     output_dir = generate_package(capability, tmp_path / "api2agent-output")
 
     runner = _load_runner(output_dir)
@@ -275,6 +404,7 @@ def test_execute_tool_can_call_api2agent_proxy(tmp_path, monkeypatch) -> None:
         assert payload["routing_decision_id"] == "decision_123"
         assert payload["capability_id"] == "semantic_capability"
         assert payload["provider_id"] == "github"
+        assert payload["provider_region"] == "us-east"
         assert payload["tool_id"] == "create_item"
         assert payload["estimated_cost"] == 0.02
         assert payload["request"]["method"] == "POST"
@@ -294,6 +424,130 @@ def test_execute_tool_can_call_api2agent_proxy(tmp_path, monkeypatch) -> None:
             "secret_ref": "BODY_QUERY_HEADER_API_TOKEN",
         }
         assert "secret-token" not in json.dumps(payload)
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_proxy_credential_intent_respects_endpoint_level_auth(tmp_path, monkeypatch) -> None:
+    capability = parse_openapi_file(FIXTURES / "mixed_auth.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = []
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+            text = ""
+
+            def json(self):
+                return {"ok": True, "proxied": True}
+
+        def fake_post(url, **kwargs):
+            captured.append(kwargs["json"])
+            return FakeResponse()
+
+        env = {
+            "API2AGENT_PROXY_URL": "http://127.0.0.1:8765",
+            "API2AGENT_PROJECT_ID": "local",
+            "API2AGENT_PROVIDER_ID": "mixed-provider",
+        }
+        monkeypatch.setattr(runner.os, "getenv", lambda key: env.get(key))
+        monkeypatch.setattr(runner.httpx, "post", fake_post)
+
+        public_result = runner.execute_tool("get_public", {})
+        secure_result = runner.execute_tool("get_secure", {})
+        admin_result = runner.execute_tool("get_admin", {})
+
+        assert public_result["proxied"] is True
+        assert "credential" not in captured[0]
+
+        assert secure_result["proxied"] is True
+        assert captured[1]["credential"]["auth_type"] == "bearer"
+        assert captured[1]["credential"]["secret_ref"] == "MIXED_AUTH_API_TOKEN"
+
+        assert admin_result["proxied"] is True
+        assert captured[2]["credential"]["auth_type"] == "api_key"
+        assert captured[2]["credential"]["injection_name"] == "X-Admin-Key"
+        assert captured[2]["credential"]["secret_ref"] == "MIXED_AUTH_API_API_KEY"
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_proxy_payload_provider_region_env_overrides_capability_metadata(tmp_path, monkeypatch) -> None:
+    capability = parse_curl("curl https://api.example.com/items", name="example_items").model_copy(
+        update={"provider_region": "us-east", "provider_regions": ["us-east"]}
+    )
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+            text = ""
+
+            def json(self):
+                return {"ok": True, "proxied": True, "usage_event_id": "evt_123"}
+
+        def fake_post(url, **kwargs):
+            captured["kwargs"] = kwargs
+            return FakeResponse()
+
+        env = {
+            "API2AGENT_PROXY_URL": "http://127.0.0.1:8765",
+            "API2AGENT_PROVIDER_REGION": "cn",
+        }
+        monkeypatch.setattr(runner.os, "getenv", lambda key: env.get(key))
+        monkeypatch.setattr(runner.httpx, "post", fake_post)
+
+        result = runner.execute_tool("get_items", {})
+
+        assert result["proxied"] is True
+        assert captured["kwargs"]["json"]["provider_region"] == "cn"
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_proxy_payload_uses_base_url_override(tmp_path, monkeypatch) -> None:
+    capability = parse_curl("curl https://api.example.com/items", name="example_items").model_copy(
+        update={"provider_region": "us-east", "provider_regions": ["us-east"]}
+    )
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+            text = ""
+
+            def json(self):
+                return {"ok": True, "proxied": True, "usage_event_id": "evt_123"}
+
+        def fake_post(url, **kwargs):
+            captured["kwargs"] = kwargs
+            return FakeResponse()
+
+        env = {
+            "API2AGENT_PROXY_URL": "http://127.0.0.1:8765",
+            "API2AGENT_BASE_URL": "http://127.0.0.1:9001/api",
+        }
+        monkeypatch.setattr(runner.os, "getenv", lambda key: env.get(key))
+        monkeypatch.setattr(runner.httpx, "post", fake_post)
+
+        result = runner.execute_tool("get_items", {})
+
+        assert result["proxied"] is True
+        assert captured["kwargs"]["json"]["request"]["url"] == "http://127.0.0.1:9001/api/items"
     finally:
         sys.path.remove(str(output_dir))
         sys.modules.pop("runner", None)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -11,6 +12,7 @@ import (
 
 	"api2agent/services/control-plane/internal/httpapi"
 	"api2agent/services/control-plane/internal/registry"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
@@ -31,6 +33,14 @@ func main() {
 		if err := publishArtifact(os.Args[2:]); err != nil {
 			log.Fatalf("publish artifact: %v", err)
 		}
+	case "seed-postgres":
+		if err := seedPostgres(os.Args[2:]); err != nil {
+			log.Fatalf("seed postgres: %v", err)
+		}
+	case "import-replace-postgres":
+		if err := importReplacePostgres(os.Args[2:]); err != nil {
+			log.Fatalf("import replace postgres: %v", err)
+		}
 	case "serve":
 		if err := serve(os.Args[2:]); err != nil {
 			log.Fatalf("serve: %v", err)
@@ -44,18 +54,21 @@ func main() {
 func exportSnapshot(args []string) error {
 	flags := flag.NewFlagSet("export-snapshot", flag.ExitOnError)
 	registryPath := flags.String("registry", "", "path to control plane registry json")
+	registryStore := flags.String("registry-store", defaultRegistryStore(), "registry store: file or postgres")
+	postgresDSN := flags.String("postgres-dsn", os.Getenv("API2AGENT_CONTROL_PLANE_POSTGRES_DSN"), "Postgres DSN for --registry-store=postgres")
 	outputPath := flags.String("output", "", "path to write routing snapshot json")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
-	if *registryPath == "" {
-		return fmt.Errorf("--registry is required")
-	}
 	if *outputPath == "" {
 		return fmt.Errorf("--output is required")
 	}
-	store := registry.NewFileStore(*registryPath)
-	reg, err := store.Load(context.Background())
+	runtime, err := openRegistryRuntime(context.Background(), *registryStore, *registryPath, *postgresDSN)
+	if err != nil {
+		return err
+	}
+	defer runtime.Close()
+	reg, err := runtime.Store.Load(context.Background())
 	if err != nil {
 		return err
 	}
@@ -69,22 +82,25 @@ func exportSnapshot(args []string) error {
 func exportArtifact(args []string) error {
 	flags := flag.NewFlagSet("export-artifact", flag.ExitOnError)
 	registryPath := flags.String("registry", "", "path to control plane registry json")
+	registryStore := flags.String("registry-store", defaultRegistryStore(), "registry store: file or postgres")
+	postgresDSN := flags.String("postgres-dsn", os.Getenv("API2AGENT_CONTROL_PLANE_POSTGRES_DSN"), "Postgres DSN for --registry-store=postgres")
 	outputDir := flags.String("output-dir", "", "directory to write snapshot artifact")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
-	if *registryPath == "" {
-		return fmt.Errorf("--registry is required")
-	}
 	if *outputDir == "" {
 		return fmt.Errorf("--output-dir is required")
 	}
-	store := registry.NewFileStore(*registryPath)
-	reg, err := store.Load(context.Background())
+	runtime, err := openRegistryRuntime(context.Background(), *registryStore, *registryPath, *postgresDSN)
 	if err != nil {
 		return err
 	}
-	snapshot, manifest, err := reg.ExportArtifact(time.Now().UTC(), "file", *registryPath)
+	defer runtime.Close()
+	reg, err := runtime.Store.Load(context.Background())
+	if err != nil {
+		return err
+	}
+	snapshot, manifest, err := reg.ExportArtifact(time.Now().UTC(), runtime.StoreName, runtime.Source)
 	if err != nil {
 		return err
 	}
@@ -108,26 +124,110 @@ func publishArtifact(args []string) error {
 	return err
 }
 
-func serve(args []string) error {
-	flags := flag.NewFlagSet("serve", flag.ExitOnError)
-	registryPath := flags.String("registry", "", "path to control plane registry json")
-	addr := flags.String("addr", "127.0.0.1:8081", "address for the local control plane service")
-	adminToken := flags.String("admin-token", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_TOKEN"), "admin bearer token for non-health endpoints")
-	distributionDir := flags.String("distribution-dir", "", "optional local snapshot distribution directory")
+func seedPostgres(args []string) error {
+	flags := flag.NewFlagSet("seed-postgres", flag.ExitOnError)
+	registryPath := flags.String("registry", "", "path to control plane registry json to seed")
+	postgresDSN := flags.String("postgres-dsn", os.Getenv("API2AGENT_CONTROL_PLANE_POSTGRES_DSN"), "Postgres DSN")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
 	if *registryPath == "" {
 		return fmt.Errorf("--registry is required")
 	}
+	if *postgresDSN == "" {
+		return fmt.Errorf("--postgres-dsn is required or API2AGENT_CONTROL_PLANE_POSTGRES_DSN must be set")
+	}
+	reg, err := registry.LoadFile(*registryPath)
+	if err != nil {
+		return err
+	}
+	db, err := openPostgresDB(context.Background(), *postgresDSN)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	rows, err := registry.SeedPostgresRegistry(context.Background(), db, *reg)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("seeded postgres registry: projects=%d api_keys=%d capabilities=%d providers=%d credentials=%d snapshot_configs=%d\n", len(rows.Projects), len(rows.APIKeys), len(rows.Capabilities), len(rows.Providers), len(rows.CredentialMetadata), len(rows.SnapshotConfigs))
+	return nil
+}
+
+func importReplacePostgres(args []string) error {
+	flags := flag.NewFlagSet("import-replace-postgres", flag.ExitOnError)
+	registryPath := flags.String("registry", "", "path to control plane registry json to import/replace")
+	postgresDSN := flags.String("postgres-dsn", os.Getenv("API2AGENT_CONTROL_PLANE_POSTGRES_DSN"), "Postgres DSN")
+	actorID := flags.String("actor-id", "local-admin", "actor id for persistent audit")
+	requestID := flags.String("request-id", "", "request id for persistent audit")
+	idempotencyKey := flags.String("idempotency-key", "", "optional idempotency key for persistent audit")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if *registryPath == "" {
+		return fmt.Errorf("--registry is required")
+	}
+	if *postgresDSN == "" {
+		return fmt.Errorf("--postgres-dsn is required or API2AGENT_CONTROL_PLANE_POSTGRES_DSN must be set")
+	}
+	reg, err := registry.LoadFile(*registryPath)
+	if err != nil {
+		return err
+	}
+	db, err := openPostgresDB(context.Background(), *postgresDSN)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	result, err := registry.ReplacePersistentRegistry(context.Background(), db, *reg, registry.ImportReplaceOptions{
+		ActorID:        *actorID,
+		RequestID:      *requestID,
+		IdempotencyKey: *idempotencyKey,
+		Source:         *registryPath,
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("import-replace postgres registry: fingerprint=%s previous=%s snapshot=%s noop=%t projects=%d api_keys=%d capabilities=%d providers=%d credentials=%d\n",
+		result.RegistryFingerprint,
+		result.PreviousRegistryFingerprint,
+		result.SnapshotVersion,
+		result.Noop,
+		result.Counts.Projects,
+		result.Counts.APIKeys,
+		result.Counts.Capabilities,
+		result.Counts.Providers,
+		result.Counts.CredentialMetadata,
+	)
+	return nil
+}
+
+func serve(args []string) error {
+	flags := flag.NewFlagSet("serve", flag.ExitOnError)
+	registryPath := flags.String("registry", "", "path to control plane registry json")
+	registryStore := flags.String("registry-store", defaultRegistryStore(), "registry store: file or postgres")
+	postgresDSN := flags.String("postgres-dsn", os.Getenv("API2AGENT_CONTROL_PLANE_POSTGRES_DSN"), "Postgres DSN for --registry-store=postgres")
+	addr := flags.String("addr", "127.0.0.1:8081", "address for the local control plane service")
+	adminToken := flags.String("admin-token", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_TOKEN"), "admin bearer token for non-health endpoints")
+	distributionDir := flags.String("distribution-dir", "", "optional local snapshot distribution directory")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
 	if *adminToken == "" {
 		return fmt.Errorf("--admin-token is required or API2AGENT_CONTROL_PLANE_ADMIN_TOKEN must be set")
 	}
+	runtime, err := openRegistryRuntime(context.Background(), *registryStore, *registryPath, *postgresDSN)
+	if err != nil {
+		return err
+	}
+	defer runtime.Close()
 	mux := http.NewServeMux()
 	handler := httpapi.Handler{
-		Store:           registry.NewFileStore(*registryPath),
-		RegistryStore:   "file",
-		RegistrySource:  *registryPath,
+		Store:           runtime.Store,
+		AuditSink:       runtime.AuditSink,
+		ImportReplacer:  runtime.ImportReplacer,
+		RegistryStore:   runtime.StoreName,
+		RegistrySource:  runtime.Source,
 		DistributionDir: *distributionDir,
 		AdminToken:      *adminToken,
 	}
@@ -136,10 +236,88 @@ func serve(args []string) error {
 	return http.ListenAndServe(*addr, mux)
 }
 
+type registryRuntime struct {
+	Store          registry.Store
+	AuditSink      registry.PersistentAuditSink
+	ImportReplacer httpapi.RegistryImportReplacer
+	StoreName      string
+	Source         string
+	close          func() error
+}
+
+func (r registryRuntime) Close() error {
+	if r.close == nil {
+		return nil
+	}
+	return r.close()
+}
+
+func defaultRegistryStore() string {
+	value := os.Getenv("API2AGENT_CONTROL_PLANE_REGISTRY_STORE")
+	if value == "" {
+		return "file"
+	}
+	return value
+}
+
+func openRegistryRuntime(ctx context.Context, storeName string, registryPath string, postgresDSN string) (registryRuntime, error) {
+	switch storeName {
+	case "", "file":
+		if registryPath == "" {
+			return registryRuntime{}, fmt.Errorf("--registry is required when --registry-store=file")
+		}
+		return registryRuntime{
+			Store:     registry.NewFileStore(registryPath),
+			StoreName: "file",
+			Source:    registryPath,
+		}, nil
+	case "postgres":
+		if postgresDSN == "" {
+			return registryRuntime{}, fmt.Errorf("--postgres-dsn is required when --registry-store=postgres or API2AGENT_CONTROL_PLANE_POSTGRES_DSN must be set")
+		}
+		db, err := openPostgresDB(ctx, postgresDSN)
+		if err != nil {
+			return registryRuntime{}, err
+		}
+		return registryRuntime{
+			Store:          registry.NewPostgresStore(db),
+			AuditSink:      registry.NewPostgresAuditSink(db),
+			ImportReplacer: postgresRegistryImportReplacer{db: db},
+			StoreName:      "postgres",
+			Source:         "postgres",
+			close:          db.Close,
+		}, nil
+	default:
+		return registryRuntime{}, fmt.Errorf("--registry-store must be file or postgres")
+	}
+}
+
+type postgresRegistryImportReplacer struct {
+	db *sql.DB
+}
+
+func (r postgresRegistryImportReplacer) ReplacePersistentRegistry(ctx context.Context, reg registry.Registry, opts registry.ImportReplaceOptions) (registry.ImportReplaceResult, error) {
+	return registry.ReplacePersistentRegistry(ctx, r.db, reg, opts)
+}
+
+func openPostgresDB(ctx context.Context, dsn string) (*sql.DB, error) {
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("open postgres registry db: %w", err)
+	}
+	if err := db.PingContext(ctx); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("connect postgres registry db: %w", err)
+	}
+	return db, nil
+}
+
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage:")
-	fmt.Fprintln(os.Stderr, "  api2agent-controlplane export-snapshot --registry <registry.json> --output <snapshot.json>")
-	fmt.Fprintln(os.Stderr, "  api2agent-controlplane export-artifact --registry <registry.json> --output-dir <artifact-dir>")
+	fmt.Fprintln(os.Stderr, "  api2agent-controlplane export-snapshot --registry <registry.json> --output <snapshot.json> [--registry-store file|postgres] [--postgres-dsn <dsn>]")
+	fmt.Fprintln(os.Stderr, "  api2agent-controlplane export-artifact --registry <registry.json> --output-dir <artifact-dir> [--registry-store file|postgres] [--postgres-dsn <dsn>]")
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane publish-artifact --artifact-dir <artifact-dir> --distribution-dir <distribution-dir>")
-	fmt.Fprintln(os.Stderr, "  api2agent-controlplane serve --registry <registry.json> --admin-token <token> [--addr <addr>] [--distribution-dir <dir>]")
+	fmt.Fprintln(os.Stderr, "  api2agent-controlplane seed-postgres --registry <registry.json> --postgres-dsn <dsn>")
+	fmt.Fprintln(os.Stderr, "  api2agent-controlplane import-replace-postgres --registry <registry.json> --postgres-dsn <dsn> [--actor-id <actor>] [--request-id <request-id>] [--idempotency-key <key>]")
+	fmt.Fprintln(os.Stderr, "  api2agent-controlplane serve --registry <registry.json> --admin-token <token> [--registry-store file|postgres] [--postgres-dsn <dsn>] [--addr <addr>] [--distribution-dir <dir>]")
 }

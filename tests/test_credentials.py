@@ -94,6 +94,48 @@ def test_resolver_reads_config_credential_without_auth_hint() -> None:
     assert result.injection_patch.query == {"api_key": "config-secret"}
 
 
+def test_resolver_selects_endpoint_matching_config_credential() -> None:
+    resolver = LocalCredentialResolver(
+        [
+            CredentialDefinition(
+                credential_id="cred_bearer",
+                provider_id="demo",
+                auth_type="bearer",
+                injection_mode="header",
+                injection_name="Authorization",
+                source="config",
+                secret_value="bearer-secret",
+                scope=["tool:get_secure"],
+            ),
+            CredentialDefinition(
+                credential_id="cred_admin",
+                provider_id="demo",
+                auth_type="api_key",
+                injection_mode="header",
+                injection_name="X-Admin-Key",
+                source="config",
+                secret_value="admin-secret",
+                scope=["tool:get_admin"],
+            ),
+        ]
+    )
+
+    result = resolver.resolve(
+        CredentialResolutionRequest(
+            capability_id="demo.admin",
+            provider_id="demo",
+            tool_id="get_admin",
+            auth_type="api_key",
+            injection_mode="header",
+            injection_name="X-Admin-Key",
+        )
+    )
+
+    assert result.resolved is True
+    assert result.credential_reference == "config:cred_admin"
+    assert result.injection_patch.headers == {"X-Admin-Key": "admin-secret"}
+
+
 def test_load_credential_config_reads_yaml_object(tmp_path) -> None:
     config = tmp_path / "credentials.yaml"
     config.write_text(

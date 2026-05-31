@@ -56,6 +56,7 @@ class Tool(BaseModel):
     request_body: RequestBody | None = None
     responses: list[ResponseShape] = Field(default_factory=list)
     safety: SafetyLevel = SafetyLevel.UNKNOWN
+    auth: AuthConfig | None = None
 
 
 class Capability(BaseModel):
@@ -64,4 +65,6 @@ class Capability(BaseModel):
     base_url: str = ""
     auth: AuthConfig = Field(default_factory=AuthConfig)
     tools: list[Tool] = Field(default_factory=list)
+    provider_region: str | None = None
+    provider_regions: list[str] = Field(default_factory=list)
     source: str | None = None

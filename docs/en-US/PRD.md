@@ -27,6 +27,20 @@ The current product mandate is API2Agent itself:
 - minimize API/provider onboarding cost
 - keep API onboarding first while preserving future source-neutral capability execution
 
+Current Tooling Re-entry goals:
+
+- collect more real execution data
+- reduce API/provider onboarding cost
+- improve response-speed visibility for Agent API calls
+
+Current Tooling Re-entry constraints:
+
+- API-first implementation
+- no workflow engine
+- no non-API runtime expansion
+- no marketplace, billing, or vault work
+- preserve proxy, usage, credential, replay, shadow, golden trace, and Protocol v0.2 compatibility
+
 The long-term product can become larger:
 
 ```text
@@ -67,6 +81,7 @@ Strategic weight update:
 
 - API2Agent should own the most real execution data.
 - API2Agent should have the lowest possible API onboarding cost.
+- API2Agent should make response speed visible and optimizable.
 - These two goals are the flywheel that makes routing quality defensible.
 
 API2Agent is not just "Stainless for Agents." Stainless helps humans call APIs through SDKs. API2Agent should help Agents choose and execute capabilities through a neutral infrastructure layer.

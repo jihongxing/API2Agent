@@ -4,7 +4,7 @@ Date: 2026-05-31
 
 Status: strategic direction, not an active implementation task
 
-Decision: API2Agent should evolve from API-to-Agent tooling into a controlled execution, receipt, routing, and trust layer. This strategy does not change the current next engineering task, which remains `Go Control Plane Persistent Registry Store Schema v0`.
+Decision: API2Agent should evolve from API-to-Agent tooling into a controlled execution, receipt, routing, and trust layer. This strategy does not override the current roadmap; persistent registry mutation boundary review is complete, and the project is now re-entering the Tooling Layer through API-first hardening tasks.
 
 ## 1. Why This Matters
 
@@ -296,14 +296,16 @@ API2Agent must collect trustworthy execution metadata without always collecting 
 
 ## 10. Roadmap Implications
 
-This strategy should influence future protocol and architecture work, but it should not interrupt the current persistence roadmap.
+This strategy should influence future protocol and architecture work, but it should not interrupt the current Tooling Re-entry Phase.
 
 Near term:
 
-- continue `Go Control Plane Persistent Registry Store Schema v0`
+- continue `Endpoint-level Auth Inference v0`
 - preserve `UsageEvent`
 - preserve `DecisionLog`
 - preserve current snapshot contract
+- keep API-first tooling constraints
+- do not build a workflow engine
 
 Future protocol work:
 

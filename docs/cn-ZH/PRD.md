@@ -27,6 +27,20 @@ OpenAPI / curl
 - 最小化 API/provider 接入成本
 - 坚持 API onboarding first，同时为未来 source-neutral capability execution 预留抽象
 
+当前 Tooling Re-entry 目标：
+
+- 收集更多真实执行数据
+- 降低 API/provider 接入成本
+- 让 Agent API 调用的响应速度可见、可优化
+
+当前 Tooling Re-entry 约束：
+
+- API-first implementation
+- 不做 workflow engine
+- 不扩展 non-API runtime
+- 不做 marketplace、billing 或 vault
+- 保持 proxy、usage、credential、replay、shadow、golden trace 和 Protocol v0.2 compatibility
+
 长期产品可以变得更大：
 
 ```text
@@ -67,7 +81,8 @@ alpha 产品抓手是 Reliability + Observability：
 
 - API2Agent 应该拥有最多真实执行数据。
 - API2Agent 应该具备最低 API onboarding cost。
-- 这两个目标是 routing quality 形成护城河的飞轮。
+- API2Agent 应该让响应速度可见、可优化。
+- 这些目标是 routing quality 形成护城河的飞轮。
 
 API2Agent 不只是 “Agent 时代的 Stainless”。Stainless 帮人类用 SDK 调 API，API2Agent 应该帮 Agent 通过中立基础设施选择和执行能力。
 

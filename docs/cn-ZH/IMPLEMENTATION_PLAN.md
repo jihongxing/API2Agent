@@ -18,13 +18,36 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Python MVP freeze
-  -> Protocol v0.2 contract freeze
-  -> Production Architecture RFC
-  -> Control Plane / Data Plane split
+Admin Mutation Idempotency Store Design
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness，不应该继续扩展成长远 hosted data plane。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 现在已经完成，下一项 implementation step 是 Go Control Plane private admin import/replace endpoint closeout review。
+
+实现语言决策：
+
+```text
+Python = Tooling reference implementation 和 local dogfood harness。
+Go = production Data Plane 和 Control Plane implementation。
+Protocol artifacts = language-neutral boundary。
+```
+
+参见 `docs/cn-ZH/TOOLING_IMPLEMENTATION_LANGUAGE_DECISION.md`。
+
+当前 Tooling Layer 目标：
+
+1. 更多真实调用数据
+2. 更低 API/provider 接入成本
+3. 更快 Agent API 响应
+
+当前 Tooling Layer 约束：
+
+- API-first
+- 不做 workflow engine
+- 不新增 non-API runtime
+- 不做 marketplace
+- 不做 billing
+- 不做 vault
+- 保持 proxy、usage、credential、replay、shadow、golden trace 和 Protocol v0.2 compatibility
 
 ## 2. 当前仓库结构
 
@@ -80,15 +103,32 @@ docs/
 
 ## 4. 剩余 Tooling Reliability 工作
 
-这些仍然有价值，但不再是战略终点：
+当前 active Tooling Re-entry hardening backlog 已完成，closeout review 也已完成。
 
-1. Endpoint-level auth
-2. Base URL override
-3. Manual write test path
-4. Better curl naming
-5. Large spec performance
+最近完成：
 
-在 proxy 和 metrics 存在之前，不要继续扩很多新输入格式。
+- Manual write test path
+- Large spec performance
+- Better curl naming residual review
+- Tooling Re-entry closeout review
+
+不要继续扩很多新输入格式。当前 tooling expansion 保持 API-first：OpenAPI、curl、HTTP/REST、generated packages、generated runner、smoke test 和 MCP server。
+
+当前 re-entry plan：
+
+- 详见 `docs/cn-ZH/API2AGENT_TOOLING_REENTRY_REVIEW_AND_EXPANSION_PLAN.md`
+
+下一项 tooling task：
+
+```text
+none - Tooling Re-entry is paused after closeout
+```
+
+下一项工程任务：
+
+```text
+Go Control Plane Private Admin Import/Replace Endpoint Implementation v0
+```
 
 ## 5. 下一阶段主线：Control Layer MVP
 
@@ -545,11 +585,198 @@ Go Control Plane Minimum v0
   - receipt farming 和 Edge-Mesh privacy requirements 已作为战略约束记录。
   - 这不改变当前下一项任务。
   - 详见 `docs/cn-ZH/CONTROL_RECEIPT_AND_TRUST_LAYER_STRATEGY.md`。
+- Go Control Plane Persistent Registry Store Schema v0 已完成：
+  - Postgres schema draft 已添加到 `services/control-plane/schema/postgres`。
+  - schema tests 覆盖 required tables 和关键 constraints。
+  - `MapRegistryToPersistentRows` 可以把现有 file registry fixture 映射为 persistent row-shaped structs。
+  - `CanonicalRegistry` 可以对 persistent export inputs 做确定性排序，且不修改原始 registry。
+  - `FileStore` 仍然是默认 runtime store。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_STORE_SCHEMA_REPORT.md`。
+- Go Control Plane Persistence Phase Review 已完成：
+  - 已完成的 Data Plane 和 Control Plane local primitives 已总结。
+  - runtime persistence readiness 仅批准进入很窄的 load-parity 切片。
+  - active requirements 已重新确认：API-first、snapshot-contract stability、registry tables 不存 secrets、不进入 marketplace/billing/vault scope。
+  - 下一项 implementation slice 收窄为 `PostgresStore.Load(ctx)` parity。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENCE_PHASE_REVIEW.md`。
+- Go Control Plane PostgresStore Load Parity v0 已完成：
+  - `PostgresStore.Load(ctx)` 会在 read-only `REPEATABLE READ` transaction 内读取 persistent registry rows。
+  - persistent row loading 会重建与 `FileStore` 相同的 in-memory `Registry` shape。
+  - file-backed 和 Postgres-loaded registries 在测试中生成等价 snapshot contract output。
+  - runtime store selection、Postgres driver wiring 和 live DB dogfood 被明确推迟。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_POSTGRES_STORE_LOAD_PARITY_REPORT.md`。
+- Go Control Plane Persistent Store Runtime Wiring v0 已完成：
+  - `--registry-store file|postgres` 和 `--postgres-dsn` 已接入 local commands。
+  - 已增加 `pgx` stdlib driver 支持，用于显式选择 Postgres。
+  - `seed-postgres` 可以把 file registry import 到 persistent schema。
+  - `file` 仍然是默认 runtime store。
+  - 当前环境没有 Docker 和 host `psql`，live Postgres dogfood 已使用 podman 完成。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_STORE_RUNTIME_WIRING_REPORT.md`。
+- Go Control Plane Live Postgres Store Dogfood v0 已完成：
+  - podman provisioned 了临时 Postgres-compatible database。
+  - schema application、seed import、file/postgres snapshot parity、CLI artifact export、service validation 和 service artifact export 均通过。
+  - 对现有 fixture，file-store 和 postgres-store snapshot output 完全一致。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_LIVE_POSTGRES_STORE_DOGFOOD_REPORT.md`。
+- Go Control Plane Persistent Export/Publish Audit Writes v0 已完成：
+  - Postgres runtime mode 现在会接入 persistent audit sink。
+  - 配置 persistent audit 时，service registry validation、artifact export、distribution publish 和 current pointer reads 会写入 `admin_audit_events`。
+  - artifact export 成功后写入 `registry_revisions`。
+  - distribution publish 成功后写入 `snapshot_artifact_publications`。
+  - live Postgres dogfood 已验证 `admin_audit_events=4`、`registry_revisions=2`、`snapshot_artifact_publications=1`。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_EXPORT_PUBLISH_AUDIT_REPORT.md`。
+- Go Control Plane Persistent Store Failure Semantics Hardening v0 已完成：
+  - Postgres-backed registry load failures 现在返回 `PERSISTENT_STORE_READ_FAILED`，HTTP 503，platform scope，并标记为 retryable。
+  - file-store load failures 仍然保持 `REGISTRY_INVALID`，HTTP 400，caller scope，并标记为 non-retryable。
+  - required persistent audit writes 失败时，成功 admin operations 会 fail closed，返回 `AUDIT_WRITE_FAILED`。
+  - failure-path admin audit writes 保持 best-effort，避免遮盖原始错误。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_STORE_FAILURE_SEMANTICS_REPORT.md`。
+- Go Control Plane Persistent Registry Mutation Boundary Review v0 已完成：
+  - granular registry CRUD APIs 暂缓。
+  - 下一条安全写侧路径是 controlled full-registry import/replace transaction。
+  - mutable registry state 限定为 `projects`、`api_keys`、`capabilities`、`providers`、`credential_metadata`、`routing_policies` 和 `snapshot_configs`。
+  - `registry_revisions`、`snapshot_artifact_publications` 和 `admin_audit_events` 保持 append-only evidence surfaces。
+  - transaction、audit、idempotency、failure 和 rollback requirements 已在实现前文档化。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_MUTATION_BOUNDARY_REVIEW.md`。
+- API2Agent Tooling Re-entry Review + Tooling Expansion Plan v0 已完成：
+  - 项目现在带着 Control/Data Plane 约束回到 Tooling Layer。
+  - 当前 Tooling Layer 目标是更多真实执行数据、更低 API/provider 接入成本、更快 Agent API 响应。
+  - 当前实现保持 API-first，并明确不变成 workflow engine。
+  - Control Plane import/replace transaction design 在 tooling baseline audit 期间保持暂停。
+  - 详见 `docs/cn-ZH/API2AGENT_TOOLING_REENTRY_REVIEW_AND_EXPANSION_PLAN.md`。
+- API2Agent Tooling Baseline Audit v0 已完成：
+  - 可复现 audit script 位于 `scripts/api2agent_tooling_baseline_audit.py`。
+  - ipify、Open-Meteo、GitHub repo read 和 httpbin bearer 的 curl generation 与第一次 direct call 均成功。
+  - ipify、Open-Meteo 和 GitHub repo read 的 no-auth proxy execution 成功。
+  - GitHub REST OpenAPI 生成成功，但未过滤 package 暴露 1186-tool 风险。
+  - 下一项 Tooling fix 收窄为 OpenAPI filtering 和 curl tool naming hardening。
+  - 详见 `docs/cn-ZH/API2AGENT_TOOLING_BASELINE_AUDIT_REPORT.md`。
+- API2Agent OpenAPI Filtering + curl Tool Naming Hardening v0 已完成：
+  - root-path curl tools 现在包含 capability intent。
+  - non-root curl naming 为 backward compatibility 继续保持 path-based。
+  - OpenAPI generation 在 oversized packages 仍 unbounded 时输出 warning。
+  - targeted tests 和 baseline audit script 在改动后均通过。
+  - 详见 `docs/cn-ZH/API2AGENT_OPENAPI_FILTERING_CURL_NAMING_HARDENING_REPORT.md`。
+- Generated Package Region Metadata v0 已完成：
+  - `--provider-region` 会把 region metadata 写入 generated `capability.json`。
+  - generated README files 包含 provider region guidance。
+  - generated runners 会把 provider-region intent 传入 proxy payloads。
+  - region metadata dogfood 已通过，scope 保持 API-first。
+  - 详见 `docs/cn-ZH/API2AGENT_GENERATED_PACKAGE_REGION_METADATA_REPORT.md`。
+- Proxy-mode Credential Dogfood Expansion v0 已完成：
+  - `scripts/api2agent_proxy_credential_dogfood.py` 会让 authenticated generated package 通过 local proxy 运行。
+  - local credential config 在 proxy 侧注入 provider auth，不让 generated package 携带 secret。
+  - usage events 保留 credential-safe attribution 和 provider-region metadata。
+  - 详见 `docs/cn-ZH/API2AGENT_PROXY_CREDENTIAL_DOGFOOD_EXPANSION_REPORT.md`。
+- Generated Package Latency Benchmark Helper v0 已完成：
+  - `run_generated_package_latency_benchmark` 提供可复用的 generated-package direct/proxy timing。
+  - `api2agent benchmark-package` 可以为 generated package tools 输出 p50/p95 latency。
+  - local dogfood 已验证 direct/proxy timing、proxy usage ids 和 provider-region attribution。
+  - 详见 `docs/cn-ZH/API2AGENT_GENERATED_PACKAGE_LATENCY_BENCHMARK_REPORT.md`。
+- Endpoint-level Auth Inference v0 已完成：
+  - OpenAPI mixed public/protected operations 现在会生成 endpoint-aware auth metadata。
+  - generated runners 只对 operation 需要 auth 的 tools 要求 auth。
+  - proxy credential intent 和 local credential config selection 对 mixed-auth providers 具备 tool-specific 语义。
+  - local dogfood 已验证 public/no-auth、bearer 和 API key endpoints 的 direct/proxy execution。
+  - 详见 `docs/cn-ZH/API2AGENT_ENDPOINT_AUTH_INFERENCE_REPORT.md`。
+- Base URL Override v0 已完成：
+  - generated packages 可以用 `API2AGENT_BASE_URL` 在 runtime 覆盖 provider base URLs。
+  - generated packages 可以用 `API2AGENT_TOOL_BASE_URL_<TOOL_NAME>` 覆盖单个 tool。
+  - direct 和 proxy execution 共用同一套 URL resolution semantics。
+  - local dogfood 已验证 default、global override、tool-specific override、invalid override fail-fast 和 proxy usage metadata。
+  - 详见 `docs/cn-ZH/API2AGENT_BASE_URL_OVERRIDE_REPORT.md`。
+- Manual Write Test Path v0 已完成：
+  - generated packages 现在包含 guarded `manual_write_test.py`。
+  - 默认 `api2agent test` 继续保持 read-only。
+  - `api2agent test --allow-write` 会显式 opt in write/delete testing。
+  - local dogfood 已验证 default no-write behavior、direct opt-in execution、proxy opt-in execution 和 usage metadata preservation。
+  - 详见 `docs/cn-ZH/API2AGENT_MANUAL_WRITE_TEST_PATH_REPORT.md`。
+- Large Spec Performance v0 已完成：
+  - OpenAPI filters 会在 parsing 阶段应用，而不是只在完整 tool construction 之后过滤。
+  - `api2agent inspect` 会输出 large-package summaries 和 bounded tool lists。
+  - `api2agent test --tool ... --params ...` 支持 targeted generated read-tool checks。
+  - local dogfood 已验证 1200-operation spec 的 unfiltered warning、bounded generation、inspect summary 和 targeted execution。
+  - 详见 `docs/cn-ZH/API2AGENT_LARGE_SPEC_PERFORMANCE_REPORT.md`。
+- Better curl naming residual review v0 已完成：
+  - `api` 和 `www` 这类 generic leading curl host labels 不再生成过泛的默认 capability names。
+  - generated auth env names 现在继承更好的 capability intent，例如 `GITHUB_API_TOKEN`。
+  - 显式 `--name` 和 non-root path-based tool naming 保持稳定。
+  - local dogfood 已验证 generic API subdomain、root-path inferred naming、explicit name override 和 non-root path compatibility。
+  - 详见 `docs/cn-ZH/API2AGENT_CURL_NAMING_RESIDUAL_REVIEW.md`。
+- API2Agent Tooling Re-entry Closeout + Phase Review v0 已完成：
+  - Tooling Re-entry 被判断为可以暂停。
+  - acceptance criteria、validation 和 remaining risks 已文档化。
+  - 除非先更新产品需求，下一项工程范围回到 Control Plane import/replace transaction design。
+  - 详见 `docs/cn-ZH/API2AGENT_TOOLING_REENTRY_CLOSEOUT_REVIEW.md`。
+- API2Agent Stage Consolidation Before Import/Replace v0 已完成：
+  - Tooling、Go Data Plane 和 Go Control Plane persistent read/audit 状态已汇总。
+  - import/replace design 的 entry gates 已文档化。
+  - write-side design 开始前的不变量边界已重新确认。
+  - 详见 `docs/cn-ZH/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md`。
+- Go Control Plane Persistent Registry Import/Replace Transaction Design v0 已完成：
+  - 第一个 write-side operation 被限制为 controlled full-registry import/replace。
+  - `seed-postgres` 仍然是 dogfood helper，不是 production mutation path。
+  - serializable transaction、advisory lock、idempotency、same-transaction audit、rollback 和 snapshot boundary semantics 已明确。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md`。
+- Go Control Plane Persistent Registry Import/Replace CLI Implementation v0 已完成：
+  - `api2agent-controlplane import-replace-postgres` 已实现为很窄的 local/admin write path。
+  - `ReplacePersistentRegistry` 覆盖 serializable transaction、advisory lock、full mutable-table replacement、no-op detection、revision/audit writes 和 rollback behavior。
+  - unit tests 覆盖 no-op、replacement、lock conflict、audit failure rollback 和 transaction options。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Persistent Registry Import/Replace Live Postgres Dogfood v0 已完成：
+  - live Postgres dogfood 使用 podman。
+  - schema apply、seed、changed-registry import/replace、same-registry no-op 和 snapshot export 均通过。
+  - persistent audit counts 已断言：`registry_revisions=2`、`admin_audit_events=2`、`providers=1`。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_LIVE_POSTGRES_DOGFOOD_REPORT.md`。
+- Go Control Plane Import/Replace Closeout + Mutation API Readiness Review v0 已完成：
+  - local/admin CLI primitive 被接受为当前 write-side slice 的完成状态。
+  - readiness decision 是只进入 private admin endpoint design。
+  - public CRUD 和 endpoint implementation 继续 deferred。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_IMPORT_REPLACE_CLOSEOUT_MUTATION_API_READINESS_REVIEW.md`。
+- Go Control Plane Private Admin Import/Replace Endpoint Design v0 已完成：
+  - `POST /v1/admin/registry/import-replace` 是被接受的 private admin endpoint。
+  - endpoint 要求 `Authorization`、`X-Request-ID` 和 `Idempotency-Key`。
+  - request body 使用 wrapper object，包含 `registry`、可选 `source` 和 reserved `dry_run=false`。
+  - FileStore 保持不变；只有 Postgres mutation mode 可以执行 import/replace。
+  - response shape、request-size limit、error mapping、audit mapping 和 implementation tests 已文档化。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_DESIGN.md`。
+- Go Control Plane Private Admin Import/Replace Endpoint Implementation v0 已完成：
+  - `POST /v1/admin/registry/import-replace` 已在现有 admin auth boundary 后实现。
+  - Postgres runtime wiring 注入很窄的 registry import replacer。
+  - FileStore/unconfigured mutation 返回 `REGISTRY_MUTATION_UNAVAILABLE`。
+  - changed registry 返回 `201`；same-fingerprint no-op 返回 `200`。
+  - required request headers、2 MiB request-size limit、error mapping 和 option propagation 已有测试覆盖。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Private Admin Import/Replace Endpoint Live Postgres Dogfood v0 已完成：
+  - live service dogfood 使用 podman-backed Postgres。
+  - HTTP import/replace 返回 `201` 和 `noop=false`。
+  - repeated import 返回 `200` 和 `noop=true`。
+  - service validation/export 看到了替换后的 registry 和 `httpbin_public_ip_v1` provider。
+  - persistent audit counts 已断言：`registry_revisions=3`、`admin_audit_events=4`、`providers=1`。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_LIVE_POSTGRES_DOGFOOD_REPORT.md`。
+- Go Control Plane Private Admin Import/Replace Endpoint Closeout + Phase Review v0 已完成：
+  - design、implementation 和 live dogfood 被接受为 complete。
+  - private admin write-side endpoint milestone 可以关闭。
+  - remaining risks 已文档化。
+  - 下一项安全证明是从 import/replace 到 Data Plane execution 的 snapshot propagation。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Import/Replace Snapshot Propagation E2E Dogfood v0 已完成：
+  - HTTP import/replace 将 persistent registry provider 替换为 `httpbin_public_ip_v1`。
+  - Control Plane export 并 publish replacement snapshot。
+  - Data Plane manual reload 从 `snapshot_propagation_ipify_v1` 切换到 `snapshot_propagation_httpbin_v2`。
+  - Data Plane execution 返回 replacement-provider output `{ "ip": "203.0.113.88" }`。
+  - usage 和 decision records 已归因到 replacement provider 和 snapshot version。
+  - persistent audit counts 已断言。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_E2E_DOGFOOD_REPORT.md`。
+- Go Control Plane Import/Replace Snapshot Propagation Closeout + Phase Review v0 已完成：
+  - manual propagation milestone 可以关闭。
+  - architecture rule 继续成立：Data Plane 消费 immutable/versioned snapshots，而不是 mutable Control Plane tables。
+  - remaining hosted-readiness risks 已文档化。
+  - 下一项任务收窄为 admin mutation idempotency store design。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Persistent Registry Store Schema v0
+Go Control Plane Admin Mutation Idempotency Store Design v0
 ```
 
 ## 9. Marketplace 是后面的结果

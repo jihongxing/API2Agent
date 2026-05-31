@@ -1,7 +1,8 @@
 from pathlib import Path
 
+from api2agent.filters import ToolFilter
 from api2agent.ir.models import SafetyLevel
-from api2agent.parsers.openapi import parse_openapi_file
+from api2agent.parsers.openapi import count_openapi_operations_file, parse_openapi_file
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "openapi"
@@ -27,12 +28,41 @@ def test_parse_openapi_tags() -> None:
     assert tags_by_name["list_repos"] == ["repos"]
 
 
+def test_parse_openapi_applies_filters_during_parse() -> None:
+    capability = parse_openapi_file(
+        FIXTURES / "multi_tools.yaml",
+        filters=ToolFilter(include_tags=["repos"], max_tools=1),
+    )
+
+    assert [tool.name for tool in capability.tools] == ["list_repos"]
+
+
+def test_count_openapi_operations_file() -> None:
+    assert count_openapi_operations_file(FIXTURES / "multi_tools.yaml") == 4
+
+
 def test_parse_bearer_auth() -> None:
     capability = parse_openapi_file(FIXTURES / "bearer_auth.yaml")
 
     assert capability.auth.type == "bearer"
     assert capability.auth.env == "BEARER_API_TOKEN"
     assert capability.auth.header == "Authorization"
+
+
+def test_parse_endpoint_level_auth_overrides() -> None:
+    capability = parse_openapi_file(FIXTURES / "mixed_auth.yaml")
+    tools = {tool.name: tool for tool in capability.tools}
+
+    assert capability.auth.type == "bearer"
+    assert capability.auth.env == "MIXED_AUTH_API_TOKEN"
+
+    assert tools["get_public"].auth is not None
+    assert tools["get_public"].auth.type == "none"
+    assert tools["get_secure"].auth is None
+    assert tools["get_admin"].auth is not None
+    assert tools["get_admin"].auth.type == "api_key"
+    assert tools["get_admin"].auth.env == "MIXED_AUTH_API_API_KEY"
+    assert tools["get_admin"].auth.header == "X-Admin-Key"
 
 
 def test_classifies_unsafe_methods() -> None:

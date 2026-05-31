@@ -3,7 +3,11 @@ from pathlib import Path
 from api2agent.adapters.models import AdapterResult, CostEstimate
 from api2agent.adapters.open_meteo import OpenMeteoWeatherAdapter
 from api2agent.adapters.wttr_in import WttrInWeatherAdapter
-from api2agent.benchmark import run_region_aware_routing_benchmark, run_weather_benchmark
+from api2agent.benchmark import (
+    run_generated_package_latency_benchmark,
+    run_region_aware_routing_benchmark,
+    run_weather_benchmark,
+)
 from api2agent.capabilities.models import MetricsSnapshot, ProviderCandidate
 from api2agent.control.storage import UsageStore
 from api2agent.sdk import call
@@ -431,6 +435,57 @@ def test_weather_benchmark_returns_provider_latency_stats(tmp_path: Path, monkey
     assert calls == {"open_meteo": 2, "wttr_in": 2}
     assert result["providers"][0]["p50_latency_ms"] == 100
     assert result["providers"][1]["p95_latency_ms"] == 50
+
+
+def test_generated_package_latency_benchmark_reports_direct_and_proxy_stats(tmp_path: Path, monkeypatch) -> None:
+    from api2agent.generators.package import generate_package
+    from api2agent.parsers.curl import parse_curl
+
+    capability = parse_curl("curl https://api.example.com/items", name="example_items").model_copy(
+        update={"provider_region": "us-east", "provider_regions": ["us-east"]}
+    )
+    package_dir = generate_package(capability, tmp_path / "package")
+    calls = {"direct": 0, "proxy": 0}
+
+    class FakeResponse:
+        is_success = True
+        status_code = 200
+        text = ""
+
+        def __init__(self, body):
+            self._body = body
+
+        def json(self):
+            return self._body
+
+    def fake_request(method, url, **kwargs):
+        calls["direct"] += 1
+        return FakeResponse({"ok": True})
+
+    def fake_post(url, **kwargs):
+        calls["proxy"] += 1
+        payload = kwargs["json"]
+        assert payload["provider_region"] == "us-east"
+        return FakeResponse({"ok": True, "proxied": True, "usage_event_id": "evt_benchmark"})
+
+    monkeypatch.setattr("httpx.request", fake_request)
+    monkeypatch.setattr("httpx.post", fake_post)
+
+    result = run_generated_package_latency_benchmark(
+        package_dir=package_dir,
+        tool_name="get_items",
+        iterations=2,
+        proxy_url="http://127.0.0.1:8765",
+    )
+
+    assert result["contract_version"] == "api2agent.generated_package_latency_benchmark.v0"
+    assert result["capability"]["provider_region"] == "us-east"
+    assert result["runs"]["direct"]["runs"] == 2
+    assert result["runs"]["direct"]["successful_runs"] == 2
+    assert result["runs"]["proxy"]["runs"] == 2
+    assert result["runs"]["proxy"]["successful_runs"] == 2
+    assert result["runs"]["proxy"]["results"][0]["usage_event_id"] == "evt_benchmark"
+    assert calls == {"direct": 2, "proxy": 2}
 
 
 def test_region_aware_routing_benchmark_returns_decision_dataset() -> None:
