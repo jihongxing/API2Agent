@@ -262,6 +262,9 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Admin Mutation Idempotency Store closeout completed; durable private admin mutation idempotency can close and the next hosted-readiness gap is admin identity/project scope design.
 - Go Control Plane Hosted Admin Identity Boundary design completed with admin principal shape, local/private compatibility, hosted trust rules, endpoint permissions, audit/idempotency identity mapping, auth error mapping, and implementation test requirements.
 - Go Control Plane Hosted Admin Identity Boundary implemented with `registry.AdminPrincipal`, local/private principal resolution, hosted-ready authenticator seam, endpoint permission checks, principal-derived audit metadata, principal-derived import/replace idempotency scope, and HTTP auth/authz regression tests.
+- Go Control Plane Hosted Admin Identity Boundary closeout completed; the principal boundary can close and the next hosted-readiness gap is concrete admin authenticator integration design.
+- Go Control Plane Hosted Admin Authenticator Integration design completed with trusted-gateway mode, internal gateway authentication, trusted claim headers, claim validation, principal mapping, audit/idempotency mapping, error semantics, and implementation test requirements.
+- Go Control Plane Hosted Admin Authenticator Integration implemented with `trusted_gateway` mode, internal gateway authorization, trusted claim parsing, service flag/env wiring, hosted serve startup without local admin token, fail-closed mode validation, principal-derived audit/idempotency behavior, and regression tests.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -269,4 +272,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0.
+- Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0.

@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"context"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,21 +13,24 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode"
 
 	"api2agent/services/control-plane/internal/registry"
 )
 
 type Handler struct {
-	Store             registry.Store
-	AuditSink         registry.PersistentAuditSink
-	ImportReplacer    RegistryImportReplacer
-	Authenticator     AdminAuthenticator
-	RegistryStore     string
-	RegistrySource    string
-	DistributionDir   string
-	AdminToken        string
-	AdminIdentityMode string
-	Now               func() time.Time
+	Store                  registry.Store
+	AuditSink              registry.PersistentAuditSink
+	ImportReplacer         RegistryImportReplacer
+	Authenticator          AdminAuthenticator
+	RegistryStore          string
+	RegistrySource         string
+	DistributionDir        string
+	AdminToken             string
+	AdminIdentityMode      string
+	AdminAuthenticatorMode string
+	TrustedGatewaySecret   string
+	Now                    func() time.Time
 }
 
 const importReplaceMaxBodyBytes int64 = 2 * 1024 * 1024
@@ -33,6 +38,29 @@ const importReplaceMaxBodyBytes int64 = 2 * 1024 * 1024
 const (
 	AdminIdentityModeLocalPrivate = "local_private"
 	AdminIdentityModeHosted       = "hosted"
+)
+
+const (
+	AdminAuthenticatorModeLocalPrivate   = "local_private"
+	AdminAuthenticatorModeTrustedGateway = "trusted_gateway"
+)
+
+const (
+	trustedGatewayAuthorizationHeader = "X-API2Agent-Gateway-Authorization"
+	trustedPrincipalIDHeader          = "X-API2Agent-Principal-ID"
+	trustedActorIDHeader              = "X-API2Agent-Actor-ID"
+	trustedProjectIDHeader            = "X-API2Agent-Project-ID"
+	trustedOrganizationIDHeader       = "X-API2Agent-Organization-ID"
+	trustedTokenIDHeader              = "X-API2Agent-Token-ID"
+	trustedRolesHeader                = "X-API2Agent-Roles"
+	trustedPermissionsHeader          = "X-API2Agent-Permissions"
+)
+
+const (
+	trustedClaimMaxBytes      = 256
+	trustedListHeaderMaxBytes = 8192
+	trustedRoleMaxCount       = 32
+	trustedPermissionMaxCount = 128
 )
 
 type RegistryImportReplacer interface {
@@ -552,13 +580,32 @@ func (h Handler) adminAuthenticator() (AdminAuthenticator, error) {
 		return h.Authenticator, nil
 	}
 	mode := h.adminIdentityMode()
-	if mode == AdminIdentityModeHosted {
-		return nil, fmt.Errorf("hosted admin identity mode requires an admin authenticator")
+	authenticatorMode := strings.TrimSpace(h.AdminAuthenticatorMode)
+	if authenticatorMode == "" && mode == AdminIdentityModeLocalPrivate {
+		authenticatorMode = AdminAuthenticatorModeLocalPrivate
 	}
-	if mode != AdminIdentityModeLocalPrivate {
+	if mode != AdminIdentityModeLocalPrivate && mode != AdminIdentityModeHosted {
 		return nil, fmt.Errorf("unsupported admin identity mode %q", mode)
 	}
-	return localPrivateAdminAuthenticator{AdminToken: h.AdminToken}, nil
+	switch authenticatorMode {
+	case AdminAuthenticatorModeLocalPrivate:
+		if mode != AdminIdentityModeLocalPrivate {
+			return nil, fmt.Errorf("local_private admin authenticator requires local_private identity mode")
+		}
+		return localPrivateAdminAuthenticator{AdminToken: h.AdminToken}, nil
+	case AdminAuthenticatorModeTrustedGateway:
+		if mode != AdminIdentityModeHosted {
+			return nil, fmt.Errorf("trusted_gateway admin authenticator requires hosted identity mode")
+		}
+		if strings.TrimSpace(h.TrustedGatewaySecret) == "" {
+			return nil, fmt.Errorf("trusted_gateway admin authenticator requires a trusted gateway secret")
+		}
+		return TrustedGatewayAuthenticator{GatewaySecret: h.TrustedGatewaySecret}, nil
+	case "":
+		return nil, fmt.Errorf("hosted admin identity mode requires an admin authenticator")
+	default:
+		return nil, fmt.Errorf("unsupported admin authenticator mode %q", authenticatorMode)
+	}
 }
 
 func (h Handler) adminIdentityMode() string {
@@ -681,6 +728,151 @@ func (a localPrivateAdminAuthenticator) ResolveAdminPrincipal(r *http.Request, r
 		Permissions:  registry.LocalPrivateAdminPermissions(),
 		LocalPrivate: true,
 	}, nil
+}
+
+type TrustedGatewayAuthenticator struct {
+	GatewaySecret string
+}
+
+func (a TrustedGatewayAuthenticator) ResolveAdminPrincipal(r *http.Request, requiredPermission string) (registry.AdminPrincipal, error) {
+	secret := strings.TrimSpace(a.GatewaySecret)
+	if secret == "" {
+		return registry.AdminPrincipal{}, AdminAuthError{
+			ErrorType: "AUTH_SERVICE_UNAVAILABLE",
+			Scope:     "platform",
+			Message:   "trusted gateway secret is not configured",
+			Retryable: true,
+		}
+	}
+	token, ok := bearerToken(r.Header.Get(trustedGatewayAuthorizationHeader))
+	if !ok || !constantTimeSecretEqual(token, secret) {
+		return registry.AdminPrincipal{}, AdminAuthError{
+			ErrorType: "AUTH_ERROR",
+			Scope:     "caller",
+			Message:   "invalid trusted gateway authorization",
+		}
+	}
+	subjectID, err := requiredTrustedClaim(r, trustedPrincipalIDHeader, "principal id")
+	if err != nil {
+		return registry.AdminPrincipal{}, err
+	}
+	projectID, err := requiredTrustedClaim(r, trustedProjectIDHeader, "project id")
+	if err != nil {
+		return registry.AdminPrincipal{}, err
+	}
+	permissions, err := trustedClaimList(r.Header.Get(trustedPermissionsHeader), "permissions", true, trustedPermissionMaxCount)
+	if err != nil {
+		return registry.AdminPrincipal{}, err
+	}
+	actorID, err := optionalTrustedClaim(r, trustedActorIDHeader, "actor id")
+	if err != nil {
+		return registry.AdminPrincipal{}, err
+	}
+	if actorID == "" {
+		actorID = subjectID
+	}
+	organizationID, err := optionalTrustedClaim(r, trustedOrganizationIDHeader, "organization id")
+	if err != nil {
+		return registry.AdminPrincipal{}, err
+	}
+	tokenID, err := optionalTrustedClaim(r, trustedTokenIDHeader, "token id")
+	if err != nil {
+		return registry.AdminPrincipal{}, err
+	}
+	roles, err := trustedClaimList(r.Header.Get(trustedRolesHeader), "roles", false, trustedRoleMaxCount)
+	if err != nil {
+		return registry.AdminPrincipal{}, err
+	}
+	return registry.AdminPrincipal{
+		SubjectID:      subjectID,
+		ActorID:        actorID,
+		ProjectID:      projectID,
+		OrganizationID: organizationID,
+		AuthMethod:     registry.AdminAuthMethodTrustedGateway,
+		TokenID:        tokenID,
+		Roles:          roles,
+		Permissions:    permissions,
+		LocalPrivate:   false,
+	}, nil
+}
+
+func bearerToken(header string) (string, bool) {
+	const prefix = "Bearer "
+	if !strings.HasPrefix(header, prefix) {
+		return "", false
+	}
+	token := strings.TrimSpace(strings.TrimPrefix(header, prefix))
+	return token, token != ""
+}
+
+func constantTimeSecretEqual(value string, expected string) bool {
+	valueHash := sha256.Sum256([]byte(value))
+	expectedHash := sha256.Sum256([]byte(expected))
+	return subtle.ConstantTimeCompare(valueHash[:], expectedHash[:]) == 1
+}
+
+func requiredTrustedClaim(r *http.Request, header string, label string) (string, error) {
+	value, err := trustedClaimValue(r.Header.Get(header), label, true)
+	if err != nil {
+		return "", err
+	}
+	return value, nil
+}
+
+func optionalTrustedClaim(r *http.Request, header string, label string) (string, error) {
+	value, err := trustedClaimValue(r.Header.Get(header), label, false)
+	if err != nil {
+		return "", err
+	}
+	return value, nil
+}
+
+func trustedClaimValue(raw string, label string, required bool) (string, error) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		if required {
+			return "", trustedClaimError("missing trusted gateway " + label)
+		}
+		return "", nil
+	}
+	if len(value) > trustedClaimMaxBytes || strings.ContainsFunc(value, unicode.IsControl) {
+		return "", trustedClaimError("malformed trusted gateway " + label)
+	}
+	return value, nil
+}
+
+func trustedClaimList(raw string, label string, required bool, maxCount int) ([]string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		if required {
+			return nil, trustedClaimError("missing trusted gateway " + label)
+		}
+		return nil, nil
+	}
+	if len(raw) > trustedListHeaderMaxBytes || strings.ContainsFunc(raw, unicode.IsControl) {
+		return nil, trustedClaimError("malformed trusted gateway " + label)
+	}
+	parts := strings.Split(raw, ",")
+	if len(parts) > maxCount {
+		return nil, trustedClaimError("malformed trusted gateway " + label)
+	}
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		value := strings.TrimSpace(part)
+		if value == "" || len(value) > trustedClaimMaxBytes {
+			return nil, trustedClaimError("malformed trusted gateway " + label)
+		}
+		values = append(values, value)
+	}
+	return values, nil
+}
+
+func trustedClaimError(message string) error {
+	return AdminAuthError{
+		ErrorType: "AUTH_ERROR",
+		Scope:     "caller",
+		Message:   message,
+	}
 }
 
 func ensureSingleJSONDocument(decoder *json.Decoder) error {

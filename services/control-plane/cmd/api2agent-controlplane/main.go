@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"api2agent/services/control-plane/internal/httpapi"
@@ -210,11 +211,13 @@ func serve(args []string) error {
 	addr := flags.String("addr", "127.0.0.1:8081", "address for the local control plane service")
 	adminToken := flags.String("admin-token", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_TOKEN"), "admin bearer token for non-health endpoints")
 	adminIdentityMode := flags.String("admin-identity-mode", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_IDENTITY_MODE"), "admin identity mode: local_private or hosted")
+	adminAuthenticator := flags.String("admin-authenticator", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_AUTHENTICATOR"), "admin authenticator mode: local_private or trusted_gateway")
+	trustedGatewaySecret := flags.String("trusted-gateway-secret", os.Getenv("API2AGENT_CONTROL_PLANE_TRUSTED_GATEWAY_SECRET"), "trusted gateway secret for --admin-authenticator=trusted_gateway")
 	distributionDir := flags.String("distribution-dir", "", "optional local snapshot distribution directory")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
-	if *adminToken == "" {
+	if requiresLocalAdminToken(*adminIdentityMode, *adminAuthenticator) && *adminToken == "" {
 		return fmt.Errorf("--admin-token is required or API2AGENT_CONTROL_PLANE_ADMIN_TOKEN must be set")
 	}
 	runtime, err := openRegistryRuntime(context.Background(), *registryStore, *registryPath, *postgresDSN)
@@ -224,18 +227,32 @@ func serve(args []string) error {
 	defer runtime.Close()
 	mux := http.NewServeMux()
 	handler := httpapi.Handler{
-		Store:             runtime.Store,
-		AuditSink:         runtime.AuditSink,
-		ImportReplacer:    runtime.ImportReplacer,
-		RegistryStore:     runtime.StoreName,
-		RegistrySource:    runtime.Source,
-		DistributionDir:   *distributionDir,
-		AdminToken:        *adminToken,
-		AdminIdentityMode: *adminIdentityMode,
+		Store:                  runtime.Store,
+		AuditSink:              runtime.AuditSink,
+		ImportReplacer:         runtime.ImportReplacer,
+		RegistryStore:          runtime.StoreName,
+		RegistrySource:         runtime.Source,
+		DistributionDir:        *distributionDir,
+		AdminToken:             *adminToken,
+		AdminIdentityMode:      *adminIdentityMode,
+		AdminAuthenticatorMode: *adminAuthenticator,
+		TrustedGatewaySecret:   *trustedGatewaySecret,
 	}
 	handler.Register(mux)
 	log.Printf("api2agent control plane listening on %s", *addr)
 	return http.ListenAndServe(*addr, mux)
+}
+
+func requiresLocalAdminToken(identityMode string, authenticatorMode string) bool {
+	identityMode = strings.TrimSpace(identityMode)
+	authenticatorMode = strings.TrimSpace(authenticatorMode)
+	if identityMode == "" {
+		identityMode = httpapi.AdminIdentityModeLocalPrivate
+	}
+	if authenticatorMode == "" {
+		return identityMode == httpapi.AdminIdentityModeLocalPrivate
+	}
+	return authenticatorMode == httpapi.AdminAuthenticatorModeLocalPrivate
 }
 
 type registryRuntime struct {
@@ -321,5 +338,5 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane publish-artifact --artifact-dir <artifact-dir> --distribution-dir <distribution-dir>")
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane seed-postgres --registry <registry.json> --postgres-dsn <dsn>")
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane import-replace-postgres --registry <registry.json> --postgres-dsn <dsn> [--actor-id <actor>] [--request-id <request-id>] [--idempotency-key <key>]")
-	fmt.Fprintln(os.Stderr, "  api2agent-controlplane serve --registry <registry.json> --admin-token <token> [--registry-store file|postgres] [--postgres-dsn <dsn>] [--addr <addr>] [--distribution-dir <dir>]")
+	fmt.Fprintln(os.Stderr, "  api2agent-controlplane serve --registry <registry.json> [--admin-token <token>] [--registry-store file|postgres] [--postgres-dsn <dsn>] [--addr <addr>] [--distribution-dir <dir>] [--admin-identity-mode local_private|hosted] [--admin-authenticator local_private|trusted_gateway] [--trusted-gateway-secret <secret>]")
 }

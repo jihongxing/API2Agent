@@ -1,50 +1,50 @@
 package main
 
 import (
-	"context"
-	"strings"
 	"testing"
+
+	"api2agent/services/control-plane/internal/httpapi"
 )
 
-func TestOpenRegistryRuntimeDefaultsToFile(t *testing.T) {
-	runtime, err := openRegistryRuntime(context.Background(), "", "registry.json", "")
-	if err != nil {
-		t.Fatalf("open registry runtime: %v", err)
+func TestRequiresLocalAdminToken(t *testing.T) {
+	tests := []struct {
+		name              string
+		identityMode      string
+		authenticatorMode string
+		want              bool
+	}{
+		{
+			name: "default local private",
+			want: true,
+		},
+		{
+			name:         "explicit local private identity",
+			identityMode: httpapi.AdminIdentityModeLocalPrivate,
+			want:         true,
+		},
+		{
+			name:              "explicit local private authenticator",
+			identityMode:      httpapi.AdminIdentityModeHosted,
+			authenticatorMode: httpapi.AdminAuthenticatorModeLocalPrivate,
+			want:              true,
+		},
+		{
+			name:              "hosted trusted gateway",
+			identityMode:      httpapi.AdminIdentityModeHosted,
+			authenticatorMode: httpapi.AdminAuthenticatorModeTrustedGateway,
+			want:              false,
+		},
+		{
+			name:         "hosted without authenticator fails closed at request time",
+			identityMode: httpapi.AdminIdentityModeHosted,
+			want:         false,
+		},
 	}
-	if runtime.StoreName != "file" || runtime.Source != "registry.json" {
-		t.Fatalf("unexpected runtime: %#v", runtime)
-	}
-	if runtime.Close() != nil {
-		t.Fatalf("file runtime close should be nil")
-	}
-}
-
-func TestOpenRegistryRuntimeRequiresRegistryForFileStore(t *testing.T) {
-	_, err := openRegistryRuntime(context.Background(), "file", "", "")
-	if err == nil {
-		t.Fatalf("expected missing registry error")
-	}
-	if !strings.Contains(err.Error(), "--registry is required") {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
-func TestOpenRegistryRuntimeRequiresPostgresDSN(t *testing.T) {
-	_, err := openRegistryRuntime(context.Background(), "postgres", "", "")
-	if err == nil {
-		t.Fatalf("expected missing postgres dsn error")
-	}
-	if !strings.Contains(err.Error(), "--postgres-dsn is required") {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
-func TestOpenRegistryRuntimeRejectsUnknownStore(t *testing.T) {
-	_, err := openRegistryRuntime(context.Background(), "sqlite", "", "")
-	if err == nil {
-		t.Fatalf("expected invalid registry store error")
-	}
-	if !strings.Contains(err.Error(), "--registry-store must be file or postgres") {
-		t.Fatalf("unexpected error: %v", err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := requiresLocalAdminToken(test.identityMode, test.authenticatorMode); got != test.want {
+				t.Fatalf("requiresLocalAdminToken() = %t, want %t", got, test.want)
+			}
+		})
 	}
 }

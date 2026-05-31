@@ -138,6 +138,8 @@ By default, `/v1/admin/*` endpoints run in `local_private` identity mode and req
 
 The HTTP layer now resolves admin requests into `registry.AdminPrincipal` before running endpoint logic. Hosted mode is fail-closed unless an `AdminAuthenticator` is injected by the embedding service; caller-supplied identity headers such as `X-Actor-ID` are not trusted in hosted mode.
 
+Trusted gateway hosted mode can be enabled with `--admin-identity-mode hosted --admin-authenticator trusted_gateway --trusted-gateway-secret <secret>`. In that mode, the service validates `X-API2Agent-Gateway-Authorization: Bearer <secret>` before reading trusted `X-API2Agent-*` principal, project, role, and permission claims.
+
 Private admin import/replace endpoint:
 
 - It is Postgres mutation only and reuses `ReplacePersistentRegistry`.
@@ -158,3 +160,6 @@ Idempotency live dogfood report: `../../docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATI
 Idempotency closeout review: `../../docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_CLOSEOUT_PHASE_REVIEW.md`.
 Hosted admin identity design: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md`.
 Hosted admin identity implementation report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md`.
+Hosted admin identity closeout review: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`.
+Hosted admin authenticator integration design: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`.
+Hosted admin authenticator integration implementation report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`.

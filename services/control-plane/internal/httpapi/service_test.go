@@ -401,6 +401,221 @@ func TestHostedAdminAuditUsesResolvedPrincipal(t *testing.T) {
 	}
 }
 
+func TestTrustedGatewayValidateRecordsAuditAndIgnoresPublicIdentityHeaders(t *testing.T) {
+	audit := &recordingAuditSink{}
+	handler := newTestHandler(t, "")
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+	handler.AuditSink = audit
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/validate", nil, "public-token", trustedGatewayHeaders("gateway-secret", map[string]string{
+		"X-Actor-ID":             "public-actor",
+		"X-Project-ID":           "public-project",
+		trustedActorIDHeader:     "trusted-actor",
+		trustedPermissionsHeader: registry.PermissionRegistryValidate,
+	}))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if len(audit.adminEvents) != 1 {
+		t.Fatalf("expected one audit event, got %#v", audit.adminEvents)
+	}
+	event := audit.adminEvents[0]
+	if event.ActorID != "trusted-actor" {
+		t.Fatalf("expected trusted actor, got %#v", event)
+	}
+	if event.Metadata["principal_subject_id"] != "principal-1" || event.Metadata["project_id"] != "project-1" || event.Metadata["organization_id"] != "org-1" || event.Metadata["auth_method"] != registry.AdminAuthMethodTrustedGateway || event.Metadata["token_id"] != "token-1" || event.Metadata["local_private"] != "false" {
+		t.Fatalf("unexpected audit metadata: %#v", event.Metadata)
+	}
+	for key, value := range event.Metadata {
+		if strings.Contains(value, "gateway-secret") || strings.Contains(key, "gateway-secret") {
+			t.Fatalf("gateway secret leaked into audit metadata: %#v", event.Metadata)
+		}
+	}
+}
+
+func TestTrustedGatewayImportReplacePassesPrincipalScope(t *testing.T) {
+	replacer := &recordingImportReplacer{result: registry.ImportReplaceResult{
+		RegistryFingerprint: "sha256:new",
+		SnapshotVersion:     "snapshot_http_import_v1",
+		Counts:              registry.ImportReplaceCounts{Projects: 1, Providers: 1},
+	}}
+	handler := newPostgresImportHandlerWithReplacer(replacer)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/import-replace", importReplaceBody(t), "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		"X-Request-ID":           "req-gateway",
+		"Idempotency-Key":        "idem-gateway",
+		trustedActorIDHeader:     "trusted-actor",
+		trustedProjectIDHeader:   "project-2",
+		trustedPermissionsHeader: registry.PermissionRegistryImportReplace,
+	}))
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d: %s", response.Code, response.Body.String())
+	}
+	if replacer.options.ProjectID != "project-2" || replacer.options.ActorID != "trusted-actor" || replacer.options.RequestID != "req-gateway" || replacer.options.IdempotencyKey != "idem-gateway" {
+		t.Fatalf("unexpected import options: %#v", replacer.options)
+	}
+}
+
+func TestTrustedGatewayActorDefaultsToPrincipalID(t *testing.T) {
+	authenticator := TrustedGatewayAuthenticator{GatewaySecret: "gateway-secret"}
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/registry/validate", nil)
+	for key, value := range trustedGatewayHeaders("gateway-secret", map[string]string{
+		trustedActorIDHeader:     "",
+		trustedPermissionsHeader: registry.PermissionRegistryValidate,
+	}) {
+		req.Header.Set(key, value)
+	}
+	principal, err := authenticator.ResolveAdminPrincipal(req, registry.PermissionRegistryValidate)
+	if err != nil {
+		t.Fatalf("resolve principal: %v", err)
+	}
+	if principal.ActorID != "principal-1" || principal.SubjectID != "principal-1" || principal.ProjectID != "project-1" {
+		t.Fatalf("unexpected principal: %#v", principal)
+	}
+}
+
+func TestTrustedGatewayAuthenticationFailures(t *testing.T) {
+	tests := []struct {
+		name      string
+		secret    string
+		headers   map[string]string
+		status    int
+		errorType string
+	}{
+		{
+			name:      "missing server secret",
+			secret:    "",
+			headers:   trustedGatewayHeaders("gateway-secret", map[string]string{trustedPermissionsHeader: registry.PermissionRegistryImportReplace}),
+			status:    http.StatusServiceUnavailable,
+			errorType: "AUTH_SERVICE_UNAVAILABLE",
+		},
+		{
+			name:      "missing gateway authorization",
+			secret:    "gateway-secret",
+			headers:   trustedGatewayHeaders("", map[string]string{trustedGatewayAuthorizationHeader: "", trustedPermissionsHeader: registry.PermissionRegistryImportReplace}),
+			status:    http.StatusUnauthorized,
+			errorType: "AUTH_ERROR",
+		},
+		{
+			name:   "malformed gateway authorization",
+			secret: "gateway-secret",
+			headers: trustedGatewayHeaders("gateway-secret", map[string]string{
+				trustedGatewayAuthorizationHeader: "Token gateway-secret",
+				trustedPermissionsHeader:          registry.PermissionRegistryImportReplace,
+			}),
+			status:    http.StatusUnauthorized,
+			errorType: "AUTH_ERROR",
+		},
+		{
+			name:      "wrong gateway secret",
+			secret:    "gateway-secret",
+			headers:   trustedGatewayHeaders("wrong-secret", map[string]string{trustedPermissionsHeader: registry.PermissionRegistryImportReplace}),
+			status:    http.StatusUnauthorized,
+			errorType: "AUTH_ERROR",
+		},
+		{
+			name:      "missing principal",
+			secret:    "gateway-secret",
+			headers:   trustedGatewayHeaders("gateway-secret", map[string]string{trustedPrincipalIDHeader: "", trustedPermissionsHeader: registry.PermissionRegistryImportReplace}),
+			status:    http.StatusUnauthorized,
+			errorType: "AUTH_ERROR",
+		},
+		{
+			name:      "missing project",
+			secret:    "gateway-secret",
+			headers:   trustedGatewayHeaders("gateway-secret", map[string]string{trustedProjectIDHeader: "", trustedPermissionsHeader: registry.PermissionRegistryImportReplace}),
+			status:    http.StatusUnauthorized,
+			errorType: "AUTH_ERROR",
+		},
+		{
+			name:      "missing permissions",
+			secret:    "gateway-secret",
+			headers:   trustedGatewayHeaders("gateway-secret", map[string]string{trustedPermissionsHeader: ""}),
+			status:    http.StatusUnauthorized,
+			errorType: "AUTH_ERROR",
+		},
+		{
+			name:      "malformed permissions",
+			secret:    "gateway-secret",
+			headers:   trustedGatewayHeaders("gateway-secret", map[string]string{trustedPermissionsHeader: registry.PermissionRegistryImportReplace + ",," + registry.PermissionRegistryValidate}),
+			status:    http.StatusUnauthorized,
+			errorType: "AUTH_ERROR",
+		},
+		{
+			name:      "permission denied",
+			secret:    "gateway-secret",
+			headers:   trustedGatewayHeaders("gateway-secret", map[string]string{trustedPermissionsHeader: registry.PermissionRegistryValidate}),
+			status:    http.StatusForbidden,
+			errorType: "AUTHZ_DENIED",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			replacer := &recordingImportReplacer{result: registry.ImportReplaceResult{}}
+			handler := newPostgresImportHandlerWithReplacer(replacer)
+			handler.AdminIdentityMode = AdminIdentityModeHosted
+			handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+			handler.TrustedGatewaySecret = test.secret
+			response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/import-replace", importReplaceBody(t), "", test.headers)
+			if response.Code != test.status {
+				t.Fatalf("expected status %d, got %d: %s", test.status, response.Code, response.Body.String())
+			}
+			var errorResponse ErrorResponse
+			decodeResponse(t, response, &errorResponse)
+			if errorResponse.Error.ErrorType != test.errorType {
+				t.Fatalf("unexpected error response: %#v", errorResponse)
+			}
+			if replacer.calls != 0 {
+				t.Fatalf("mutation should not run after auth failure, got %d calls", replacer.calls)
+			}
+		})
+	}
+}
+
+func TestAdminAuthenticatorModeCombinationsFailClosed(t *testing.T) {
+	tests := []struct {
+		name              string
+		identityMode      string
+		authenticatorMode string
+	}{
+		{
+			name:              "trusted gateway requires hosted identity mode",
+			identityMode:      AdminIdentityModeLocalPrivate,
+			authenticatorMode: AdminAuthenticatorModeTrustedGateway,
+		},
+		{
+			name:              "local private authenticator requires local private mode",
+			identityMode:      AdminIdentityModeHosted,
+			authenticatorMode: AdminAuthenticatorModeLocalPrivate,
+		},
+		{
+			name:              "unsupported authenticator mode",
+			identityMode:      AdminIdentityModeHosted,
+			authenticatorMode: "bogus",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			handler := newTestHandler(t, "")
+			handler.AdminIdentityMode = test.identityMode
+			handler.AdminAuthenticatorMode = test.authenticatorMode
+			handler.TrustedGatewaySecret = "gateway-secret"
+			response := performRequest(handler, http.MethodPost, "/v1/admin/registry/validate", nil, "secret")
+			if response.Code != http.StatusServiceUnavailable {
+				t.Fatalf("expected status 503, got %d: %s", response.Code, response.Body.String())
+			}
+			var errorResponse ErrorResponse
+			decodeResponse(t, response, &errorResponse)
+			if errorResponse.Error.ErrorType != "AUTH_SERVICE_UNAVAILABLE" || !errorResponse.Error.Retryable {
+				t.Fatalf("unexpected error response: %#v", errorResponse)
+			}
+		})
+	}
+}
+
 func TestImportReplaceRegistryReturnsOKForNoop(t *testing.T) {
 	result := registry.ImportReplaceResult{
 		RegistryFingerprint:         "sha256:same",
@@ -886,6 +1101,26 @@ func importReplaceBodyWithSource(t *testing.T, source string) map[string]any {
 		body["source"] = source
 	}
 	return body
+}
+
+func trustedGatewayHeaders(secret string, overrides map[string]string) map[string]string {
+	headers := map[string]string{
+		trustedGatewayAuthorizationHeader: "Bearer " + secret,
+		trustedPrincipalIDHeader:          "principal-1",
+		trustedProjectIDHeader:            "project-1",
+		trustedOrganizationIDHeader:       "org-1",
+		trustedTokenIDHeader:              "token-1",
+		trustedRolesHeader:                "control_plane_admin",
+		trustedPermissionsHeader:          registry.PermissionRegistryValidate,
+	}
+	for key, value := range overrides {
+		if value == "" {
+			delete(headers, key)
+			continue
+		}
+		headers[key] = value
+	}
+	return headers
 }
 
 type failingStore struct {

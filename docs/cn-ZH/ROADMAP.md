@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Hosted Admin Identity Boundary Implementation Complete
+Hosted Admin Authenticator Integration Implementation Complete
 ```
 
 战略判断：
@@ -782,6 +782,9 @@ Go Control Plane Admin Mutation Idempotency Store Live Postgres Dogfood v0 - com
 Go Control Plane Admin Mutation Idempotency Store Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Identity Boundary Design v0 - complete
 Go Control Plane Hosted Admin Identity Boundary Implementation v0 - complete
+Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0 - complete
+Go Control Plane Hosted Admin Authenticator Integration Design v0 - complete
+Go Control Plane Hosted Admin Authenticator Integration Implementation v0 - complete
 ```
 
 ## 8.8 Phase 5.8：Tooling Re-entry Phase
@@ -933,7 +936,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
+Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -985,30 +988,32 @@ Go Control Plane Admin Mutation Idempotency Store Live Postgres Dogfood v0
 Go Control Plane Admin Mutation Idempotency Store Closeout + Phase Review v0
 Go Control Plane Hosted Admin Identity Boundary Design v0
 Go Control Plane Hosted Admin Identity Boundary Implementation v0
+Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
+Go Control Plane Hosted Admin Authenticator Integration Design v0
+Go Control Plane Hosted Admin Authenticator Integration Implementation v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
+Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
 ```
 
-这现在是 hosted admin identity boundary implementation 完成后的下一项工程任务。
+这现在是 hosted admin authenticator integration implementation 完成后的下一项工程任务。
 
 范围：
 
-1. Review 已实现的 local/private 和 hosted-mode identity behavior。
-2. 按 design 确认 audit 和 idempotency identity mapping。
-3. 在增加新 write endpoints 前记录 remaining hosted-auth gaps。
+1. 按 design review trusted-gateway authenticator behavior。
+2. 确认 local/private compatibility 和 fail-closed hosted mode behavior。
+3. 记录 remaining hosted-auth、gateway 和 permission-source risks。
 4. 不实现 public CRUD、automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
+- trusted gateway authenticator acceptance criteria 已 review。
 - local/private behavior 保持兼容并有测试覆盖。
-- hosted mode 不信任 `X-Actor-ID`。
-- endpoint permission checks 已作为已实现内容文档化。
-- audit 和 idempotency identity mapping 使用 resolved principal。
-- residual risks 和下一项 implementation gate 明确。
+- residual hosted deployment risks 已文档化。
+- 下一项 implementation gate 明确。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：
@@ -1019,6 +1024,9 @@ Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 
 已完成 propagation closeout 结果：
 

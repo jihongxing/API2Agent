@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Admin Identity Boundary Implementation Complete
+Hosted Admin Authenticator Integration Implementation Complete
 ```
 
 Strategic thesis:
@@ -782,6 +782,9 @@ Go Control Plane Admin Mutation Idempotency Store Live Postgres Dogfood v0 - com
 Go Control Plane Admin Mutation Idempotency Store Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Identity Boundary Design v0 - complete
 Go Control Plane Hosted Admin Identity Boundary Implementation v0 - complete
+Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0 - complete
+Go Control Plane Hosted Admin Authenticator Integration Design v0 - complete
+Go Control Plane Hosted Admin Authenticator Integration Implementation v0 - complete
 ```
 
 ## 8.8 Phase 5.8: Tooling Re-entry Phase
@@ -933,7 +936,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
+Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -985,30 +988,32 @@ Go Control Plane Admin Mutation Idempotency Store Live Postgres Dogfood v0
 Go Control Plane Admin Mutation Idempotency Store Closeout + Phase Review v0
 Go Control Plane Hosted Admin Identity Boundary Design v0
 Go Control Plane Hosted Admin Identity Boundary Implementation v0
+Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
+Go Control Plane Hosted Admin Authenticator Integration Design v0
+Go Control Plane Hosted Admin Authenticator Integration Implementation v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
+Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
 ```
 
-This is now the next engineering task after hosted admin identity boundary implementation is complete.
+This is now the next engineering task after hosted admin authenticator integration implementation is complete.
 
 Scope:
 
-1. Review the implemented local/private and hosted-mode identity behavior.
-2. Confirm audit and idempotency identity mapping against the design.
-3. Capture residual hosted-auth gaps before new write endpoints are added.
+1. Review trusted-gateway authenticator behavior against the design.
+2. Confirm local/private compatibility and fail-closed hosted mode behavior.
+3. Capture residual hosted-auth, gateway, and permission-source risks.
 4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
+- trusted gateway authenticator acceptance criteria are reviewed.
 - local/private behavior remains compatible and tested.
-- hosted mode does not trust `X-Actor-ID`.
-- endpoint permission checks are documented as implemented.
-- audit and idempotency identity mapping use the resolved principal.
-- residual risks and next implementation gate are explicit.
+- residual hosted deployment risks are documented.
+- next implementation gate is explicit.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1019,6 +1024,9 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 
 Completed propagation closeout result:
 
