@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Implementation Complete
+Agent Capability Compiler Diagnostics Score Calibration Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is diagnostics score calibration closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI summary noise reduction design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -966,11 +966,16 @@ Current Phase 6 progress:
   - real-spec calibration improved from 1 pass / 5 warn to 4 pass / 2 warn, while write-heavy and large-surface cases remain visible warnings.
   - the full Python suite passed with 212 tests.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_IMPLEMENTATION_REPORT.md`.
+- Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0 is complete:
+  - the calibrated score profile is accepted as complete.
+  - remaining risks are action-cap calibration on broader real specs, heuristic score semantics, summary noise, generic examples, and fixture-heavy corpus coverage.
+  - the next compiler hardening task is OpenAPI summary noise reduction design.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
 ```
 
 References:

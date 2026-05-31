@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Implementation Complete
+Agent Capability Compiler Diagnostics Score Calibration Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 diagnostics score calibration closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI summary noise reduction design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -966,11 +966,16 @@ Go Control Plane Minimum v0
   - real-spec calibration 从 1 pass / 5 warn 改善为 4 pass / 2 warn，同时 write-heavy 和 large-surface cases 仍保持 visible warnings。
   - full Python suite 已通过 212 tests。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_IMPLEMENTATION_REPORT.md`。
+- Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0 已完成：
+  - calibrated score profile 被接受为 complete。
+  - remaining risks 是更广 real specs 上的 action-cap calibration、heuristic score semantics、summary noise、generic examples 和 fixture-heavy corpus coverage。
+  - 下一项 compiler hardening task 是 OpenAPI summary noise reduction design。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
 ```
 
 参考：

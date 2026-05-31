@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Implementation Complete
+Agent Capability Compiler Diagnostics Score Calibration Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0.
 
 Scope:
 
@@ -1076,13 +1076,20 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`
+
+Completed Agent capability compiler diagnostics score calibration closeout result:
+
+- the calibrated score profile is accepted as complete.
+- remaining risks are action-cap calibration on broader real specs, heuristic score semantics, summary noise, generic examples, and fixture-heavy corpus coverage.
+- the next compiler hardening task is OpenAPI summary noise reduction design.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed Agent capability compiler diagnostics score calibration implementation result:
 
 - diagnostics scoring now uses an explicit impact profile, score breakdown, metadata cap, repeated action-finding cap, and readiness zero-penalty handling.
 - real-spec calibration improved from 1 pass / 5 warn to 4 pass / 2 warn, while write-heavy and large-surface cases remain visible warnings.
 - the full Python suite passed with 212 tests.
-- the next compiler hardening task is diagnostics score calibration closeout.
 - See `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_IMPLEMENTATION_REPORT.md`.
 
 Completed Agent capability compiler diagnostics score calibration design result:
