@@ -180,3 +180,16 @@ def test_diagnose_reports_schema_shaping_hints() -> None:
     assert "additional_properties_present" in finding_ids
     assert "nested_polymorphic_schema" in finding_ids
     assert "array_without_item_schema" in finding_ids
+
+
+def test_diagnose_reports_discriminator_hints() -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/discriminator.yaml"))
+    diagnostics = diagnose_capability(capability)
+    finding_ids = {finding["id"] for finding in diagnostics["findings"]}
+
+    assert "discriminator_present" in finding_ids
+    assert "discriminator_mapping_present" in finding_ids
+    assert "discriminator_missing_property" in finding_ids
+    assert "discriminator_without_polymorphism" in finding_ids
+    assert "discriminator_mapping_unresolved" in finding_ids
+    assert "discriminator_branch_without_tag" in finding_ids

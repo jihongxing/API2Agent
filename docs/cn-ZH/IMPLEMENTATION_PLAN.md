@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Design Complete
+Agent Capability Compiler OpenAPI Discriminator Handling Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI discriminator handling implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI discriminator handling closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0
+Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0
+Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -905,11 +905,16 @@ Go Control Plane Minimum v0
   - compatibility strategy、extraction rules、summary formatting、deterministic example rules、generated artifact effects、diagnostics、tests、dogfood 和 non-goals 已定义。
   - 下一项 OpenAPI hardening task 是 discriminator handling implementation。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md`。
+- Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0 已完成：
+  - discriminator-aware schema summaries、mapping-driven examples、schema hints、diagnostics 和 tool schema preservation 已实现。
+  - discriminator fixture 和 parser/generator/diagnostics/CLI regression tests 已增加。
+  - local discriminator dogfood 已通过，full Python suite 以 197 tests 通过。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0
+Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
 ```
 
 参考：
@@ -949,6 +954,7 @@ Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace 是后面的结果
 

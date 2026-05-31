@@ -192,6 +192,24 @@ def test_preserves_schema_shaping_source_metadata() -> None:
     assert response_schema["properties"]["status"]["type"] == ["string", "null"]
 
 
+def test_preserves_openapi_discriminator_metadata() -> None:
+    capability = parse_openapi_file(FIXTURES / "discriminator.yaml")
+    tools = {tool.name: tool for tool in capability.tools}
+
+    create_payment = tools["create_payment"]
+    assert create_payment.request_body is not None
+    schema = create_payment.request_body.schema_
+
+    assert schema["discriminator"]["propertyName"] == "method"
+    assert schema["discriminator"]["mapping"]["card"] == "#/components/schemas/CardPayment"
+    assert schema["oneOf"][0]["title"] == "CardPayment"
+    assert schema["oneOf"][1]["properties"]["method"]["enum"] == ["bank_transfer"]
+
+    broken = tools["create_broken_payment"]
+    assert broken.request_body is not None
+    assert "propertyName" not in broken.request_body.schema_["discriminator"]
+
+
 def test_preserves_openapi_security_requirement_combinations() -> None:
     capability = parse_openapi_file(FIXTURES / "security_combinations.yaml")
     tools = {tool.name: tool for tool in capability.tools}

@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Design Complete
+Agent Capability Compiler OpenAPI Discriminator Handling Implementation Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0
+Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0.
 
 Scope:
 
@@ -1063,6 +1063,14 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`
+
+Completed Agent capability compiler OpenAPI discriminator handling implementation result:
+
+- discriminator-aware schema summaries, mapping-driven examples, schema hints, diagnostics, and tool schema preservation are implemented.
+- discriminator fixture and parser/generator/diagnostics/CLI regression tests are added.
+- local discriminator dogfood passed, and the full Python suite passed with 197 tests.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`.
 
 Completed Agent capability compiler OpenAPI discriminator handling design result:
 

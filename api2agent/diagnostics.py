@@ -447,6 +447,87 @@ def _schema_complexity_findings(tool: Tool, schema: dict[str, Any], label: str) 
                 },
             )
         )
+    findings.extend(_discriminator_findings(tool, schema, label))
+    return findings
+
+
+def _discriminator_findings(tool: Tool, schema: dict[str, Any], label: str) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    discriminator_paths = schema_paths_with_hint(schema, "discriminators")
+    if not discriminator_paths:
+        return findings
+
+    findings.append(
+        _finding(
+            "discriminator_present",
+            "info",
+            "schema",
+            "Schema includes OpenAPI discriminator metadata.",
+            _tool_location(tool),
+            "Review discriminator-aware summaries and examples for polymorphic Agent inputs.",
+            {"schema": label, "paths": discriminator_paths[:10]},
+        )
+    )
+
+    mapping_paths = schema_paths_with_hint(schema, "discriminator_mappings")
+    if mapping_paths:
+        findings.append(
+            _finding(
+                "discriminator_mapping_present",
+                "info",
+                "schema",
+                "Schema discriminator includes explicit mapping values.",
+                _tool_location(tool),
+                "Use mapping keys to verify generated examples select the intended branch.",
+                {"schema": label, "paths": mapping_paths[:10]},
+            )
+        )
+
+    quality_specs = [
+        (
+            "discriminator_missing_property",
+            "discriminator_missing_property",
+            "warning",
+            "Schema discriminator is missing propertyName.",
+            "Add discriminator.propertyName so generated summaries can explain branch selection.",
+        ),
+        (
+            "discriminator_without_polymorphism",
+            "discriminator_without_polymorphism",
+            "warning",
+            "Schema has a discriminator without sibling oneOf/anyOf branches.",
+            "Place discriminator metadata next to the polymorphic oneOf/anyOf schema.",
+        ),
+        (
+            "discriminator_mapping_unresolved",
+            "discriminator_mapping_unresolved",
+            "warning",
+            "Schema discriminator mapping references targets that do not match known branch labels.",
+            "Check mapping targets and branch schema titles or refs in the source OpenAPI document.",
+        ),
+        (
+            "discriminator_branch_without_tag",
+            "discriminator_branch_without_tag",
+            "info",
+            "A discriminator branch does not declare an obvious tag value.",
+            "Add const, enum, default, or example on the discriminator property for clearer generated examples.",
+        ),
+    ]
+    for hint, finding_id, severity, message, recommendation in quality_specs:
+        paths = schema_paths_with_hint(schema, hint)
+        if not paths:
+            continue
+        findings.append(
+            _finding(
+                finding_id,
+                severity,
+                "schema",
+                message,
+                _tool_location(tool),
+                recommendation,
+                {"schema": label, "paths": paths[:10]},
+            )
+        )
     return findings
 
 

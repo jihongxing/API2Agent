@@ -1,0 +1,100 @@
+openapi: 3.1.0
+info:
+  title: Discriminator API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+components:
+  schemas:
+    CardPayment:
+      title: CardPayment
+      type: object
+      required:
+        - method
+        - card_number
+        - token
+      properties:
+        method:
+          type: string
+          enum:
+            - card
+        card_number:
+          type: string
+        token:
+          type: string
+          writeOnly: true
+        id:
+          type: string
+          readOnly: true
+    BankTransfer:
+      title: BankTransfer
+      type: object
+      required:
+        - method
+        - routing_number
+      properties:
+        method:
+          type: string
+          enum:
+            - bank_transfer
+        routing_number:
+          type: string
+    CashPayment:
+      title: CashPayment
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: number
+    PaymentRequest:
+      oneOf:
+        - $ref: "#/components/schemas/CardPayment"
+        - $ref: "#/components/schemas/BankTransfer"
+        - $ref: "#/components/schemas/CashPayment"
+      discriminator:
+        propertyName: method
+        mapping:
+          card: "#/components/schemas/CardPayment"
+          bank_transfer: "#/components/schemas/BankTransfer"
+          cash: "#/components/schemas/CashPayment"
+          ghost: "#/components/schemas/GhostPayment"
+    BrokenDiscriminator:
+      type: object
+      discriminator:
+        mapping:
+          ghost: "#/components/schemas/GhostPayment"
+      properties:
+        kind:
+          type: string
+paths:
+  /payments:
+    post:
+      operationId: createPayment
+      summary: Create payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentRequest"
+  /broken:
+    post:
+      operationId: createBrokenPayment
+      summary: Create broken payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrokenDiscriminator"
+      responses:
+        "200":
+          description: OK

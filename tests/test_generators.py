@@ -129,6 +129,23 @@ def test_schema_shaping_affects_readme_examples_and_openai_tools(tmp_path: Path)
     assert "password" in body_schema["properties"]
 
 
+def test_discriminator_shaping_affects_readme_examples_and_openai_tools(tmp_path: Path) -> None:
+    capability = parse_openapi_file(FIXTURES / "discriminator.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+    manual_write_test = (output_dir / "manual_write_test.py").read_text(encoding="utf-8")
+    tools_json = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert "oneOf[discriminator=method: card=>CardPayment | bank_transfer=>BankTransfer | cash=>CashPayment]" in readme
+    assert "'body': {'method': 'card', 'card_number': 'example', 'token': 'example'}" in manual_write_test
+
+    body_schema = tools_json[0]["function"]["parameters"]["properties"]["body"]
+    assert body_schema["discriminator"]["propertyName"] == "method"
+    assert "id" not in body_schema["oneOf"][0]["properties"]
+    assert body_schema["oneOf"][0]["properties"]["token"]["writeOnly"] is True
+
+
 def test_generate_package_refuses_non_empty_output_without_force(tmp_path: Path) -> None:
     capability = parse_openapi_file(FIXTURES / "basic.yaml")
     output_dir = tmp_path / "api2agent-output"

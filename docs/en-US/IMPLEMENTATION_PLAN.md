@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Design Complete
+Agent Capability Compiler OpenAPI Discriminator Handling Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI discriminator handling implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI discriminator handling closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0
+Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0
+Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -905,11 +905,16 @@ Current Phase 6 progress:
   - compatibility strategy, extraction rules, summary formatting, deterministic example rules, generated artifact effects, diagnostics, tests, dogfood, and non-goals are defined.
   - the next OpenAPI hardening task is discriminator handling implementation.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md`.
+- Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0 is complete:
+  - discriminator-aware schema summaries, mapping-driven examples, schema hints, diagnostics, and tool schema preservation are implemented.
+  - discriminator fixture and parser/generator/diagnostics/CLI regression tests are added.
+  - local discriminator dogfood passed, and the full Python suite passed with 197 tests.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Implementation v0
+Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
 ```
 
 References:
@@ -949,6 +954,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace Is Later
 

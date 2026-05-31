@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from api2agent.ir.models import Parameter, RequestBody
-from api2agent.schema_shaping import shape_schema
+from api2agent.schema_shaping import select_discriminator_branch, shape_schema
 
 
 def example_for_parameter(parameter: Parameter) -> Any:
@@ -42,6 +42,16 @@ def example_value(schema: dict, *, required_only: bool = False) -> Any:
     )
     if ok:
         return value
+
+    discriminator_selection = select_discriminator_branch(schema)
+    if discriminator_selection is not None:
+        branch, discriminator_value = discriminator_selection
+        example = example_value(branch, required_only=required_only)
+        if isinstance(example, dict):
+            property_name = (schema.get("discriminator") or {}).get("propertyName")
+            if isinstance(property_name, str) and property_name and discriminator_value is not None:
+                example[property_name] = discriminator_value
+        return example
 
     schema_type = _primary_type(schema)
     if schema_type == "object":

@@ -558,6 +558,17 @@ def test_inspect_command_prints_schema_shaping_hints(tmp_path) -> None:
     assert "body: object {name:string, nickname:string nullable?, password:string writeOnly" in result.output
 
 
+def test_inspect_command_prints_discriminator_hints(tmp_path) -> None:
+    package_dir = generate_package(parse_openapi_file(Path("tests/fixtures/openapi/discriminator.yaml")), tmp_path / "package")
+
+    result = runner.invoke(app, ["inspect", str(package_dir)])
+
+    assert result.exit_code == 0
+    assert "discriminators=" in result.output
+    assert "discriminator_mappings=" in result.output
+    assert "body: oneOf[discriminator=method: card=>CardPayment | bank_transfer=>BankTransfer | cash=>CashPayment] required" in result.output
+
+
 def test_ledger_command_prints_json_rows(tmp_path) -> None:
     db = tmp_path / "usage.sqlite"
     store = UsageStore(db)

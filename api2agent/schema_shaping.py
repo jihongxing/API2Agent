@@ -49,6 +49,103 @@ def schema_paths_with_hint(schema: dict[str, Any], hint: str) -> list[str]:
     return paths
 
 
+def discriminator_info(schema: dict[str, Any]) -> dict[str, Any] | None:
+    if not isinstance(schema, dict):
+        return None
+    raw_discriminator = schema.get("discriminator")
+    if not isinstance(raw_discriminator, dict):
+        return None
+
+    property_name = raw_discriminator.get("propertyName")
+    mapping = raw_discriminator.get("mapping")
+    return {
+        "property_name": str(property_name) if isinstance(property_name, str) and property_name.strip() else None,
+        "mapping": {str(key): str(value) for key, value in mapping.items()} if isinstance(mapping, dict) else {},
+        "has_polymorphism": _schema_has_polymorphism(schema),
+        "unresolved_mappings": unresolved_discriminator_mappings(schema),
+        "untagged_branches": discriminator_untagged_branches(schema),
+    }
+
+
+def select_discriminator_branch(schema: dict[str, Any]) -> tuple[dict[str, Any], str | None] | None:
+    info = discriminator_info(schema)
+    if info is None or not info["property_name"]:
+        return None
+
+    branches = _polymorphic_branches(schema)
+    if not branches:
+        return None
+
+    mapping = info["mapping"]
+    if mapping:
+        selected_value, target = next(iter(mapping.items()))
+        selected_label = _mapping_target_label(target)
+        for branch in branches:
+            if _branch_label(branch) == selected_label:
+                return branch, selected_value
+        return branches[0], selected_value
+
+    branch = branches[0]
+    return branch, _discriminator_value_for_branch(branch, info["property_name"])
+
+
+def unresolved_discriminator_mappings(schema: dict[str, Any]) -> list[str]:
+    raw_discriminator = schema.get("discriminator") if isinstance(schema, dict) else None
+    if not isinstance(raw_discriminator, dict):
+        return []
+    mapping = raw_discriminator.get("mapping")
+    if not isinstance(mapping, dict):
+        return []
+
+    branch_labels = {
+        label
+        for branch in _polymorphic_branches(schema)
+        for label in [_branch_label(branch)]
+        if label
+    }
+    if not branch_labels:
+        return []
+
+    unresolved: list[str] = []
+    for key, raw_target in mapping.items():
+        target = str(raw_target)
+        if target.startswith("#/") and _mapping_target_label(target) not in branch_labels:
+            unresolved.append(str(key))
+    return unresolved
+
+
+def discriminator_untagged_branches(schema: dict[str, Any]) -> list[int]:
+    info = discriminator_info_without_branch_checks(schema)
+    if info is None or not info["property_name"]:
+        return []
+
+    untagged: list[int] = []
+    for index, branch in enumerate(_polymorphic_branches(schema)):
+        properties = branch.get("properties") or {}
+        tag_schema = properties.get(info["property_name"])
+        if not isinstance(tag_schema, dict):
+            untagged.append(index)
+            continue
+        if not _discriminator_value_for_branch(branch, info["property_name"]):
+            untagged.append(index)
+    return untagged
+
+
+def discriminator_info_without_branch_checks(schema: dict[str, Any]) -> dict[str, Any] | None:
+    if not isinstance(schema, dict):
+        return None
+    raw_discriminator = schema.get("discriminator")
+    if not isinstance(raw_discriminator, dict):
+        return None
+    property_name = raw_discriminator.get("propertyName")
+    mapping = raw_discriminator.get("mapping")
+    return {
+        "property_name": str(property_name) if isinstance(property_name, str) and property_name.strip() else None,
+        "mapping": {str(key): str(value) for key, value in mapping.items()} if isinstance(mapping, dict) else {},
+        "has_polymorphism": _schema_has_polymorphism(schema),
+    }
+
+
 def is_nullable_schema(schema: dict[str, Any]) -> bool:
     schema_type = schema.get("type") if isinstance(schema, dict) else None
     return bool(
@@ -94,9 +191,9 @@ def _shape_value(value: Any, *, direction: SchemaDirection) -> Any:
 
 def _summarize_schema(schema: dict[str, Any], *, direction: SchemaDirection, depth: int) -> str:
     if "oneOf" in schema and isinstance(schema["oneOf"], list):
-        return _summarize_branches("oneOf", schema["oneOf"], direction=direction, depth=depth)
+        return _summarize_branches("oneOf", schema, schema["oneOf"], direction=direction, depth=depth)
     if "anyOf" in schema and isinstance(schema["anyOf"], list):
-        return _summarize_branches("anyOf", schema["anyOf"], direction=direction, depth=depth)
+        return _summarize_branches("anyOf", schema, schema["anyOf"], direction=direction, depth=depth)
 
     schema_type = _primary_type(schema)
     if schema_type == "object":
@@ -143,18 +240,48 @@ def _summarize_object(schema: dict[str, Any], *, direction: SchemaDirection, dep
 
 def _summarize_branches(
     label: str,
+    schema: dict[str, Any],
     branches: list[Any],
     *,
     direction: SchemaDirection,
     depth: int,
 ) -> str:
-    parts = [
-        summarize_schema(branch if isinstance(branch, dict) else {}, direction=direction, depth=depth + 1)
-        for branch in branches[:MAX_SCHEMA_BRANCHES]
-    ]
+    parts = _discriminator_branch_summaries(schema, branches, direction=direction, depth=depth)
+    if parts is None:
+        parts = [
+            summarize_schema(branch if isinstance(branch, dict) else {}, direction=direction, depth=depth + 1)
+            for branch in branches[:MAX_SCHEMA_BRANCHES]
+        ]
     if len(branches) > MAX_SCHEMA_BRANCHES:
         parts.append("...")
     return f"{label}[" + " | ".join(parts) + "]"
+
+
+def _discriminator_branch_summaries(
+    schema: dict[str, Any],
+    branches: list[Any],
+    *,
+    direction: SchemaDirection,
+    depth: int,
+) -> list[str] | None:
+    info = discriminator_info_without_branch_checks(schema)
+    if info is None or not info["property_name"]:
+        return None
+
+    prefix = f"discriminator={info['property_name']}: "
+    mapping = info["mapping"]
+    if mapping:
+        parts = [
+            f"{key}=>{_mapping_target_label(target)}"
+            for key, target in list(mapping.items())[:MAX_SCHEMA_BRANCHES]
+        ]
+        return [prefix + parts[0], *parts[1:]] if parts else [prefix.rstrip()]
+
+    branch_parts = [
+        summarize_schema(branch if isinstance(branch, dict) else {}, direction=direction, depth=depth + 1)
+        for branch in branches[:MAX_SCHEMA_BRANCHES]
+    ]
+    return [prefix + branch_parts[0], *branch_parts[1:]] if branch_parts else [prefix.rstrip()]
 
 
 def _schema_markers(schema: dict[str, Any], *, direction: SchemaDirection) -> list[str]:
@@ -197,6 +324,11 @@ def _collect_schema_hints(schema: dict[str, Any], counter: Counter[str], *, dept
         counter["write_only"] += 1
     if "additionalProperties" in schema:
         counter["maps"] += 1
+    info = discriminator_info_without_branch_checks(schema)
+    if info is not None:
+        counter["discriminators"] += 1
+        if info["mapping"]:
+            counter["discriminator_mappings"] += 1
     if any(key in schema for key in ("oneOf", "anyOf")):
         counter["polymorphic"] += 1
         if depth > 0:
@@ -246,6 +378,21 @@ def _schema_has_hint(schema: dict[str, Any], hint: str, *, depth: int) -> bool:
         return schema.get("writeOnly") is True
     if hint == "maps":
         return "additionalProperties" in schema
+    if hint == "discriminators":
+        return discriminator_info_without_branch_checks(schema) is not None
+    if hint == "discriminator_mappings":
+        info = discriminator_info_without_branch_checks(schema)
+        return bool(info and info["mapping"])
+    if hint == "discriminator_missing_property":
+        info = discriminator_info_without_branch_checks(schema)
+        return bool(info and not info["property_name"])
+    if hint == "discriminator_without_polymorphism":
+        info = discriminator_info_without_branch_checks(schema)
+        return bool(info and not info["has_polymorphism"])
+    if hint == "discriminator_mapping_unresolved":
+        return bool(unresolved_discriminator_mappings(schema))
+    if hint == "discriminator_branch_without_tag":
+        return bool(discriminator_untagged_branches(schema))
     if hint == "nested_polymorphic":
         return depth > 0 and any(key in schema for key in ("oneOf", "anyOf"))
     if hint == "arrays_without_items":
@@ -276,3 +423,42 @@ def _schema_children(schema: dict[str, Any]) -> list[dict[str, Any]]:
         children.append(additional)
 
     return children
+
+
+def _schema_has_polymorphism(schema: dict[str, Any]) -> bool:
+    return isinstance(schema.get("oneOf"), list) or isinstance(schema.get("anyOf"), list)
+
+
+def _polymorphic_branches(schema: dict[str, Any]) -> list[dict[str, Any]]:
+    for key in ("oneOf", "anyOf"):
+        branches = schema.get(key)
+        if isinstance(branches, list):
+            return [branch for branch in branches if isinstance(branch, dict)]
+    return []
+
+
+def _branch_label(branch: dict[str, Any]) -> str | None:
+    for key in ("title", "x-schema-name", "name"):
+        value = branch.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def _mapping_target_label(target: str) -> str:
+    tail = str(target).rstrip("/").split("/")[-1] if target else ""
+    return tail or str(target)
+
+
+def _discriminator_value_for_branch(branch: dict[str, Any], property_name: str) -> str | None:
+    properties = branch.get("properties") or {}
+    tag_schema = properties.get(property_name)
+    if not isinstance(tag_schema, dict):
+        return None
+    for key in ("const", "default", "example"):
+        if tag_schema.get(key) is not None:
+            return str(tag_schema[key])
+    enum_values = tag_schema.get("enum")
+    if isinstance(enum_values, list) and enum_values:
+        return str(enum_values[0])
+    return None
