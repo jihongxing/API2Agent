@@ -30,9 +30,13 @@ def test_generate_package(tmp_path: Path) -> None:
 
     capability_json = json.loads((output_dir / "capability.json").read_text())
     tools_json = json.loads((output_dir / "tools.json").read_text())
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+    smoke_test = (output_dir / "smoke_test.py").read_text(encoding="utf-8")
 
     assert capability_json["name"] == "basic_api"
     assert tools_json[0]["function"]["name"] == "get_user"
+    assert "'user_id': 'user_123'" in readme
+    assert "'user_id': 'user_123'" in smoke_test
 
 
 def test_generate_package_includes_guarded_manual_write_test(tmp_path: Path) -> None:
@@ -65,7 +69,7 @@ def test_generated_readme_includes_parameter_and_body_details(tmp_path: Path) ->
     assert "query: verbose string default=true" in readme
     assert "header: X-Trace-Id string default=trace-123" in readme
     assert "body: object {name:string?, active:boolean?} required" in readme
-    assert "'body': {'name': 'example', 'active': True}" in readme
+    assert "'body': {'name': 'Demo', 'active': True}" in readme
     assert "api2agent test . --tool" in readme
 
 
@@ -125,7 +129,7 @@ def test_schema_shaping_affects_readme_examples_and_openai_tools(tmp_path: Path)
     assert "labels:object map[string]?" in readme
     assert "loose:array[unknown]?" in readme
     assert "id:string" not in readme.split("body: ", 1)[1].split("\n", 1)[0]
-    assert "'body': {'name': 'example', 'password': 'example'}" in manual_write_test
+    assert "'body': {'name': 'Demo', 'password': 'REPLACE_ME'}" in manual_write_test
 
     body_schema = tools_json[0]["function"]["parameters"]["properties"]["body"]
     assert "id" not in body_schema["properties"]
@@ -142,7 +146,7 @@ def test_discriminator_shaping_affects_readme_examples_and_openai_tools(tmp_path
     tools_json = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
 
     assert "oneOf[discriminator=method: card=>CardPayment | bank_transfer=>BankTransfer | cash=>CashPayment]" in readme
-    assert "'body': {'method': 'card', 'card_number': 'example', 'token': 'example'}" in manual_write_test
+    assert "'body': {'method': 'card', 'card_number': 'example', 'token': 'REPLACE_ME'}" in manual_write_test
 
     body_schema = tools_json[0]["function"]["parameters"]["properties"]["body"]
     assert body_schema["discriminator"]["propertyName"] == "method"

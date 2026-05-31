@@ -103,6 +103,9 @@ def test_run_calibration_writes_contract_and_skips_optional_case(tmp_path: Path)
     assert report["cases"][0]["max_inspect_line_chars"] >= 1
     assert report["cases"][0]["readme_tool_section_lines"] >= 1
     assert "repeated_finding_groups" in report["cases"][0]
+    assert report["cases"][0]["first_call_params"]["params"]["user_id"] == "user_123"
+    assert report["cases"][0]["generic_example_count"] == 0
+    assert report["cases"][0]["generic_first_call_params"] == []
     assert report["cases"][1]["status"] == "skipped"
 
 

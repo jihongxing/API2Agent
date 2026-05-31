@@ -309,11 +309,12 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI Summary Noise Reduction implemented with compact inspect aggregate rendering, representative response previews, line clipping, grouped diagnostics text, README package overview/key caveats, calibration summary-density metrics, regression coverage, and dogfood.
 - Agent Capability Compiler OpenAPI Summary Noise Reduction closeout completed; v0 summary budgets can close and the next evidence-driven compiler target is generic example reduction design.
 - Agent Capability Compiler OpenAPI Generic Example Reduction design completed with deterministic name-aware fallback rules, priority preservation for source/schema hints, object field context threading, calibration generic example metrics, tests, dogfood, and non-goals.
+- Agent Capability Compiler OpenAPI Generic Example Reduction implemented with name-aware parameter/property examples, secret-safe placeholders, numeric/name fallbacks, calibration generic example metrics, regression coverage, and dogfood reducing default calibration generic first-call params to zero.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
-- Full test suite: `213 passed`.
+- Full test suite: `217 passed`.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Generic Example Reduction Implementation v0.
+- Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0.

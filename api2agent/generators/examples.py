@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from api2agent.ir.models import Parameter, RequestBody
@@ -18,7 +19,7 @@ def example_for_parameter(parameter: Parameter) -> Any:
     )
     if ok:
         return value
-    return example_value(parameter.schema_)
+    return example_value(parameter.schema_, name=parameter.name)
 
 
 def example_for_request_body(request_body: RequestBody) -> Any:
@@ -34,7 +35,7 @@ def example_for_request_body(request_body: RequestBody) -> Any:
     return example_value(shape_schema(request_body.schema_, direction="request"), required_only=True)
 
 
-def example_value(schema: dict, *, required_only: bool = False) -> Any:
+def example_value(schema: dict, *, required_only: bool = False, name: str | None = None) -> Any:
     value, ok = _first_present(
         schema.get("default"),
         schema.get("example"),
@@ -48,7 +49,7 @@ def example_value(schema: dict, *, required_only: bool = False) -> Any:
     discriminator_selection = select_discriminator_branch(schema)
     if discriminator_selection is not None:
         branch, discriminator_value = discriminator_selection
-        example = example_value(branch, required_only=required_only)
+        example = example_value(branch, required_only=required_only, name=name)
         if isinstance(example, dict):
             property_name = (schema.get("discriminator") or {}).get("propertyName")
             if isinstance(property_name, str) and property_name and discriminator_value is not None:
@@ -60,10 +61,10 @@ def example_value(schema: dict, *, required_only: bool = False) -> Any:
         properties = schema.get("properties") or {}
         required = set(schema.get("required") or [])
         selected = {
-            name: value
-            for name, raw_schema in properties.items()
-            if not required_only or not required or name in required
-            for value in [example_value(raw_schema if isinstance(raw_schema, dict) else {})]
+            property_name: value
+            for property_name, raw_schema in properties.items()
+            if not required_only or not required or property_name in required
+            for value in [example_value(raw_schema if isinstance(raw_schema, dict) else {}, name=str(property_name))]
         }
         return selected or {}
     if schema_type == "array":
@@ -71,14 +72,14 @@ def example_value(schema: dict, *, required_only: bool = False) -> Any:
         if not isinstance(items, dict):
             return []
         count = _array_example_count(schema)
-        return [example_value(items) for _ in range(count)]
+        return [example_value(items, name=name) for _ in range(count)]
     if schema_type == "integer":
-        return _numeric_example(schema, integer=True)
+        return _numeric_example(schema, integer=True, name=name)
     if schema_type == "number":
-        return _numeric_example(schema, integer=False)
+        return _numeric_example(schema, integer=False, name=name)
     if schema_type == "boolean":
-        return True
-    return _string_example(schema)
+        return _boolean_example(name)
+    return _string_example(schema, name=name)
 
 
 def _primary_type(schema: dict) -> str | None:
@@ -102,7 +103,7 @@ def _first_item(value: Any) -> Any | None:
     return None
 
 
-def _string_example(schema: dict) -> str:
+def _string_example(schema: dict, *, name: str | None = None) -> str:
     format_examples = {
         "email": "user@example.com",
         "uri": "https://example.com",
@@ -112,7 +113,9 @@ def _string_example(schema: dict) -> str:
         "date-time": "2026-01-01T00:00:00Z",
         "hostname": "example.com",
     }
-    value = format_examples.get(str(schema.get("format") or "").lower(), "example")
+    value = format_examples.get(str(schema.get("format") or "").lower())
+    if value is None:
+        value = _semantic_string_example(name) or "example"
 
     min_length = _non_negative_int(schema.get("minLength"))
     max_length = _non_negative_int(schema.get("maxLength"))
@@ -123,8 +126,8 @@ def _string_example(schema: dict) -> str:
     return value
 
 
-def _numeric_example(schema: dict, *, integer: bool) -> int | float:
-    candidate: int | float = 1
+def _numeric_example(schema: dict, *, integer: bool, name: str | None = None) -> int | float:
+    candidate: int | float = _semantic_numeric_example(name)
     minimum = _number(schema.get("minimum"))
     maximum = _number(schema.get("maximum"))
     exclusive_minimum = _number(schema.get("exclusiveMinimum"))
@@ -145,6 +148,70 @@ def _numeric_example(schema: dict, *, integer: bool) -> int | float:
     if integer:
         return int(candidate)
     return float(candidate) if isinstance(candidate, float) else candidate
+
+
+def _boolean_example(name: str | None = None) -> bool:
+    normalized = _normalized_name(name)
+    if normalized in {"disabled", "archived", "deleted"}:
+        return False
+    return True
+
+
+def _semantic_numeric_example(name: str | None) -> int:
+    normalized = _normalized_name(name)
+    if normalized in {"offset"}:
+        return 0
+    if normalized in {"limit", "page_size", "per_page"}:
+        return 10
+    return 1
+
+
+def _semantic_string_example(name: str | None) -> str | None:
+    normalized = _normalized_name(name)
+    if not normalized:
+        return None
+    if normalized in {"api_key", "apikey", "token", "access_token", "refresh_token", "secret", "password"}:
+        return "REPLACE_ME"
+    if normalized in {"email"} or normalized.endswith("_email"):
+        return "user@example.com"
+    if normalized in {"url", "uri", "website"} or normalized.endswith(("_url", "_uri", "_website")):
+        return "https://example.com"
+    if normalized in {"phone", "phone_number"}:
+        return "+15555550100"
+    if normalized in {"country", "country_code"}:
+        return "US"
+    if normalized == "region":
+        return "us-east-1"
+    if normalized == "locale":
+        return "en-US"
+    if normalized == "currency":
+        return "USD"
+    if normalized == "status":
+        return "active"
+    if normalized in {"type", "kind"}:
+        return "standard"
+    if normalized in {"cursor", "page_token", "next_token"}:
+        return "cursor_123"
+    if normalized in {"trace_id", "request_id", "correlation_id"}:
+        return normalized.removesuffix("_id") + "_123"
+    if normalized in {"slug"} or normalized.endswith("_slug"):
+        return "example-slug"
+    if normalized in {"name"} or normalized.endswith("_name"):
+        return "Demo"
+    if normalized == "title":
+        return "Demo title"
+    if normalized == "id":
+        return "id_123"
+    if normalized.endswith("_id"):
+        return normalized[:-3] + "_123"
+    return None
+
+
+def _normalized_name(name: str | None) -> str:
+    if not name:
+        return ""
+    normalized = re.sub(r"[^0-9a-zA-Z]+", "_", str(name).strip().lower()).strip("_")
+    return re.sub(r"_+", "_", normalized)
 
 
 def _array_example_count(schema: dict) -> int:

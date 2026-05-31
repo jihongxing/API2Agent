@@ -235,6 +235,7 @@ def case_metrics(
     response_counts = merge_response_category_counts(tools)
     finding_counts = _finding_counts(diagnostics.get("findings") or [])
     inspect_lines = [*inspect_excerpt, *sample_tool_details]
+    generic_first_call_params = _generic_examples(first_call_params.get("params") or {})
     return {
         "case_id": case.case_id,
         "purpose": case.purpose,
@@ -268,6 +269,8 @@ def case_metrics(
         "inspect_excerpt": inspect_excerpt[:5],
         "sample_tool_details": sample_tool_details[:5],
         "first_call_params": first_call_params,
+        "generic_example_count": len(generic_first_call_params),
+        "generic_first_call_params": generic_first_call_params,
     }
 
 
@@ -328,6 +331,7 @@ def build_recommendations(cases: list[dict[str, Any]]) -> list[str]:
     low_score_cases = [case["case_id"] for case in cases if isinstance(case.get("diagnostics_score"), int | float) and case["diagnostics_score"] < 60]
     long_line_cases = [case["case_id"] for case in cases if case.get("max_inspect_line_chars", 0) > 180]
     repeated_finding_cases = [case["case_id"] for case in cases if case.get("repeated_finding_groups", 0) > 3]
+    generic_example_cases = [case["case_id"] for case in cases if case.get("generic_example_count", 0) > 0]
     if large_cases:
         recommendations.append("Review filter guidance and inspect truncation for large packages: " + ", ".join(large_cases))
     if low_score_cases:
@@ -336,6 +340,8 @@ def build_recommendations(cases: list[dict[str, Any]]) -> list[str]:
         recommendations.append("Review summary line density for long inspect lines: " + ", ".join(long_line_cases))
     if repeated_finding_cases:
         recommendations.append("Review repeated diagnostics grouping for noisy packages: " + ", ".join(repeated_finding_cases))
+    if generic_example_cases:
+        recommendations.append("Review generic first-call params: " + ", ".join(generic_example_cases))
     if fail_cases:
         recommendations.append("Fix failed calibration cases before expanding the corpus: " + ", ".join(fail_cases))
     if warn_cases and not recommendations:
@@ -513,6 +519,8 @@ def _skipped_case(case: CalibrationCase, reason: str) -> dict[str, Any]:
         "inspect_excerpt": [],
         "sample_tool_details": [],
         "first_call_params": {},
+        "generic_example_count": 0,
+        "generic_first_call_params": [],
     }
     status, reasons = classify_case_status(metrics)
     metrics["status"] = status
@@ -533,6 +541,30 @@ def _failed_case(case: CalibrationCase, reason: str) -> dict[str, Any]:
 
 def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _generic_examples(value: Any, *, path: str = "") -> list[dict[str, Any]]:
+    matches: list[dict[str, Any]] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_path = f"{path}.{key}" if path else str(key)
+            matches.extend(_generic_examples(child, path=child_path))
+        return matches
+    if isinstance(value, list):
+        for index, child in enumerate(value):
+            matches.extend(_generic_examples(child, path=f"{path}[{index}]"))
+        return matches
+    if isinstance(value, str) and _is_generic_example(value):
+        matches.append({"path": path or "$", "value": value})
+    return matches
+
+
+def _is_generic_example(value: str) -> bool:
+    if value == "example":
+        return True
+    if value.startswith("example") and set(value[len("example"):]) <= {"x"}:
+        return True
+    return False
 
 
 def _file_size(path: Path) -> int:
