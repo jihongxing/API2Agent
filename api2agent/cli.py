@@ -1084,7 +1084,23 @@ def _format_auth(auth: dict) -> str:
     if auth_type == "none":
         return "none"
 
+    credentials = auth.get("credentials") or []
+    if len(credentials) > 1:
+        return "combined " + " + ".join(_format_auth_credential(credential) for credential in credentials)
+    return _format_auth_credential(auth)
+
+
+def _format_auth_credential(auth: dict) -> str:
+    auth_type = auth.get("type") or "none"
+    if auth_type == "none":
+        return "none"
     env = auth.get("env") or "(missing env name)"
+    if auth_type == "bearer":
+        return f"bearer via Authorization, env={env}"
+    location = auth.get("location")
+    name = auth.get("name") or auth.get("header") or "(default name)"
+    if location:
+        return f"{auth_type} via {location}:{name}, env={env}"
     header = auth.get("header") or "(default header)"
     return f"{auth_type} via {header}, env={env}"
 

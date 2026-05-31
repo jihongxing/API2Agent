@@ -126,12 +126,18 @@ def _auth_from_headers(headers: list[str], capability_name: str) -> AuthConfig:
                 type="bearer",
                 env=env_name(f"{capability_name}_token"),
                 header="Authorization",
+                location="authorization",
+                name="Authorization",
+                source="curl",
             )
         if name.lower() == "x-api-key":
             return AuthConfig(
                 type="api_key",
                 env=env_name(f"{capability_name}_api_key"),
                 header="X-API-Key",
+                location="header",
+                name="X-API-Key",
+                source="curl",
             )
     return AuthConfig(type="none")
 

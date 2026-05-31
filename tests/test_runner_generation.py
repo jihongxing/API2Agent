@@ -477,6 +477,113 @@ def test_proxy_credential_intent_respects_endpoint_level_auth(tmp_path, monkeypa
         sys.modules.pop("runner", None)
 
 
+def test_execute_tool_supports_query_cookie_and_combined_openapi_auth(tmp_path, monkeypatch) -> None:
+    capability = parse_openapi_file(FIXTURES / "security_combinations.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = []
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+
+            def json(self):
+                return {"ok": True}
+
+        def fake_request(method, url, **kwargs):
+            captured.append({"method": method, "url": url, "kwargs": kwargs})
+            return FakeResponse()
+
+        monkeypatch.setattr(runner.httpx, "request", fake_request)
+        monkeypatch.setattr(
+            runner.os,
+            "getenv",
+            lambda key: "secret-token" if key == "SECURITY_COMBINATIONS_API_API_KEY" else None,
+        )
+
+        query_result = runner.execute_tool("get_query_auth", {})
+        cookie_result = runner.execute_tool("get_cookie_auth", {})
+        combined_result = runner.execute_tool("get_combined_auth", {})
+
+        assert query_result["ok"] is True
+        assert captured[0]["kwargs"]["params"] == {"api_key": "secret-token"}
+        assert captured[0]["kwargs"]["headers"] == {}
+
+        assert cookie_result["ok"] is True
+        assert captured[1]["kwargs"]["params"] == {}
+        assert captured[1]["kwargs"]["headers"] == {"Cookie": "session=secret-token"}
+
+        assert combined_result["ok"] is True
+        assert captured[2]["kwargs"]["params"] == {"api_key": "secret-token"}
+        assert captured[2]["kwargs"]["headers"] == {"X-API-Key": "secret-token"}
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_execute_tool_reports_all_missing_combined_auth_envs(tmp_path, monkeypatch) -> None:
+    capability = parse_openapi_file(FIXTURES / "security_combinations.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        monkeypatch.setattr(runner.os, "getenv", lambda key: None)
+
+        result = runner.execute_tool("get_combined_auth", {})
+
+        assert result["ok"] is False
+        assert result["error"]["type"] == "missing_auth"
+        assert result["error"]["envs"] == [
+            "SECURITY_COMBINATIONS_API_API_KEY",
+            "SECURITY_COMBINATIONS_API_API_KEY",
+        ]
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_proxy_payload_includes_combined_credential_intents(tmp_path, monkeypatch) -> None:
+    capability = parse_openapi_file(FIXTURES / "security_combinations.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+            text = ""
+
+            def json(self):
+                return {"ok": True, "proxied": True}
+
+        def fake_post(url, **kwargs):
+            captured["payload"] = kwargs["json"]
+            return FakeResponse()
+
+        env = {
+            "API2AGENT_PROXY_URL": "http://127.0.0.1:8765",
+            "API2AGENT_PROJECT_ID": "local",
+            "API2AGENT_PROVIDER_ID": "security-provider",
+        }
+        monkeypatch.setattr(runner.os, "getenv", lambda key: env.get(key))
+        monkeypatch.setattr(runner.httpx, "post", fake_post)
+
+        result = runner.execute_tool("get_combined_auth", {})
+
+        assert result["proxied"] is True
+        credentials = captured["payload"]["credentials"]
+        assert [credential["injection_mode"] for credential in credentials] == ["header", "query"]
+        assert [credential["injection_name"] for credential in credentials] == ["X-API-Key", "api_key"]
+        assert captured["payload"]["credential"] == credentials[0]
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
 def test_proxy_payload_provider_region_env_overrides_capability_metadata(tmp_path, monkeypatch) -> None:
     capability = parse_curl("curl https://api.example.com/items", name="example_items").model_copy(
         update={"provider_region": "us-east", "provider_regions": ["us-east"]}

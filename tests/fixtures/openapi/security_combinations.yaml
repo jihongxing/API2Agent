@@ -1,0 +1,76 @@
+openapi: 3.0.3
+info:
+  title: Security Combinations API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    headerKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    queryKey:
+      type: apiKey
+      in: query
+      name: api_key
+    cookieKey:
+      type: apiKey
+      in: cookie
+      name: session
+    oauthAuth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://api.example.com/oauth/token
+          scopes:
+            read: Read access
+            write: Write access
+security:
+  - bearerAuth: []
+  - headerKey: []
+paths:
+  /public:
+    get:
+      operationId: getPublic
+      security: []
+      responses:
+        "200":
+          description: OK
+  /query:
+    get:
+      operationId: getQueryAuth
+      security:
+        - queryKey: []
+      responses:
+        "200":
+          description: OK
+  /cookie:
+    get:
+      operationId: getCookieAuth
+      security:
+        - cookieKey: []
+      responses:
+        "200":
+          description: OK
+  /combined:
+    get:
+      operationId: getCombinedAuth
+      security:
+        - headerKey: []
+          queryKey: []
+      responses:
+        "200":
+          description: OK
+  /oauth:
+    get:
+      operationId: getOAuthMetadata
+      security:
+        - oauthAuth:
+            - read
+      responses:
+        "200":
+          description: OK

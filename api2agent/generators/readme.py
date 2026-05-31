@@ -159,8 +159,9 @@ def _format_tool(tool) -> str:
 def _auth_note(capability: Capability) -> str:
     env_names = []
     for auth in [capability.auth] + [tool.auth for tool in capability.tools if tool.auth is not None]:
-        if auth.type in {"api_key", "bearer"} and auth.env and auth.env not in env_names:
-            env_names.append(auth.env)
+        for env in _auth_env_names(auth):
+            if env not in env_names:
+                env_names.append(env)
 
     if not env_names:
         return "No auth detected."
@@ -170,7 +171,36 @@ def _auth_note(capability: Capability) -> str:
 def _format_auth(auth) -> str:
     if auth is None:
         return "auth: inherit"
-    return f"auth: {auth.type}"
+    credentials = auth.credentials or []
+    if len(credentials) > 1:
+        return "auth: combined " + " + ".join(_format_auth_credential(credential) for credential in credentials)
+    return "auth: " + _format_auth_credential(auth.model_dump(mode="json", by_alias=True))
+
+
+def _format_auth_credential(auth: dict) -> str:
+    auth_type = auth.get("type") or "none"
+    if auth_type == "none":
+        return "none"
+    location = auth.get("location")
+    name = auth.get("name") or auth.get("header")
+    env = auth.get("env")
+    if location and name and env:
+        return f"{auth_type} via {location}:{name} env={env}"
+    if env:
+        return f"{auth_type} env={env}"
+    return auth_type
+
+
+def _auth_env_names(auth) -> list[str]:
+    credentials = auth.credentials or []
+    if not credentials:
+        credentials = [auth.model_dump(mode="json", by_alias=True)]
+
+    envs: list[str] = []
+    for credential in credentials:
+        if credential.get("type") in {"api_key", "bearer"} and credential.get("env"):
+            envs.append(str(credential["env"]))
+    return envs
 
 
 def _tool_base_url_suffix(tool_name: str) -> str:

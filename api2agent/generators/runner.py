@@ -33,11 +33,11 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
     url = url_result
     proxy_url = os.getenv("API2AGENT_PROXY_URL")
     use_proxy = bool(proxy_url and proxy_url.startswith(("http://", "https://")))
-    auth_result = {{}} if use_proxy else _auth_headers(tool)
+    auth_result = {{"headers": {{}}, "params": {{}}}} if use_proxy else _auth_request_patch(tool)
     if "error" in auth_result:
         return {{"ok": False, "error": auth_result["error"]}}
 
-    headers = auth_result
+    headers = auth_result.get("headers") or {{}}
     query = {{
         p["name"]: value
         for p in tool.get("parameters", [])
@@ -45,6 +45,7 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
         for value in [_parameter_value(p, params)]
         if value is not None
     }}
+    query.update(auth_result.get("params") or {{}})
     for parameter in tool.get("parameters", []):
         if parameter.get("location") == "header":
             value = _parameter_value(parameter, params)
@@ -55,7 +56,7 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
     if tool.get("request_body") and "body" in params:
         request_kwargs["json"] = params["body"]
     if use_proxy:
-        return _proxy_call(tool, url, request_kwargs, proxy_url, _proxy_credential_intent(tool))
+        return _proxy_call(tool, url, request_kwargs, proxy_url, _proxy_credential_intents(tool))
 
     _apply_credential_injection(request_kwargs)
 
@@ -87,7 +88,7 @@ def _proxy_call(
     url: str,
     request_kwargs: dict,
     proxy_url: str,
-    credential: dict | None = None,
+    credentials: list[dict] | None = None,
 ) -> dict:
     proxy_headers = {{}}
     proxy_key = os.getenv("API2AGENT_PROXY_KEY")
@@ -114,10 +115,15 @@ def _proxy_call(
             "timeout": request_kwargs.get("timeout") or 20,
         }},
     }}
-    if credential:
-        credential.setdefault("owner_id", project_id)
-        credential.setdefault("provider_id", provider_id)
+    credentials = credentials or []
+    if credentials:
+        credentials = [dict(credential) for credential in credentials]
+        for credential in credentials:
+            credential.setdefault("owner_id", project_id)
+            credential.setdefault("provider_id", provider_id)
+        credential = credentials[0]
         payload["credential"] = credential
+        payload["credentials"] = credentials
 
     try:
         response = httpx.post(
@@ -157,29 +163,30 @@ def _provider_region() -> str | None:
     return os.getenv("API2AGENT_PROVIDER_REGION") or CAPABILITY.get("provider_region")
 
 
-def _proxy_credential_intent(tool: dict) -> dict | None:
+def _proxy_credential_intents(tool: dict) -> list[dict]:
     auth = _tool_auth(tool)
-    auth_type = auth.get("type")
-    if auth_type not in {{"api_key", "bearer"}}:
-        return None
-
-    env_name = auth.get("env")
-    if not env_name:
-        return None
-
     provider_id = os.getenv("API2AGENT_PROVIDER_ID") or CAPABILITY.get("name", "unknown")
-    injection_name = auth.get("header") or ("Authorization" if auth_type == "bearer" else "X-API-Key")
-    return {{
-        "credential_id": os.getenv("API2AGENT_CREDENTIAL_ID") or f"{{provider_id}}_{{env_name}}",
-        "owner_type": os.getenv("API2AGENT_CREDENTIAL_OWNER_TYPE") or "project",
-        "owner_id": os.getenv("API2AGENT_CREDENTIAL_OWNER_ID") or os.getenv("API2AGENT_PROJECT_ID") or "local",
-        "provider_id": provider_id,
-        "auth_type": auth_type,
-        "injection_mode": "header",
-        "injection_name": injection_name,
-        "source": "env",
-        "secret_ref": env_name,
-    }}
+    credentials = []
+    for credential in _auth_credentials(auth):
+        auth_type = credential.get("type")
+        if auth_type not in {{"api_key", "bearer"}}:
+            continue
+        env_name = credential.get("env")
+        if not env_name:
+            continue
+        injection_mode, injection_name = _credential_injection_target(credential)
+        credentials.append({{
+            "credential_id": os.getenv("API2AGENT_CREDENTIAL_ID") or f"{{provider_id}}_{{env_name}}",
+            "owner_type": os.getenv("API2AGENT_CREDENTIAL_OWNER_TYPE") or "project",
+            "owner_id": os.getenv("API2AGENT_CREDENTIAL_OWNER_ID") or os.getenv("API2AGENT_PROJECT_ID") or "local",
+            "provider_id": provider_id,
+            "auth_type": auth_type,
+            "injection_mode": injection_mode,
+            "injection_name": injection_name,
+            "source": "env",
+            "secret_ref": env_name,
+        }})
+    return credentials
 
 
 def _apply_credential_injection(request_kwargs: dict) -> None:
@@ -279,29 +286,85 @@ def _tool_auth(tool: dict) -> dict:
     return CAPABILITY.get("auth") or {{}}
 
 
-def _auth_headers(tool: dict) -> dict:
+def _auth_request_patch(tool: dict) -> dict:
     auth = _tool_auth(tool)
     if auth.get("type") in {"none", "unknown"}:
-        return {{}}
+        if auth.get("type") == "unknown" and auth.get("unsupported_reason"):
+            return {{
+                "error": {{
+                    "type": "unsupported_auth",
+                    "message": auth.get("unsupported_reason"),
+                }}
+            }}
+        return {{"headers": {{}}, "params": {{}}}}
     if _has_credential_injection():
-        return {{}}
+        return {{"headers": {{}}, "params": {{}}}}
 
-    env_name = auth.get("env")
-    token = os.getenv(env_name) if env_name else None
-    if not token:
+    credentials = _auth_credentials(auth)
+    missing = [
+        credential.get("env")
+        for credential in credentials
+        if credential.get("type") in {{"api_key", "bearer"}}
+        and (not credential.get("env") or os.getenv(credential.get("env")) is None)
+    ]
+    if missing:
+        env_name = missing[0]
         return {{
             "error": {{
                 "type": "missing_auth",
                 "message": f"Missing auth environment variable: {{env_name}}",
                 "env": env_name,
+                "envs": missing,
             }}
         }}
 
-    if auth.get("type") == "bearer":
-        return {{"Authorization": f"Bearer {{token}}"}}
+    headers = {{}}
+    params = {{}}
+    for credential in credentials:
+        token = os.getenv(credential.get("env"))
+        _apply_auth_credential(headers, params, credential, token)
+    return {{"headers": headers, "params": params}}
 
-    header = auth.get("header") or "X-API-Key"
-    return {{header: token}}
+
+def _auth_credentials(auth: dict) -> list[dict]:
+    credentials = auth.get("credentials") or []
+    if credentials:
+        return [credential for credential in credentials if isinstance(credential, dict)]
+    return [auth]
+
+
+def _apply_auth_credential(headers: dict, params: dict, credential: dict, token: str) -> None:
+    auth_type = credential.get("type")
+    location = credential.get("location")
+    name = credential.get("name") or credential.get("header")
+    if auth_type == "bearer":
+        headers["Authorization"] = f"Bearer {{token}}"
+        return
+    if auth_type != "api_key":
+        return
+    if location == "query":
+        params[name or "api_key"] = token
+        return
+    if location == "cookie":
+        cookie_name = name or "api_key"
+        existing = headers.get("Cookie")
+        cookie = f"{{cookie_name}}={{token}}"
+        headers["Cookie"] = f"{{existing}}; {{cookie}}" if existing else cookie
+        return
+    headers[name or credential.get("header") or "X-API-Key"] = token
+
+
+def _credential_injection_target(credential: dict) -> tuple[str, str]:
+    auth_type = credential.get("type")
+    location = credential.get("location")
+    name = credential.get("name") or credential.get("header")
+    if auth_type == "bearer":
+        return "header", "Authorization"
+    if location == "query":
+        return "query", name or "api_key"
+    if location == "cookie":
+        return "cookie", name or "api_key"
+    return "header", name or credential.get("header") or "X-API-Key"
 
 
 def _has_credential_injection() -> bool:

@@ -4,7 +4,16 @@ from typing import Any
 import yaml
 
 from api2agent.filters import ToolFilter
-from api2agent.ir.models import AuthConfig, Capability, Parameter, RequestBody, ResponseShape, Tool
+from api2agent.ir.models import (
+    AuthConfig,
+    Capability,
+    Parameter,
+    RequestBody,
+    ResponseShape,
+    SecurityAlternative,
+    SecurityRequirements,
+    Tool,
+)
 from api2agent.safety import classify_method
 from api2agent.utils.naming import env_name, snake_name
 
@@ -31,7 +40,8 @@ def parse_openapi(
     capability_name = snake_name(name or info.get("title") or "api")
     base_url = _first_server_url(document)
     schemes = _extract_security_schemes(document, capability_name)
-    auth = _extract_auth(document, capability_name, schemes)
+    security_requirements = _security_requirements_for(document.get("security"), schemes)
+    auth = _extract_auth(document, capability_name, schemes, security_requirements)
     tools = _extract_tools(document, base_url, auth, schemes, filters)
 
     return Capability(
@@ -39,6 +49,7 @@ def parse_openapi(
         version=str(info.get("version") or "0.1.0"),
         base_url=base_url,
         auth=auth,
+        security_requirements=security_requirements,
         tools=tools,
         source=source,
     )
@@ -109,24 +120,39 @@ def _extract_security_schemes(document: dict[str, Any], capability_name: str) ->
                 type="bearer",
                 env=env_name(f"{capability_name}_token"),
                 header="Authorization",
+                location="authorization",
+                name="Authorization",
+                scheme_name=str(scheme_name),
+                source="openapi",
                 description=scheme.get("description"),
             )
             continue
 
-        if scheme_type == "apiKey" and scheme.get("in") == "header":
-            header_name = str(scheme.get("name") or "X-API-Key")
+        if scheme_type == "apiKey" and scheme.get("in") in {"header", "query", "cookie"}:
+            location = str(scheme.get("in"))
+            credential_name = str(scheme.get("name") or ("X-API-Key" if location == "header" else "api_key"))
             auth_by_scheme[str(scheme_name)] = AuthConfig(
                 type="api_key",
                 env=env_name(f"{capability_name}_api_key"),
-                header=header_name,
+                header=credential_name if location == "header" else None,
+                location=location,
+                name=credential_name,
+                scheme_name=str(scheme_name),
+                source="openapi",
                 description=scheme.get("description"),
             )
             continue
 
+        scopes = _oauth_scopes(scheme)
         auth_by_scheme[str(scheme_name)] = AuthConfig(
             type="unknown",
             env=None,
             header=None,
+            location="unknown",
+            scheme_name=str(scheme_name),
+            scopes=scopes,
+            source="openapi",
+            unsupported_reason=_unsupported_auth_reason(scheme),
             description=scheme.get("description"),
         )
 
@@ -137,10 +163,10 @@ def _extract_auth(
     document: dict[str, Any],
     capability_name: str,
     schemes: dict[str, AuthConfig] | None = None,
+    security_requirements: SecurityRequirements | None = None,
 ) -> AuthConfig:
     schemes = schemes if schemes is not None else _extract_security_schemes(document, capability_name)
-    document_security = document.get("security")
-    document_auth = _auth_for_security(document_security, schemes)
+    document_auth = _select_auth(security_requirements)
     if document_auth is not None:
         return document_auth
 
@@ -184,6 +210,11 @@ def _extract_tools(
             tool_name = snake_name(operation_id or f"{method}_{path}")
             description = operation.get("summary") or operation.get("description") or f"{method.upper()} {path}"
             tool_auth = _tool_auth_override(operation, capability_auth, schemes)
+            tool_security_requirements = (
+                _security_requirements_for(operation.get("security"), schemes)
+                if "security" in operation
+                else None
+            )
 
             tools.append(
                 Tool(
@@ -199,6 +230,7 @@ def _extract_tools(
                     responses=responses,
                     safety=classify_method(method),
                     auth=tool_auth,
+                    security_requirements=tool_security_requirements,
                 )
             )
             if filters is not None and filters.max_tools is not None and len(tools) >= filters.max_tools:
@@ -254,7 +286,7 @@ def _tool_auth_override(
     if "security" not in operation:
         return None
 
-    operation_auth = _auth_for_security(operation.get("security"), schemes)
+    operation_auth = _select_auth(_security_requirements_for(operation.get("security"), schemes))
     if operation_auth is None:
         return None
     if operation_auth == capability_auth:
@@ -262,25 +294,104 @@ def _tool_auth_override(
     return operation_auth
 
 
-def _auth_for_security(raw_security: Any, schemes: dict[str, AuthConfig]) -> AuthConfig | None:
+def _security_requirements_for(raw_security: Any, schemes: dict[str, AuthConfig]) -> SecurityRequirements | None:
     if raw_security is None:
         return None
     if raw_security == []:
-        return AuthConfig(type="none")
+        return SecurityRequirements(alternatives=[])
     if not isinstance(raw_security, list):
         return None
 
+    alternatives: list[SecurityAlternative] = []
     for requirement in raw_security:
         if not isinstance(requirement, dict):
             continue
         if not requirement:
-            return AuthConfig(type="none")
-        for scheme_name in requirement:
-            auth = schemes.get(str(scheme_name))
-            if auth is not None:
-                return auth
+            alternatives.append(SecurityAlternative(anonymous=True))
+            continue
 
-    return None
+        requirement_schemes: list[AuthConfig] = []
+        for scheme_name, raw_scopes in requirement.items():
+            scheme_key = str(scheme_name)
+            auth = schemes.get(scheme_key) or AuthConfig(
+                type="unknown",
+                location="unknown",
+                scheme_name=scheme_key,
+                source="openapi",
+                unsupported_reason="security scheme is referenced but not defined",
+            )
+            scopes = [str(scope) for scope in raw_scopes] if isinstance(raw_scopes, list) else []
+            requirement_schemes.append(auth.model_copy(update={"scopes": scopes or auth.scopes}))
+        alternatives.append(SecurityAlternative(schemes=requirement_schemes))
+
+    return SecurityRequirements(alternatives=alternatives)
+
+
+def _select_auth(requirements: SecurityRequirements | None) -> AuthConfig | None:
+    if requirements is None:
+        return None
+    if not requirements.alternatives:
+        return AuthConfig(type="none")
+    if any(alternative.anonymous for alternative in requirements.alternatives):
+        return AuthConfig(type="none")
+
+    for alternative in requirements.alternatives:
+        if alternative.schemes and all(_is_supported_auth(auth) for auth in alternative.schemes):
+            if len(alternative.schemes) == 1:
+                return alternative.schemes[0]
+            primary = alternative.schemes[0]
+            return primary.model_copy(
+                update={
+                    "credentials": [
+                        scheme.model_dump(mode="json", by_alias=True, exclude_none=True)
+                        for scheme in alternative.schemes
+                    ]
+                }
+            )
+
+    return AuthConfig(
+        type="unknown",
+        location="unknown",
+        source="openapi",
+        unsupported_reason="no supported executable security requirement alternative",
+        credentials=[
+            scheme.model_dump(mode="json", by_alias=True, exclude_none=True)
+            for alternative in requirements.alternatives
+            for scheme in alternative.schemes
+        ],
+    )
+
+
+def _is_supported_auth(auth: AuthConfig) -> bool:
+    return auth.type in {"bearer", "api_key"} and auth.location in {
+        "authorization",
+        "header",
+        "query",
+        "cookie",
+    }
+
+
+def _oauth_scopes(scheme: dict[str, Any]) -> list[str]:
+    if scheme.get("type") != "oauth2":
+        return []
+    scopes: list[str] = []
+    flows = scheme.get("flows") or {}
+    if not isinstance(flows, dict):
+        return scopes
+    for flow in flows.values():
+        if not isinstance(flow, dict):
+            continue
+        raw_scopes = flow.get("scopes") or {}
+        if isinstance(raw_scopes, dict):
+            scopes.extend(str(scope) for scope in raw_scopes)
+    return sorted(set(scopes))
+
+
+def _unsupported_auth_reason(scheme: dict[str, Any]) -> str:
+    scheme_type = scheme.get("type")
+    if scheme_type in {"oauth2", "openIdConnect"}:
+        return "metadata-only OAuth/OpenID scheme"
+    return f"unsupported security scheme type: {scheme_type or 'unknown'}"
 
 
 def _extract_parameters(raw_parameters: list[Any], document: dict[str, Any]) -> list[Parameter]:

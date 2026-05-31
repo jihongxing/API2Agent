@@ -16,6 +16,22 @@ class AuthConfig(BaseModel):
     env: str | None = None
     header: str | None = None
     description: str | None = None
+    location: Literal["header", "query", "cookie", "authorization", "unknown"] | None = None
+    name: str | None = None
+    scheme_name: str | None = None
+    scopes: list[str] = Field(default_factory=list)
+    source: Literal["openapi", "curl", "manual"] | None = None
+    unsupported_reason: str | None = None
+    credentials: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class SecurityAlternative(BaseModel):
+    schemes: list[AuthConfig] = Field(default_factory=list)
+    anonymous: bool = False
+
+
+class SecurityRequirements(BaseModel):
+    alternatives: list[SecurityAlternative] = Field(default_factory=list)
 
 
 class Parameter(BaseModel):
@@ -61,6 +77,7 @@ class Tool(BaseModel):
     responses: list[ResponseShape] = Field(default_factory=list)
     safety: SafetyLevel = SafetyLevel.UNKNOWN
     auth: AuthConfig | None = None
+    security_requirements: SecurityRequirements | None = None
 
 
 class Capability(BaseModel):
@@ -68,6 +85,7 @@ class Capability(BaseModel):
     version: str = "0.1.0"
     base_url: str = ""
     auth: AuthConfig = Field(default_factory=AuthConfig)
+    security_requirements: SecurityRequirements | None = None
     tools: list[Tool] = Field(default_factory=list)
     provider_region: str | None = None
     provider_regions: list[str] = Field(default_factory=list)

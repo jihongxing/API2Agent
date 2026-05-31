@@ -95,6 +95,7 @@ def diagnose_capability(
         findings.append(_auth_finding("unknown_auth", capability.name, "capability", capability.auth))
     if _auth_requires_env(capability.auth):
         findings.append(_auth_finding("auth_env_missing", capability.name, "capability", capability.auth))
+    findings.extend(_security_requirement_findings(capability.name, "capability", capability.security_requirements))
 
     if not capability.base_url and not any(tool.base_url for tool in tools):
         findings.append(
@@ -300,6 +301,7 @@ def _tool_findings(tool: Tool) -> list[dict[str, Any]]:
             findings.append(_auth_finding("unknown_auth", tool.name, "tool", tool.auth))
         if _auth_requires_env(tool.auth):
             findings.append(_auth_finding("auth_env_missing", tool.name, "tool", tool.auth))
+    findings.extend(_security_requirement_findings(tool.name, "tool", tool.security_requirements))
 
     return findings
 
@@ -361,7 +363,7 @@ def _auth_finding(finding_id: str, name: str, kind: str, auth: AuthConfig) -> di
             "Auth type is unknown.",
             {"kind": kind, "name": name},
             "Clarify auth in the source spec or curl command before production Agent use.",
-            {"auth_type": auth.type},
+            {"auth_type": auth.type, "unsupported_reason": auth.unsupported_reason},
         )
     return _finding(
         "auth_env_missing",
@@ -370,12 +372,93 @@ def _auth_finding(finding_id: str, name: str, kind: str, auth: AuthConfig) -> di
         "Auth is required but no environment variable name is available.",
         {"kind": kind, "name": name},
         "Regenerate from a source with explicit auth metadata or add a safe env var mapping.",
-        {"auth_type": auth.type},
+        {"auth_type": auth.type, "envs": _missing_auth_envs(auth)},
     )
 
 
 def _auth_requires_env(auth: AuthConfig) -> bool:
-    return auth.type in {"api_key", "bearer"} and not auth.env
+    return bool(_missing_auth_envs(auth))
+
+
+def _missing_auth_envs(auth: AuthConfig) -> list[str]:
+    credentials = auth.credentials or [auth.model_dump(mode="json", by_alias=True)]
+    missing: list[str] = []
+    for credential in credentials:
+        if credential.get("type") in {"api_key", "bearer"} and not credential.get("env"):
+            label = credential.get("scheme_name") or credential.get("name") or credential.get("type")
+            missing.append(str(label))
+    return missing
+
+
+def _security_requirement_findings(name: str, kind: str, requirements) -> list[dict[str, Any]]:
+    if requirements is None:
+        return []
+
+    findings: list[dict[str, Any]] = []
+    alternatives = requirements.alternatives
+    if len(alternatives) > 1:
+        findings.append(
+            _finding(
+                "auth_alternatives_present",
+                "info",
+                "auth",
+                "OpenAPI security has alternative auth requirements.",
+                {"kind": kind, "name": name},
+                "Check generated README auth summaries before choosing credentials for Agent or proxy wiring.",
+                {"alternatives": len(alternatives)},
+            )
+        )
+
+    for alternative in alternatives:
+        if len(alternative.schemes) > 1:
+            findings.append(
+                _finding(
+                    "combined_auth_required",
+                    "info",
+                    "auth",
+                    "OpenAPI security requires multiple credentials for one alternative.",
+                    {"kind": kind, "name": name},
+                    "Set every listed auth environment variable before direct execution.",
+                    {"scheme_names": [scheme.scheme_name for scheme in alternative.schemes]},
+                )
+            )
+        for scheme in alternative.schemes:
+            if scheme.location == "query":
+                findings.append(_auth_location_finding("query_api_key_auth", name, kind, scheme))
+            if scheme.location == "cookie":
+                findings.append(_auth_location_finding("cookie_api_key_auth", name, kind, scheme))
+            if scheme.type == "unknown":
+                finding_id = "metadata_only_oauth" if scheme.scopes else "unsupported_auth_scheme"
+                findings.append(
+                    _finding(
+                        finding_id,
+                        "warning" if finding_id == "unsupported_auth_scheme" else "info",
+                        "auth",
+                        "Security scheme is preserved as metadata only."
+                        if finding_id == "metadata_only_oauth"
+                        else "Security scheme is not directly executable.",
+                        {"kind": kind, "name": name},
+                        "Use a supported bearer/header/query/cookie API key scheme for generated direct execution.",
+                        {
+                            "scheme_name": scheme.scheme_name,
+                            "scopes": scheme.scopes,
+                            "unsupported_reason": scheme.unsupported_reason,
+                        },
+                    )
+                )
+    return findings
+
+
+def _auth_location_finding(finding_id: str, name: str, kind: str, auth: AuthConfig) -> dict[str, Any]:
+    return _finding(
+        finding_id,
+        "info",
+        "auth",
+        "Security scheme uses a non-header API key location.",
+        {"kind": kind, "name": name},
+        "Verify generated runner and proxy credential injection before production Agent use.",
+        {"scheme_name": auth.scheme_name, "location": auth.location, "name": auth.name},
+    )
 
 
 def _summary(findings: list[dict[str, Any]]) -> dict[str, int]:

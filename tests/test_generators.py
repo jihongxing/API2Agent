@@ -83,6 +83,19 @@ def test_generated_readme_and_tests_use_openapi_examples(tmp_path: Path) -> None
     assert "'body': {'sku': 'sku_123', 'quantity': 2}" in manual_write_test
 
 
+def test_generated_auth_docs_include_security_combinations(tmp_path: Path) -> None:
+    capability = parse_openapi_file(FIXTURES / "security_combinations.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+    auth_env = (output_dir / "auth.env.example").read_text(encoding="utf-8")
+
+    assert "auth: combined api_key via header:X-API-Key" in readme
+    assert "api_key via query:api_key" in readme
+    assert "api_key via cookie:session" in readme
+    assert "SECURITY_COMBINATIONS_API_API_KEY=" in auth_env
+
+
 def test_generate_package_refuses_non_empty_output_without_force(tmp_path: Path) -> None:
     capability = parse_openapi_file(FIXTURES / "basic.yaml")
     output_dir = tmp_path / "api2agent-output"

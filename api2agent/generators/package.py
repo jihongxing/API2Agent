@@ -47,14 +47,27 @@ def _write_text(path: Path, content: str) -> None:
 def _render_auth_env(capability: Capability) -> str:
     env_names = []
     for auth in [capability.auth] + [tool.auth for tool in capability.tools if tool.auth is not None]:
-        if auth.type in {"api_key", "bearer"} and auth.env and auth.env not in env_names:
-            env_names.append(auth.env)
+        for env in _auth_env_names(auth):
+            if env not in env_names:
+                env_names.append(env)
 
     if not env_names:
         return "# This API does not require auth based on the parsed spec.\n"
     lines = ["# Fill these before running generated tools that require auth."]
     lines.extend(f"{name}=" for name in env_names)
     return "\n".join(lines) + "\n"
+
+
+def _auth_env_names(auth) -> list[str]:
+    credentials = auth.credentials or []
+    if not credentials:
+        credentials = [auth.model_dump(mode="json", by_alias=True)]
+
+    envs: list[str] = []
+    for credential in credentials:
+        if credential.get("type") in {"api_key", "bearer"} and credential.get("env"):
+            envs.append(str(credential["env"]))
+    return envs
 
 
 def _render_openai_placeholder(capability: Capability) -> str:

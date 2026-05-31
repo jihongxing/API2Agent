@@ -139,3 +139,44 @@ def test_preserves_openapi_examples_and_defaults() -> None:
     assert update_order.parameters[0].schema_["enum"][0] == "order_123"
     assert update_order.request_body is not None
     assert update_order.request_body.schema_["properties"]["status"]["enum"][0] == "shipped"
+
+
+def test_preserves_openapi_security_requirement_combinations() -> None:
+    capability = parse_openapi_file(FIXTURES / "security_combinations.yaml")
+    tools = {tool.name: tool for tool in capability.tools}
+
+    assert capability.auth.type == "bearer"
+    assert capability.auth.location == "authorization"
+    assert capability.security_requirements is not None
+    assert len(capability.security_requirements.alternatives) == 2
+
+    public = tools["get_public"]
+    assert public.auth is not None
+    assert public.auth.type == "none"
+    assert public.security_requirements is not None
+    assert public.security_requirements.alternatives == []
+
+    query = tools["get_query_auth"]
+    assert query.auth is not None
+    assert query.auth.type == "api_key"
+    assert query.auth.location == "query"
+    assert query.auth.name == "api_key"
+
+    cookie = tools["get_cookie_auth"]
+    assert cookie.auth is not None
+    assert cookie.auth.type == "api_key"
+    assert cookie.auth.location == "cookie"
+    assert cookie.auth.name == "session"
+
+    combined = tools["get_combined_auth"]
+    assert combined.auth is not None
+    assert combined.auth.type == "api_key"
+    assert len(combined.auth.credentials) == 2
+    assert {credential["location"] for credential in combined.auth.credentials} == {"header", "query"}
+
+    oauth = tools["get_oauth_metadata"]
+    assert oauth.auth is not None
+    assert oauth.auth.type == "unknown"
+    assert oauth.auth.unsupported_reason == "no supported executable security requirement alternative"
+    assert oauth.security_requirements is not None
+    assert oauth.security_requirements.alternatives[0].schemes[0].scopes == ["read"]

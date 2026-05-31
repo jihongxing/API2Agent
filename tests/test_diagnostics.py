@@ -143,3 +143,15 @@ def test_inspect_prints_diagnostics_summary(tmp_path) -> None:
 
     assert result.exit_code == 0
     assert "Diagnostics:" in result.output
+
+
+def test_diagnose_reports_openapi_security_combinations() -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/security_combinations.yaml"))
+    diagnostics = diagnose_capability(capability)
+    finding_ids = {finding["id"] for finding in diagnostics["findings"]}
+
+    assert "auth_alternatives_present" in finding_ids
+    assert "combined_auth_required" in finding_ids
+    assert "query_api_key_auth" in finding_ids
+    assert "cookie_api_key_auth" in finding_ids
+    assert "metadata_only_oauth" in finding_ids

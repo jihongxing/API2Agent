@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Design Complete
+Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI security requirement combinations implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI security requirement combinations closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -857,11 +857,17 @@ Current Phase 6 progress:
   - additive IR metadata, deterministic primary auth selection, bearer/header/query/cookie/OAuth scheme mappings, generated artifact effects, tests, dogfood, and non-goals are defined.
   - the next OpenAPI hardening task is implementation of security requirement combinations.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_DESIGN.md`.
+- Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0 is complete:
+  - OpenAPI OR/AND security requirements are preserved as additive generated package metadata.
+  - query API key, cookie API key, and supported combined auth execution are implemented for generated runners.
+  - OAuth/OpenID schemes are preserved as metadata-only auth with diagnostics.
+  - loopback dogfood passed for query, cookie, and combined auth.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Closeout + Phase Review v0
 ```
 
 References:
@@ -892,6 +898,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace Is Later
 
