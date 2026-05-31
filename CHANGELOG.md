@@ -283,6 +283,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI Examples + Defaults closeout completed; examples/defaults propagation can close and the next OpenAPI hardening design target is security requirement combinations.
 - Agent Capability Compiler OpenAPI Security Requirement Combinations design completed with OR/AND semantics, additive IR metadata, deterministic primary auth selection, scheme mappings, generated artifact effects, tests, dogfood, and non-goals.
 - Agent Capability Compiler OpenAPI Security Requirement Combinations implemented with additive security requirement metadata, query/cookie API key support, combined auth runner injection, OAuth/OpenID metadata preservation, diagnostics, generated docs, and loopback dogfood.
+- Agent Capability Compiler OpenAPI Security Requirement Combinations closeout completed; auth combination hardening can close and the next OpenAPI hardening design target is server handling.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -290,4 +291,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Security Requirement Combinations Closeout + Phase Review v0.
+- Agent Capability Compiler OpenAPI Server Handling Design v0.
