@@ -8,7 +8,7 @@ Status: complete
 
 Hosted trusted-gateway admin dogfood passed against a real `api2agent-controlplane serve` process and live podman-backed Postgres.
 
-The service started in hosted mode without `--admin-token`, accepted trusted gateway claims for admin requests, rejected missing gateway auth with `401 AUTH_ERROR`, rejected missing permission with `403 AUTHZ_DENIED`, and persisted principal-derived audit/idempotency evidence.
+The service started in hosted mode without `--admin-token`, accepted trusted gateway claims for admin requests, proved old/new gateway secret rotation overlap, rejected a removed old secret with `401 AUTH_ERROR`, rejected missing gateway auth with `401 AUTH_ERROR`, rejected missing permission with `403 AUTHZ_DENIED`, and persisted principal-derived audit/idempotency evidence.
 
 ## Script
 
@@ -31,12 +31,15 @@ podman Postgres
   -> build api2agent-controlplane
   -> serve with --admin-identity-mode hosted
   -> serve with --admin-authenticator trusted_gateway
-  -> serve with --trusted-gateway-secret
+  -> serve with --trusted-gateway-secrets old,new
   -> no --admin-token flag
   -> public GET /healthz
+  -> trusted POST /v1/admin/registry/validate with old secret
   -> trusted POST /v1/admin/registry/validate
   -> missing gateway auth POST /v1/admin/registry/validate
   -> missing permission POST /v1/admin/registry/validate
+  -> restart with only the new gateway secret
+  -> removed old secret POST /v1/admin/registry/validate
   -> trusted POST /v1/admin/registry/import-replace
   -> query audit and idempotency evidence
 ```
@@ -49,6 +52,9 @@ Observed:
 {
   "status": "passed",
   "admin_token_flag_used": false,
+  "old_secret_overlap_status": 200,
+  "old_secret_removed_status": 401,
+  "old_secret_removed_error_type": "AUTH_ERROR",
   "validate_status": 200,
   "missing_gateway_auth_status": 401,
   "missing_gateway_auth_error_type": "AUTH_ERROR",
@@ -57,7 +63,7 @@ Observed:
   "import_status": 201,
   "audit_counts": {
     "registry_revisions": 2,
-    "admin_audit_events": 2,
+    "admin_audit_events": 3,
     "idempotency_records": 1,
     "providers": 1
   }
@@ -76,6 +82,7 @@ The dogfood verified both `registry.validate` and `registry.import_replace` audi
   "organization_id": "hosted-org-dogfood",
   "auth_method": "trusted_gateway",
   "token_id": "gateway-token-dogfood",
+  "gateway_key_id": "dogfood-gateway-key-new",
   "local_private": "false",
   "metadata_contains_gateway_secret": false
 }
@@ -114,13 +121,16 @@ Passed:
 
 - service started in hosted/trusted-gateway mode without `--admin-token`
 - `/healthz` remained public
+- old and new active gateway secrets both worked during rotation overlap
+- removed old gateway secret returned `401 AUTH_ERROR`
 - trusted gateway validation returned `200`
 - public `Authorization` and `X-Actor-ID` did not override trusted gateway claims
 - missing gateway authorization returned `401 AUTH_ERROR`
 - missing endpoint permission returned `403 AUTHZ_DENIED`
 - import/replace returned `201`
 - audit rows used trusted gateway actor and principal metadata
-- audit metadata did not contain the gateway secret
+- audit metadata included non-secret `gateway_key_id`
+- audit metadata did not contain old or new gateway secrets
 - idempotency record used trusted gateway project and actor scope
 - idempotency record linked to registry revision and admin audit event
 - no public CRUD, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation was added
@@ -149,7 +159,7 @@ python scripts\go_control_plane_hosted_admin_gateway_dogfood.py --output tmp\go_
 ## Next Recommended Task
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
 ```
 
-The closeout should decide whether the trusted-gateway hosted admin integration can pause before moving to the next hosted Control Plane readiness gap.
+The closeout should decide whether the implemented production-boundary support can pause before moving to the next hosted Control Plane readiness gap.

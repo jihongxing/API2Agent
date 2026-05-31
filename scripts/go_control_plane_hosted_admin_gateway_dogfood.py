@@ -17,7 +17,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONTROL_PLANE = REPO_ROOT / "services" / "control-plane"
 SCHEMA = CONTROL_PLANE / "schema" / "postgres" / "001_persistent_registry_store.sql"
 REGISTRY = CONTROL_PLANE / "testdata" / "registry" / "network.public_ip.get.json"
-GATEWAY_SECRET = "dogfood-trusted-gateway-secret"
+OLD_GATEWAY_SECRET = "dogfood-trusted-gateway-secret-old"
+NEW_GATEWAY_SECRET = "dogfood-trusted-gateway-secret-new"
+OLD_GATEWAY_KEY_ID = "dogfood-gateway-key-old"
+NEW_GATEWAY_KEY_ID = "dogfood-gateway-key-new"
 SUBJECT_ID = "hosted-admin-subject-dogfood"
 ACTOR_ID = "hosted-admin-actor-dogfood"
 PROJECT_ID = "hosted-project-dogfood"
@@ -155,9 +158,16 @@ def create_replacement_registry(path: Path) -> dict:
     return data
 
 
-def trusted_gateway_headers(*, permissions: list[str], actor_id: str = ACTOR_ID) -> dict[str, str]:
+def trusted_gateway_headers(
+    *,
+    secret: str,
+    key_id: str,
+    permissions: list[str],
+    actor_id: str = ACTOR_ID,
+) -> dict[str, str]:
     return {
-        "X-API2Agent-Gateway-Authorization": f"Bearer {GATEWAY_SECRET}",
+        "X-API2Agent-Gateway-Authorization": f"Bearer {secret}",
+        "X-API2Agent-Gateway-Key-ID": key_id,
         "X-API2Agent-Principal-ID": SUBJECT_ID,
         "X-API2Agent-Actor-ID": actor_id,
         "X-API2Agent-Project-ID": PROJECT_ID,
@@ -168,7 +178,14 @@ def trusted_gateway_headers(*, permissions: list[str], actor_id: str = ACTOR_ID)
     }
 
 
-def start_control_plane(binary: Path, dsn: str, distribution_dir: Path, addr: str) -> subprocess.Popen[str]:
+def start_control_plane(
+    binary: Path,
+    dsn: str,
+    distribution_dir: Path,
+    addr: str,
+    *,
+    gateway_secrets: list[str],
+) -> subprocess.Popen[str]:
     env = os.environ.copy()
     env["API2AGENT_CONTROL_PLANE_POSTGRES_DSN"] = dsn
     env.pop("API2AGENT_CONTROL_PLANE_ADMIN_TOKEN", None)
@@ -187,8 +204,10 @@ def start_control_plane(binary: Path, dsn: str, distribution_dir: Path, addr: st
             "hosted",
             "--admin-authenticator",
             "trusted_gateway",
-            "--trusted-gateway-secret",
-            GATEWAY_SECRET,
+            "--trusted-gateway-secrets",
+            ",".join(gateway_secrets),
+            "--trusted-gateway-key-id",
+            NEW_GATEWAY_KEY_ID,
         ],
         cwd=str(CONTROL_PLANE),
         env=env,
@@ -233,7 +252,7 @@ def main() -> int:
         "dsn": f"postgres://api2agent:REDACTED@127.0.0.1:{pg_port}/api2agent?sslmode=disable",
         "service_addr": f"127.0.0.1:{service_port}",
         "admin_token_flag_used": False,
-        "gateway_secret_redacted": "REDACTED",
+        "gateway_secrets_redacted": ["REDACTED"],
     }
     try:
         subprocess.run(["podman", "rm", "-f", container], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -283,12 +302,35 @@ def main() -> int:
 
         distribution_dir = workdir / "distribution"
         base_url = f"http://127.0.0.1:{service_port}"
-        server = start_control_plane(binary, dsn, distribution_dir, f"127.0.0.1:{service_port}")
+        server = start_control_plane(
+            binary,
+            dsn,
+            distribution_dir,
+            f"127.0.0.1:{service_port}",
+            gateway_secrets=[OLD_GATEWAY_SECRET, NEW_GATEWAY_SECRET],
+        )
         health = wait_for_health(f"{base_url}/healthz", server)
 
         validate_permissions = ["control_plane.registry.validate"]
         mutation_permissions = ["control_plane.registry.validate", "control_plane.registry.import_replace"]
-        validate_headers = trusted_gateway_headers(permissions=validate_permissions)
+        old_secret_status, old_secret_response, _ = request_json(
+            "POST",
+            f"{base_url}/v1/admin/registry/validate",
+            headers=trusted_gateway_headers(
+                secret=OLD_GATEWAY_SECRET,
+                key_id=OLD_GATEWAY_KEY_ID,
+                permissions=validate_permissions,
+            ),
+            expected_status={200},
+        )
+        if old_secret_response.get("valid") is not True:
+            raise RuntimeError(f"expected old secret overlap validation success, got {old_secret_response}")
+
+        validate_headers = trusted_gateway_headers(
+            secret=NEW_GATEWAY_SECRET,
+            key_id=NEW_GATEWAY_KEY_ID,
+            permissions=validate_permissions,
+        )
         validate_headers["Authorization"] = "Bearer untrusted-public-token"
         validate_headers["X-Actor-ID"] = "spoofed-public-actor"
         validate_status, validate_response, _ = request_json(
@@ -317,12 +359,42 @@ def main() -> int:
         missing_permission_status, missing_permission_response, _ = request_json(
             "POST",
             f"{base_url}/v1/admin/registry/validate",
-            headers=trusted_gateway_headers(permissions=["control_plane.distribution.read_current"]),
+            headers=trusted_gateway_headers(
+                secret=NEW_GATEWAY_SECRET,
+                key_id=NEW_GATEWAY_KEY_ID,
+                permissions=["control_plane.distribution.read_current"],
+            ),
             expected_status={403},
         )
         assert_error_type(missing_permission_response, "AUTHZ_DENIED")
 
-        import_headers = trusted_gateway_headers(permissions=mutation_permissions)
+        server.terminate()
+        server.wait(timeout=5)
+        server = start_control_plane(
+            binary,
+            dsn,
+            distribution_dir,
+            f"127.0.0.1:{service_port}",
+            gateway_secrets=[NEW_GATEWAY_SECRET],
+        )
+        rotation_health = wait_for_health(f"{base_url}/healthz", server)
+        removed_old_secret_status, removed_old_secret_response, _ = request_json(
+            "POST",
+            f"{base_url}/v1/admin/registry/validate",
+            headers=trusted_gateway_headers(
+                secret=OLD_GATEWAY_SECRET,
+                key_id=OLD_GATEWAY_KEY_ID,
+                permissions=validate_permissions,
+            ),
+            expected_status={401},
+        )
+        assert_error_type(removed_old_secret_response, "AUTH_ERROR")
+
+        import_headers = trusted_gateway_headers(
+            secret=NEW_GATEWAY_SECRET,
+            key_id=NEW_GATEWAY_KEY_ID,
+            permissions=mutation_permissions,
+        )
         import_headers["X-Request-ID"] = "dogfood-hosted-gateway-import-1"
         import_headers["Idempotency-Key"] = "dogfood-hosted-gateway-idempotency-key"
         import_status, import_response, import_response_headers = request_json(
@@ -345,7 +417,7 @@ def main() -> int:
         }
         expected_counts = {
             "registry_revisions": 2,
-            "admin_audit_events": 2,
+            "admin_audit_events": 3,
             "idempotency_records": 1,
             "providers": 1,
         }
@@ -368,14 +440,15 @@ FROM (
     metadata->>'organization_id' AS organization_id,
     metadata->>'auth_method' AS auth_method,
     metadata->>'token_id' AS token_id,
+    metadata->>'gateway_key_id' AS gateway_key_id,
     metadata->>'local_private' AS local_private,
-    metadata::text LIKE '%{GATEWAY_SECRET}%' AS metadata_contains_gateway_secret
+    metadata::text LIKE '%{OLD_GATEWAY_SECRET}%' OR metadata::text LIKE '%{NEW_GATEWAY_SECRET}%' AS metadata_contains_gateway_secret
   FROM admin_audit_events
 ) AS t;
 """,
         )
-        if len(audit_rows) != 2:
-            raise RuntimeError(f"expected two audit rows, got {audit_rows}")
+        if len(audit_rows) != 3:
+            raise RuntimeError(f"expected three audit rows, got {audit_rows}")
         for row in audit_rows:
             if row["actor_id"] != ACTOR_ID:
                 raise RuntimeError(f"expected trusted actor id in audit row, got {row}")
@@ -383,6 +456,8 @@ FROM (
                 raise RuntimeError(f"expected trusted subject/project metadata, got {row}")
             if row["organization_id"] != ORGANIZATION_ID or row["token_id"] != TOKEN_ID:
                 raise RuntimeError(f"expected trusted org/token metadata, got {row}")
+            if row["gateway_key_id"] not in {OLD_GATEWAY_KEY_ID, NEW_GATEWAY_KEY_ID}:
+                raise RuntimeError(f"expected gateway key id metadata, got {row}")
             if row["auth_method"] != "trusted_gateway" or row["local_private"] != "false":
                 raise RuntimeError(f"expected trusted_gateway non-local audit metadata, got {row}")
             if row["metadata_contains_gateway_secret"]:
@@ -429,6 +504,10 @@ FROM (
                 "status": "passed",
                 "seed_stdout": seed.stdout.strip(),
                 "health": health,
+                "rotation_health": rotation_health,
+                "old_secret_overlap_status": old_secret_status,
+                "old_secret_removed_status": removed_old_secret_status,
+                "old_secret_removed_error_type": removed_old_secret_response.get("error", {}).get("error_type"),
                 "validate_status": validate_status,
                 "validate_response": {
                     "valid": validate_response.get("valid"),

@@ -30,6 +30,8 @@ type Handler struct {
 	AdminIdentityMode      string
 	AdminAuthenticatorMode string
 	TrustedGatewaySecret   string
+	TrustedGatewaySecrets  []string
+	TrustedGatewayKeyID    string
 	Now                    func() time.Time
 }
 
@@ -47,6 +49,7 @@ const (
 
 const (
 	trustedGatewayAuthorizationHeader = "X-API2Agent-Gateway-Authorization"
+	trustedGatewayKeyIDHeader         = "X-API2Agent-Gateway-Key-ID"
 	trustedPrincipalIDHeader          = "X-API2Agent-Principal-ID"
 	trustedActorIDHeader              = "X-API2Agent-Actor-ID"
 	trustedProjectIDHeader            = "X-API2Agent-Project-ID"
@@ -288,6 +291,7 @@ func (h Handler) ImportReplaceRegistry(w http.ResponseWriter, r *http.Request) {
 		OrganizationID: principal.OrganizationID,
 		AuthMethod:     principal.AuthMethod,
 		TokenID:        principal.TokenID,
+		GatewayKeyID:   principal.GatewayKeyID,
 		LocalPrivate:   principal.LocalPrivate,
 		RequestID:      requestID,
 		IdempotencyKey: idempotencyKey,
@@ -602,10 +606,11 @@ func (h Handler) adminAuthenticator() (AdminAuthenticator, error) {
 		if mode != AdminIdentityModeHosted {
 			return nil, fmt.Errorf("trusted_gateway admin authenticator requires hosted identity mode")
 		}
-		if strings.TrimSpace(h.TrustedGatewaySecret) == "" {
+		secrets := normalizeTrustedGatewaySecrets(h.TrustedGatewaySecrets, h.TrustedGatewaySecret)
+		if len(secrets) == 0 {
 			return nil, fmt.Errorf("trusted_gateway admin authenticator requires a trusted gateway secret")
 		}
-		return TrustedGatewayAuthenticator{GatewaySecret: h.TrustedGatewaySecret}, nil
+		return TrustedGatewayAuthenticator{GatewaySecret: h.TrustedGatewaySecret, GatewaySecrets: secrets, GatewayKeyID: h.TrustedGatewayKeyID}, nil
 	case "":
 		return nil, fmt.Errorf("hosted admin identity mode requires an admin authenticator")
 	default:
@@ -688,6 +693,9 @@ func (h Handler) auditMetadata(principal registry.AdminPrincipal, extra map[stri
 	if principal.TokenID != "" {
 		metadata["token_id"] = principal.TokenID
 	}
+	if principal.GatewayKeyID != "" {
+		metadata["gateway_key_id"] = principal.GatewayKeyID
+	}
 	if h.RegistrySource != "" {
 		metadata["registry_source"] = h.RegistrySource
 	}
@@ -736,12 +744,14 @@ func (a localPrivateAdminAuthenticator) ResolveAdminPrincipal(r *http.Request, r
 }
 
 type TrustedGatewayAuthenticator struct {
-	GatewaySecret string
+	GatewaySecret  string
+	GatewaySecrets []string
+	GatewayKeyID   string
 }
 
 func (a TrustedGatewayAuthenticator) ResolveAdminPrincipal(r *http.Request, requiredPermission string) (registry.AdminPrincipal, error) {
-	secret := strings.TrimSpace(a.GatewaySecret)
-	if secret == "" {
+	secrets := normalizeTrustedGatewaySecrets(a.GatewaySecrets, a.GatewaySecret)
+	if len(secrets) == 0 {
 		return registry.AdminPrincipal{}, AdminAuthError{
 			ErrorType: "AUTH_SERVICE_UNAVAILABLE",
 			Scope:     "platform",
@@ -750,7 +760,7 @@ func (a TrustedGatewayAuthenticator) ResolveAdminPrincipal(r *http.Request, requ
 		}
 	}
 	token, ok := bearerToken(r.Header.Get(trustedGatewayAuthorizationHeader))
-	if !ok || !constantTimeSecretEqual(token, secret) {
+	if !ok || !constantTimeAnySecretEqual(token, secrets) {
 		return registry.AdminPrincipal{}, AdminAuthError{
 			ErrorType: "AUTH_ERROR",
 			Scope:     "caller",
@@ -788,6 +798,13 @@ func (a TrustedGatewayAuthenticator) ResolveAdminPrincipal(r *http.Request, requ
 	if err != nil {
 		return registry.AdminPrincipal{}, err
 	}
+	gatewayKeyID, err := optionalTrustedClaim(r, trustedGatewayKeyIDHeader, "gateway key id")
+	if err != nil {
+		return registry.AdminPrincipal{}, err
+	}
+	if gatewayKeyID == "" {
+		gatewayKeyID = strings.TrimSpace(a.GatewayKeyID)
+	}
 	return registry.AdminPrincipal{
 		SubjectID:      subjectID,
 		ActorID:        actorID,
@@ -795,10 +812,34 @@ func (a TrustedGatewayAuthenticator) ResolveAdminPrincipal(r *http.Request, requ
 		OrganizationID: organizationID,
 		AuthMethod:     registry.AdminAuthMethodTrustedGateway,
 		TokenID:        tokenID,
+		GatewayKeyID:   gatewayKeyID,
 		Roles:          roles,
 		Permissions:    permissions,
 		LocalPrivate:   false,
 	}, nil
+}
+
+func normalizeTrustedGatewaySecrets(values []string, legacy string) []string {
+	seen := map[string]struct{}{}
+	var secrets []string
+	add := func(raw string) {
+		for _, part := range strings.Split(raw, ",") {
+			secret := strings.TrimSpace(part)
+			if secret == "" {
+				continue
+			}
+			if _, ok := seen[secret]; ok {
+				continue
+			}
+			seen[secret] = struct{}{}
+			secrets = append(secrets, secret)
+		}
+	}
+	for _, value := range values {
+		add(value)
+	}
+	add(legacy)
+	return secrets
 }
 
 func bearerToken(header string) (string, bool) {
@@ -810,10 +851,14 @@ func bearerToken(header string) (string, bool) {
 	return token, token != ""
 }
 
-func constantTimeSecretEqual(value string, expected string) bool {
+func constantTimeAnySecretEqual(value string, expected []string) bool {
 	valueHash := sha256.Sum256([]byte(value))
-	expectedHash := sha256.Sum256([]byte(expected))
-	return subtle.ConstantTimeCompare(valueHash[:], expectedHash[:]) == 1
+	matched := 0
+	for _, secret := range expected {
+		expectedHash := sha256.Sum256([]byte(secret))
+		matched |= subtle.ConstantTimeCompare(valueHash[:], expectedHash[:])
+	}
+	return matched == 1
 }
 
 func requiredTrustedClaim(r *http.Request, header string, label string) (string, error) {

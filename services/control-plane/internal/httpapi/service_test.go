@@ -427,7 +427,7 @@ func TestTrustedGatewayValidateRecordsAuditAndIgnoresPublicIdentityHeaders(t *te
 	if event.ActorID != "trusted-actor" {
 		t.Fatalf("expected trusted actor, got %#v", event)
 	}
-	if event.Metadata["principal_subject_id"] != "principal-1" || event.Metadata["project_id"] != "project-1" || event.Metadata["organization_id"] != "org-1" || event.Metadata["auth_method"] != registry.AdminAuthMethodTrustedGateway || event.Metadata["token_id"] != "token-1" || event.Metadata["local_private"] != "false" {
+	if event.Metadata["principal_subject_id"] != "principal-1" || event.Metadata["project_id"] != "project-1" || event.Metadata["organization_id"] != "org-1" || event.Metadata["auth_method"] != registry.AdminAuthMethodTrustedGateway || event.Metadata["token_id"] != "token-1" || event.Metadata["gateway_key_id"] != "key-1" || event.Metadata["local_private"] != "false" {
 		t.Fatalf("unexpected audit metadata: %#v", event.Metadata)
 	}
 	for key, value := range event.Metadata {
@@ -460,8 +460,57 @@ func TestTrustedGatewayImportReplacePassesPrincipalScope(t *testing.T) {
 	if replacer.options.ProjectID != "project-2" || replacer.options.ActorID != "trusted-actor" || replacer.options.RequestID != "req-gateway" || replacer.options.IdempotencyKey != "idem-gateway" {
 		t.Fatalf("unexpected import options: %#v", replacer.options)
 	}
-	if replacer.options.SubjectID != "principal-1" || replacer.options.OrganizationID != "org-1" || replacer.options.AuthMethod != registry.AdminAuthMethodTrustedGateway || replacer.options.TokenID != "token-1" || replacer.options.LocalPrivate {
+	if replacer.options.SubjectID != "principal-1" || replacer.options.OrganizationID != "org-1" || replacer.options.AuthMethod != registry.AdminAuthMethodTrustedGateway || replacer.options.TokenID != "token-1" || replacer.options.GatewayKeyID != "key-1" || replacer.options.LocalPrivate {
 		t.Fatalf("expected trusted gateway principal evidence, got %#v", replacer.options)
+	}
+}
+
+func TestTrustedGatewayAcceptsMultipleActiveSecretsAndRejectsRemovedSecret(t *testing.T) {
+	handler := newTestHandler(t, "")
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecrets = []string{"old-secret", "new-secret"}
+	for _, secret := range []string{"old-secret", "new-secret"} {
+		response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/validate", nil, "", trustedGatewayHeaders(secret, map[string]string{
+			trustedPermissionsHeader: registry.PermissionRegistryValidate,
+		}))
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected active secret %q to be accepted, got %d: %s", secret, response.Code, response.Body.String())
+		}
+	}
+
+	handler.TrustedGatewaySecrets = []string{"new-secret"}
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/validate", nil, "", trustedGatewayHeaders("old-secret", map[string]string{
+		trustedPermissionsHeader: registry.PermissionRegistryValidate,
+	}))
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected removed old secret to be rejected, got %d: %s", response.Code, response.Body.String())
+	}
+	var errorResponse ErrorResponse
+	decodeResponse(t, response, &errorResponse)
+	if errorResponse.Error.ErrorType != "AUTH_ERROR" {
+		t.Fatalf("unexpected error response: %#v", errorResponse)
+	}
+}
+
+func TestTrustedGatewayUsesConfiguredKeyIDWhenHeaderAbsent(t *testing.T) {
+	authenticator := TrustedGatewayAuthenticator{
+		GatewaySecrets: []string{"gateway-secret"},
+		GatewayKeyID:   "configured-key",
+	}
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/registry/validate", nil)
+	for key, value := range trustedGatewayHeaders("gateway-secret", map[string]string{
+		trustedGatewayKeyIDHeader: "",
+		trustedPermissionsHeader:  registry.PermissionRegistryValidate,
+	}) {
+		req.Header.Set(key, value)
+	}
+	principal, err := authenticator.ResolveAdminPrincipal(req, registry.PermissionRegistryValidate)
+	if err != nil {
+		t.Fatalf("resolve principal: %v", err)
+	}
+	if principal.GatewayKeyID != "configured-key" {
+		t.Fatalf("expected configured gateway key id, got %#v", principal)
 	}
 }
 
@@ -1112,6 +1161,7 @@ func importReplaceBodyWithSource(t *testing.T, source string) map[string]any {
 func trustedGatewayHeaders(secret string, overrides map[string]string) map[string]string {
 	headers := map[string]string{
 		trustedGatewayAuthorizationHeader: "Bearer " + secret,
+		trustedGatewayKeyIDHeader:         "key-1",
 		trustedPrincipalIDHeader:          "principal-1",
 		trustedProjectIDHeader:            "project-1",
 		trustedOrganizationIDHeader:       "org-1",

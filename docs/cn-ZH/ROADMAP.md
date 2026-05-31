@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Hosted Admin Trusted Gateway Production Boundary Design Complete
+Hosted Admin Trusted Gateway Production Boundary Implementation Complete
 ```
 
 战略判断：
@@ -789,6 +789,7 @@ Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review 
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0 - complete
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0 - complete
 ```
 
 ## 8.8 Phase 5.8：Tooling Re-entry Phase
@@ -940,7 +941,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0, after design acceptance
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -999,29 +1000,30 @@ Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review 
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0, after design acceptance
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
 ```
 
-这现在是 hosted trusted-gateway production boundary design 被接受后的下一项工程任务。
+这现在是 hosted trusted-gateway production boundary implementation 完成后的下一项工程任务。
 
 范围：
 
-1. 在 Control Plane 内实现 accepted production boundary support。
-2. 添加 rotation-compatible trusted gateway secret configuration 和 optional gateway key-id metadata。
-3. 添加 multi-secret overlap、old-secret rejection 和 no-secret fail-closed behavior 的 tests 与 dogfood。
+1. 对照 design review production boundary implementation。
+2. 确认 rotation dogfood、secret-safe metadata 和 key-id evidence。
+3. 记录 remaining real-gateway、permission-source、deployment 和 tenant-partitioning risks。
 4. 不实现 public CRUD、automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- accepted production boundary semantics 已实现。
-- multiple active gateway secrets 可以在 rotation overlap 期间 dogfood。
-- old secrets 可以移除并被拒绝。
-- audit/idempotency evidence 仍然 secret-safe 且 derived from trusted claims。
+- production boundary implementation acceptance criteria 已 review。
+- dogfood evidence 已总结。
+- remaining hosted deployment risks 已文档化。
+- 下一项 hosted Control Plane readiness gap 明确。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：
@@ -1039,6 +1041,15 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
+
+已完成 hosted trusted-gateway production boundary implementation 结果：
+
+- rotation-compatible active gateway secrets 已实现。
+- legacy single-secret configuration 保持兼容。
+- optional gateway key-id evidence 会进入 audit 和 import/replace metadata。
+- live dogfood 验证 old/new overlap、removed old-secret rejection、new-secret mutation、key-id evidence 和 secret-safe metadata。
+- 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`。
 
 已完成 hosted trusted-gateway production boundary design 结果：
 

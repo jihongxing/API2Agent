@@ -213,6 +213,8 @@ func serve(args []string) error {
 	adminIdentityMode := flags.String("admin-identity-mode", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_IDENTITY_MODE"), "admin identity mode: local_private or hosted")
 	adminAuthenticator := flags.String("admin-authenticator", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_AUTHENTICATOR"), "admin authenticator mode: local_private or trusted_gateway")
 	trustedGatewaySecret := flags.String("trusted-gateway-secret", os.Getenv("API2AGENT_CONTROL_PLANE_TRUSTED_GATEWAY_SECRET"), "trusted gateway secret for --admin-authenticator=trusted_gateway")
+	trustedGatewaySecrets := flags.String("trusted-gateway-secrets", os.Getenv("API2AGENT_CONTROL_PLANE_TRUSTED_GATEWAY_SECRETS"), "comma-separated trusted gateway secrets for rotation-compatible --admin-authenticator=trusted_gateway")
+	trustedGatewayKeyID := flags.String("trusted-gateway-key-id", os.Getenv("API2AGENT_CONTROL_PLANE_TRUSTED_GATEWAY_KEY_ID"), "optional non-secret trusted gateway key id for audit evidence")
 	distributionDir := flags.String("distribution-dir", "", "optional local snapshot distribution directory")
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -237,6 +239,8 @@ func serve(args []string) error {
 		AdminIdentityMode:      *adminIdentityMode,
 		AdminAuthenticatorMode: *adminAuthenticator,
 		TrustedGatewaySecret:   *trustedGatewaySecret,
+		TrustedGatewaySecrets:  parseTrustedGatewaySecrets(*trustedGatewaySecrets),
+		TrustedGatewayKeyID:    *trustedGatewayKeyID,
 	}
 	handler.Register(mux)
 	log.Printf("api2agent control plane listening on %s", *addr)
@@ -253,6 +257,23 @@ func requiresLocalAdminToken(identityMode string, authenticatorMode string) bool
 		return identityMode == httpapi.AdminIdentityModeLocalPrivate
 	}
 	return authenticatorMode == httpapi.AdminAuthenticatorModeLocalPrivate
+}
+
+func parseTrustedGatewaySecrets(raw string) []string {
+	var secrets []string
+	seen := map[string]struct{}{}
+	for _, part := range strings.Split(raw, ",") {
+		secret := strings.TrimSpace(part)
+		if secret == "" {
+			continue
+		}
+		if _, ok := seen[secret]; ok {
+			continue
+		}
+		seen[secret] = struct{}{}
+		secrets = append(secrets, secret)
+	}
+	return secrets
 }
 
 type registryRuntime struct {
@@ -338,5 +359,5 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane publish-artifact --artifact-dir <artifact-dir> --distribution-dir <distribution-dir>")
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane seed-postgres --registry <registry.json> --postgres-dsn <dsn>")
 	fmt.Fprintln(os.Stderr, "  api2agent-controlplane import-replace-postgres --registry <registry.json> --postgres-dsn <dsn> [--actor-id <actor>] [--request-id <request-id>] [--idempotency-key <key>]")
-	fmt.Fprintln(os.Stderr, "  api2agent-controlplane serve --registry <registry.json> [--admin-token <token>] [--registry-store file|postgres] [--postgres-dsn <dsn>] [--addr <addr>] [--distribution-dir <dir>] [--admin-identity-mode local_private|hosted] [--admin-authenticator local_private|trusted_gateway] [--trusted-gateway-secret <secret>]")
+	fmt.Fprintln(os.Stderr, "  api2agent-controlplane serve --registry <registry.json> [--admin-token <token>] [--registry-store file|postgres] [--postgres-dsn <dsn>] [--addr <addr>] [--distribution-dir <dir>] [--admin-identity-mode local_private|hosted] [--admin-authenticator local_private|trusted_gateway] [--trusted-gateway-secret <secret>] [--trusted-gateway-secrets <secret-a,secret-b>] [--trusted-gateway-key-id <key-id>]")
 }

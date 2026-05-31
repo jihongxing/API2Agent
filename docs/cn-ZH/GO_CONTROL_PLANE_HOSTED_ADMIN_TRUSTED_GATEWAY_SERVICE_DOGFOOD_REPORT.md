@@ -8,7 +8,7 @@
 
 Hosted trusted-gateway admin dogfood 已在真实 `api2agent-controlplane serve` process 和 live podman-backed Postgres 上通过。
 
-Service 在不传 `--admin-token` 的情况下用 hosted mode 启动，能用 trusted gateway claims 处理 admin requests；missing gateway auth 返回 `401 AUTH_ERROR`，missing permission 返回 `403 AUTHZ_DENIED`，并持久化 principal-derived audit/idempotency evidence。
+Service 在不传 `--admin-token` 的情况下用 hosted mode 启动，能用 trusted gateway claims 处理 admin requests；证明 old/new gateway secret rotation overlap；已移除 old secret 返回 `401 AUTH_ERROR`；missing gateway auth 返回 `401 AUTH_ERROR`，missing permission 返回 `403 AUTHZ_DENIED`，并持久化 principal-derived audit/idempotency evidence。
 
 ## Script
 
@@ -31,12 +31,15 @@ podman Postgres
   -> build api2agent-controlplane
   -> serve with --admin-identity-mode hosted
   -> serve with --admin-authenticator trusted_gateway
-  -> serve with --trusted-gateway-secret
+  -> serve with --trusted-gateway-secrets old,new
   -> no --admin-token flag
   -> public GET /healthz
+  -> trusted POST /v1/admin/registry/validate with old secret
   -> trusted POST /v1/admin/registry/validate
   -> missing gateway auth POST /v1/admin/registry/validate
   -> missing permission POST /v1/admin/registry/validate
+  -> restart with only the new gateway secret
+  -> removed old secret POST /v1/admin/registry/validate
   -> trusted POST /v1/admin/registry/import-replace
   -> query audit and idempotency evidence
 ```
@@ -49,6 +52,9 @@ podman Postgres
 {
   "status": "passed",
   "admin_token_flag_used": false,
+  "old_secret_overlap_status": 200,
+  "old_secret_removed_status": 401,
+  "old_secret_removed_error_type": "AUTH_ERROR",
   "validate_status": 200,
   "missing_gateway_auth_status": 401,
   "missing_gateway_auth_error_type": "AUTH_ERROR",
@@ -57,7 +63,7 @@ podman Postgres
   "import_status": 201,
   "audit_counts": {
     "registry_revisions": 2,
-    "admin_audit_events": 2,
+    "admin_audit_events": 3,
     "idempotency_records": 1,
     "providers": 1
   }
@@ -76,6 +82,7 @@ Dogfood 验证了 `registry.validate` 和 `registry.import_replace` audit rows �
   "organization_id": "hosted-org-dogfood",
   "auth_method": "trusted_gateway",
   "token_id": "gateway-token-dogfood",
+  "gateway_key_id": "dogfood-gateway-key-new",
   "local_private": "false",
   "metadata_contains_gateway_secret": false
 }
@@ -114,13 +121,16 @@ Dogfood 也验证了 import/replace idempotency record 使用 trusted gateway cl
 
 - service 在 hosted/trusted-gateway mode 下不需要 `--admin-token` 即可启动
 - `/healthz` 保持 public
+- old 和 new active gateway secrets 在 rotation overlap 期间都可用
+- 已移除 old gateway secret 返回 `401 AUTH_ERROR`
 - trusted gateway validation 返回 `200`
 - public `Authorization` 和 `X-Actor-ID` 不会覆盖 trusted gateway claims
 - missing gateway authorization 返回 `401 AUTH_ERROR`
 - missing endpoint permission 返回 `403 AUTHZ_DENIED`
 - import/replace 返回 `201`
 - audit rows 使用 trusted gateway actor 和 principal metadata
-- audit metadata 不包含 gateway secret
+- audit metadata 包含 non-secret `gateway_key_id`
+- audit metadata 不包含 old/new gateway secrets
 - idempotency record 使用 trusted gateway project 和 actor scope
 - idempotency record 链接到 registry revision 和 admin audit event
 - 未增加 public CRUD、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation
@@ -149,7 +159,7 @@ python scripts\go_control_plane_hosted_admin_gateway_dogfood.py --output tmp\go_
 ## 推荐下一项任务
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
 ```
 
-closeout 应判断 trusted-gateway hosted admin integration 是否可以暂停，再进入下一个 hosted Control Plane readiness gap。
+closeout 应判断 implemented production-boundary support 是否可以暂停，再进入下一个 hosted Control Plane readiness gap。

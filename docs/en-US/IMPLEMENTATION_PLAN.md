@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Hosted Admin Trusted Gateway Production Boundary Design Complete
+Hosted Admin Trusted Gateway Production Boundary Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is complete, and the current Go Control Plane gate is production boundary implementation for the trusted-gateway hosted admin path, after design acceptance.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is complete, and the current Go Control Plane gate is closeout of the trusted-gateway hosted admin production boundary implementation.
 
 Implementation language decision:
 
@@ -789,11 +789,17 @@ Current Phase 6 progress:
   - permission issuance, audit/idempotency evidence, failure semantics, deployment, and observability contracts are defined.
   - implementation tests and dogfood requirements are named.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`.
+- Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0 is complete:
+  - rotation-compatible active gateway secrets are implemented.
+  - legacy single-secret configuration remains compatible.
+  - optional gateway key-id evidence is carried into audit and import/replace metadata.
+  - live dogfood verifies overlap, old-secret removal, key-id evidence, and secret-safe metadata.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0, after design acceptance
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
 ```
 
 References:
@@ -811,6 +817,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace Is Later
 

@@ -19,6 +19,7 @@ type AdminPrincipal struct {
 	OrganizationID string
 	AuthMethod     string
 	TokenID        string
+	GatewayKeyID   string
 	Roles          []string
 	Permissions    []string
 	LocalPrivate   bool

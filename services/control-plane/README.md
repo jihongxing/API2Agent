@@ -138,7 +138,7 @@ By default, `/v1/admin/*` endpoints run in `local_private` identity mode and req
 
 The HTTP layer now resolves admin requests into `registry.AdminPrincipal` before running endpoint logic. Hosted mode is fail-closed unless an `AdminAuthenticator` is injected by the embedding service; caller-supplied identity headers such as `X-Actor-ID` are not trusted in hosted mode.
 
-Trusted gateway hosted mode can be enabled with `--admin-identity-mode hosted --admin-authenticator trusted_gateway --trusted-gateway-secret <secret>`. In that mode, the service validates `X-API2Agent-Gateway-Authorization: Bearer <secret>` before reading trusted `X-API2Agent-*` principal, project, role, and permission claims.
+Trusted gateway hosted mode can be enabled with `--admin-identity-mode hosted --admin-authenticator trusted_gateway --trusted-gateway-secret <secret>` or rotation-compatible `--trusted-gateway-secrets <old,new>`. In that mode, the service validates `X-API2Agent-Gateway-Authorization: Bearer <secret>` before reading trusted `X-API2Agent-*` principal, project, role, permission, and optional gateway key-id claims.
 
 Hosted/trusted-gateway mode has been dogfooded against a real service process and live Postgres without `--admin-token`.
 
@@ -169,3 +169,4 @@ Hosted admin authenticator integration closeout review: `../../docs/en-US/GO_CON
 Hosted admin trusted gateway service dogfood report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`.
 Hosted admin trusted gateway service dogfood closeout review: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`.
 Hosted admin trusted gateway production boundary design: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`.
+Hosted admin trusted gateway production boundary implementation report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`.

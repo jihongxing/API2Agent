@@ -18,6 +18,7 @@ type ImportReplaceOptions struct {
 	OrganizationID string
 	AuthMethod     string
 	TokenID        string
+	GatewayKeyID   string
 	LocalPrivate   bool
 	RequestID      string
 	IdempotencyKey string
@@ -671,6 +672,9 @@ func importReplaceAuditMetadata(opts ImportReplaceOptions, result ImportReplaceR
 	}
 	if opts.TokenID != "" {
 		metadata["token_id"] = opts.TokenID
+	}
+	if opts.GatewayKeyID != "" {
+		metadata["gateway_key_id"] = opts.GatewayKeyID
 	}
 	if opts.IdempotencyKey != "" {
 		scope := idempotencyScope(opts)

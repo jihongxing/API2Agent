@@ -48,3 +48,16 @@ func TestRequiresLocalAdminToken(t *testing.T) {
 		})
 	}
 }
+
+func TestParseTrustedGatewaySecrets(t *testing.T) {
+	got := parseTrustedGatewaySecrets(" old-secret, new-secret ,, old-secret ")
+	want := []string{"old-secret", "new-secret"}
+	if len(got) != len(want) {
+		t.Fatalf("parseTrustedGatewaySecrets() = %#v, want %#v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("parseTrustedGatewaySecrets() = %#v, want %#v", got, want)
+		}
+	}
+}
