@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Admin Trusted Gateway Service Dogfood Closeout Complete
+Hosted Admin Trusted Gateway Production Boundary Design Complete
 ```
 
 Strategic thesis:
@@ -788,6 +788,7 @@ Go Control Plane Hosted Admin Authenticator Integration Implementation v0 - comp
 Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0 - complete
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0 - complete
 ```
 
 ## 8.8 Phase 5.8: Tooling Re-entry Phase
@@ -939,7 +940,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0, after design acceptance
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -997,29 +998,30 @@ Go Control Plane Hosted Admin Authenticator Integration Implementation v0
 Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0, after design acceptance
 ```
 
-This is now the next engineering task after hosted trusted-gateway service dogfood closeout is complete.
+This is now the next engineering task after hosted trusted-gateway production boundary design is accepted.
 
 Scope:
 
-1. Design the production gateway-to-Control-Plane trust boundary.
-2. Define trusted header strip/rewrite rules, gateway secret rotation, and permission claim issuance assumptions.
-3. Define deployment, observability, failure semantics, and later implementation test requirements.
+1. Implement the accepted production boundary support inside the Control Plane.
+2. Add rotation-compatible trusted gateway secret configuration and optional gateway key-id metadata.
+3. Add tests and dogfood for multi-secret overlap, old-secret rejection, and no-secret fail-closed behavior.
 4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- production gateway boundary is documented before implementation.
-- secret rotation and trusted header requirements are explicit.
-- permission issuance and audit evidence contracts are explicit.
-- later implementation and dogfood requirements are named.
+- accepted production boundary semantics are implemented.
+- multiple active gateway secrets can be dogfooded during rotation overlap.
+- old secrets can be removed and rejected.
+- audit/idempotency evidence remains secret-safe and trusted-claim-derived.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1036,6 +1038,18 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`
+
+Completed hosted trusted-gateway production boundary design result:
+
+- gateway-to-Control-Plane trust boundary is explicit.
+- trusted header strip/rewrite rules are explicit.
+- gateway secret rotation approach is explicit.
+- permission issuance assumptions are explicit.
+- audit/idempotency evidence contract is explicit.
+- deployment and observability expectations are explicit.
+- implementation tests and dogfood requirements are named.
+- See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`.
 
 Completed hosted trusted-gateway service dogfood closeout result:
 

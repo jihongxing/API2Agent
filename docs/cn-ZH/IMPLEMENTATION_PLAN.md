@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Hosted Admin Trusted Gateway Service Dogfood Closeout Complete
+Hosted Admin Trusted Gateway Production Boundary Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 trusted-gateway hosted admin path 的 production boundary design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 trusted-gateway hosted admin path 的 production boundary implementation，前提是 design 被接受。
 
 实现语言决策：
 
@@ -783,11 +783,17 @@ Go Control Plane Minimum v0
   - remaining gateway、secret-rotation、permission-source、header-stripping 和 tenant-partitioning risks 已文档化。
   - 下一项任务是 production gateway boundary design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0 已完成：
+  - gateway-to-Control-Plane trust boundary 已定义。
+  - trusted header strip/rewrite rules 和 secret rotation policy 已定义。
+  - permission issuance、audit/idempotency evidence、failure semantics、deployment 和 observability contracts 已定义。
+  - implementation tests 和 dogfood requirements 已命名。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
+Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0, after design acceptance
 ```
 
 参考：
@@ -804,6 +810,7 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`
 
 ## 9. Marketplace 是后面的结果
 

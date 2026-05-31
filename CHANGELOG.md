@@ -268,6 +268,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Admin Authenticator Integration closeout completed; trusted-gateway auth can close and the next proof is service-level hosted gateway dogfood over HTTP.
 - Go Control Plane Hosted Admin Trusted Gateway Service Dogfood passed against a real service process and live Postgres; hosted/trusted-gateway serve starts without `--admin-token`, validates trusted gateway success plus `401 AUTH_ERROR` and `403 AUTHZ_DENIED`, persists trusted principal audit/idempotency evidence, and fixed import/replace audit metadata to include hosted principal evidence.
 - Go Control Plane Hosted Admin Trusted Gateway Service Dogfood closeout completed; Control Plane-side hosted trusted-gateway admin can pause and the next task is production gateway boundary design.
+- Go Control Plane Hosted Admin Trusted Gateway Production Boundary design completed with gateway-to-Control-Plane trust boundary, trusted header strip/rewrite rules, secret rotation policy, permission issuance assumptions, audit/idempotency evidence contract, failure semantics, deployment/observability expectations, and implementation dogfood requirements.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -275,4 +276,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0.
+- Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0, after design acceptance.
