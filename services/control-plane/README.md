@@ -172,3 +172,4 @@ Hosted admin trusted gateway production boundary design: `../../docs/en-US/GO_CO
 Hosted admin trusted gateway production boundary implementation report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`.
 Hosted admin trusted gateway production boundary closeout review: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`.
 Hosted admin gateway contract harness design: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`.
+Hosted admin gateway contract harness implementation report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`.

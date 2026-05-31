@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Admin Gateway Contract Harness Design Complete
+Hosted Admin Gateway Contract Harness Implementation Complete
 ```
 
 Strategic thesis:
@@ -943,7 +943,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0, after design acceptance
+Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1005,29 +1005,30 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
 Go Control Plane Hosted Admin Gateway Contract Harness Design v0
+Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0, after design acceptance
+Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
 ```
 
-This is now the next engineering task after hosted admin gateway contract harness design is accepted.
+This is now the next engineering task after the hosted admin gateway contract harness implementation passed live dogfood.
 
 Scope:
 
-1. Implement the local gateway contract harness and dogfood script.
-2. Prove public header stripping, trusted claim injection, request id propagation, and static test policy.
-3. Prove dogfood requests call the Control Plane through the harness rather than directly.
+1. Review the implemented local gateway contract harness and dogfood evidence.
+2. Decide whether the gateway contract proof can close.
+3. Carry forward remaining real hosted gateway, permission-source, deployment, and tenant-partitioning risks.
 4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- gateway harness is implemented as local dogfood-only tooling.
-- spoofed public trusted headers are stripped before forwarding.
-- audit/idempotency evidence uses harness-injected identity.
-- raw public token and gateway secret are absent from evidence artifacts.
+- gateway harness implementation evidence is accepted.
+- spoofed public trusted headers stripping is accepted.
+- audit/idempotency evidence using harness-injected identity is accepted.
+- secret/token-safe report artifact evidence is accepted.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1048,6 +1049,16 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+
+Completed hosted admin gateway contract harness implementation result:
+
+- local dogfood-only gateway harness is implemented.
+- public bearer auth is consumed locally and trusted `X-API2Agent-*` headers are stripped and re-injected.
+- dogfood requests reach private Control Plane admin endpoints through the harness.
+- audit/idempotency evidence uses harness-injected identity and gateway key id.
+- raw public bearer tokens and the raw gateway secret are absent from evidence/report artifacts.
+- See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`.
 
 Completed hosted admin gateway contract harness design result:
 
