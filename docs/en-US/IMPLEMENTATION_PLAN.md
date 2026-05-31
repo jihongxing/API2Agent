@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Closeout Complete
+Agent Capability Compiler OpenAPI Schema Shaping Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI schema shaping design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI schema shaping implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design v0
+Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design v0
+Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -884,11 +884,16 @@ Current Phase 6 progress:
   - remaining risks are heuristic profile hints, relative URLs requiring runtime origin, no automatic profile switching, and unresolved schema complexity.
   - the next OpenAPI hardening task is schema shaping design.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler OpenAPI Schema Shaping Design v0 is complete:
+  - current schema handling baseline and gaps are documented.
+  - additive compatibility strategy, direction-aware request/response shaping, nullable/readOnly/writeOnly/additionalProperties/array/polymorphism policies, generated artifact effects, diagnostics, tests, dogfood, and non-goals are defined.
+  - the next OpenAPI hardening task is schema shaping implementation.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design v0
+Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
 ```
 
 References:
@@ -924,6 +929,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`
 
 ## 9. Marketplace Is Later
 

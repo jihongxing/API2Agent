@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Closeout Complete
+Agent Capability Compiler OpenAPI Schema Shaping Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design v0
+Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent capability compiler expansion design.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Schema Shaping Implementation v0.
 
 Scope:
 
@@ -1059,6 +1059,15 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`
+
+Completed Agent capability compiler OpenAPI schema shaping design result:
+
+- current schema handling baseline and gaps are documented.
+- direction-aware request/response shaping rules are defined.
+- nullable, readOnly/writeOnly, additionalProperties, array, polymorphism, and required/optional field policies are defined.
+- generated README, tools schema, examples, inspect, diagnostics, tests, and dogfood expectations are defined.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`.
 
 Completed Agent capability compiler OpenAPI real-world hardening design result:
 

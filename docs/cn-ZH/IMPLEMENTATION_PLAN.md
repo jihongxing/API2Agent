@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Closeout Complete
+Agent Capability Compiler OpenAPI Schema Shaping Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI schema shaping design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI schema shaping implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design v0
+Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design v0
+Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -884,11 +884,16 @@ Go Control Plane Minimum v0
   - remaining risks 是 heuristic profile hints、relative URLs requiring runtime origin、no automatic profile switching 和 unresolved schema complexity。
   - 下一项 OpenAPI hardening task 是 schema shaping design。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`。
+- Agent Capability Compiler OpenAPI Schema Shaping Design v0 已完成：
+  - current schema handling baseline 和 gaps 已文档化。
+  - additive compatibility strategy、direction-aware request/response shaping、nullable/readOnly/writeOnly/additionalProperties/array/polymorphism policies、generated artifact effects、diagnostics、tests、dogfood 和 non-goals 已定义。
+  - 下一项 OpenAPI hardening task 是 schema shaping implementation。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Design v0
+Agent Capability Compiler OpenAPI Schema Shaping Implementation v0
 ```
 
 参考：
@@ -924,6 +929,7 @@ Agent Capability Compiler OpenAPI Schema Shaping Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`
 
 ## 9. Marketplace 是后面的结果
 
