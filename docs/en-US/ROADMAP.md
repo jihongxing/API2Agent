@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Implementation Complete
+Agent Capability Compiler OpenAPI Schema Shaping Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Discriminator Handling Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Discriminator Handling Design v0.
 
 Scope:
 
@@ -1061,6 +1061,15 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`
+
+Completed Agent capability compiler OpenAPI schema shaping closeout result:
+
+- schema shaping is accepted as complete.
+- generated Agent-facing inputs are clearer for nullable, map, array, polymorphic, and optional object shapes.
+- remaining risks are discriminator metadata not yet used, response shaping depth, intentional partial JSON Schema coverage, advisory diagnostics, and bounded rather than semantic simplification.
+- the next OpenAPI hardening task is discriminator handling design.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed Agent capability compiler OpenAPI schema shaping implementation result:
 

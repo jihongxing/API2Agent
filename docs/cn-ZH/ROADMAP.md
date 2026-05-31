@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Implementation Complete
+Agent Capability Compiler OpenAPI Schema Shaping Closeout Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Discriminator Handling Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Discriminator Handling Design v0。
 
 范围：
 
@@ -1061,6 +1061,15 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`
+
+已完成 Agent capability compiler OpenAPI schema shaping closeout 结果：
+
+- schema shaping 已接受为 complete。
+- generated Agent-facing inputs 对 nullable、map、array、polymorphic 和 optional object shapes 更清楚。
+- remaining risks 是 discriminator metadata not yet used、response shaping depth、intentional partial JSON Schema coverage、advisory diagnostics 和 bounded rather than semantic simplification。
+- 下一项 OpenAPI hardening task 是 discriminator handling design。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 Agent capability compiler OpenAPI schema shaping implementation 结果：
 

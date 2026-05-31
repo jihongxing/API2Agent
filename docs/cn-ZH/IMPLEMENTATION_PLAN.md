@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Implementation Complete
+Agent Capability Compiler OpenAPI Schema Shaping Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI schema shaping closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI discriminator handling design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Discriminator Handling Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Discriminator Handling Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -895,11 +895,16 @@ Go Control Plane Minimum v0
   - nullable、readOnly/writeOnly、additionalProperties、array、polymorphism 和 required/optional cases 已有 fixtures 和 regression tests。
   - local schema-shaping dogfood 已通过，full Python suite 以 193 tests 通过。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`。
+- Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0 已完成：
+  - schema shaping 已接受为 complete。
+  - remaining risks 是 discriminator metadata not yet used、response shaping depth、intentional partial JSON Schema coverage、advisory diagnostics 和 bounded rather than semantic simplification。
+  - 下一项 OpenAPI hardening task 是 discriminator handling design。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Discriminator Handling Design v0
 ```
 
 参考：
@@ -937,6 +942,7 @@ Agent Capability Compiler OpenAPI Schema Shaping Closeout + Phase Review v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace 是后面的结果
 
