@@ -276,6 +276,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Admin Gateway Contract Harness closeout completed; the local gateway contract proof can close and the next hosted-readiness gap is permission-source design.
 - Hosted Control Plane Pause + Agent Capability Compiler Re-entry documented; deeper hosted work is moved to backlog and the next immediate focus returns to API-first compiler expansion.
 - Agent Capability Compiler Expansion design completed; the first implementation slice is quality diagnostics for generated OpenAPI/curl capability packages.
+- Agent Capability Compiler Quality Diagnostics implemented with `diagnostics.json`, deterministic findings, diagnostics summary output during generation, `api2agent diagnose`, README/inspect summaries, and regression coverage.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -283,4 +284,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler Quality Diagnostics v0.
+- Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0.

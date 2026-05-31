@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler Expansion Design Complete
+Agent Capability Compiler Quality Diagnostics Implementation Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Quality Diagnostics v0
+Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1056,6 +1056,16 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
+
+已完成 Agent capability compiler quality diagnostics implementation 结果：
+
+- generated packages 现在写入 additive `diagnostics.json`。
+- `api2agent diagnose` 可以从旧 packages 重新计算 diagnostics。
+- generation、README 和 inspect surfaces 暴露 compact diagnostics summaries。
+- deterministic findings 覆盖 usability、safety、auth、schema、execution 和 observability risks。
+- tests 和 local dogfood 已通过。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`。
 
 已完成 Agent capability compiler expansion design 结果：
 

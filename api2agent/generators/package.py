@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from api2agent.diagnostics import diagnose_capability
 from api2agent.generators.mcp import render_mcp_server
 from api2agent.generators.readme import render_readme
 from api2agent.generators.runner import render_runner
@@ -18,11 +19,13 @@ def generate_package(capability: Capability, output_dir: Path, force: bool = Fal
     output_dir.mkdir(parents=True, exist_ok=True)
     examples_dir = output_dir / "examples"
     examples_dir.mkdir(exist_ok=True)
+    diagnostics = diagnose_capability(capability)
 
     _write_json(output_dir / "capability.json", capability.model_dump(mode="json", by_alias=True))
     _write_json(output_dir / "tools.json", to_openai_tools(capability))
+    _write_json(output_dir / "diagnostics.json", diagnostics)
     _write_text(output_dir / "auth.env.example", _render_auth_env(capability))
-    _write_text(output_dir / "README.md", render_readme(capability))
+    _write_text(output_dir / "README.md", render_readme(capability, diagnostics=diagnostics))
     _write_text(output_dir / "runner.py", render_runner(capability))
     _write_text(output_dir / "smoke_test.py", render_smoke_test(capability))
     _write_text(output_dir / "manual_write_test.py", render_manual_write_test(capability))

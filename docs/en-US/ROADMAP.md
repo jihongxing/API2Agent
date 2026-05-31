@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler Expansion Design Complete
+Agent Capability Compiler Quality Diagnostics Implementation Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler Quality Diagnostics v0
+Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1056,6 +1056,16 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
+
+Completed Agent capability compiler quality diagnostics implementation result:
+
+- generated packages now write additive `diagnostics.json`.
+- diagnostics can be recomputed from old packages with `api2agent diagnose`.
+- generation, README, and inspect surfaces expose compact diagnostics summaries.
+- deterministic findings cover usability, safety, auth, schema, execution, and observability risks.
+- tests and local dogfood passed.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`.
 
 Completed Agent capability compiler expansion design result:
 

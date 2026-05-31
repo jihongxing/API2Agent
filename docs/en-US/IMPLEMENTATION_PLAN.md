@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler Expansion Design Complete
+Agent Capability Compiler Quality Diagnostics Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is Agent capability compiler quality diagnostics implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is Agent capability compiler quality diagnostics closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler Quality Diagnostics v0
+Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Quality Diagnostics v0
+Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -826,11 +826,17 @@ Current Phase 6 progress:
   - target generate/diagnose/inspect workflows are defined.
   - the `diagnostics.json` contract, initial finding set, scoring heuristic, tests, dogfood, and non-goals are documented.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`.
+- Agent Capability Compiler Quality Diagnostics v0 is complete:
+  - generated packages now include additive `diagnostics.json`.
+  - `api2agent diagnose` can print human-readable or JSON diagnostics.
+  - generation, README, and inspect surfaces show compact diagnostics summaries.
+  - deterministic findings cover usability, safety, auth, schema, execution, and observability risks.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Quality Diagnostics v0
+Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
 ```
 
 References:
@@ -855,6 +861,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace Is Later
 

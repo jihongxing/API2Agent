@@ -17,6 +17,12 @@ from api2agent.benchmark import run_generated_package_latency_benchmark
 from api2agent.control.models import UsageEvent
 from api2agent.control.proxy import run_proxy_server
 from api2agent.control.storage import UsageStore
+from api2agent.diagnostics import (
+    diagnose_capability_file,
+    diagnostics_summary_line,
+    format_diagnostics,
+    load_package_diagnostics,
+)
 from api2agent.filters import ToolFilter, filter_capability
 from api2agent.generators.package import generate_package
 from api2agent.parsers.curl import parse_curl
@@ -150,6 +156,9 @@ def generate(
         raise typer.BadParameter(str(exc)) from exc
 
     typer.echo(f"Generated capability package: {result}")
+    diagnostics = load_package_diagnostics(result)
+    if diagnostics is not None:
+        typer.echo(diagnostics_summary_line(diagnostics))
     for warning in _generation_warnings(source_kind, original_tool_count, len(capability.tools), filters):
         typer.echo(warning)
 
@@ -287,6 +296,9 @@ def inspect(
                 "Large package hint: regenerate with --include-tag, --include-path, "
                 "--include-operation, or --max-tools before wiring this into an Agent."
             )
+    diagnostics = load_package_diagnostics(package_dir)
+    if diagnostics is not None:
+        typer.echo(diagnostics_summary_line(diagnostics))
     typer.echo("")
     typer.echo("Tools:")
 
@@ -313,6 +325,28 @@ def inspect(
         )
         for detail in _format_tool_details(tool):
             typer.echo(f"    {detail}")
+
+
+@app.command()
+def diagnose(
+    package_dir: Path = typer.Argument(..., help="Generated package directory."),
+    json_output: bool = typer.Option(False, "--json", help="Print raw diagnostics JSON."),
+) -> None:
+    """Diagnose generated capability package quality."""
+    capability_path = package_dir / "capability.json"
+    if not capability_path.exists():
+        raise typer.BadParameter(f"Capability file not found: {capability_path}")
+
+    diagnostics = load_package_diagnostics(package_dir)
+    if diagnostics is None:
+        diagnostics = diagnose_capability_file(capability_path)
+
+    if json_output:
+        typer.echo(json.dumps(diagnostics, indent=2, ensure_ascii=False))
+        return
+
+    for line in format_diagnostics(diagnostics):
+        typer.echo(line)
 
 
 @app.command()

@@ -16,6 +16,7 @@ def test_generate_package(tmp_path: Path) -> None:
     expected_files = [
         "README.md",
         "capability.json",
+        "diagnostics.json",
         "tools.json",
         "runner.py",
         "smoke_test.py",
