@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Hosted Admin Trusted Gateway Production Boundary Closeout Complete
+Hosted Admin Gateway Contract Harness Design Complete
 ```
 
 战略判断：
@@ -791,6 +791,7 @@ Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase R
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0 - complete
+Go Control Plane Hosted Admin Gateway Contract Harness Design v0 - complete
 ```
 
 ## 8.8 Phase 5.8：Tooling Re-entry Phase
@@ -942,7 +943,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Design v0
+Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0, after design acceptance
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1003,29 +1004,30 @@ Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase R
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Contract Harness Design v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Design v0
+Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0, after design acceptance
 ```
 
-这现在是 hosted trusted-gateway production boundary closeout 完成后的下一项工程任务。
+这现在是 hosted admin gateway contract harness design 被接受后的下一项工程任务。
 
 范围：
 
-1. 为 hosted admin requests 设计 local gateway contract harness。
-2. 定义 public header stripping、trusted claim injection、request id propagation 和 static test policy。
-3. 定义通过 harness 而不是直接调用 Control Plane 的 dogfood steps。
+1. 实现 local gateway contract harness 和 dogfood script。
+2. 证明 public header stripping、trusted claim injection、request id propagation 和 static test policy。
+3. 证明 dogfood requests 通过 harness 调用 Control Plane，而不是直接调用。
 4. 不实现 public CRUD、automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- gateway harness responsibilities 已文档化。
-- header stripping 和 trusted claim injection requirements 明确。
-- negative spoofed-header cases 已命名。
-- 后续 implementation 和 dogfood requirements 已命名。
+- gateway harness 作为 local dogfood-only tooling 已实现。
+- spoofed public trusted headers 在 forwarding 前被 strip。
+- audit/idempotency evidence 使用 harness-injected identity。
+- raw public token 和 gateway secret 不出现在 evidence artifacts。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：
@@ -1045,6 +1047,16 @@ Go Control Plane Hosted Admin Gateway Contract Harness Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
+
+已完成 hosted admin gateway contract harness design 结果：
+
+- local gateway harness responsibilities 明确。
+- static public auth and identity policy 明确。
+- public header stripping matrix 明确。
+- trusted claim injection 和 request/idempotency propagation 明确。
+- negative spoofing 和 dogfood evidence requirements 已命名。
+- 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`。
 
 已完成 hosted trusted-gateway production boundary closeout 结果：
 

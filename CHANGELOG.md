@@ -271,6 +271,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Admin Trusted Gateway Production Boundary design completed with gateway-to-Control-Plane trust boundary, trusted header strip/rewrite rules, secret rotation policy, permission issuance assumptions, audit/idempotency evidence contract, failure semantics, deployment/observability expectations, and implementation dogfood requirements.
 - Go Control Plane Hosted Admin Trusted Gateway Production Boundary implemented with rotation-compatible active gateway secrets, legacy single-secret compatibility, optional gateway key-id evidence, secret-safe active-set matching, CLI/env wiring, audit/idempotency evidence propagation, regression tests, and live rotation dogfood.
 - Go Control Plane Hosted Admin Trusted Gateway Production Boundary closeout completed; Control Plane-side production boundary mechanics can close and the next task is gateway contract harness design.
+- Go Control Plane Hosted Admin Gateway Contract Harness design completed with local harness responsibilities, static public auth and identity policy, header stripping matrix, trusted claim injection, request/idempotency propagation, negative spoofing cases, and dogfood evidence requirements.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -278,4 +279,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Admin Gateway Contract Harness Design v0.
+- Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0, after design acceptance.

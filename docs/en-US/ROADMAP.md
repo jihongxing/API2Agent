@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Admin Trusted Gateway Production Boundary Closeout Complete
+Hosted Admin Gateway Contract Harness Design Complete
 ```
 
 Strategic thesis:
@@ -791,6 +791,7 @@ Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase R
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0 - complete
+Go Control Plane Hosted Admin Gateway Contract Harness Design v0 - complete
 ```
 
 ## 8.8 Phase 5.8: Tooling Re-entry Phase
@@ -942,7 +943,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Design v0
+Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0, after design acceptance
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1003,29 +1004,30 @@ Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase R
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Contract Harness Design v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Design v0
+Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0, after design acceptance
 ```
 
-This is now the next engineering task after hosted trusted-gateway production boundary closeout is complete.
+This is now the next engineering task after hosted admin gateway contract harness design is accepted.
 
 Scope:
 
-1. Design a local gateway contract harness for hosted admin requests.
-2. Define public header stripping, trusted claim injection, request id propagation, and static test policy.
-3. Define dogfood steps that call the Control Plane through the harness rather than directly.
+1. Implement the local gateway contract harness and dogfood script.
+2. Prove public header stripping, trusted claim injection, request id propagation, and static test policy.
+3. Prove dogfood requests call the Control Plane through the harness rather than directly.
 4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- gateway harness responsibilities are documented.
-- header stripping and trusted claim injection requirements are explicit.
-- negative spoofed-header cases are named.
-- later implementation and dogfood requirements are named.
+- gateway harness is implemented as local dogfood-only tooling.
+- spoofed public trusted headers are stripped before forwarding.
+- audit/idempotency evidence uses harness-injected identity.
+- raw public token and gateway secret are absent from evidence artifacts.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1045,6 +1047,16 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
+
+Completed hosted admin gateway contract harness design result:
+
+- local gateway harness responsibilities are explicit.
+- static public auth and identity policy are explicit.
+- public header stripping matrix is explicit.
+- trusted claim injection and request/idempotency propagation are explicit.
+- negative spoofing and dogfood evidence requirements are named.
+- See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`.
 
 Completed hosted trusted-gateway production boundary closeout result:
 

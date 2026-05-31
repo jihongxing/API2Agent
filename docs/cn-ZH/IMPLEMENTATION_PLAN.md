@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Hosted Admin Trusted Gateway Production Boundary Closeout Complete
+Hosted Admin Gateway Contract Harness Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 hosted admin trusted-gateway path 的 gateway contract harness design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 hosted admin trusted-gateway path 的 gateway contract harness implementation，前提是 design 被接受。
 
 实现语言决策：
 
@@ -800,11 +800,17 @@ Go Control Plane Minimum v0
   - remaining gateway contract、public auth、permission-source、deployment 和 tenant-partitioning risks 已文档化。
   - 下一项任务是 gateway contract harness design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Admin Gateway Contract Harness Design v0 已完成：
+  - local gateway harness responsibilities 已定义。
+  - static public auth and identity policy 已定义。
+  - header stripping、trusted claim injection 和 request/idempotency propagation 已定义。
+  - negative spoofing cases 和 dogfood evidence requirements 已命名。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Design v0
+Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0, after design acceptance
 ```
 
 参考：
@@ -824,6 +830,7 @@ Go Control Plane Hosted Admin Gateway Contract Harness Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 
 ## 9. Marketplace 是后面的结果
 
