@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout Complete
+Agent Capability Compiler OpenAPI Real-Spec Calibration Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Design v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Real-Spec Calibration Design v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Implementation v0.
 
 Scope:
 
@@ -1071,6 +1071,13 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_DESIGN.md`
+
+Completed Agent capability compiler OpenAPI real-spec calibration design result:
+
+- calibration-after-keyword-coverage rationale, corpus slots, metric contract, status thresholds, harness behavior, artifact strategy, tests, dogfood, and non-goals are defined.
+- the next compiler hardening task is a local real-spec calibration harness implementation.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_DESIGN.md`.
 
 Completed Agent capability compiler OpenAPI JSON Schema keyword coverage closeout result:
 
