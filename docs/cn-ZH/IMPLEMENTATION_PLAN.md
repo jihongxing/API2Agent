@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Hosted Admin Trusted Gateway Production Boundary Implementation Complete
+Hosted Admin Trusted Gateway Production Boundary Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 trusted-gateway hosted admin production boundary implementation 的 closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 hosted admin trusted-gateway path 的 gateway contract harness design。
 
 实现语言决策：
 
@@ -795,11 +795,16 @@ Go Control Plane Minimum v0
   - optional gateway key-id evidence 会进入 audit 和 import/replace metadata。
   - live dogfood 验证 overlap、old-secret removal、key-id evidence 和 secret-safe metadata。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0 已完成：
+  - Control Plane 侧 production boundary mechanics 可以关闭。
+  - remaining gateway contract、public auth、permission-source、deployment 和 tenant-partitioning risks 已文档化。
+  - 下一项任务是 gateway contract harness design。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Contract Harness Design v0
 ```
 
 参考：
@@ -818,6 +823,7 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Pha
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace 是后面的结果
 

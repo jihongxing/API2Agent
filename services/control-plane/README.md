@@ -170,3 +170,4 @@ Hosted admin trusted gateway service dogfood report: `../../docs/en-US/GO_CONTRO
 Hosted admin trusted gateway service dogfood closeout review: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`.
 Hosted admin trusted gateway production boundary design: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_DESIGN.md`.
 Hosted admin trusted gateway production boundary implementation report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`.
+Hosted admin trusted gateway production boundary closeout review: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`.
