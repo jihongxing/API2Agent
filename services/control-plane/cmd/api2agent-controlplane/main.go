@@ -209,6 +209,7 @@ func serve(args []string) error {
 	postgresDSN := flags.String("postgres-dsn", os.Getenv("API2AGENT_CONTROL_PLANE_POSTGRES_DSN"), "Postgres DSN for --registry-store=postgres")
 	addr := flags.String("addr", "127.0.0.1:8081", "address for the local control plane service")
 	adminToken := flags.String("admin-token", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_TOKEN"), "admin bearer token for non-health endpoints")
+	adminIdentityMode := flags.String("admin-identity-mode", os.Getenv("API2AGENT_CONTROL_PLANE_ADMIN_IDENTITY_MODE"), "admin identity mode: local_private or hosted")
 	distributionDir := flags.String("distribution-dir", "", "optional local snapshot distribution directory")
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -223,13 +224,14 @@ func serve(args []string) error {
 	defer runtime.Close()
 	mux := http.NewServeMux()
 	handler := httpapi.Handler{
-		Store:           runtime.Store,
-		AuditSink:       runtime.AuditSink,
-		ImportReplacer:  runtime.ImportReplacer,
-		RegistryStore:   runtime.StoreName,
-		RegistrySource:  runtime.Source,
-		DistributionDir: *distributionDir,
-		AdminToken:      *adminToken,
+		Store:             runtime.Store,
+		AuditSink:         runtime.AuditSink,
+		ImportReplacer:    runtime.ImportReplacer,
+		RegistryStore:     runtime.StoreName,
+		RegistrySource:    runtime.Source,
+		DistributionDir:   *distributionDir,
+		AdminToken:        *adminToken,
+		AdminIdentityMode: *adminIdentityMode,
 	}
 	handler.Register(mux)
 	log.Printf("api2agent control plane listening on %s", *addr)

@@ -16,20 +16,53 @@ import (
 )
 
 type Handler struct {
-	Store           registry.Store
-	AuditSink       registry.PersistentAuditSink
-	ImportReplacer  RegistryImportReplacer
-	RegistryStore   string
-	RegistrySource  string
-	DistributionDir string
-	AdminToken      string
-	Now             func() time.Time
+	Store             registry.Store
+	AuditSink         registry.PersistentAuditSink
+	ImportReplacer    RegistryImportReplacer
+	Authenticator     AdminAuthenticator
+	RegistryStore     string
+	RegistrySource    string
+	DistributionDir   string
+	AdminToken        string
+	AdminIdentityMode string
+	Now               func() time.Time
 }
 
 const importReplaceMaxBodyBytes int64 = 2 * 1024 * 1024
 
+const (
+	AdminIdentityModeLocalPrivate = "local_private"
+	AdminIdentityModeHosted       = "hosted"
+)
+
 type RegistryImportReplacer interface {
 	ReplacePersistentRegistry(ctx context.Context, reg registry.Registry, opts registry.ImportReplaceOptions) (registry.ImportReplaceResult, error)
+}
+
+type AdminAuthenticator interface {
+	ResolveAdminPrincipal(r *http.Request, requiredPermission string) (registry.AdminPrincipal, error)
+}
+
+type AdminAuthError struct {
+	ErrorType  string
+	Scope      string
+	Message    string
+	Retryable  bool
+	Underlying error
+}
+
+func (e AdminAuthError) Error() string {
+	if e.Message != "" {
+		return e.Message
+	}
+	if e.Underlying != nil {
+		return e.Underlying.Error()
+	}
+	return e.ErrorType
+}
+
+func (e AdminAuthError) Unwrap() error {
+	return e.Underlying
 }
 
 type HealthResponse struct {
@@ -127,24 +160,24 @@ func (h Handler) ValidateRegistry(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed", false)
 		return
 	}
-	if !h.authorized(r) {
-		writeError(w, http.StatusUnauthorized, "AUTH_ERROR", "caller", "invalid control plane admin token", false)
+	principal, ok := h.resolveAdminPrincipal(w, r, registry.PermissionRegistryValidate)
+	if !ok {
 		return
 	}
 	reg, err := h.loadRegistry(r.Context())
 	if err != nil {
 		errorType, _, _, _ := h.registryLoadFailure()
-		h.recordAdminAuditFailure(r.Context(), r, "registry.validate", "registry", h.RegistrySource, errorType)
+		h.recordAdminAuditFailure(r.Context(), principal, r, "registry.validate", "registry", h.RegistrySource, errorType)
 		h.writeRegistryLoadError(w, err)
 		return
 	}
 	fingerprint, err := reg.Fingerprint()
 	if err != nil {
-		h.recordAdminAuditFailure(r.Context(), r, "registry.validate", "registry", h.RegistrySource, "REGISTRY_INVALID")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "registry.validate", "registry", h.RegistrySource, "REGISTRY_INVALID")
 		writeError(w, http.StatusBadRequest, "REGISTRY_INVALID", "caller", err.Error(), false)
 		return
 	}
-	if err := h.recordAdminAuditSuccess(r.Context(), r, "registry.validate", "registry", fingerprint, map[string]string{
+	if err := h.recordAdminAuditSuccess(r.Context(), principal, r, "registry.validate", "registry", fingerprint, map[string]string{
 		"registry_fingerprint": fingerprint,
 	}); err != nil {
 		writeError(w, http.StatusInternalServerError, "AUDIT_WRITE_FAILED", "platform", err.Error(), true)
@@ -164,8 +197,8 @@ func (h Handler) ImportReplaceRegistry(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed", false)
 		return
 	}
-	if !h.authorized(r) {
-		writeError(w, http.StatusUnauthorized, "AUTH_ERROR", "caller", "invalid control plane admin token", false)
+	principal, ok := h.resolveAdminPrincipal(w, r, registry.PermissionRegistryImportReplace)
+	if !ok {
 		return
 	}
 	requestID := strings.TrimSpace(r.Header.Get("X-Request-ID"))
@@ -220,12 +253,9 @@ func (h Handler) ImportReplaceRegistry(w http.ResponseWriter, r *http.Request) {
 	if source == "" {
 		source = "admin_http_import"
 	}
-	actorID := strings.TrimSpace(r.Header.Get("X-Actor-ID"))
-	if actorID == "" {
-		actorID = "admin"
-	}
 	result, err := h.ImportReplacer.ReplacePersistentRegistry(r.Context(), incoming, registry.ImportReplaceOptions{
-		ActorID:        actorID,
+		ProjectID:      principal.ProjectID,
+		ActorID:        principal.ActorID,
 		RequestID:      requestID,
 		IdempotencyKey: idempotencyKey,
 		Source:         source,
@@ -233,6 +263,12 @@ func (h Handler) ImportReplaceRegistry(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.writeRegistryMutationError(w, err)
 		return
+	}
+	if result.Replayed {
+		w.Header().Set("Idempotency-Replayed", "true")
+		if result.IdempotencyRecordID != 0 {
+			w.Header().Set("Idempotency-Record-ID", fmt.Sprint(result.IdempotencyRecordID))
+		}
 	}
 	status := http.StatusCreated
 	if result.Noop {
@@ -253,36 +289,36 @@ func (h Handler) ExportArtifact(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed", false)
 		return
 	}
-	if !h.authorized(r) {
-		writeError(w, http.StatusUnauthorized, "AUTH_ERROR", "caller", "invalid control plane admin token", false)
+	principal, ok := h.resolveAdminPrincipal(w, r, registry.PermissionSnapshotExportArtifact)
+	if !ok {
 		return
 	}
 	var req ExportArtifactRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.recordAdminAuditFailure(r.Context(), r, "snapshot.export_artifact", "snapshot_artifact", "", "INVALID_REQUEST")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "snapshot.export_artifact", "snapshot_artifact", "", "INVALID_REQUEST")
 		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "invalid json body", false)
 		return
 	}
 	if strings.TrimSpace(req.OutputDir) == "" {
-		h.recordAdminAuditFailure(r.Context(), r, "snapshot.export_artifact", "snapshot_artifact", "", "INVALID_REQUEST")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "snapshot.export_artifact", "snapshot_artifact", "", "INVALID_REQUEST")
 		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "output_dir is required", false)
 		return
 	}
 	reg, err := h.loadRegistry(r.Context())
 	if err != nil {
 		errorType, _, _, _ := h.registryLoadFailure()
-		h.recordAdminAuditFailure(r.Context(), r, "snapshot.export_artifact", "snapshot_artifact", req.OutputDir, errorType)
+		h.recordAdminAuditFailure(r.Context(), principal, r, "snapshot.export_artifact", "snapshot_artifact", req.OutputDir, errorType)
 		h.writeRegistryLoadError(w, err)
 		return
 	}
 	snapshot, manifest, err := reg.ExportArtifact(h.now(), h.registryStore(), h.RegistrySource)
 	if err != nil {
-		h.recordAdminAuditFailure(r.Context(), r, "snapshot.export_artifact", "snapshot_artifact", req.OutputDir, "REGISTRY_INVALID")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "snapshot.export_artifact", "snapshot_artifact", req.OutputDir, "REGISTRY_INVALID")
 		writeError(w, http.StatusBadRequest, "REGISTRY_INVALID", "caller", err.Error(), false)
 		return
 	}
 	if err := registry.WriteArtifactDir(req.OutputDir, snapshot, manifest); err != nil {
-		h.recordAdminAuditFailure(r.Context(), r, "snapshot.export_artifact", "snapshot_artifact", manifest.SnapshotVersion, "ARTIFACT_EXPORT_FAILED")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "snapshot.export_artifact", "snapshot_artifact", manifest.SnapshotVersion, "ARTIFACT_EXPORT_FAILED")
 		writeError(w, http.StatusInternalServerError, "ARTIFACT_EXPORT_FAILED", "platform", err.Error(), true)
 		return
 	}
@@ -290,7 +326,7 @@ func (h Handler) ExportArtifact(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "AUDIT_WRITE_FAILED", "platform", err.Error(), true)
 		return
 	}
-	if err := h.recordAdminAuditSuccess(r.Context(), r, "snapshot.export_artifact", "snapshot_artifact", manifest.SnapshotVersion, map[string]string{
+	if err := h.recordAdminAuditSuccess(r.Context(), principal, r, "snapshot.export_artifact", "snapshot_artifact", manifest.SnapshotVersion, map[string]string{
 		"artifact_dir":         req.OutputDir,
 		"registry_fingerprint": manifest.RegistryFingerprint,
 		"snapshot_digest":      manifest.SnapshotDigest,
@@ -310,33 +346,33 @@ func (h Handler) DistributionCurrent(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed", false)
 		return
 	}
-	if !h.authorized(r) {
-		writeError(w, http.StatusUnauthorized, "AUTH_ERROR", "caller", "invalid control plane admin token", false)
+	principal, ok := h.resolveAdminPrincipal(w, r, registry.PermissionDistributionReadCurrent)
+	if !ok {
 		return
 	}
 	if strings.TrimSpace(h.DistributionDir) == "" {
-		h.recordAdminAuditFailure(r.Context(), r, "distribution.current.read", "distribution", h.DistributionDir, "DISTRIBUTION_NOT_CONFIGURED")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "distribution.current.read", "distribution", h.DistributionDir, "DISTRIBUTION_NOT_CONFIGURED")
 		writeError(w, http.StatusConflict, "DISTRIBUTION_NOT_CONFIGURED", "platform", "distribution dir is not configured", false)
 		return
 	}
 	currentPath := filepath.Join(h.DistributionDir, "current.json")
 	if _, err := os.Stat(currentPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			h.recordAdminAuditFailure(r.Context(), r, "distribution.current.read", "distribution", currentPath, "DISTRIBUTION_POINTER_NOT_FOUND")
+			h.recordAdminAuditFailure(r.Context(), principal, r, "distribution.current.read", "distribution", currentPath, "DISTRIBUTION_POINTER_NOT_FOUND")
 			writeError(w, http.StatusNotFound, "DISTRIBUTION_POINTER_NOT_FOUND", "platform", "distribution current.json was not found", true)
 			return
 		}
-		h.recordAdminAuditFailure(r.Context(), r, "distribution.current.read", "distribution", currentPath, "DISTRIBUTION_READ_FAILED")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "distribution.current.read", "distribution", currentPath, "DISTRIBUTION_READ_FAILED")
 		writeError(w, http.StatusInternalServerError, "DISTRIBUTION_READ_FAILED", "platform", err.Error(), true)
 		return
 	}
 	pointer, err := registry.ReadDistributionPointerFile(currentPath)
 	if err != nil {
-		h.recordAdminAuditFailure(r.Context(), r, "distribution.current.read", "distribution", currentPath, "DISTRIBUTION_READ_FAILED")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "distribution.current.read", "distribution", currentPath, "DISTRIBUTION_READ_FAILED")
 		writeError(w, http.StatusInternalServerError, "DISTRIBUTION_READ_FAILED", "platform", err.Error(), true)
 		return
 	}
-	if err := h.recordAdminAuditSuccess(r.Context(), r, "distribution.current.read", "distribution", pointer.SnapshotVersion, map[string]string{
+	if err := h.recordAdminAuditSuccess(r.Context(), principal, r, "distribution.current.read", "distribution", pointer.SnapshotVersion, map[string]string{
 		"distribution_pointer": currentPath,
 		"snapshot_version":     pointer.SnapshotVersion,
 		"snapshot_digest":      pointer.SnapshotDigest,
@@ -355,23 +391,23 @@ func (h Handler) PublishArtifact(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed", false)
 		return
 	}
-	if !h.authorized(r) {
-		writeError(w, http.StatusUnauthorized, "AUTH_ERROR", "caller", "invalid control plane admin token", false)
+	principal, ok := h.resolveAdminPrincipal(w, r, registry.PermissionDistributionPublish)
+	if !ok {
 		return
 	}
 	if strings.TrimSpace(h.DistributionDir) == "" {
-		h.recordAdminAuditFailure(r.Context(), r, "distribution.publish", "snapshot_artifact", "", "DISTRIBUTION_NOT_CONFIGURED")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "distribution.publish", "snapshot_artifact", "", "DISTRIBUTION_NOT_CONFIGURED")
 		writeError(w, http.StatusConflict, "DISTRIBUTION_NOT_CONFIGURED", "platform", "distribution dir is not configured", false)
 		return
 	}
 	var req PublishArtifactRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.recordAdminAuditFailure(r.Context(), r, "distribution.publish", "snapshot_artifact", "", "INVALID_REQUEST")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "distribution.publish", "snapshot_artifact", "", "INVALID_REQUEST")
 		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "invalid json body", false)
 		return
 	}
 	if strings.TrimSpace(req.ArtifactDir) == "" {
-		h.recordAdminAuditFailure(r.Context(), r, "distribution.publish", "snapshot_artifact", "", "INVALID_REQUEST")
+		h.recordAdminAuditFailure(r.Context(), principal, r, "distribution.publish", "snapshot_artifact", "", "INVALID_REQUEST")
 		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "artifact_dir is required", false)
 		return
 	}
@@ -384,7 +420,7 @@ func (h Handler) PublishArtifact(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusConflict
 			errorType = "DISTRIBUTION_ARTIFACT_EXISTS"
 		}
-		h.recordAdminAuditFailure(r.Context(), r, "distribution.publish", "snapshot_artifact", req.ArtifactDir, errorType)
+		h.recordAdminAuditFailure(r.Context(), principal, r, "distribution.publish", "snapshot_artifact", req.ArtifactDir, errorType)
 		writeError(w, status, errorType, "platform", err.Error(), retryable)
 		return
 	}
@@ -392,7 +428,7 @@ func (h Handler) PublishArtifact(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "AUDIT_WRITE_FAILED", "platform", err.Error(), true)
 		return
 	}
-	if err := h.recordAdminAuditSuccess(r.Context(), r, "distribution.publish", "snapshot_artifact", pointer.SnapshotVersion, map[string]string{
+	if err := h.recordAdminAuditSuccess(r.Context(), principal, r, "distribution.publish", "snapshot_artifact", pointer.SnapshotVersion, map[string]string{
 		"artifact_dir":         pointer.ArtifactDir,
 		"source_artifact_dir":  pointer.SourceArtifactDir,
 		"registry_fingerprint": pointer.RegistryFingerprint,
@@ -427,11 +463,11 @@ func (h Handler) writeRegistryMutationError(w http.ResponseWriter, err error) {
 		switch mutationErr.ErrorType {
 		case "REGISTRY_MUTATION_INVALID":
 			status = http.StatusBadRequest
-		case "REGISTRY_MUTATION_CONFLICT":
+		case "REGISTRY_MUTATION_CONFLICT", "IDEMPOTENCY_KEY_CONFLICT", "IDEMPOTENCY_REQUEST_IN_PROGRESS":
 			status = http.StatusConflict
-		case "PERSISTENT_STORE_READ_FAILED", "PERSISTENT_STORE_WRITE_FAILED":
+		case "PERSISTENT_STORE_READ_FAILED", "PERSISTENT_STORE_WRITE_FAILED", "IDEMPOTENCY_STORE_READ_FAILED", "IDEMPOTENCY_STORE_WRITE_FAILED":
 			status = http.StatusServiceUnavailable
-		case "AUDIT_WRITE_FAILED":
+		case "AUDIT_WRITE_FAILED", "IDEMPOTENCY_RESPONSE_REPLAY_FAILED":
 			status = http.StatusInternalServerError
 		}
 		writeError(w, status, mutationErr.ErrorType, mutationErr.Scope, mutationErr.Error(), mutationErr.Retryable)
@@ -461,16 +497,76 @@ func (h Handler) now() time.Time {
 	return time.Now().UTC()
 }
 
-func (h Handler) authorized(r *http.Request) bool {
-	if h.AdminToken == "" {
-		return false
+func (h Handler) resolveAdminPrincipal(w http.ResponseWriter, r *http.Request, requiredPermission string) (registry.AdminPrincipal, bool) {
+	authenticator, err := h.adminAuthenticator()
+	if err != nil {
+		writeError(w, http.StatusServiceUnavailable, "AUTH_SERVICE_UNAVAILABLE", "platform", err.Error(), true)
+		return registry.AdminPrincipal{}, false
 	}
-	const prefix = "Bearer "
-	header := r.Header.Get("Authorization")
-	if !strings.HasPrefix(header, prefix) {
-		return false
+	principal, err := authenticator.ResolveAdminPrincipal(r, requiredPermission)
+	if err != nil {
+		h.writeAuthError(w, err)
+		return registry.AdminPrincipal{}, false
 	}
-	return strings.TrimSpace(strings.TrimPrefix(header, prefix)) == h.AdminToken
+	principal.ActorID = strings.TrimSpace(principal.ActorID)
+	principal.ProjectID = strings.TrimSpace(principal.ProjectID)
+	if principal.ActorID == "" || principal.ProjectID == "" {
+		writeError(w, http.StatusForbidden, "AUTHZ_DENIED", "caller", "admin principal is missing required actor or project scope", false)
+		return registry.AdminPrincipal{}, false
+	}
+	if !principal.HasPermission(requiredPermission) {
+		writeError(w, http.StatusForbidden, "AUTHZ_DENIED", "caller", "admin principal lacks required permission", false)
+		return registry.AdminPrincipal{}, false
+	}
+	return principal, true
+}
+
+func (h Handler) writeAuthError(w http.ResponseWriter, err error) {
+	var authErr AdminAuthError
+	if errors.As(err, &authErr) {
+		errorType := authErr.ErrorType
+		if errorType == "" {
+			errorType = "AUTH_ERROR"
+		}
+		scope := authErr.Scope
+		if scope == "" {
+			scope = "caller"
+		}
+		status := http.StatusUnauthorized
+		if errorType == "AUTHZ_DENIED" {
+			status = http.StatusForbidden
+		}
+		if errorType == "AUTH_SERVICE_UNAVAILABLE" {
+			status = http.StatusServiceUnavailable
+			scope = "platform"
+			authErr.Retryable = true
+		}
+		writeError(w, status, errorType, scope, authErr.Error(), authErr.Retryable)
+		return
+	}
+	writeError(w, http.StatusUnauthorized, "AUTH_ERROR", "caller", err.Error(), false)
+}
+
+func (h Handler) adminAuthenticator() (AdminAuthenticator, error) {
+	if h.Authenticator != nil {
+		return h.Authenticator, nil
+	}
+	mode := h.adminIdentityMode()
+	if mode == AdminIdentityModeHosted {
+		return nil, fmt.Errorf("hosted admin identity mode requires an admin authenticator")
+	}
+	if mode != AdminIdentityModeLocalPrivate {
+		return nil, fmt.Errorf("unsupported admin identity mode %q", mode)
+	}
+	return localPrivateAdminAuthenticator{AdminToken: h.AdminToken}, nil
+}
+
+func (h Handler) adminIdentityMode() string {
+	mode := strings.TrimSpace(h.AdminIdentityMode)
+	if mode == "" {
+		return AdminIdentityModeLocalPrivate
+	}
+	return mode
 }
 
 func (h Handler) recordRegistryRevision(ctx context.Context, snapshot registry.RoutingSnapshot) error {
@@ -500,33 +596,45 @@ func (h Handler) recordArtifactPublication(ctx context.Context, pointer registry
 	})
 }
 
-func (h Handler) recordAdminAuditSuccess(ctx context.Context, r *http.Request, action string, resourceType string, resourceID string, metadata map[string]string) error {
-	return h.recordAdminAudit(ctx, r, action, resourceType, resourceID, "success", "", metadata)
+func (h Handler) recordAdminAuditSuccess(ctx context.Context, principal registry.AdminPrincipal, r *http.Request, action string, resourceType string, resourceID string, metadata map[string]string) error {
+	return h.recordAdminAudit(ctx, principal, r, action, resourceType, resourceID, "success", "", metadata)
 }
 
-func (h Handler) recordAdminAuditFailure(ctx context.Context, r *http.Request, action string, resourceType string, resourceID string, errorType string) {
-	_ = h.recordAdminAudit(ctx, r, action, resourceType, resourceID, "failure", errorType, nil)
+func (h Handler) recordAdminAuditFailure(ctx context.Context, principal registry.AdminPrincipal, r *http.Request, action string, resourceType string, resourceID string, errorType string) {
+	_ = h.recordAdminAudit(ctx, principal, r, action, resourceType, resourceID, "failure", errorType, nil)
 }
 
-func (h Handler) recordAdminAudit(ctx context.Context, r *http.Request, action string, resourceType string, resourceID string, outcome string, errorType string, metadata map[string]string) error {
+func (h Handler) recordAdminAudit(ctx context.Context, principal registry.AdminPrincipal, r *http.Request, action string, resourceType string, resourceID string, outcome string, errorType string, metadata map[string]string) error {
 	if h.AuditSink == nil {
 		return nil
 	}
 	return h.AuditSink.RecordAdminAuditEvent(ctx, registry.PersistentAdminAuditEventRow{
-		ActorID:      "admin",
+		ActorID:      principal.ActorID,
 		Action:       action,
 		ResourceType: resourceType,
 		ResourceID:   resourceID,
 		RequestID:    r.Header.Get("X-Request-ID"),
 		Outcome:      outcome,
 		ErrorType:    errorType,
-		Metadata:     h.auditMetadata(metadata),
+		Metadata:     h.auditMetadata(principal, metadata),
 	})
 }
 
-func (h Handler) auditMetadata(extra map[string]string) map[string]string {
+func (h Handler) auditMetadata(principal registry.AdminPrincipal, extra map[string]string) map[string]string {
 	metadata := map[string]string{
 		"registry_store": h.registryStore(),
+		"project_id":     principal.ProjectID,
+		"auth_method":    principal.AuthMethod,
+		"local_private":  fmt.Sprint(principal.LocalPrivate),
+	}
+	if principal.SubjectID != "" {
+		metadata["principal_subject_id"] = principal.SubjectID
+	}
+	if principal.OrganizationID != "" {
+		metadata["organization_id"] = principal.OrganizationID
+	}
+	if principal.TokenID != "" {
+		metadata["token_id"] = principal.TokenID
 	}
 	if h.RegistrySource != "" {
 		metadata["registry_source"] = h.RegistrySource
@@ -538,6 +646,41 @@ func (h Handler) auditMetadata(extra map[string]string) map[string]string {
 		metadata[key] = value
 	}
 	return metadata
+}
+
+type localPrivateAdminAuthenticator struct {
+	AdminToken string
+}
+
+func (a localPrivateAdminAuthenticator) ResolveAdminPrincipal(r *http.Request, requiredPermission string) (registry.AdminPrincipal, error) {
+	if a.AdminToken == "" {
+		return registry.AdminPrincipal{}, AdminAuthError{
+			ErrorType: "AUTH_ERROR",
+			Scope:     "caller",
+			Message:   "invalid control plane admin token",
+		}
+	}
+	const prefix = "Bearer "
+	header := r.Header.Get("Authorization")
+	if !strings.HasPrefix(header, prefix) || strings.TrimSpace(strings.TrimPrefix(header, prefix)) != a.AdminToken {
+		return registry.AdminPrincipal{}, AdminAuthError{
+			ErrorType: "AUTH_ERROR",
+			Scope:     "caller",
+			Message:   "invalid control plane admin token",
+		}
+	}
+	actorID := strings.TrimSpace(r.Header.Get("X-Actor-ID"))
+	if actorID == "" {
+		actorID = "admin"
+	}
+	return registry.AdminPrincipal{
+		SubjectID:    actorID,
+		ActorID:      actorID,
+		ProjectID:    registry.DefaultAdminPrincipalProjectID,
+		AuthMethod:   registry.AdminAuthMethodLocalAdminToken,
+		Permissions:  registry.LocalPrivateAdminPermissions(),
+		LocalPrivate: true,
+	}, nil
 }
 
 func ensureSingleJSONDocument(decoder *json.Decoder) error {

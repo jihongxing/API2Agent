@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Admin Mutation Idempotency Store Design
+Hosted Admin Identity Boundary Implementation Complete
 ```
 
 战略判断：
@@ -776,7 +776,12 @@ Go Control Plane Private Admin Import/Replace Endpoint Live Postgres Dogfood v0 
 Go Control Plane Private Admin Import/Replace Endpoint Closeout + Phase Review v0 - complete
 Go Control Plane Import/Replace Snapshot Propagation E2E Dogfood v0 - complete
 Go Control Plane Import/Replace Snapshot Propagation Closeout + Phase Review v0 - complete
-Next: Go Control Plane Admin Mutation Idempotency Store Design v0
+Go Control Plane Admin Mutation Idempotency Store Design v0 - complete
+Go Control Plane Admin Mutation Idempotency Store Implementation v0 - complete
+Go Control Plane Admin Mutation Idempotency Store Live Postgres Dogfood v0 - complete
+Go Control Plane Admin Mutation Idempotency Store Closeout + Phase Review v0 - complete
+Go Control Plane Hosted Admin Identity Boundary Design v0 - complete
+Go Control Plane Hosted Admin Identity Boundary Implementation v0 - complete
 ```
 
 ## 8.8 Phase 5.8：Tooling Re-entry Phase
@@ -928,7 +933,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Admin Mutation Idempotency Store Design v0
+Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -974,31 +979,46 @@ Go Control Plane Private Admin Import/Replace Endpoint Live Postgres Dogfood v0
 Go Control Plane Private Admin Import/Replace Endpoint Closeout + Phase Review v0
 Go Control Plane Import/Replace Snapshot Propagation E2E Dogfood v0
 Go Control Plane Import/Replace Snapshot Propagation Closeout + Phase Review v0
+Go Control Plane Admin Mutation Idempotency Store Design v0
+Go Control Plane Admin Mutation Idempotency Store Implementation v0
+Go Control Plane Admin Mutation Idempotency Store Live Postgres Dogfood v0
+Go Control Plane Admin Mutation Idempotency Store Closeout + Phase Review v0
+Go Control Plane Hosted Admin Identity Boundary Design v0
+Go Control Plane Hosted Admin Identity Boundary Implementation v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Admin Mutation Idempotency Store Design v0
+Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
 ```
 
-这现在是 write-side + manual snapshot handoff milestone 关闭之后的下一项工程任务。
+这现在是 hosted admin identity boundary implementation 完成后的下一项工程任务。
 
 范围：
 
-1. 为 private admin mutation requests 设计 persistent idempotency records。
-2. 定义 key scope、request fingerprinting、response replay、conflict detection、audit linkage 和 retention。
-3. 设计范围只限现有 private admin mutation path。
+1. Review 已实现的 local/private 和 hosted-mode identity behavior。
+2. 按 design 确认 audit 和 idempotency identity mapping。
+3. 在增加新 write endpoints 前记录 remaining hosted-auth gaps。
 4. 不实现 public CRUD、automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- idempotency record schema 已文档化。
-- same-key same-request replay semantics 已文档化。
-- same-key different-request conflict semantics 已文档化。
-- 和 registry import/replace 的 transaction / audit linkage 已文档化。
-- implementation tasks 在 design 被接受后再命名。
+- local/private behavior 保持兼容并有测试覆盖。
+- hosted mode 不信任 `X-Actor-ID`。
+- endpoint permission checks 已作为已实现内容文档化。
+- audit 和 idempotency identity mapping 使用 resolved principal。
+- residual risks 和下一项 implementation gate 明确。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
+
+参考：
+
+- `docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_LIVE_POSTGRES_DOGFOOD_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md`
 
 已完成 propagation closeout 结果：
 

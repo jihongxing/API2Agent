@@ -2,13 +2,17 @@ package registry
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type ImportReplaceOptions struct {
+	ProjectID      string
 	ActorID        string
 	RequestID      string
 	IdempotencyKey string
@@ -31,6 +35,8 @@ type ImportReplaceResult struct {
 	SnapshotVersion             string              `json:"snapshot_version"`
 	Noop                        bool                `json:"noop"`
 	Counts                      ImportReplaceCounts `json:"counts"`
+	Replayed                    bool                `json:"-"`
+	IdempotencyRecordID         int64               `json:"-"`
 }
 
 type RegistryMutationError struct {
@@ -69,6 +75,10 @@ func ReplacePersistentRegistry(ctx context.Context, db *sql.DB, reg Registry, op
 		SnapshotVersion:     prepared.Snapshot.Version,
 		Counts:              counts,
 	}
+	idempotency, err := newImportReplaceIdempotencyRequest(opts, incomingFingerprint)
+	if err != nil {
+		return ImportReplaceResult{}, mutationError("REGISTRY_MUTATION_INVALID", "caller", false, err)
+	}
 
 	tx, err := db.BeginTx(ctx, &sql.TxOptions{
 		Isolation: sql.LevelSerializable,
@@ -84,6 +94,19 @@ func ReplacePersistentRegistry(ctx context.Context, db *sql.DB, reg Registry, op
 			_ = tx.Rollback()
 		}
 	}()
+
+	idempotencyRecord, replay, err := reserveImportReplaceIdempotency(ctx, tx, idempotency)
+	if err != nil {
+		return ImportReplaceResult{}, err
+	}
+	if replay {
+		if err := tx.Commit(); err != nil {
+			return ImportReplaceResult{}, mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("commit registry import/replace replay: %w", err))
+		}
+		committed = true
+		return idempotencyRecord.Result, nil
+	}
+	result.IdempotencyRecordID = idempotencyRecord.ID
 
 	locked, err := acquireRegistryMutationLock(ctx, tx)
 	if err != nil {
@@ -103,9 +126,14 @@ func ReplacePersistentRegistry(ctx context.Context, db *sql.DB, reg Registry, op
 	result.PreviousRegistryFingerprint = previousFingerprint
 	if previousFingerprint != "" && previousFingerprint == incomingFingerprint {
 		result.Noop = true
-		if err := insertImportReplaceAdminAudit(ctx, tx, opts, result, "import_replace_noop", "success", ""); err != nil {
+		auditID, err := insertImportReplaceAdminAudit(ctx, tx, opts, result, "import_replace_noop", "success", "")
+		if err != nil {
 			_ = recordImportReplaceFailureAudit(ctx, db, opts, "AUDIT_WRITE_FAILED", incomingFingerprint, previousFingerprint)
 			return ImportReplaceResult{}, mutationError("AUDIT_WRITE_FAILED", "platform", true, err)
+		}
+		if err := completeImportReplaceIdempotency(ctx, tx, idempotencyRecord, result, 0, auditID); err != nil {
+			_ = recordImportReplaceFailureAudit(ctx, db, opts, "IDEMPOTENCY_STORE_WRITE_FAILED", incomingFingerprint, previousFingerprint)
+			return ImportReplaceResult{}, err
 		}
 		if err := tx.Commit(); err != nil {
 			_ = recordImportReplaceFailureAudit(ctx, db, opts, "PERSISTENT_STORE_WRITE_FAILED", incomingFingerprint, previousFingerprint)
@@ -128,18 +156,24 @@ func ReplacePersistentRegistry(ctx context.Context, db *sql.DB, reg Registry, op
 		_ = recordImportReplaceFailureAudit(ctx, db, opts, "REGISTRY_MUTATION_INVALID", incomingFingerprint, previousFingerprint)
 		return ImportReplaceResult{}, mutationError("REGISTRY_MUTATION_INVALID", "caller", false, fmt.Errorf("written registry fingerprint %q does not match incoming fingerprint %q", writtenFingerprint, incomingFingerprint))
 	}
-	if err := insertRegistryRevisionTx(ctx, tx, PersistentRegistryRevisionRow{
+	revisionID, err := insertRegistryRevisionTx(ctx, tx, PersistentRegistryRevisionRow{
 		RegistryFingerprint: incomingFingerprint,
 		SnapshotVersion:     prepared.Snapshot.Version,
 		SourceStore:         "postgres",
 		SourceRevision:      importReplaceSourceRevision(opts),
-	}, opts.ActorID); err != nil {
+	}, opts.ActorID)
+	if err != nil {
 		_ = recordImportReplaceFailureAudit(ctx, db, opts, "AUDIT_WRITE_FAILED", incomingFingerprint, previousFingerprint)
 		return ImportReplaceResult{}, mutationError("AUDIT_WRITE_FAILED", "platform", true, err)
 	}
-	if err := insertImportReplaceAdminAudit(ctx, tx, opts, result, "import_replace", "success", ""); err != nil {
+	auditID, err := insertImportReplaceAdminAudit(ctx, tx, opts, result, "import_replace", "success", "")
+	if err != nil {
 		_ = recordImportReplaceFailureAudit(ctx, db, opts, "AUDIT_WRITE_FAILED", incomingFingerprint, previousFingerprint)
 		return ImportReplaceResult{}, mutationError("AUDIT_WRITE_FAILED", "platform", true, err)
+	}
+	if err := completeImportReplaceIdempotency(ctx, tx, idempotencyRecord, result, revisionID, auditID); err != nil {
+		_ = recordImportReplaceFailureAudit(ctx, db, opts, "IDEMPOTENCY_STORE_WRITE_FAILED", incomingFingerprint, previousFingerprint)
+		return ImportReplaceResult{}, err
 	}
 	if err := tx.Commit(); err != nil {
 		_ = recordImportReplaceFailureAudit(ctx, db, opts, "PERSISTENT_STORE_WRITE_FAILED", incomingFingerprint, previousFingerprint)
@@ -281,16 +315,18 @@ VALUES ($1, $2, $3, $4, $5, $6)`, row.ID, row.Version, row.FetchedAt, row.TTL, r
 	return nil
 }
 
-func insertRegistryRevisionTx(ctx context.Context, tx *sql.Tx, row PersistentRegistryRevisionRow, actorID string) error {
-	if _, err := tx.ExecContext(ctx, `
+func insertRegistryRevisionTx(ctx context.Context, tx *sql.Tx, row PersistentRegistryRevisionRow, actorID string) (int64, error) {
+	var id int64
+	if err := tx.QueryRowContext(ctx, `
 INSERT INTO registry_revisions (registry_fingerprint, snapshot_version, source_store, source_revision, created_by)
-VALUES ($1, $2, $3, $4, $5)`, row.RegistryFingerprint, row.SnapshotVersion, row.SourceStore, row.SourceRevision, actorID); err != nil {
-		return fmt.Errorf("record registry revision: %w", err)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id`, row.RegistryFingerprint, row.SnapshotVersion, row.SourceStore, row.SourceRevision, actorID).Scan(&id); err != nil {
+		return 0, fmt.Errorf("record registry revision: %w", err)
 	}
-	return nil
+	return id, nil
 }
 
-func insertImportReplaceAdminAudit(ctx context.Context, tx *sql.Tx, opts ImportReplaceOptions, result ImportReplaceResult, mutationMode string, outcome string, errorType string) error {
+func insertImportReplaceAdminAudit(ctx context.Context, tx *sql.Tx, opts ImportReplaceOptions, result ImportReplaceResult, mutationMode string, outcome string, errorType string) (int64, error) {
 	return insertAdminAuditTx(ctx, tx, PersistentAdminAuditEventRow{
 		ActorID:      opts.ActorID,
 		Action:       "registry.import_replace",
@@ -305,17 +341,19 @@ func insertImportReplaceAdminAudit(ctx context.Context, tx *sql.Tx, opts ImportR
 	})
 }
 
-func insertAdminAuditTx(ctx context.Context, tx *sql.Tx, row PersistentAdminAuditEventRow) error {
+func insertAdminAuditTx(ctx context.Context, tx *sql.Tx, row PersistentAdminAuditEventRow) (int64, error) {
 	metadata, err := json.Marshal(row.Metadata)
 	if err != nil {
-		return fmt.Errorf("encode admin audit metadata: %w", err)
+		return 0, fmt.Errorf("encode admin audit metadata: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, `
+	var id int64
+	if err := tx.QueryRowContext(ctx, `
 INSERT INTO admin_audit_events (actor_id, action, resource_type, resource_id, request_id, outcome, error_type, metadata)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`, row.ActorID, row.Action, row.ResourceType, row.ResourceID, row.RequestID, row.Outcome, row.ErrorType, metadata); err != nil {
-		return fmt.Errorf("record admin audit event: %w", err)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+RETURNING id`, row.ActorID, row.Action, row.ResourceType, row.ResourceID, row.RequestID, row.Outcome, row.ErrorType, metadata).Scan(&id); err != nil {
+		return 0, fmt.Errorf("record admin audit event: %w", err)
 	}
-	return nil
+	return id, nil
 }
 
 func recordImportReplaceFailureAudit(ctx context.Context, db *sql.DB, opts ImportReplaceOptions, errorType string, fingerprint string, previousFingerprint string) error {
@@ -349,6 +387,254 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`, row.ActorID, row.Action, row.Re
 	return err
 }
 
+const (
+	adminMutationIdempotencyVersion = "admin-mutation-idempotency-v0"
+	importReplaceOperation          = "registry.import_replace"
+	defaultIdempotencyProjectID     = "control_plane"
+)
+
+type importReplaceIdempotencyRequest struct {
+	Enabled            bool
+	ProjectID          string
+	ActorID            string
+	Operation          string
+	KeyHash            string
+	KeyPrefix          string
+	RequestFingerprint string
+	RequestSummary     map[string]string
+	FirstRequestID     string
+}
+
+type importReplaceIdempotencyRecord struct {
+	ID     int64
+	Result ImportReplaceResult
+}
+
+type idempotencyScopeRecord struct {
+	ProjectID string
+	ActorID   string
+	Operation string
+	KeyHash   string
+	KeyPrefix string
+}
+
+func newImportReplaceIdempotencyRequest(opts ImportReplaceOptions, registryFingerprint string) (importReplaceIdempotencyRequest, error) {
+	if strings.TrimSpace(opts.IdempotencyKey) == "" {
+		return importReplaceIdempotencyRequest{}, nil
+	}
+	scope := idempotencyScope(opts)
+	source := strings.TrimSpace(opts.Source)
+	if source == "" {
+		source = "admin_http_import"
+	}
+	summary := map[string]string{
+		"version":              adminMutationIdempotencyVersion,
+		"operation":            importReplaceOperation,
+		"method":               "POST",
+		"path":                 "/v1/admin/registry/import-replace",
+		"registry_fingerprint": registryFingerprint,
+		"source":               source,
+		"dry_run":              "false",
+	}
+	fingerprint, err := hashCanonicalJSON(summary)
+	if err != nil {
+		return importReplaceIdempotencyRequest{}, err
+	}
+	return importReplaceIdempotencyRequest{
+		Enabled:            true,
+		ProjectID:          scope.ProjectID,
+		ActorID:            scope.ActorID,
+		Operation:          scope.Operation,
+		KeyHash:            scope.KeyHash,
+		KeyPrefix:          scope.KeyPrefix,
+		RequestFingerprint: fingerprint,
+		RequestSummary:     summary,
+		FirstRequestID:     opts.RequestID,
+	}, nil
+}
+
+func idempotencyScope(opts ImportReplaceOptions) idempotencyScopeRecord {
+	projectID := strings.TrimSpace(opts.ProjectID)
+	if projectID == "" {
+		projectID = defaultIdempotencyProjectID
+	}
+	actorID := strings.TrimSpace(opts.ActorID)
+	keyHash := hashString(strings.TrimSpace(opts.IdempotencyKey))
+	keyPrefix := keyHash
+	if len(keyPrefix) > len("sha256:")+12 {
+		keyPrefix = keyPrefix[:len("sha256:")+12]
+	}
+	return idempotencyScopeRecord{
+		ProjectID: projectID,
+		ActorID:   actorID,
+		Operation: importReplaceOperation,
+		KeyHash:   keyHash,
+		KeyPrefix: keyPrefix,
+	}
+}
+
+func reserveImportReplaceIdempotency(ctx context.Context, tx *sql.Tx, req importReplaceIdempotencyRequest) (importReplaceIdempotencyRecord, bool, error) {
+	if !req.Enabled {
+		return importReplaceIdempotencyRecord{}, false, nil
+	}
+	summary, err := json.Marshal(req.RequestSummary)
+	if err != nil {
+		return importReplaceIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("encode idempotency request summary: %w", err))
+	}
+	var id int64
+	err = tx.QueryRowContext(ctx, `
+INSERT INTO admin_mutation_idempotency_records (
+  project_id,
+  actor_id,
+  operation,
+  idempotency_key_hash,
+  idempotency_key_prefix,
+  request_fingerprint,
+  request_summary,
+  first_request_id,
+  status,
+  expires_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, 'processing', now() + interval '30 days')
+ON CONFLICT (project_id, actor_id, operation, idempotency_key_hash) DO NOTHING
+RETURNING id`, req.ProjectID, req.ActorID, req.Operation, req.KeyHash, req.KeyPrefix, req.RequestFingerprint, summary, req.FirstRequestID).Scan(&id)
+	if err == nil {
+		return importReplaceIdempotencyRecord{ID: id}, false, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return importReplaceIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("reserve idempotency record: %w", err))
+	}
+	existing, err := loadImportReplaceIdempotencyRecord(ctx, tx, req)
+	if err != nil {
+		return importReplaceIdempotencyRecord{}, false, err
+	}
+	if existing.RequestFingerprint != req.RequestFingerprint {
+		return importReplaceIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_KEY_CONFLICT", "caller", false, fmt.Errorf("idempotency key was already used for a different request"))
+	}
+	if existing.Status != "succeeded" {
+		return importReplaceIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_REQUEST_IN_PROGRESS", "platform", true, fmt.Errorf("idempotency request is still in progress"))
+	}
+	result, err := importReplaceResultFromCachedResponse(existing.ResponseBody)
+	if err != nil {
+		return importReplaceIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_RESPONSE_REPLAY_FAILED", "platform", true, err)
+	}
+	result.Replayed = true
+	result.IdempotencyRecordID = existing.ID
+	if err := recordImportReplaceReplay(ctx, tx, existing.ID, req.FirstRequestID); err != nil {
+		return importReplaceIdempotencyRecord{}, false, err
+	}
+	return importReplaceIdempotencyRecord{ID: existing.ID, Result: result}, true, nil
+}
+
+func completeImportReplaceIdempotency(ctx context.Context, tx *sql.Tx, record importReplaceIdempotencyRecord, result ImportReplaceResult, registryRevisionID int64, adminAuditEventID int64) error {
+	if record.ID == 0 {
+		return nil
+	}
+	body, err := json.Marshal(result)
+	if err != nil {
+		return mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("encode idempotency response body: %w", err))
+	}
+	responseFingerprint, err := hashCanonicalJSON(result)
+	if err != nil {
+		return mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("fingerprint idempotency response body: %w", err))
+	}
+	status := 201
+	if result.Noop {
+		status = 200
+	}
+	var revision any
+	if registryRevisionID != 0 {
+		revision = registryRevisionID
+	}
+	if _, err := tx.ExecContext(ctx, `
+UPDATE admin_mutation_idempotency_records
+SET status = 'succeeded',
+    response_status_code = $1,
+    response_body = $2::jsonb,
+    response_fingerprint = $3,
+    registry_fingerprint = $4,
+    previous_registry_fingerprint = $5,
+    snapshot_version = $6,
+    noop = $7,
+    registry_revision_id = $8,
+    admin_audit_event_id = $9,
+    completed_at = now(),
+    expires_at = now() + interval '30 days',
+    updated_at = now()
+WHERE id = $10`, status, body, responseFingerprint, result.RegistryFingerprint, result.PreviousRegistryFingerprint, result.SnapshotVersion, result.Noop, revision, adminAuditEventID, record.ID); err != nil {
+		return mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("complete idempotency record: %w", err))
+	}
+	return nil
+}
+
+type storedImportReplaceIdempotencyRecord struct {
+	ID                 int64
+	RequestFingerprint string
+	Status             string
+	ResponseBody       []byte
+}
+
+func loadImportReplaceIdempotencyRecord(ctx context.Context, tx *sql.Tx, req importReplaceIdempotencyRequest) (storedImportReplaceIdempotencyRecord, error) {
+	var record storedImportReplaceIdempotencyRecord
+	var responseRaw any
+	if err := tx.QueryRowContext(ctx, `
+SELECT id, request_fingerprint, status, response_body
+FROM admin_mutation_idempotency_records
+WHERE project_id = $1
+  AND actor_id = $2
+  AND operation = $3
+  AND idempotency_key_hash = $4`, req.ProjectID, req.ActorID, req.Operation, req.KeyHash).Scan(&record.ID, &record.RequestFingerprint, &record.Status, &responseRaw); err != nil {
+		return storedImportReplaceIdempotencyRecord{}, mutationError("IDEMPOTENCY_STORE_READ_FAILED", "platform", true, fmt.Errorf("load idempotency record: %w", err))
+	}
+	data, err := rawBytes(responseRaw)
+	if err != nil {
+		return storedImportReplaceIdempotencyRecord{}, mutationError("IDEMPOTENCY_RESPONSE_REPLAY_FAILED", "platform", true, err)
+	}
+	record.ResponseBody = data
+	return record, nil
+}
+
+func recordImportReplaceReplay(ctx context.Context, tx *sql.Tx, recordID int64, requestID string) error {
+	if _, err := tx.ExecContext(ctx, `
+UPDATE admin_mutation_idempotency_records
+SET replay_count = replay_count + 1,
+    last_replay_request_id = $1,
+    last_replayed_at = now(),
+    updated_at = now()
+WHERE id = $2`, requestID, recordID); err != nil {
+		return mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("record idempotency replay: %w", err))
+	}
+	return nil
+}
+
+func importReplaceResultFromCachedResponse(data []byte) (ImportReplaceResult, error) {
+	if len(data) == 0 || string(data) == "null" {
+		return ImportReplaceResult{}, fmt.Errorf("cached idempotency response is empty")
+	}
+	var result ImportReplaceResult
+	if err := json.Unmarshal(data, &result); err != nil {
+		return ImportReplaceResult{}, fmt.Errorf("decode cached idempotency response: %w", err)
+	}
+	return result, nil
+}
+
+func hashCanonicalJSON(value any) (string, error) {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return "", err
+	}
+	return hashBytes(data), nil
+}
+
+func hashString(value string) string {
+	return hashBytes([]byte(value))
+}
+
+func hashBytes(value []byte) string {
+	sum := sha256.Sum256(value)
+	return "sha256:" + fmt.Sprintf("%x", sum[:])
+}
+
 func importReplaceAuditMetadata(opts ImportReplaceOptions, result ImportReplaceResult, extra map[string]string) map[string]string {
 	metadata := map[string]string{
 		"registry_store":       "postgres",
@@ -366,7 +652,9 @@ func importReplaceAuditMetadata(opts ImportReplaceOptions, result ImportReplaceR
 		metadata["previous_registry_fingerprint"] = result.PreviousRegistryFingerprint
 	}
 	if opts.IdempotencyKey != "" {
-		metadata["idempotency_key"] = opts.IdempotencyKey
+		scope := idempotencyScope(opts)
+		metadata["idempotency_key_hash"] = scope.KeyHash
+		metadata["idempotency_key_prefix"] = scope.KeyPrefix
 	}
 	if opts.Source != "" {
 		metadata["source"] = opts.Source

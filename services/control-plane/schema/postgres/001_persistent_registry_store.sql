@@ -139,3 +139,49 @@ CREATE TABLE admin_audit_events (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE admin_mutation_idempotency_records (
+  id BIGSERIAL PRIMARY KEY,
+  project_id TEXT NOT NULL DEFAULT 'control_plane',
+  actor_id TEXT NOT NULL DEFAULT '',
+  operation TEXT NOT NULL,
+  idempotency_key_hash TEXT NOT NULL,
+  idempotency_key_prefix TEXT NOT NULL DEFAULT '',
+  idempotency_key_hash_algorithm TEXT NOT NULL DEFAULT 'sha256',
+  request_fingerprint TEXT NOT NULL,
+  request_fingerprint_algorithm TEXT NOT NULL DEFAULT 'sha256',
+  request_summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+  first_request_id TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL CHECK (status IN ('processing', 'succeeded')),
+  response_status_code INTEGER,
+  response_body JSONB,
+  response_fingerprint TEXT NOT NULL DEFAULT '',
+  registry_fingerprint TEXT NOT NULL DEFAULT '',
+  previous_registry_fingerprint TEXT NOT NULL DEFAULT '',
+  snapshot_version TEXT NOT NULL DEFAULT '',
+  noop BOOLEAN NOT NULL DEFAULT false,
+  registry_revision_id BIGINT REFERENCES registry_revisions(id),
+  admin_audit_event_id BIGINT REFERENCES admin_audit_events(id),
+  replay_count BIGINT NOT NULL DEFAULT 0,
+  last_replay_request_id TEXT NOT NULL DEFAULT '',
+  last_replayed_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX admin_mutation_idempotency_records_unique_key
+  ON admin_mutation_idempotency_records (
+    project_id,
+    actor_id,
+    operation,
+    idempotency_key_hash
+  );
+
+CREATE INDEX admin_mutation_idempotency_records_expires_at
+  ON admin_mutation_idempotency_records (expires_at);
+
+CREATE INDEX admin_mutation_idempotency_records_request_fingerprint
+  ON admin_mutation_idempotency_records (request_fingerprint);

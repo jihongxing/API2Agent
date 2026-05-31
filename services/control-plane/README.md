@@ -134,12 +134,17 @@ Service endpoints:
 - `POST /v1/admin/distribution/publish` publishes an artifact directory to the configured local distribution.
 - `GET /v1/admin/distribution/current` reads the configured distribution `current.json`.
 
-All `/v1/admin/*` endpoints require `Authorization: Bearer <admin-token>`.
+By default, `/v1/admin/*` endpoints run in `local_private` identity mode and require `Authorization: Bearer <admin-token>`. Local/private mode maps `X-Actor-ID` to the audit/idempotency actor when present, defaults the actor to `admin`, and scopes mutations to project `control_plane`.
+
+The HTTP layer now resolves admin requests into `registry.AdminPrincipal` before running endpoint logic. Hosted mode is fail-closed unless an `AdminAuthenticator` is injected by the embedding service; caller-supplied identity headers such as `X-Actor-ID` are not trusted in hosted mode.
 
 Private admin import/replace endpoint:
 
 - It is Postgres mutation only and reuses `ReplacePersistentRegistry`.
 - It requires `X-Request-ID` and `Idempotency-Key`.
+- It persists scoped idempotency records for committed mutations.
+- Same-key same-request replay returns the cached response without a second mutation.
+- Same-key different-request reuse returns `409 IDEMPOTENCY_KEY_CONFLICT`.
 - It accepts a wrapper request body with `registry`, optional `source`, and reserved `dry_run=false`.
 - It does not export, publish, or reload snapshots.
 
@@ -147,3 +152,9 @@ See `../../docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_DES
 Implementation report: `../../docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_IMPLEMENTATION_REPORT.md`.
 Live dogfood report: `../../docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_LIVE_POSTGRES_DOGFOOD_REPORT.md`.
 Closeout review: `../../docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_CLOSEOUT_PHASE_REVIEW.md`.
+Idempotency design: `../../docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_DESIGN.md`.
+Idempotency implementation report: `../../docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_IMPLEMENTATION_REPORT.md`.
+Idempotency live dogfood report: `../../docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_LIVE_POSTGRES_DOGFOOD_REPORT.md`.
+Idempotency closeout review: `../../docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_CLOSEOUT_PHASE_REVIEW.md`.
+Hosted admin identity design: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md`.
+Hosted admin identity implementation report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md`.

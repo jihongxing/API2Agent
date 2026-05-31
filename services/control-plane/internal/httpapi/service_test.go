@@ -74,7 +74,10 @@ func TestValidateRegistryRecordsAdminAudit(t *testing.T) {
 	if event.Action != "registry.validate" || event.Outcome != "success" || event.ResourceType != "registry" {
 		t.Fatalf("unexpected audit event: %#v", event)
 	}
-	if event.Metadata["registry_store"] != "file" {
+	if event.ActorID != "admin" {
+		t.Fatalf("expected local admin audit actor, got %q", event.ActorID)
+	}
+	if event.Metadata["registry_store"] != "file" || event.Metadata["project_id"] != "control_plane" || event.Metadata["auth_method"] != registry.AdminAuthMethodLocalAdminToken || event.Metadata["local_private"] != "true" {
 		t.Fatalf("expected registry_store metadata, got %#v", event.Metadata)
 	}
 }
@@ -252,8 +255,149 @@ func TestImportReplaceRegistryReturnsCreatedAndPassesOptions(t *testing.T) {
 	if replacer.calls != 1 {
 		t.Fatalf("expected one replacer call, got %d", replacer.calls)
 	}
-	if replacer.options.ActorID != "local-admin" || replacer.options.RequestID != "req-http" || replacer.options.IdempotencyKey != "idem-http" || replacer.options.Source != "admin_upload" {
+	if replacer.options.ProjectID != "control_plane" || replacer.options.ActorID != "local-admin" || replacer.options.RequestID != "req-http" || replacer.options.IdempotencyKey != "idem-http" || replacer.options.Source != "admin_upload" {
 		t.Fatalf("unexpected import options: %#v", replacer.options)
+	}
+}
+
+func TestImportReplaceRegistryUsesHostedPrincipalForIdentityScope(t *testing.T) {
+	replacer := &recordingImportReplacer{result: registry.ImportReplaceResult{
+		RegistryFingerprint: "sha256:new",
+		SnapshotVersion:     "snapshot_http_import_v1",
+		Counts:              registry.ImportReplaceCounts{Projects: 1, Providers: 1},
+	}}
+	authenticator := &recordingAdminAuthenticator{
+		principal: registry.AdminPrincipal{
+			SubjectID:      "subject-hosted",
+			ActorID:        "hosted-actor",
+			ProjectID:      "project-hosted",
+			OrganizationID: "org-hosted",
+			AuthMethod:     registry.AdminAuthMethodHostedAdminToken,
+			TokenID:        "token-123",
+			Permissions:    []string{registry.PermissionRegistryImportReplace},
+		},
+	}
+	handler := newPostgresImportHandlerWithReplacer(replacer)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.Authenticator = authenticator
+
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/import-replace", importReplaceBody(t), "", map[string]string{
+		"X-Request-ID":      "req-hosted",
+		"Idempotency-Key":   "idem-hosted",
+		"X-Actor-ID":        "caller-controlled",
+		"X-Project-ID":      "caller-project",
+		"X-Organization-ID": "caller-org",
+	})
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d: %s", response.Code, response.Body.String())
+	}
+	if authenticator.requiredPermission != registry.PermissionRegistryImportReplace {
+		t.Fatalf("unexpected required permission %q", authenticator.requiredPermission)
+	}
+	if replacer.options.ProjectID != "project-hosted" || replacer.options.ActorID != "hosted-actor" {
+		t.Fatalf("expected hosted principal identity scope, got %#v", replacer.options)
+	}
+}
+
+func TestHostedAdminPermissionDeniedBeforeMutation(t *testing.T) {
+	replacer := &recordingImportReplacer{result: registry.ImportReplaceResult{}}
+	handler := newPostgresImportHandlerWithReplacer(replacer)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.Authenticator = &recordingAdminAuthenticator{
+		principal: registry.AdminPrincipal{
+			ActorID:     "hosted-actor",
+			ProjectID:   "project-hosted",
+			AuthMethod:  registry.AdminAuthMethodHostedAdminToken,
+			Permissions: []string{registry.PermissionRegistryValidate},
+		},
+	}
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/import-replace", importReplaceBody(t), "", map[string]string{
+		"X-Request-ID":    "req-denied",
+		"Idempotency-Key": "idem-denied",
+	})
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d: %s", response.Code, response.Body.String())
+	}
+	var errorResponse ErrorResponse
+	decodeResponse(t, response, &errorResponse)
+	if errorResponse.Error.ErrorType != "AUTHZ_DENIED" || errorResponse.Error.Retryable {
+		t.Fatalf("unexpected error response: %#v", errorResponse)
+	}
+	if replacer.calls != 0 {
+		t.Fatalf("mutation should not run after authz denial, got %d calls", replacer.calls)
+	}
+}
+
+func TestHostedAdminAuthenticatorUnavailable(t *testing.T) {
+	handler := newPostgresImportHandler(registry.ImportReplaceResult{})
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/import-replace", importReplaceBody(t), "", map[string]string{
+		"X-Request-ID":    "req-unavailable",
+		"Idempotency-Key": "idem-unavailable",
+	})
+	if response.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status 503, got %d: %s", response.Code, response.Body.String())
+	}
+	var errorResponse ErrorResponse
+	decodeResponse(t, response, &errorResponse)
+	if errorResponse.Error.ErrorType != "AUTH_SERVICE_UNAVAILABLE" || errorResponse.Error.ErrorScope != "platform" || !errorResponse.Error.Retryable {
+		t.Fatalf("unexpected error response: %#v", errorResponse)
+	}
+}
+
+func TestHostedAdminMalformedIdentityReturnsAuthError(t *testing.T) {
+	handler := newPostgresImportHandler(registry.ImportReplaceResult{})
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.Authenticator = &recordingAdminAuthenticator{err: AdminAuthError{
+		ErrorType: "AUTH_ERROR",
+		Scope:     "caller",
+		Message:   "malformed trusted gateway identity",
+	}}
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/import-replace", importReplaceBody(t), "", map[string]string{
+		"X-Request-ID":    "req-malformed",
+		"Idempotency-Key": "idem-malformed",
+	})
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401, got %d: %s", response.Code, response.Body.String())
+	}
+	var errorResponse ErrorResponse
+	decodeResponse(t, response, &errorResponse)
+	if errorResponse.Error.ErrorType != "AUTH_ERROR" || !strings.Contains(errorResponse.Error.Message, "malformed") {
+		t.Fatalf("unexpected error response: %#v", errorResponse)
+	}
+}
+
+func TestHostedAdminAuditUsesResolvedPrincipal(t *testing.T) {
+	audit := &recordingAuditSink{}
+	handler := newTestHandler(t, "")
+	handler.AuditSink = audit
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.Authenticator = &recordingAdminAuthenticator{
+		principal: registry.AdminPrincipal{
+			SubjectID:      "subject-hosted",
+			ActorID:        "hosted-actor",
+			ProjectID:      "project-hosted",
+			OrganizationID: "org-hosted",
+			AuthMethod:     registry.AdminAuthMethodTrustedGateway,
+			TokenID:        "token-456",
+			Permissions:    []string{registry.PermissionRegistryValidate},
+		},
+	}
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/validate", nil, "", map[string]string{
+		"X-Actor-ID": "caller-controlled",
+	})
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if len(audit.adminEvents) != 1 {
+		t.Fatalf("expected one audit event, got %#v", audit.adminEvents)
+	}
+	event := audit.adminEvents[0]
+	if event.ActorID != "hosted-actor" {
+		t.Fatalf("expected hosted actor, got %#v", event)
+	}
+	if event.Metadata["project_id"] != "project-hosted" || event.Metadata["principal_subject_id"] != "subject-hosted" || event.Metadata["organization_id"] != "org-hosted" || event.Metadata["auth_method"] != registry.AdminAuthMethodTrustedGateway || event.Metadata["token_id"] != "token-456" || event.Metadata["local_private"] != "false" {
+		t.Fatalf("unexpected hosted audit metadata: %#v", event.Metadata)
 	}
 }
 
@@ -284,6 +428,30 @@ func TestImportReplaceRegistryReturnsOKForNoop(t *testing.T) {
 	}
 }
 
+func TestImportReplaceRegistryMarksReplayedIdempotencyResponse(t *testing.T) {
+	result := registry.ImportReplaceResult{
+		RegistryFingerprint:         "sha256:new",
+		PreviousRegistryFingerprint: "sha256:old",
+		SnapshotVersion:             "snapshot_http_import_v1",
+		Noop:                        false,
+		Counts:                      registry.ImportReplaceCounts{Projects: 1, Providers: 1},
+		Replayed:                    true,
+		IdempotencyRecordID:         42,
+	}
+	replacer := &recordingImportReplacer{result: result}
+	handler := newPostgresImportHandlerWithReplacer(replacer)
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/import-replace", importReplaceBody(t), "secret", map[string]string{
+		"X-Request-ID":    "req-replay",
+		"Idempotency-Key": "idem-replay",
+	})
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d: %s", response.Code, response.Body.String())
+	}
+	if response.Header().Get("Idempotency-Replayed") != "true" || response.Header().Get("Idempotency-Record-ID") != "42" {
+		t.Fatalf("expected replay headers, got %#v", response.Header())
+	}
+}
+
 func TestImportReplaceRegistryMapsMutationErrors(t *testing.T) {
 	tests := []struct {
 		errorType string
@@ -296,6 +464,11 @@ func TestImportReplaceRegistryMapsMutationErrors(t *testing.T) {
 		{"PERSISTENT_STORE_READ_FAILED", "platform", true, http.StatusServiceUnavailable},
 		{"PERSISTENT_STORE_WRITE_FAILED", "platform", true, http.StatusServiceUnavailable},
 		{"AUDIT_WRITE_FAILED", "platform", true, http.StatusInternalServerError},
+		{"IDEMPOTENCY_KEY_CONFLICT", "caller", false, http.StatusConflict},
+		{"IDEMPOTENCY_REQUEST_IN_PROGRESS", "platform", true, http.StatusConflict},
+		{"IDEMPOTENCY_STORE_READ_FAILED", "platform", true, http.StatusServiceUnavailable},
+		{"IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, http.StatusServiceUnavailable},
+		{"IDEMPOTENCY_RESPONSE_REPLAY_FAILED", "platform", true, http.StatusInternalServerError},
 	}
 	for _, test := range tests {
 		t.Run(test.errorType, func(t *testing.T) {
@@ -770,6 +943,20 @@ func (r *recordingImportReplacer) ReplacePersistentRegistry(ctx context.Context,
 		return registry.ImportReplaceResult{}, r.err
 	}
 	return r.result, nil
+}
+
+type recordingAdminAuthenticator struct {
+	principal          registry.AdminPrincipal
+	err                error
+	requiredPermission string
+}
+
+func (a *recordingAdminAuthenticator) ResolveAdminPrincipal(r *http.Request, requiredPermission string) (registry.AdminPrincipal, error) {
+	a.requiredPermission = requiredPermission
+	if a.err != nil {
+		return registry.AdminPrincipal{}, a.err
+	}
+	return a.principal, nil
 }
 
 func validRegistry() registry.Registry {

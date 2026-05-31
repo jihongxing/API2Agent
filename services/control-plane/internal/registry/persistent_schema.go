@@ -15,6 +15,7 @@ type PersistentRegistryRows struct {
 	RegistryRevisions    []PersistentRegistryRevisionRow    `json:"registry_revisions"`
 	ArtifactPublications []PersistentArtifactPublicationRow `json:"snapshot_artifact_publications"`
 	AdminAuditEvents     []PersistentAdminAuditEventRow     `json:"admin_audit_events"`
+	IdempotencyRecords   []PersistentIdempotencyRecordRow   `json:"admin_mutation_idempotency_records"`
 }
 
 type PersistentProjectRow struct {
@@ -89,6 +90,7 @@ type PersistentSnapshotConfigRow struct {
 }
 
 type PersistentRegistryRevisionRow struct {
+	ID                  int64  `json:"id,omitempty"`
 	RegistryFingerprint string `json:"registry_fingerprint"`
 	SnapshotVersion     string `json:"snapshot_version"`
 	SourceStore         string `json:"source_store"`
@@ -106,6 +108,7 @@ type PersistentArtifactPublicationRow struct {
 }
 
 type PersistentAdminAuditEventRow struct {
+	ID           int64             `json:"id,omitempty"`
 	ActorID      string            `json:"actor_id"`
 	Action       string            `json:"action"`
 	ResourceType string            `json:"resource_type"`
@@ -114,6 +117,30 @@ type PersistentAdminAuditEventRow struct {
 	Outcome      string            `json:"outcome"`
 	ErrorType    string            `json:"error_type"`
 	Metadata     map[string]string `json:"metadata"`
+}
+
+type PersistentIdempotencyRecordRow struct {
+	ID                          int64             `json:"id,omitempty"`
+	ProjectID                   string            `json:"project_id"`
+	ActorID                     string            `json:"actor_id"`
+	Operation                   string            `json:"operation"`
+	IdempotencyKeyHash          string            `json:"idempotency_key_hash"`
+	IdempotencyKeyPrefix        string            `json:"idempotency_key_prefix"`
+	RequestFingerprint          string            `json:"request_fingerprint"`
+	RequestSummary              map[string]string `json:"request_summary"`
+	FirstRequestID              string            `json:"first_request_id"`
+	Status                      string            `json:"status"`
+	ResponseStatusCode          int               `json:"response_status_code,omitempty"`
+	ResponseBody                string            `json:"response_body,omitempty"`
+	ResponseFingerprint         string            `json:"response_fingerprint,omitempty"`
+	RegistryFingerprint         string            `json:"registry_fingerprint,omitempty"`
+	PreviousRegistryFingerprint string            `json:"previous_registry_fingerprint,omitempty"`
+	SnapshotVersion             string            `json:"snapshot_version,omitempty"`
+	Noop                        bool              `json:"noop"`
+	RegistryRevisionID          *int64            `json:"registry_revision_id,omitempty"`
+	AdminAuditEventID           *int64            `json:"admin_audit_event_id,omitempty"`
+	ReplayCount                 int64             `json:"replay_count"`
+	LastReplayRequestID         string            `json:"last_replay_request_id,omitempty"`
 }
 
 func MapRegistryToPersistentRows(reg Registry) (PersistentRegistryRows, error) {

@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: design Admin Mutation Idempotency Store v0 for the Go Control Plane after the import/replace snapshot propagation milestone closed, without adding public CRUD, vault, billing, marketplace, automatic propagation, or workflow runtime scope.
+Current focus: close out the completed Go Control Plane Hosted Admin Identity Boundary implementation; next work remains out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
@@ -80,6 +80,12 @@ English:
 - [Private Admin Import/Replace Endpoint Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_CLOSEOUT_PHASE_REVIEW.md)
 - [Import/Replace Snapshot Propagation E2E Dogfood Report](docs/en-US/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_E2E_DOGFOOD_REPORT.md)
 - [Import/Replace Snapshot Propagation Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_CLOSEOUT_PHASE_REVIEW.md)
+- [Admin Mutation Idempotency Store Design](docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_DESIGN.md)
+- [Admin Mutation Idempotency Store Implementation Report](docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_IMPLEMENTATION_REPORT.md)
+- [Admin Mutation Idempotency Store Live Postgres Dogfood Report](docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_LIVE_POSTGRES_DOGFOOD_REPORT.md)
+- [Admin Mutation Idempotency Store Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_CLOSEOUT_PHASE_REVIEW.md)
+- [Hosted Admin Identity Boundary Design](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md)
+- [Hosted Admin Identity Boundary Implementation Report](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md)
 - [Next Session Handoff - 2026-06-01](docs/en-US/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/en-US/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/en-US/ROUTING_POLICY.md)
@@ -139,6 +145,12 @@ English:
 - [Private Admin Import/Replace Endpoint Closeout + Phase Review](docs/cn-ZH/GO_CONTROL_PLANE_PRIVATE_ADMIN_IMPORT_REPLACE_ENDPOINT_CLOSEOUT_PHASE_REVIEW.md)
 - [Import/Replace Snapshot Propagation E2E Dogfood 报告](docs/cn-ZH/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_E2E_DOGFOOD_REPORT.md)
 - [Import/Replace Snapshot Propagation Closeout + Phase Review](docs/cn-ZH/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_CLOSEOUT_PHASE_REVIEW.md)
+- [Admin Mutation Idempotency Store Design](docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_DESIGN.md)
+- [Admin Mutation Idempotency Store Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_IMPLEMENTATION_REPORT.md)
+- [Admin Mutation Idempotency Store Live Postgres Dogfood 报告](docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_LIVE_POSTGRES_DOGFOOD_REPORT.md)
+- [Admin Mutation Idempotency Store Closeout + Phase Review](docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_CLOSEOUT_PHASE_REVIEW.md)
+- [Hosted Admin Identity Boundary Design](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md)
+- [Hosted Admin Identity Boundary Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md)
 - [下一次会话交接 - 2026-06-01](docs/cn-ZH/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/cn-ZH/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/cn-ZH/ROUTING_POLICY.md)

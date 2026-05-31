@@ -50,6 +50,16 @@ func TestReplacePersistentRegistryNoopWritesAdminAuditOnly(t *testing.T) {
 	if containsExec(script.execQueries, "DELETE FROM") {
 		t.Fatalf("noop should not delete mutable rows: %#v", script.execQueries)
 	}
+	if len(script.rows.IdempotencyRecords) != 1 {
+		t.Fatalf("expected one idempotency record, got %#v", script.rows.IdempotencyRecords)
+	}
+	idempotency := script.rows.IdempotencyRecords[0]
+	if idempotency.Status != "succeeded" || idempotency.ResponseStatusCode != 200 || idempotency.RegistryRevisionID != nil || idempotency.AdminAuditEventID == nil {
+		t.Fatalf("unexpected noop idempotency record: %#v", idempotency)
+	}
+	if idempotency.IdempotencyKeyHash == "idem-noop" || idempotency.IdempotencyKeyPrefix == "idem-noop" {
+		t.Fatalf("idempotency record stored raw key: %#v", idempotency)
+	}
 }
 
 func TestReplacePersistentRegistryReplacesRowsAndWritesRevisionAndAudit(t *testing.T) {
@@ -102,6 +112,116 @@ func TestReplacePersistentRegistryReplacesRowsAndWritesRevisionAndAudit(t *testi
 	}
 	if !containsExec(script.execQueries, "DELETE FROM providers") {
 		t.Fatalf("expected mutable row deletion: %#v", script.execQueries)
+	}
+	if len(script.rows.IdempotencyRecords) != 1 {
+		t.Fatalf("expected one idempotency record, got %#v", script.rows.IdempotencyRecords)
+	}
+	idempotency := script.rows.IdempotencyRecords[0]
+	if idempotency.Status != "succeeded" || idempotency.ResponseStatusCode != 201 || idempotency.RegistryRevisionID == nil || idempotency.AdminAuditEventID == nil {
+		t.Fatalf("unexpected replace idempotency record: %#v", idempotency)
+	}
+	if idempotency.RegistryFingerprint != result.RegistryFingerprint || idempotency.SnapshotVersion != result.SnapshotVersion {
+		t.Fatalf("idempotency record did not cache result metadata: %#v result=%#v", idempotency, result)
+	}
+}
+
+func TestReplacePersistentRegistryReplaysSameIdempotencyRequest(t *testing.T) {
+	current := loadValidRegistry(t)
+	currentRows, err := MapRegistryToPersistentRows(current)
+	if err != nil {
+		t.Fatalf("map current rows: %v", err)
+	}
+	incoming := loadValidRegistry(t)
+	incoming.Providers[0].ID = "httpbin_public_ip_v1"
+	incoming.Providers[0].ProviderID = "httpbin"
+	incoming.Providers[0].Metadata["base_url"] = "https://httpbin.org"
+	incoming.CredentialMetadata[0].ProviderID = "httpbin"
+	incoming.Snapshot.Version = "snapshot_import_replace_v2"
+	db, script := openScriptedRegistryDB(t, currentRows)
+	defer db.Close()
+
+	first, err := ReplacePersistentRegistry(context.Background(), db, incoming, ImportReplaceOptions{
+		ActorID:        "tester",
+		RequestID:      "req-replay-first",
+		IdempotencyKey: "idem-replay",
+		Source:         "test-registry.json",
+	})
+	if err != nil {
+		t.Fatalf("first replace persistent registry: %v", err)
+	}
+	script.execQueries = nil
+	beforeAuditCount := len(script.rows.AdminAuditEvents)
+	beforeRevisionCount := len(script.rows.RegistryRevisions)
+
+	replayed, err := ReplacePersistentRegistry(context.Background(), db, incoming, ImportReplaceOptions{
+		ActorID:        "tester",
+		RequestID:      "req-replay-second",
+		IdempotencyKey: "idem-replay",
+		Source:         "test-registry.json",
+	})
+	if err != nil {
+		t.Fatalf("replay replace persistent registry: %v", err)
+	}
+
+	if !replayed.Replayed || replayed.RegistryFingerprint != first.RegistryFingerprint || replayed.SnapshotVersion != first.SnapshotVersion || replayed.Noop != first.Noop {
+		t.Fatalf("unexpected replay result: first=%#v replayed=%#v", first, replayed)
+	}
+	if containsExec(script.execQueries, "DELETE FROM") {
+		t.Fatalf("replay should not replace mutable rows: %#v", script.execQueries)
+	}
+	if len(script.rows.AdminAuditEvents) != beforeAuditCount || len(script.rows.RegistryRevisions) != beforeRevisionCount {
+		t.Fatalf("replay should not create audit/revision rows: audits=%#v revisions=%#v", script.rows.AdminAuditEvents, script.rows.RegistryRevisions)
+	}
+	if script.rows.IdempotencyRecords[0].ReplayCount != 1 || script.rows.IdempotencyRecords[0].LastReplayRequestID != "req-replay-second" {
+		t.Fatalf("expected replay metadata update, got %#v", script.rows.IdempotencyRecords[0])
+	}
+}
+
+func TestReplacePersistentRegistryRejectsSameIdempotencyKeyDifferentRequest(t *testing.T) {
+	current := loadValidRegistry(t)
+	currentRows, err := MapRegistryToPersistentRows(current)
+	if err != nil {
+		t.Fatalf("map current rows: %v", err)
+	}
+	incoming := loadValidRegistry(t)
+	incoming.Providers[0].ID = "httpbin_public_ip_v1"
+	incoming.Providers[0].ProviderID = "httpbin"
+	incoming.Providers[0].Metadata["base_url"] = "https://httpbin.org"
+	incoming.CredentialMetadata[0].ProviderID = "httpbin"
+	incoming.Snapshot.Version = "snapshot_import_replace_v2"
+	db, script := openScriptedRegistryDB(t, currentRows)
+	defer db.Close()
+
+	if _, err := ReplacePersistentRegistry(context.Background(), db, incoming, ImportReplaceOptions{
+		ActorID:        "tester",
+		RequestID:      "req-conflict-first",
+		IdempotencyKey: "idem-conflict",
+		Source:         "test-registry.json",
+	}); err != nil {
+		t.Fatalf("first replace persistent registry: %v", err)
+	}
+	conflicting := incoming
+	conflicting.Snapshot.Version = "snapshot_import_replace_v3"
+	script.execQueries = nil
+
+	_, err = ReplacePersistentRegistry(context.Background(), db, conflicting, ImportReplaceOptions{
+		ActorID:        "tester",
+		RequestID:      "req-conflict-second",
+		IdempotencyKey: "idem-conflict",
+		Source:         "test-registry.json",
+	})
+	if err == nil {
+		t.Fatalf("expected idempotency key conflict")
+	}
+	mutationErr, ok := err.(RegistryMutationError)
+	if !ok {
+		t.Fatalf("expected RegistryMutationError, got %T: %v", err, err)
+	}
+	if mutationErr.ErrorType != "IDEMPOTENCY_KEY_CONFLICT" || mutationErr.Retryable {
+		t.Fatalf("unexpected conflict error: %#v", mutationErr)
+	}
+	if containsExec(script.execQueries, "DELETE FROM") {
+		t.Fatalf("conflict should not replace mutable rows: %#v", script.execQueries)
 	}
 }
 

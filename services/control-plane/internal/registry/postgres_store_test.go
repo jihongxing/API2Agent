@@ -144,11 +144,33 @@ func (c *scriptedRegistryConn) BeginTx(ctx context.Context, opts driver.TxOption
 }
 
 func (c *scriptedRegistryConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
-	return c.rowsFor(query)
+	if strings.Contains(query, "INSERT INTO") || strings.Contains(query, "UPDATE ") {
+		c.script.execQueries = append(c.script.execQueries, query)
+	}
+	if c.script.failExecContains != "" && strings.Contains(query, c.script.failExecContains) {
+		return nil, fmt.Errorf("scripted exec failure for %s", c.script.failExecContains)
+	}
+	return c.rowsFor(query, args)
 }
 
-func (c *scriptedRegistryConn) rowsFor(query string) (driver.Rows, error) {
+func (c *scriptedRegistryConn) rowsFor(query string, args []driver.NamedValue) (driver.Rows, error) {
 	switch {
+	case strings.Contains(query, "INSERT INTO admin_mutation_idempotency_records"):
+		return c.insertIdempotencyRecord(query, args)
+	case strings.Contains(query, "SELECT id, request_fingerprint, status, response_body"):
+		return c.selectIdempotencyRecord(args)
+	case strings.Contains(query, "INSERT INTO registry_revisions"):
+		if err := c.applyExec(query, args); err != nil {
+			return nil, err
+		}
+		id := c.script.rows.RegistryRevisions[len(c.script.rows.RegistryRevisions)-1].ID
+		return newScriptedRows([]string{"id"}, [][]driver.Value{{id}}), nil
+	case strings.Contains(query, "INSERT INTO admin_audit_events"):
+		if err := c.applyExec(query, args); err != nil {
+			return nil, err
+		}
+		id := c.script.rows.AdminAuditEvents[len(c.script.rows.AdminAuditEvents)-1].ID
+		return newScriptedRows([]string{"id"}, [][]driver.Value{{id}}), nil
 	case strings.Contains(query, "pg_try_advisory_xact_lock"):
 		return newScriptedRows([]string{"locked"}, [][]driver.Value{{c.script.lockAvailable}}), nil
 	case strings.Contains(query, "FROM projects"):
@@ -168,6 +190,50 @@ func (c *scriptedRegistryConn) rowsFor(query string) (driver.Rows, error) {
 	default:
 		return nil, fmt.Errorf("unexpected query: %s", query)
 	}
+}
+
+func (c *scriptedRegistryConn) insertIdempotencyRecord(query string, args []driver.NamedValue) (driver.Rows, error) {
+	for _, row := range c.script.rows.IdempotencyRecords {
+		if row.ProjectID == namedString(args, 0) &&
+			row.ActorID == namedString(args, 1) &&
+			row.Operation == namedString(args, 2) &&
+			row.IdempotencyKeyHash == namedString(args, 3) {
+			return newScriptedRows([]string{"id"}, nil), nil
+		}
+	}
+	summary, err := parseJSONMap(namedBytes(args, 6))
+	if err != nil {
+		return nil, err
+	}
+	id := int64(len(c.script.rows.IdempotencyRecords) + 1)
+	c.script.rows.IdempotencyRecords = append(c.script.rows.IdempotencyRecords, PersistentIdempotencyRecordRow{
+		ID:                   id,
+		ProjectID:            namedString(args, 0),
+		ActorID:              namedString(args, 1),
+		Operation:            namedString(args, 2),
+		IdempotencyKeyHash:   namedString(args, 3),
+		IdempotencyKeyPrefix: namedString(args, 4),
+		RequestFingerprint:   namedString(args, 5),
+		RequestSummary:       summary,
+		FirstRequestID:       namedString(args, 7),
+		Status:               "processing",
+	})
+	return newScriptedRows([]string{"id"}, [][]driver.Value{{id}}), nil
+}
+
+func (c *scriptedRegistryConn) selectIdempotencyRecord(args []driver.NamedValue) (driver.Rows, error) {
+	for _, row := range c.script.rows.IdempotencyRecords {
+		if row.ProjectID == namedString(args, 0) &&
+			row.ActorID == namedString(args, 1) &&
+			row.Operation == namedString(args, 2) &&
+			row.IdempotencyKeyHash == namedString(args, 3) {
+			return newScriptedRows(
+				[]string{"id", "request_fingerprint", "status", "response_body"},
+				[][]driver.Value{{row.ID, row.RequestFingerprint, row.Status, row.ResponseBody}},
+			), nil
+		}
+	}
+	return newScriptedRows([]string{"id", "request_fingerprint", "status", "response_body"}, nil), nil
 }
 
 func (c *scriptedRegistryConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
@@ -289,7 +355,9 @@ func (c *scriptedRegistryConn) applyExec(query string, args []driver.NamedValue)
 			Status:    namedString(args, 5),
 		})
 	case strings.Contains(query, "INSERT INTO registry_revisions"):
+		id := int64(len(c.script.rows.RegistryRevisions) + 1)
 		c.script.rows.RegistryRevisions = append(c.script.rows.RegistryRevisions, PersistentRegistryRevisionRow{
+			ID:                  id,
 			RegistryFingerprint: namedString(args, 0),
 			SnapshotVersion:     namedString(args, 1),
 			SourceStore:         namedString(args, 2),
@@ -300,7 +368,9 @@ func (c *scriptedRegistryConn) applyExec(query string, args []driver.NamedValue)
 		if err != nil {
 			return err
 		}
+		id := int64(len(c.script.rows.AdminAuditEvents) + 1)
 		c.script.rows.AdminAuditEvents = append(c.script.rows.AdminAuditEvents, PersistentAdminAuditEventRow{
+			ID:           id,
 			ActorID:      namedString(args, 0),
 			Action:       namedString(args, 1),
 			ResourceType: namedString(args, 2),
@@ -310,6 +380,35 @@ func (c *scriptedRegistryConn) applyExec(query string, args []driver.NamedValue)
 			ErrorType:    namedString(args, 6),
 			Metadata:     metadata,
 		})
+	case strings.Contains(query, "UPDATE admin_mutation_idempotency_records") && strings.Contains(query, "replay_count"):
+		id := namedInt64(args, 1)
+		for i := range c.script.rows.IdempotencyRecords {
+			if c.script.rows.IdempotencyRecords[i].ID == id {
+				c.script.rows.IdempotencyRecords[i].ReplayCount++
+				c.script.rows.IdempotencyRecords[i].LastReplayRequestID = namedString(args, 0)
+				return nil
+			}
+		}
+		return fmt.Errorf("idempotency record %d not found", id)
+	case strings.Contains(query, "UPDATE admin_mutation_idempotency_records"):
+		id := namedInt64(args, 9)
+		for i := range c.script.rows.IdempotencyRecords {
+			if c.script.rows.IdempotencyRecords[i].ID == id {
+				row := &c.script.rows.IdempotencyRecords[i]
+				row.Status = "succeeded"
+				row.ResponseStatusCode = namedInt(args, 0)
+				row.ResponseBody = string(namedBytes(args, 1))
+				row.ResponseFingerprint = namedString(args, 2)
+				row.RegistryFingerprint = namedString(args, 3)
+				row.PreviousRegistryFingerprint = namedString(args, 4)
+				row.SnapshotVersion = namedString(args, 5)
+				row.Noop = namedBool(args, 6)
+				row.RegistryRevisionID = namedInt64Ptr(args, 7)
+				row.AdminAuditEventID = namedInt64Ptr(args, 8)
+				return nil
+			}
+		}
+		return fmt.Errorf("idempotency record %d not found", id)
 	default:
 		return fmt.Errorf("unexpected exec: %s", query)
 	}
@@ -480,6 +579,45 @@ func namedFloat(args []driver.NamedValue, index int) float64 {
 	default:
 		panic(fmt.Sprintf("unexpected float value %T", value))
 	}
+}
+
+func namedInt(args []driver.NamedValue, index int) int {
+	return int(namedInt64(args, index))
+}
+
+func namedInt64(args []driver.NamedValue, index int) int64 {
+	if index >= len(args) || args[index].Value == nil {
+		return 0
+	}
+	switch value := args[index].Value.(type) {
+	case int64:
+		return value
+	case int:
+		return int64(value)
+	case int32:
+		return int64(value)
+	default:
+		panic(fmt.Sprintf("unexpected int value %T", value))
+	}
+}
+
+func namedInt64Ptr(args []driver.NamedValue, index int) *int64 {
+	if index >= len(args) || args[index].Value == nil {
+		return nil
+	}
+	value := namedInt64(args, index)
+	return &value
+}
+
+func namedBool(args []driver.NamedValue, index int) bool {
+	if index >= len(args) || args[index].Value == nil {
+		return false
+	}
+	value, ok := args[index].Value.(bool)
+	if !ok {
+		panic(fmt.Sprintf("unexpected bool value %T", args[index].Value))
+	}
+	return value
 }
 
 func reflectSnapshotsEquivalent(left RoutingSnapshot, right RoutingSnapshot) bool {

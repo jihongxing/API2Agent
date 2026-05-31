@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Admin Mutation Idempotency Store Design
+Hosted Admin Identity Boundary Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 现在已经完成，下一项 implementation step 是 Go Control Plane private admin import/replace endpoint closeout review。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 Hosted Admin Identity Boundary implementation 的 closeout。
 
 实现语言决策：
 
@@ -776,8 +776,17 @@ Go Control Plane Minimum v0
 下一项工程任务：
 
 ```text
-Go Control Plane Admin Mutation Idempotency Store Design v0
+Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
 ```
+
+参考：
+
+- `docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_LIVE_POSTGRES_DOGFOOD_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace 是后面的结果
 

@@ -256,6 +256,12 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane import/replace snapshot propagation E2E dogfood passed with HTTP import/replace, artifact export, distribution publish, manual Data Plane reload, replacement provider execution, and replaced-provider usage/decision attribution.
 - Go Control Plane import/replace snapshot propagation closeout completed; the write-side + manual snapshot handoff milestone can pause and the next task is Admin Mutation Idempotency Store design.
 - Next-session handoff documented for 2026-06-01 with the first task, reading list, scope boundaries, and validation baseline.
+- Go Control Plane Admin Mutation Idempotency Store design completed with scoped key hashing, canonical request fingerprints, replay semantics, conflict behavior, transaction/audit linkage, retention, failure semantics, and implementation test requirements.
+- Go Control Plane Admin Mutation Idempotency Store implemented with Postgres schema, scoped key hashing, canonical request fingerprints, same-request replay, different-request conflict detection, audit/revision linkage, replay headers, and regression tests.
+- Go Control Plane Admin Mutation Idempotency Store live Postgres dogfood passed with HTTP first import `201`, same-key replay `201`, same-key different-request conflict `409`, independent no-op `200`, `idempotency_records=2`, and replay/audit/revision linkage assertions.
+- Go Control Plane Admin Mutation Idempotency Store closeout completed; durable private admin mutation idempotency can close and the next hosted-readiness gap is admin identity/project scope design.
+- Go Control Plane Hosted Admin Identity Boundary design completed with admin principal shape, local/private compatibility, hosted trust rules, endpoint permissions, audit/idempotency identity mapping, auth error mapping, and implementation test requirements.
+- Go Control Plane Hosted Admin Identity Boundary implemented with `registry.AdminPrincipal`, local/private principal resolution, hosted-ready authenticator seam, endpoint permission checks, principal-derived audit metadata, principal-derived import/replace idempotency scope, and HTTP auth/authz regression tests.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -263,4 +269,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Admin Mutation Idempotency Store Design v0.
+- Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0.

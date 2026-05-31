@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Admin Mutation Idempotency Store Design
+Hosted Admin Identity Boundary Implementation Complete
 ```
 
 Strategic thesis:
@@ -776,7 +776,12 @@ Go Control Plane Private Admin Import/Replace Endpoint Live Postgres Dogfood v0 
 Go Control Plane Private Admin Import/Replace Endpoint Closeout + Phase Review v0 - complete
 Go Control Plane Import/Replace Snapshot Propagation E2E Dogfood v0 - complete
 Go Control Plane Import/Replace Snapshot Propagation Closeout + Phase Review v0 - complete
-Next: Go Control Plane Admin Mutation Idempotency Store Design v0
+Go Control Plane Admin Mutation Idempotency Store Design v0 - complete
+Go Control Plane Admin Mutation Idempotency Store Implementation v0 - complete
+Go Control Plane Admin Mutation Idempotency Store Live Postgres Dogfood v0 - complete
+Go Control Plane Admin Mutation Idempotency Store Closeout + Phase Review v0 - complete
+Go Control Plane Hosted Admin Identity Boundary Design v0 - complete
+Go Control Plane Hosted Admin Identity Boundary Implementation v0 - complete
 ```
 
 ## 8.8 Phase 5.8: Tooling Re-entry Phase
@@ -928,7 +933,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Admin Mutation Idempotency Store Design v0
+Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -974,31 +979,46 @@ Go Control Plane Private Admin Import/Replace Endpoint Live Postgres Dogfood v0
 Go Control Plane Private Admin Import/Replace Endpoint Closeout + Phase Review v0
 Go Control Plane Import/Replace Snapshot Propagation E2E Dogfood v0
 Go Control Plane Import/Replace Snapshot Propagation Closeout + Phase Review v0
+Go Control Plane Admin Mutation Idempotency Store Design v0
+Go Control Plane Admin Mutation Idempotency Store Implementation v0
+Go Control Plane Admin Mutation Idempotency Store Live Postgres Dogfood v0
+Go Control Plane Admin Mutation Idempotency Store Closeout + Phase Review v0
+Go Control Plane Hosted Admin Identity Boundary Design v0
+Go Control Plane Hosted Admin Identity Boundary Implementation v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Admin Mutation Idempotency Store Design v0
+Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
 ```
 
-This is now the next engineering task after the write-side + manual snapshot handoff milestone closed.
+This is now the next engineering task after hosted admin identity boundary implementation is complete.
 
 Scope:
 
-1. Design persistent idempotency records for private admin mutation requests.
-2. Define key scope, request fingerprinting, response replay, conflict detection, audit linkage, and retention.
-3. Keep the design limited to the existing private admin mutation path.
+1. Review the implemented local/private and hosted-mode identity behavior.
+2. Confirm audit and idempotency identity mapping against the design.
+3. Capture residual hosted-auth gaps before new write endpoints are added.
 4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- idempotency record schema is documented.
-- same-key same-request replay semantics are documented.
-- same-key different-request conflict semantics are documented.
-- transaction and audit linkage with registry import/replace are documented.
-- implementation tasks are named separately after design acceptance.
+- local/private behavior remains compatible and tested.
+- hosted mode does not trust `X-Actor-ID`.
+- endpoint permission checks are documented as implemented.
+- audit and idempotency identity mapping use the resolved principal.
+- residual risks and next implementation gate are explicit.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
+
+References:
+
+- `docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_LIVE_POSTGRES_DOGFOOD_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_ADMIN_MUTATION_IDEMPOTENCY_STORE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md`
 
 Completed propagation closeout result:
 
