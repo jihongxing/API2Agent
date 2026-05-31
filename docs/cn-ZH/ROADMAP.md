@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Closeout Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0。
 
 范围：
 
@@ -1068,6 +1068,14 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`
+
+已完成 Agent capability compiler OpenAPI JSON Schema keyword coverage design 结果：
+
+- current keyword coverage baseline and gaps 已文档化。
+- Tier 1 display/example keywords、Tier 2 diagnostics-only keywords、compatibility strategy、generated artifact effects、tests、dogfood 和 non-goals 已定义。
+- 下一项 OpenAPI hardening task 是 JSON Schema keyword coverage implementation。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`。
 
 已完成 Agent capability compiler OpenAPI response shape documentation closeout 结果：
 

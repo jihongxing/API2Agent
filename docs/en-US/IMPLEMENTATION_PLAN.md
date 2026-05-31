@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Closeout Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI JSON Schema keyword coverage design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI JSON Schema keyword coverage implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -930,11 +930,16 @@ Current Phase 6 progress:
   - remaining risks are documentation-only content negotiation, unvalidated source examples, advisory diagnostics, no runtime output validation, and partial JSON Schema keyword coverage.
   - the next OpenAPI hardening task is JSON Schema keyword coverage design.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0 is complete:
+  - current keyword coverage baseline and gaps are documented.
+  - Tier 1 display/example keywords, Tier 2 diagnostics-only keywords, compatibility strategy, generated artifact effects, tests, dogfood, and non-goals are defined.
+  - the next OpenAPI hardening task is JSON Schema keyword coverage implementation.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
 ```
 
 References:
@@ -979,6 +984,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`
 
 ## 9. Marketplace Is Later
 

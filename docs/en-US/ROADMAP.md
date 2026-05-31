@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Closeout Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0.
 
 Scope:
 
@@ -1068,6 +1068,14 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`
+
+Completed Agent capability compiler OpenAPI JSON Schema keyword coverage design result:
+
+- current keyword coverage baseline and gaps are documented.
+- Tier 1 display/example keywords, Tier 2 diagnostics-only keywords, compatibility strategy, generated artifact effects, tests, dogfood, and non-goals are defined.
+- the next OpenAPI hardening task is JSON Schema keyword coverage implementation.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`.
 
 Completed Agent capability compiler OpenAPI response shape documentation closeout result:
 

@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Response Shape Documentation Closeout Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI JSON Schema keyword coverage design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI JSON Schema keyword coverage implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -930,11 +930,16 @@ Go Control Plane Minimum v0
   - remaining risks 是 documentation-only content negotiation、unvalidated source examples、advisory diagnostics、no runtime output validation 和 partial JSON Schema keyword coverage。
   - 下一项 OpenAPI hardening task 是 JSON Schema keyword coverage design。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_CLOSEOUT_PHASE_REVIEW.md`。
+- Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0 已完成：
+  - current keyword coverage baseline and gaps 已文档化。
+  - Tier 1 display/example keywords、Tier 2 diagnostics-only keywords、compatibility strategy、generated artifact effects、tests、dogfood 和 non-goals 已定义。
+  - 下一项 OpenAPI hardening task 是 JSON Schema keyword coverage implementation。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
 ```
 
 参考：
@@ -979,6 +984,7 @@ Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`
 
 ## 9. Marketplace 是后面的结果
 
