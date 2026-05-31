@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Hosted Admin Authenticator Integration Implementation Complete
+Hosted Admin Authenticator Integration Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is complete, and the current Go Control Plane gate is closeout of the trusted-gateway hosted admin authenticator integration.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is complete, and the current Go Control Plane gate is service-level dogfood of the trusted-gateway hosted admin authenticator.
 
 Implementation language decision:
 
@@ -776,7 +776,7 @@ Current Phase 6 progress:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 ```
 
 References:
@@ -790,6 +790,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace Is Later
 

@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Hosted Admin Authenticator Integration Implementation Complete
+Hosted Admin Authenticator Integration Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 trusted-gateway hosted admin authenticator integration 的 closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 trusted-gateway hosted admin authenticator 的 service-level dogfood。
 
 实现语言决策：
 
@@ -776,7 +776,7 @@ Go Control Plane Minimum v0
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 ```
 
 参考：
@@ -790,6 +790,7 @@ Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review 
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace 是后面的结果
 

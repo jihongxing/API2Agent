@@ -163,3 +163,4 @@ Hosted admin identity implementation report: `../../docs/en-US/GO_CONTROL_PLANE_
 Hosted admin identity closeout review: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`.
 Hosted admin authenticator integration design: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`.
 Hosted admin authenticator integration implementation report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`.
+Hosted admin authenticator integration closeout review: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`.

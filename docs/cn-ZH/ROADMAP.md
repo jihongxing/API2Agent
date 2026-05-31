@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Hosted Admin Authenticator Integration Implementation Complete
+Hosted Admin Authenticator Integration Closeout Complete
 ```
 
 战略判断：
@@ -785,6 +785,7 @@ Go Control Plane Hosted Admin Identity Boundary Implementation v0 - complete
 Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Design v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0 - complete
+Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0 - complete
 ```
 
 ## 8.8 Phase 5.8：Tooling Re-entry Phase
@@ -936,7 +937,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -991,29 +992,30 @@ Go Control Plane Hosted Admin Identity Boundary Implementation v0
 Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
 Go Control Plane Hosted Admin Authenticator Integration Design v0
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0
+Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 ```
 
-这现在是 hosted admin authenticator integration implementation 完成后的下一项工程任务。
+这现在是 hosted admin authenticator integration closeout 完成后的下一项工程任务。
 
 范围：
 
-1. 按 design review trusted-gateway authenticator behavior。
-2. 确认 local/private compatibility 和 fail-closed hosted mode behavior。
-3. 记录 remaining hosted-auth、gateway 和 permission-source risks。
+1. 以 hosted/trusted-gateway mode 运行 local Control Plane service。
+2. 通过 HTTP 验证 trusted gateway success、missing gateway auth 和 missing permission。
+3. 验证 hosted/trusted-gateway mode 下 service startup 不要求 local/private admin token。
 4. 不实现 public CRUD、automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- trusted gateway authenticator acceptance criteria 已 review。
-- local/private behavior 保持兼容并有测试覆盖。
-- residual hosted deployment risks 已文档化。
-- 下一项 implementation gate 明确。
+- hosted/trusted-gateway service mode 已通过 HTTP dogfood。
+- auth failure responses 符合 stable error envelope。
+- trusted gateway claims 产生预期 admin principal behavior。
+- 如果使用 Postgres，audit/idempotency identity evidence 已验证。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：
@@ -1027,6 +1029,7 @@ Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review 
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
 
 已完成 propagation closeout 结果：
 

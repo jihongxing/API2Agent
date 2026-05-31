@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Admin Authenticator Integration Implementation Complete
+Hosted Admin Authenticator Integration Closeout Complete
 ```
 
 Strategic thesis:
@@ -785,6 +785,7 @@ Go Control Plane Hosted Admin Identity Boundary Implementation v0 - complete
 Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Design v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0 - complete
+Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0 - complete
 ```
 
 ## 8.8 Phase 5.8: Tooling Re-entry Phase
@@ -936,7 +937,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -991,29 +992,30 @@ Go Control Plane Hosted Admin Identity Boundary Implementation v0
 Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
 Go Control Plane Hosted Admin Authenticator Integration Design v0
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0
+Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 ```
 
-This is now the next engineering task after hosted admin authenticator integration implementation is complete.
+This is now the next engineering task after hosted admin authenticator integration closeout is complete.
 
 Scope:
 
-1. Review trusted-gateway authenticator behavior against the design.
-2. Confirm local/private compatibility and fail-closed hosted mode behavior.
-3. Capture residual hosted-auth, gateway, and permission-source risks.
+1. Run the local Control Plane service in hosted/trusted-gateway mode.
+2. Exercise trusted gateway success, missing gateway auth, and missing permission over HTTP.
+3. Verify service startup does not require a local/private admin token in hosted/trusted-gateway mode.
 4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- trusted gateway authenticator acceptance criteria are reviewed.
-- local/private behavior remains compatible and tested.
-- residual hosted deployment risks are documented.
-- next implementation gate is explicit.
+- hosted/trusted-gateway service mode is dogfooded over HTTP.
+- auth failure responses match the stable error envelope.
+- trusted gateway claims produce the expected admin principal behavior.
+- if Postgres is used, audit/idempotency identity evidence is verified.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1027,6 +1029,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
 
 Completed propagation closeout result:
 
