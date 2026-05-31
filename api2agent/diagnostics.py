@@ -11,10 +11,92 @@ from api2agent.schema_shaping import schema_hint_counts, schema_paths_with_hint
 
 
 DIAGNOSTICS_CONTRACT_VERSION = "api2agent.capability_diagnostics.v0"
+SCORING_PROFILE = "api2agent.diagnostics.score_profile.v0"
 LARGE_TOOLSET_THRESHOLD = 50
 MANY_REQUIRED_PARAMETERS_THRESHOLD = 6
 GENERIC_CAPABILITY_NAMES = {"api", "www", "default", "openapi", "api2agent", "generated"}
 GENERIC_TOOL_NAMES = {"get", "post", "put", "patch", "delete", "list", "create", "update", "execute", "call"}
+SCORE_BASE = 100
+METADATA_REVIEW_PENALTY_CAP = 8
+ACTION_REQUIRED_FINDING_PENALTY_CAP = 10
+IMPACT_ORDER = ("blocking", "action_required", "review_required", "metadata_review", "readiness")
+IMPACT_PENALTIES = {
+    "blocking": 35,
+    "action_required": 10,
+    "review_required": 4,
+    "metadata_review": 1,
+    "readiness": 0,
+}
+BLOCKING_FINDINGS = {
+    "duplicate_tool_names",
+    "missing_base_url",
+    "required_body_without_schema",
+}
+ACTION_REQUIRED_FINDINGS = {
+    "large_toolset",
+    "no_read_tools",
+    "write_only_package",
+    "generic_capability_name",
+    "generic_tool_name",
+    "unknown_safety",
+    "write_tools_present",
+    "weak_tool_description",
+    "many_required_parameters",
+    "array_without_item_schema",
+    "discriminator_missing_property",
+    "discriminator_without_polymorphism",
+    "discriminator_mapping_unresolved",
+    "success_response_without_schema",
+    "unsupported_auth_scheme",
+    "unknown_auth",
+    "auth_env_missing",
+    "relative_server_url",
+}
+REVIEW_REQUIRED_FINDINGS = {
+    "broad_object_schema",
+    "read_only_request_fields",
+    "write_only_response_fields",
+    "conditional_schema_present",
+    "dependent_schema_present",
+}
+METADATA_REVIEW_FINDINGS = {
+    "missing_provider_region",
+    "missing_parameter_descriptions",
+    "additional_properties_present",
+    "nullable_fields_present",
+    "nested_polymorphic_schema",
+    "large_object_schema",
+    "schema_keywords_present",
+    "string_constraints_present",
+    "numeric_constraints_present",
+    "array_constraints_present",
+    "const_schema_present",
+    "deprecated_schema_fields",
+    "pattern_schema_present",
+    "unsupported_schema_keywords_present",
+    "discriminator_present",
+    "discriminator_mapping_present",
+    "discriminator_branch_without_tag",
+    "response_schema_present",
+    "response_example_present",
+    "response_without_schema",
+    "error_response_schema_present",
+    "default_response_present",
+    "multiple_response_content_types",
+    "response_polymorphic_schema",
+    "auth_alternatives_present",
+    "combined_auth_required",
+    "query_api_key_auth",
+    "cookie_api_key_auth",
+    "metadata_only_oauth",
+    "multiple_servers_present",
+    "ambiguous_server_profiles",
+    "server_variables_present",
+    "path_server_override",
+    "operation_server_override",
+    "mixed_auth_summary",
+}
+READINESS_FINDINGS = {"proxy_identity_ready"}
 
 
 def diagnose_capability(
@@ -164,10 +246,13 @@ def diagnose_capability(
     )
 
     summary = _summary(findings)
+    score_breakdown = _score_breakdown(findings)
     return {
         "contract_version": DIAGNOSTICS_CONTRACT_VERSION,
         "status": _status(summary),
-        "score": _score(summary),
+        "score": score_breakdown["score"],
+        "scoring_profile": SCORING_PROFILE,
+        "score_breakdown": score_breakdown,
         "summary": summary,
         "metrics": metrics,
         "generation_context": {
@@ -973,9 +1058,65 @@ def _status(summary: dict[str, int]) -> str:
     return "pass"
 
 
-def _score(summary: dict[str, int]) -> int:
-    penalty = summary["errors"] * 35 + summary["warnings"] * 10 + min(summary["info"] * 2, 10)
-    return max(0, min(100, 100 - penalty))
+def _score_breakdown(findings: list[dict[str, Any]]) -> dict[str, Any]:
+    impact_counts = {impact: 0 for impact in IMPACT_ORDER}
+    finding_ids_by_impact = {impact: set() for impact in IMPACT_ORDER}
+    finding_impacts: dict[str, str] = {}
+    for finding in findings:
+        finding_id = str(finding.get("id") or "unknown")
+        impact = _finding_impact(finding)
+        impact_counts[impact] += 1
+        finding_ids_by_impact[impact].add(finding_id)
+        current = finding_impacts.get(finding_id)
+        if current is None or _impact_rank(impact) < _impact_rank(current):
+            finding_impacts[finding_id] = impact
+
+    penalties = {
+        impact: impact_counts[impact] * IMPACT_PENALTIES[impact]
+        for impact in IMPACT_ORDER
+    }
+    penalties["action_required"] = min(
+        penalties["action_required"],
+        len(finding_ids_by_impact["action_required"]) * ACTION_REQUIRED_FINDING_PENALTY_CAP,
+    )
+    penalties["metadata_review"] = min(penalties["metadata_review"], METADATA_REVIEW_PENALTY_CAP)
+    penalty = sum(penalties.values())
+    score = max(0, min(SCORE_BASE, SCORE_BASE - penalty))
+    return {
+        "base": SCORE_BASE,
+        "penalty": penalty,
+        "score": score,
+        "impact_counts": impact_counts,
+        "penalties": penalties,
+        "finding_impacts": dict(sorted(finding_impacts.items())),
+    }
+
+
+def _finding_impact(finding: dict[str, Any]) -> str:
+    finding_id = str(finding.get("id") or "unknown")
+    severity = str(finding.get("severity") or "info")
+    if finding_id in READINESS_FINDINGS:
+        return "readiness"
+    if finding_id in BLOCKING_FINDINGS:
+        return "blocking"
+    if finding_id in ACTION_REQUIRED_FINDINGS:
+        return "action_required"
+    if finding_id == "deprecated_schema_fields" and severity == "warning":
+        return "review_required"
+    if finding_id in REVIEW_REQUIRED_FINDINGS:
+        return "review_required"
+    if finding_id in METADATA_REVIEW_FINDINGS:
+        return "metadata_review"
+    if severity in {"warning", "error"}:
+        return "review_required"
+    return "metadata_review"
+
+
+def _impact_rank(impact: str) -> int:
+    try:
+        return IMPACT_ORDER.index(impact)
+    except ValueError:
+        return len(IMPACT_ORDER)
 
 
 def _finding(

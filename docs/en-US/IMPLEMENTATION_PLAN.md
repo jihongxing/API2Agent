@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Design Complete
+Agent Capability Compiler Diagnostics Score Calibration Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is diagnostics score calibration implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is diagnostics score calibration closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Implementation v0
+Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Implementation v0
+Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -961,11 +961,16 @@ Current Phase 6 progress:
   - scoring weakness, compatibility strategy, impact classes, initial mapping, score formula, metadata cap, score breakdown, calibration expectations, tests, dogfood, and non-goals are defined.
   - the next compiler hardening task is diagnostics score calibration implementation.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_DESIGN.md`.
+- Agent Capability Compiler Diagnostics Score Calibration Implementation v0 is complete:
+  - diagnostics scoring now uses an explicit impact profile, score breakdown, metadata cap, repeated action-finding cap, and readiness zero-penalty handling.
+  - real-spec calibration improved from 1 pass / 5 warn to 4 pass / 2 warn, while write-heavy and large-surface cases remain visible warnings.
+  - the full Python suite passed with 212 tests.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Implementation v0
+Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
 ```
 
 References:

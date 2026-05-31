@@ -4,7 +4,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from api2agent.cli import app
-from api2agent.diagnostics import DIAGNOSTICS_CONTRACT_VERSION, diagnose_capability
+from api2agent.diagnostics import DIAGNOSTICS_CONTRACT_VERSION, SCORING_PROFILE, diagnose_capability
 from api2agent.generators.package import generate_package
 from api2agent.ir.models import AuthConfig, Capability, Parameter, RequestBody, SafetyLevel, Tool
 from api2agent.parsers.curl import parse_curl
@@ -31,6 +31,20 @@ def test_diagnose_capability_flags_generic_names_and_large_toolset() -> None:
     assert "large_toolset" in finding_ids
 
 
+def test_diagnose_capability_exposes_calibrated_score_breakdown() -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/basic.yaml"))
+
+    diagnostics = diagnose_capability(capability)
+    breakdown = diagnostics["score_breakdown"]
+
+    assert diagnostics["scoring_profile"] == SCORING_PROFILE
+    assert diagnostics["score"] == breakdown["score"]
+    assert breakdown["base"] == 100
+    assert breakdown["impact_counts"]["readiness"] == 1
+    assert breakdown["penalties"]["readiness"] == 0
+    assert breakdown["finding_impacts"]["proxy_identity_ready"] == "readiness"
+
+
 def test_diagnose_capability_flags_write_only_unknown_safety_and_auth_without_env() -> None:
     capability = Capability(
         name="orders",
@@ -50,6 +64,42 @@ def test_diagnose_capability_flags_write_only_unknown_safety_and_auth_without_en
     assert "write_tools_present" in finding_ids
     assert "unknown_safety" in finding_ids
     assert "auth_env_missing" in finding_ids
+    assert diagnostics["score"] <= 60
+    assert diagnostics["score_breakdown"]["impact_counts"]["action_required"] >= 5
+
+
+def test_diagnose_capability_keeps_blocking_findings_low_score() -> None:
+    capability = Capability(
+        name="items",
+        base_url="https://api.example.com",
+        tools=[
+            Tool(name="list_items", method="GET", path="/items", description="List items", safety=SafetyLevel.READ),
+            Tool(
+                name="list_items",
+                method="GET",
+                path="/items/archived",
+                description="List archived items",
+                safety=SafetyLevel.READ,
+            ),
+        ],
+    )
+
+    duplicate_diagnostics = diagnose_capability(capability)
+    missing_base_diagnostics = diagnose_capability(
+        Capability(
+            name="items",
+            tools=[
+                Tool(name="list_items", method="GET", path="/items", description="List items", safety=SafetyLevel.READ),
+            ],
+        )
+    )
+
+    assert duplicate_diagnostics["status"] == "fail"
+    assert duplicate_diagnostics["score"] <= 65
+    assert duplicate_diagnostics["score_breakdown"]["finding_impacts"]["duplicate_tool_names"] == "blocking"
+    assert missing_base_diagnostics["status"] == "fail"
+    assert missing_base_diagnostics["score"] <= 65
+    assert missing_base_diagnostics["score_breakdown"]["finding_impacts"]["missing_base_url"] == "blocking"
 
 
 def test_diagnose_capability_flags_required_body_without_schema() -> None:
@@ -155,6 +205,8 @@ def test_diagnose_reports_openapi_security_combinations() -> None:
     assert "query_api_key_auth" in finding_ids
     assert "cookie_api_key_auth" in finding_ids
     assert "metadata_only_oauth" in finding_ids
+    assert diagnostics["score"] >= 60
+    assert diagnostics["score_breakdown"]["penalties"]["metadata_review"] <= 8
 
 
 def test_diagnose_reports_openapi_server_metadata() -> None:
@@ -167,6 +219,8 @@ def test_diagnose_reports_openapi_server_metadata() -> None:
     assert "server_variables_present" in finding_ids
     assert "path_server_override" in finding_ids
     assert "operation_server_override" in finding_ids
+    assert diagnostics["score"] >= 60
+    assert diagnostics["score_breakdown"]["penalties"]["metadata_review"] <= 8
 
 
 def test_diagnose_reports_schema_shaping_hints() -> None:
@@ -234,3 +288,6 @@ def test_diagnose_reports_json_schema_keyword_hints() -> None:
     ]
     assert any(finding["severity"] == "warning" for finding in deprecated_findings)
     assert any(finding["severity"] == "warning" for finding in conditional_findings)
+    assert diagnostics["score"] >= 60
+    assert diagnostics["score_breakdown"]["penalties"]["metadata_review"] <= 8
+    assert diagnostics["score_breakdown"]["finding_impacts"]["deprecated_schema_fields"] == "review_required"

@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Design Complete
+Agent Capability Compiler Diagnostics Score Calibration Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 diagnostics score calibration implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 diagnostics score calibration closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Implementation v0
+Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Implementation v0
+Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -961,11 +961,16 @@ Go Control Plane Minimum v0
   - scoring weakness、compatibility strategy、impact classes、initial mapping、score formula、metadata cap、score breakdown、calibration expectations、tests、dogfood 和 non-goals 已定义。
   - 下一项 compiler hardening task 是 diagnostics score calibration implementation。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_DESIGN.md`。
+- Agent Capability Compiler Diagnostics Score Calibration Implementation v0 已完成：
+  - diagnostics scoring 现在使用 explicit impact profile、score breakdown、metadata cap、repeated action-finding cap 和 readiness zero-penalty handling。
+  - real-spec calibration 从 1 pass / 5 warn 改善为 4 pass / 2 warn，同时 write-heavy 和 large-surface cases 仍保持 visible warnings。
+  - full Python suite 已通过 212 tests。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Implementation v0
+Agent Capability Compiler Diagnostics Score Calibration Closeout + Phase Review v0
 ```
 
 参考：
