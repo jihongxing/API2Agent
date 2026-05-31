@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler Quality Diagnostics Implementation Complete
+Agent Capability Compiler Quality Diagnostics Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is Agent capability compiler quality diagnostics closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI real-world hardening design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-World Hardening Design v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-World Hardening Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -832,11 +832,16 @@ Current Phase 6 progress:
   - generation, README, and inspect surfaces show compact diagnostics summaries.
   - deterministic findings cover usability, safety, auth, schema, execution, and observability risks.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`.
+- Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0 is complete:
+  - quality diagnostics is accepted as complete.
+  - remaining risks are real-spec calibration, advisory-only diagnostics, shallow schema quality, and broader OpenAPI complexity.
+  - the next compiler expansion task is OpenAPI real-world hardening design.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-World Hardening Design v0
 ```
 
 References:
@@ -862,6 +867,7 @@ References:
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace Is Later
 

@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler Quality Diagnostics Implementation Complete
+Agent Capability Compiler Quality Diagnostics Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-World Hardening Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1057,6 +1057,15 @@ References:
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
+
+Completed Agent capability compiler quality diagnostics closeout result:
+
+- quality diagnostics is accepted as complete.
+- deterministic diagnostics now provides a feedback layer for generated package quality.
+- remaining risks are real-spec calibration, advisory-only diagnostics, shallow schema quality, and broader OpenAPI complexity.
+- next compiler expansion task is OpenAPI real-world hardening design.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed Agent capability compiler quality diagnostics implementation result:
 

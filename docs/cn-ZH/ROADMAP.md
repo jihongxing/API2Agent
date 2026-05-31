@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler Quality Diagnostics Implementation Complete
+Agent Capability Compiler Quality Diagnostics Closeout Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Quality Diagnostics Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Real-World Hardening Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1057,6 +1057,15 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
+
+已完成 Agent capability compiler quality diagnostics closeout 结果：
+
+- quality diagnostics 已接受为 complete。
+- deterministic diagnostics 现在为 generated package quality 提供 feedback layer。
+- remaining risks 是 real-spec calibration、advisory-only diagnostics、shallow schema quality 和 broader OpenAPI complexity。
+- 下一项 compiler expansion task 是 OpenAPI real-world hardening design。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 Agent capability compiler quality diagnostics implementation 结果：
 

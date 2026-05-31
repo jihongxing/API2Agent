@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: close out Agent capability compiler quality diagnostics after implementation; next work remains API-first and out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
+Current focus: design OpenAPI real-world hardening after closing Agent capability compiler quality diagnostics; next work remains API-first and out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
@@ -72,6 +72,7 @@ English:
 - [Hosted Control Plane Pause + Agent Capability Compiler Re-entry](docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md)
 - [Agent Capability Compiler Expansion Design](docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md)
 - [Agent Capability Compiler Quality Diagnostics Implementation Report](docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md)
+- [Agent Capability Compiler Quality Diagnostics Closeout + Phase Review](docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md)
 - [Stage Consolidation Before Import/Replace](docs/en-US/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
 - [Persistent Registry Import/Replace Transaction Design](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
 - [Persistent Registry Import/Replace CLI Implementation Report](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)
@@ -152,6 +153,7 @@ English:
 - [Hosted Control Plane Pause + Agent Capability Compiler Re-entry](docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md)
 - [Agent Capability Compiler Expansion Design](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md)
 - [Agent Capability Compiler Quality Diagnostics Implementation 报告](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md)
+- [Agent Capability Compiler Quality Diagnostics Closeout + Phase Review](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md)
 - [Import/Replace 前阶段总结与加固](docs/cn-ZH/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
 - [Persistent Registry Import/Replace Transaction Design](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
 - [Persistent Registry Import/Replace CLI Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)
