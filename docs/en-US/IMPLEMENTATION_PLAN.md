@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout Complete
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI summary noise reduction design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI summary noise reduction implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -971,11 +971,15 @@ Current Phase 6 progress:
   - remaining risks are action-cap calibration on broader real specs, heuristic score semantics, summary noise, generic examples, and fixture-heavy corpus coverage.
   - the next compiler hardening task is OpenAPI summary noise reduction design.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0 is complete:
+  - noise taxonomy, bounded summary budgets, risk-first rendering order, repeated finding folding, README/inspect/diagnostics text effects, calibration summary-density metrics, tests, dogfood, and non-goals are defined.
+  - the next compiler hardening task is OpenAPI summary noise reduction implementation.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
 ```
 
 References:

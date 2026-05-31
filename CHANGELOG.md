@@ -305,6 +305,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler Diagnostics Score Calibration design completed with compatibility strategy, finding impact classes, initial impact mapping, metadata penalty cap, score breakdown shape, tests, dogfood, and non-goals.
 - Agent Capability Compiler Diagnostics Score Calibration implemented with impact-based diagnostics scoring, `scoring_profile`, `score_breakdown`, metadata/repeated-action penalty caps, readiness zero-penalty handling, fixture regression coverage, and real-spec calibration improvement from 1 pass / 5 warn to 4 pass / 2 warn.
 - Agent Capability Compiler Diagnostics Score Calibration closeout completed; the calibrated score profile can close and the next evidence-driven compiler target is OpenAPI summary noise reduction design.
+- Agent Capability Compiler OpenAPI Summary Noise Reduction design completed with noise taxonomy, bounded summary budgets, risk-first rendering order, repeated finding folding, README/inspect/diagnostics text effects, calibration summary-density metrics, tests, dogfood, and non-goals.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -312,4 +313,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0.
+- Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0.

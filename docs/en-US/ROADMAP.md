@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout Complete
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0.
 
 Scope:
 
@@ -1077,12 +1077,18 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_DESIGN.md`
+
+Completed Agent capability compiler OpenAPI summary noise reduction design result:
+
+- noise taxonomy, bounded summary budgets, risk-first rendering order, repeated finding folding, README/inspect/diagnostics text effects, calibration summary-density metrics, tests, dogfood, and non-goals are defined.
+- the next compiler hardening task is OpenAPI summary noise reduction implementation.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_DESIGN.md`.
 
 Completed Agent capability compiler diagnostics score calibration closeout result:
 
 - the calibrated score profile is accepted as complete.
 - remaining risks are action-cap calibration on broader real specs, heuristic score semantics, summary noise, generic examples, and fixture-heavy corpus coverage.
-- the next compiler hardening task is OpenAPI summary noise reduction design.
 - See `docs/en-US/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed Agent capability compiler diagnostics score calibration implementation result:

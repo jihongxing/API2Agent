@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler Diagnostics Score Calibration Closeout Complete
+Agent Capability Compiler OpenAPI Summary Noise Reduction Design Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Summary Noise Reduction Design v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0。
 
 范围：
 
@@ -1077,12 +1077,18 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_DESIGN.md`
+
+已完成 Agent capability compiler OpenAPI summary noise reduction design 结果：
+
+- noise taxonomy、bounded summary budgets、risk-first rendering order、repeated finding folding、README/inspect/diagnostics text effects、calibration summary-density metrics、tests、dogfood 和 non-goals 已定义。
+- 下一项 compiler hardening task 是 OpenAPI summary noise reduction implementation。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_DESIGN.md`。
 
 已完成 Agent capability compiler diagnostics score calibration closeout 结果：
 
 - calibrated score profile 被接受为 complete。
 - remaining risks 是更广 real specs 上的 action-cap calibration、heuristic score semantics、summary noise、generic examples 和 fixture-heavy corpus coverage。
-- 下一项 compiler hardening task 是 OpenAPI summary noise reduction design。
 - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_DIAGNOSTICS_SCORE_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 Agent capability compiler diagnostics score calibration implementation 结果：
