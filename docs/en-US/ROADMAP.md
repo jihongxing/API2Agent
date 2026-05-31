@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Admin Gateway Contract Harness Closeout Complete
+Hosted Control Plane Pause + Agent Compiler Re-entry Complete
 ```
 
 Strategic thesis:
@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Agent Capability Compiler Expansion Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: next after Tooling Re-entry closeout. Local Go Control Plane minimum, snapshot distribution, and the first local service API skeleton are complete.
+Status: paused after hosted admin gateway contract harness closeout. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, and the local gateway contract harness are complete.
 
 Goal:
 
@@ -1011,13 +1011,13 @@ Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0
 Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
 ```
 
-Next local entry slice:
+Deferred hosted-readiness slice:
 
 ```text
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This is now the next engineering task after the hosted admin gateway contract harness closeout.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent capability compiler expansion design.
 
 Scope:
 
@@ -1054,6 +1054,15 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
+
+Completed hosted Control Plane pause + Agent compiler re-entry result:
+
+- deeper hosted Control Plane work is paused at a credible boundary.
+- hosted permission-source design moves to the hosted-readiness backlog.
+- the immediate next project task returns to API-first Agent capability compiler expansion.
+- recommended expansion tracks are capability quality diagnostics, OpenAPI real-world hardening, curl instant onboarding, and observable execution defaults.
+- See `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`.
 
 Completed hosted admin gateway contract harness closeout result:
 
@@ -1061,7 +1070,7 @@ Completed hosted admin gateway contract harness closeout result:
 - public header stripping and trusted claim injection are dogfooded through a real gateway hop.
 - audit/idempotency evidence uses harness-injected identity and remains secret/token-safe.
 - remaining risks are static public auth, static permission policy, production gateway deployment, tenant-partitioned mutation, and manual propagation.
-- next highest-signal task is permission-source design.
+- next hosted-readiness task is permission-source design, but immediate project focus has shifted back to the compiler.
 - See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed hosted admin gateway contract harness implementation result:

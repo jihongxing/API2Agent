@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: design the hosted admin gateway permission source boundary after closing the local gateway contract harness; next work remains out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
+Current focus: return to Agent capability compiler expansion after pausing deeper hosted Control Plane work; next work remains API-first and out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
@@ -69,6 +69,7 @@ English:
 - [Large Spec Performance Report](docs/en-US/API2AGENT_LARGE_SPEC_PERFORMANCE_REPORT.md)
 - [curl Naming Residual Review](docs/en-US/API2AGENT_CURL_NAMING_RESIDUAL_REVIEW.md)
 - [Tooling Re-entry Closeout Review](docs/en-US/API2AGENT_TOOLING_REENTRY_CLOSEOUT_REVIEW.md)
+- [Hosted Control Plane Pause + Agent Capability Compiler Re-entry](docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md)
 - [Stage Consolidation Before Import/Replace](docs/en-US/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
 - [Persistent Registry Import/Replace Transaction Design](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
 - [Persistent Registry Import/Replace CLI Implementation Report](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)
@@ -146,6 +147,7 @@ English:
 - [Large Spec Performance 报告](docs/cn-ZH/API2AGENT_LARGE_SPEC_PERFORMANCE_REPORT.md)
 - [curl Naming Residual Review](docs/cn-ZH/API2AGENT_CURL_NAMING_RESIDUAL_REVIEW.md)
 - [Tooling Re-entry Closeout Review](docs/cn-ZH/API2AGENT_TOOLING_REENTRY_CLOSEOUT_REVIEW.md)
+- [Hosted Control Plane Pause + Agent Capability Compiler Re-entry](docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md)
 - [Import/Replace 前阶段总结与加固](docs/cn-ZH/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
 - [Persistent Registry Import/Replace Transaction Design](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
 - [Persistent Registry Import/Replace CLI Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)

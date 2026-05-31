@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Hosted Admin Gateway Contract Harness Closeout Complete
+Hosted Control Plane Pause + Agent Compiler Re-entry Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 hosted admin gateway permission source design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 Agent capability compiler expansion design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-none - Tooling Re-entry is paused after closeout
+Agent Capability Compiler Expansion Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Private Admin Import/Replace Endpoint Implementation v0
+Agent Capability Compiler Expansion Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -816,11 +816,16 @@ Go Control Plane Minimum v0
   - remaining risks 是 static public auth、static permission policy、production gateway deployment、tenant-partitioned mutation 和 manual propagation。
   - 下一项 hosted-readiness gap 是 permission-source design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`。
+- API2Agent Hosted Control Plane Pause + Agent Capability Compiler Re-entry v0 已完成：
+  - deeper hosted Control Plane work 在可信暂停点后移入 backlog。
+  - immediate next focus 回到 API-first Agent capability compiler expansion。
+  - 推荐扩展 tracks 是 capability quality diagnostics、OpenAPI real-world hardening、curl instant onboarding 和 observable execution defaults。
+  - 详见 `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Agent Capability Compiler Expansion Design v0
 ```
 
 参考：
@@ -843,6 +848,7 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 
 ## 9. Marketplace 是后面的结果
 

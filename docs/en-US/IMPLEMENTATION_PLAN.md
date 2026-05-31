@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Hosted Admin Gateway Contract Harness Closeout Complete
+Hosted Control Plane Pause + Agent Compiler Re-entry Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is complete, and the current Go Control Plane gate is hosted admin gateway permission source design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is Agent capability compiler expansion design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-none - Tooling Re-entry is paused after closeout
+Agent Capability Compiler Expansion Design v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Private Admin Import/Replace Endpoint Implementation v0
+Agent Capability Compiler Expansion Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -816,11 +816,16 @@ Current Phase 6 progress:
   - remaining risks are static public auth, static permission policy, production gateway deployment, tenant-partitioned mutation, and manual propagation.
   - the next hosted-readiness gap is permission-source design.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`.
+- API2Agent Hosted Control Plane Pause + Agent Capability Compiler Re-entry v0 is complete:
+  - deeper hosted Control Plane work is moved to backlog after a credible pause point.
+  - the immediate next focus returns to API-first Agent capability compiler expansion.
+  - recommended expansion tracks are capability quality diagnostics, OpenAPI real-world hardening, curl instant onboarding, and observable execution defaults.
+  - see `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Agent Capability Compiler Expansion Design v0
 ```
 
 References:
@@ -843,6 +848,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 
 ## 9. Marketplace Is Later
 

@@ -274,6 +274,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Admin Gateway Contract Harness design completed with local harness responsibilities, static public auth and identity policy, header stripping matrix, trusted claim injection, request/idempotency propagation, negative spoofing cases, and dogfood evidence requirements.
 - Go Control Plane Hosted Admin Gateway Contract Harness implemented with a local `ThreadingHTTPServer` gateway harness, public auth stubs, header stripping, trusted claim injection, request/idempotency propagation, local 401/404/405 failures, and live Postgres evidence checks.
 - Go Control Plane Hosted Admin Gateway Contract Harness closeout completed; the local gateway contract proof can close and the next hosted-readiness gap is permission-source design.
+- Hosted Control Plane Pause + Agent Capability Compiler Re-entry documented; deeper hosted work is moved to backlog and the next immediate focus returns to API-first compiler expansion.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -281,4 +282,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Admin Gateway Permission Source Design v0.
+- Agent Capability Compiler Expansion Design v0.

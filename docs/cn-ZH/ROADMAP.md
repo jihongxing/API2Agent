@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Hosted Admin Gateway Contract Harness Closeout Complete
+Hosted Control Plane Pause + Agent Compiler Re-entry Complete
 ```
 
 战略判断：
@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Agent Capability Compiler Expansion Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：Tooling Re-entry closeout 后的下一项。Local Go Control Plane minimum、snapshot distribution 和第一版 local service API skeleton 已完成。
+状态：hosted admin gateway contract harness closeout 后暂停。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway 和 local gateway contract harness 已完成。
 
 目标：
 
@@ -1011,13 +1011,13 @@ Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0
 Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
 ```
 
-下一项 local entry slice：
+Deferred hosted-readiness slice：
 
 ```text
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这现在是 hosted admin gateway contract harness closeout 之后的下一项工程任务。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent capability compiler expansion design。
 
 范围：
 
@@ -1054,6 +1054,15 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
+
+已完成 hosted Control Plane pause + Agent compiler re-entry 结果：
+
+- deeper hosted Control Plane work 在可信边界处暂停。
+- hosted permission-source design 移入 hosted-readiness backlog。
+- immediate next project task 回到 API-first Agent capability compiler expansion。
+- 推荐扩展 tracks 是 capability quality diagnostics、OpenAPI real-world hardening、curl instant onboarding 和 observable execution defaults。
+- 详见 `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`。
 
 已完成 hosted admin gateway contract harness closeout 结果：
 
@@ -1061,7 +1070,7 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - public header stripping 和 trusted claim injection 已通过真实 gateway hop dogfood。
 - audit/idempotency evidence 使用 harness-injected identity，并保持 secret/token-safe。
 - remaining risks 是 static public auth、static permission policy、production gateway deployment、tenant-partitioned mutation 和 manual propagation。
-- 下一项最高信号任务是 permission-source design。
+- 下一项 hosted-readiness task 是 permission-source design，但 immediate project focus 已切回 compiler。
 - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 hosted admin gateway contract harness implementation 结果：
