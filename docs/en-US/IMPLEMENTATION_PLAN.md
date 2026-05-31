@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Implementation Complete
+Agent Capability Compiler OpenAPI Discriminator Handling Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI discriminator handling closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI response shape documentation design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Design v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -910,11 +910,16 @@ Current Phase 6 progress:
   - discriminator fixture and parser/generator/diagnostics/CLI regression tests are added.
   - local discriminator dogfood passed, and the full Python suite passed with 197 tests.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`.
+- Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0 is complete:
+  - discriminator handling is accepted as complete.
+  - remaining risks are pragmatic branch matching, bounded mapping resolution, sparse response documentation, advisory diagnostics, and no runtime branch validation.
+  - the next OpenAPI hardening task is response shape documentation design.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Design v0
 ```
 
 References:
@@ -955,6 +960,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace Is Later
 

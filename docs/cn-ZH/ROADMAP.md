@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Implementation Complete
+Agent Capability Compiler OpenAPI Discriminator Handling Closeout Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Response Shape Documentation Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Discriminator Handling Closeout + Phase Review v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Response Shape Documentation Design v0。
 
 范围：
 
@@ -1064,6 +1064,7 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SCHEMA_SHAPING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
 
 已完成 Agent capability compiler OpenAPI discriminator handling implementation 结果：
 
@@ -1071,6 +1072,13 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - discriminator fixture 和 parser/generator/diagnostics/CLI regression tests 已增加。
 - local discriminator dogfood 已通过，full Python suite 以 197 tests 通过。
 - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_IMPLEMENTATION_REPORT.md`。
+
+已完成 Agent capability compiler OpenAPI discriminator handling closeout 结果：
+
+- discriminator handling 已接受为 complete。
+- remaining risks 是 pragmatic branch matching、bounded mapping resolution、sparse response documentation、advisory diagnostics 和 no runtime branch validation。
+- 下一项 OpenAPI hardening task 是 response shape documentation design。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_DISCRIMINATOR_HANDLING_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 Agent capability compiler OpenAPI discriminator handling design 结果：
 
