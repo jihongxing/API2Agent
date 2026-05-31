@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout Complete
+Agent Capability Compiler OpenAPI Security Requirement Combinations Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI security requirement combinations design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI security requirement combinations implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -852,11 +852,16 @@ Current Phase 6 progress:
   - remaining risks are conservative deep schema coverage, diagnostics not yet scoring example quality, complex real-spec example objects, and unresolved OpenAPI auth semantics.
   - the next OpenAPI hardening task is security requirement combinations design.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0 is complete:
+  - OpenAPI security OR/AND semantics and current flattening gaps are documented.
+  - additive IR metadata, deterministic primary auth selection, bearer/header/query/cookie/OAuth scheme mappings, generated artifact effects, tests, dogfood, and non-goals are defined.
+  - the next OpenAPI hardening task is implementation of security requirement combinations.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0
 ```
 
 References:
@@ -886,6 +891,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_DESIGN.md`
 
 ## 9. Marketplace Is Later
 

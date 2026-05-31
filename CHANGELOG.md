@@ -281,6 +281,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI Real-World Hardening design completed; the first implementation slice is examples/defaults propagation into IR, README/test params, and diagnostics evidence.
 - Agent Capability Compiler OpenAPI Examples + Defaults propagation implemented with additive IR fields, parser preservation, shared example selection, README/test params, regression coverage, and local generated-runner dogfood.
 - Agent Capability Compiler OpenAPI Examples + Defaults closeout completed; examples/defaults propagation can close and the next OpenAPI hardening design target is security requirement combinations.
+- Agent Capability Compiler OpenAPI Security Requirement Combinations design completed with OR/AND semantics, additive IR metadata, deterministic primary auth selection, scheme mappings, generated artifact effects, tests, dogfood, and non-goals.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -288,4 +289,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0.
+- Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0.

@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout Complete
+Agent Capability Compiler OpenAPI Security Requirement Combinations Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI security requirement combinations design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI security requirement combinations implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -852,11 +852,16 @@ Go Control Plane Minimum v0
   - remaining risks 是 conservative deep schema coverage、diagnostics 尚未评分 example quality、complex real-spec example objects 和 unresolved OpenAPI auth semantics。
   - 下一项 OpenAPI hardening task 是 security requirement combinations design。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_CLOSEOUT_PHASE_REVIEW.md`。
+- Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0 已完成：
+  - OpenAPI security OR/AND semantics 和 current flattening gaps 已文档化。
+  - additive IR metadata、deterministic primary auth selection、bearer/header/query/cookie/OAuth scheme mappings、generated artifact effects、tests、dogfood 和 non-goals 已定义。
+  - 下一项 OpenAPI hardening task 是 security requirement combinations implementation。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
+Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation v0
 ```
 
 参考：
@@ -886,6 +891,7 @@ Agent Capability Compiler OpenAPI Security Requirement Combinations Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_DESIGN.md`
 
 ## 9. Marketplace 是后面的结果
 
