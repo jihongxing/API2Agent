@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: close out the hosted admin gateway contract harness implementation; next work remains out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
+Current focus: design the hosted admin gateway permission source boundary after closing the local gateway contract harness; next work remains out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
@@ -97,6 +97,7 @@ English:
 - [Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md)
 - [Hosted Admin Gateway Contract Harness Design](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md)
 - [Hosted Admin Gateway Contract Harness Implementation Report](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md)
+- [Hosted Admin Gateway Contract Harness Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md)
 - [Next Session Handoff - 2026-06-01](docs/en-US/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/en-US/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/en-US/ROUTING_POLICY.md)
@@ -173,6 +174,7 @@ English:
 - [Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md)
 - [Hosted Admin Gateway Contract Harness Design](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md)
 - [Hosted Admin Gateway Contract Harness Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md)
+- [Hosted Admin Gateway Contract Harness Closeout + Phase Review](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md)
 - [下一次会话交接 - 2026-06-01](docs/cn-ZH/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/cn-ZH/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/cn-ZH/ROUTING_POLICY.md)

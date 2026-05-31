@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Hosted Admin Gateway Contract Harness Implementation Complete
+Hosted Admin Gateway Contract Harness Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 hosted admin trusted-gateway path 的 gateway contract harness closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 hosted admin gateway permission source design。
 
 实现语言决策：
 
@@ -811,11 +811,16 @@ Go Control Plane Minimum v0
   - public bearer auth 会在本地消费，同时 trusted gateway claims 会被 strip 并重新注入。
   - live dogfood 证明 health、validation、readonly authorization failure、import/replace、audit evidence、idempotency evidence 和 secret/token-safe artifacts。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0 已完成：
+  - local gateway contract proof 已接受为 complete。
+  - remaining risks 是 static public auth、static permission policy、production gateway deployment、tenant-partitioned mutation 和 manual propagation。
+  - 下一项 hosted-readiness gap 是 permission-source design。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 参考：
@@ -837,6 +842,7 @@ Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace 是后面的结果
 

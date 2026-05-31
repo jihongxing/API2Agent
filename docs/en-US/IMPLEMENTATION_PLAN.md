@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Hosted Admin Gateway Contract Harness Implementation Complete
+Hosted Admin Gateway Contract Harness Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is complete, and the current Go Control Plane gate is gateway contract harness closeout for the hosted admin trusted-gateway path.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Tooling Re-entry hardening backlog is complete, and the current Go Control Plane gate is hosted admin gateway permission source design.
 
 Implementation language decision:
 
@@ -811,11 +811,16 @@ Current Phase 6 progress:
   - public bearer auth is consumed locally while trusted gateway claims are stripped and re-injected.
   - live dogfood proves health, validation, readonly authorization failure, import/replace, audit evidence, idempotency evidence, and secret/token-safe artifacts.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`.
+- Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0 is complete:
+  - the local gateway contract proof is accepted as complete.
+  - remaining risks are static public auth, static permission policy, production gateway deployment, tenant-partitioned mutation, and manual propagation.
+  - the next hosted-readiness gap is permission-source design.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 References:
@@ -837,6 +842,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace Is Later
 

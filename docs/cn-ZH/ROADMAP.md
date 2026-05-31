@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Hosted Admin Gateway Contract Harness Implementation Complete
+Hosted Admin Gateway Contract Harness Closeout Complete
 ```
 
 战略判断：
@@ -792,6 +792,8 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0 - co
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Gateway Contract Harness Design v0 - complete
+Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0 - complete
+Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0 - complete
 ```
 
 ## 8.8 Phase 5.8：Tooling Re-entry Phase
@@ -943,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1006,29 +1008,30 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
 Go Control Plane Hosted Admin Gateway Contract Harness Design v0
 Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0
+Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
 ```
 
 下一项 local entry slice：
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这现在是 hosted admin gateway contract harness implementation 通过 live dogfood 后的下一项工程任务。
+这现在是 hosted admin gateway contract harness closeout 之后的下一项工程任务。
 
 范围：
 
-1. Review 已实现的 local gateway contract harness 和 dogfood evidence。
-2. 决定 gateway contract proof 是否可以关闭。
-3. 继续保留真实 hosted gateway、permission-source、deployment 和 tenant-partitioning risks。
+1. 设计 hosted gateway 如何从 authenticated principal/project policy 推导 trusted roles 和 permissions。
+2. 定义 policy source、lookup inputs、failure semantics、audit/idempotency evidence 和 test fixtures。
+3. public auth provider implementation 和 production gateway deployment 保持 out of scope。
 4. 不实现 public CRUD、automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- gateway harness implementation evidence 已接受。
-- spoofed public trusted headers stripping 已接受。
-- audit/idempotency evidence 使用 harness-injected identity 已接受。
-- secret/token-safe report artifact evidence 已接受。
+- permission source responsibilities 明确。
+- trusted permission claim derivation 明确。
+- policy lookup failure semantics 明确。
+- audit/idempotency evidence requirements 明确。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：
@@ -1050,6 +1053,16 @@ Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+
+已完成 hosted admin gateway contract harness closeout 结果：
+
+- local gateway contract proof 已接受为 complete。
+- public header stripping 和 trusted claim injection 已通过真实 gateway hop dogfood。
+- audit/idempotency evidence 使用 harness-injected identity，并保持 secret/token-safe。
+- remaining risks 是 static public auth、static permission policy、production gateway deployment、tenant-partitioned mutation 和 manual propagation。
+- 下一项最高信号任务是 permission-source design。
+- 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 hosted admin gateway contract harness implementation 结果：
 

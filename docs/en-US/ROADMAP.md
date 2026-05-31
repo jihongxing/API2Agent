@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Admin Gateway Contract Harness Implementation Complete
+Hosted Admin Gateway Contract Harness Closeout Complete
 ```
 
 Strategic thesis:
@@ -792,6 +792,8 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Design v0 - co
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation v0 - complete
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0 - complete
 Go Control Plane Hosted Admin Gateway Contract Harness Design v0 - complete
+Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0 - complete
+Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0 - complete
 ```
 
 ## 8.8 Phase 5.8: Tooling Re-entry Phase
@@ -943,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1006,29 +1008,30 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Implementation
 Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Phase Review v0
 Go Control Plane Hosted Admin Gateway Contract Harness Design v0
 Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0
+Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This is now the next engineering task after the hosted admin gateway contract harness implementation passed live dogfood.
+This is now the next engineering task after the hosted admin gateway contract harness closeout.
 
 Scope:
 
-1. Review the implemented local gateway contract harness and dogfood evidence.
-2. Decide whether the gateway contract proof can close.
-3. Carry forward remaining real hosted gateway, permission-source, deployment, and tenant-partitioning risks.
+1. Design how a hosted gateway derives trusted roles and permissions from authenticated principal/project policy.
+2. Define policy source, lookup inputs, failure semantics, audit/idempotency evidence, and test fixtures.
+3. Keep public auth provider implementation and production gateway deployment out of scope.
 4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- gateway harness implementation evidence is accepted.
-- spoofed public trusted headers stripping is accepted.
-- audit/idempotency evidence using harness-injected identity is accepted.
-- secret/token-safe report artifact evidence is accepted.
+- permission source responsibilities are explicit.
+- trusted permission claim derivation is explicit.
+- policy lookup failure semantics are explicit.
+- audit/idempotency evidence requirements are explicit.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1050,6 +1053,16 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+
+Completed hosted admin gateway contract harness closeout result:
+
+- the local gateway contract proof is accepted as complete.
+- public header stripping and trusted claim injection are dogfooded through a real gateway hop.
+- audit/idempotency evidence uses harness-injected identity and remains secret/token-safe.
+- remaining risks are static public auth, static permission policy, production gateway deployment, tenant-partitioned mutation, and manual propagation.
+- next highest-signal task is permission-source design.
+- See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed hosted admin gateway contract harness implementation result:
 
