@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Implementation Complete
+Agent Capability Compiler OpenAPI Server Handling Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI server handling closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI schema shaping design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Schema Shaping Design v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Schema Shaping Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -879,11 +879,16 @@ Current Phase 6 progress:
   - README, inspect, and diagnostics now expose server choices and override guidance.
   - loopback dogfood passed for package-wide and tool-specific base URL overrides.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`.
+- Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0 is complete:
+  - server handling is accepted as complete.
+  - remaining risks are heuristic profile hints, relative URLs requiring runtime origin, no automatic profile switching, and unresolved schema complexity.
+  - the next OpenAPI hardening task is schema shaping design.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Schema Shaping Design v0
 ```
 
 References:
@@ -918,6 +923,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace Is Later
 

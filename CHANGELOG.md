@@ -286,6 +286,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI Security Requirement Combinations closeout completed; auth combination hardening can close and the next OpenAPI hardening design target is server handling.
 - Agent Capability Compiler OpenAPI Server Handling design completed with additive server metadata, deterministic selection rules, relative server policy, profile hints, generated artifact effects, tests, dogfood, and non-goals.
 - Agent Capability Compiler OpenAPI Server Handling implemented with additive server metadata, server variables, path/operation provenance, relative server diagnostics, README/inspect server summaries, and base URL override dogfood.
+- Agent Capability Compiler OpenAPI Server Handling closeout completed; server metadata hardening can close and the next OpenAPI hardening design target is schema shaping.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -293,4 +294,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0.
+- Agent Capability Compiler OpenAPI Schema Shaping Design v0.

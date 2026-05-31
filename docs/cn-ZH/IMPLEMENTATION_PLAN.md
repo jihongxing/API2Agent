@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Implementation Complete
+Agent Capability Compiler OpenAPI Server Handling Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI server handling closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI schema shaping design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Schema Shaping Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Schema Shaping Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -879,11 +879,16 @@ Go Control Plane Minimum v0
   - README、inspect 和 diagnostics 现在会暴露 server choices 和 override guidance。
   - loopback dogfood 已通过 package-wide 和 tool-specific base URL overrides。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`。
+- Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0 已完成：
+  - server handling 已接受为 complete。
+  - remaining risks 是 heuristic profile hints、relative URLs requiring runtime origin、no automatic profile switching 和 unresolved schema complexity。
+  - 下一项 OpenAPI hardening task 是 schema shaping design。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Schema Shaping Design v0
 ```
 
 参考：
@@ -918,6 +923,7 @@ Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_CLOSEOUT_PHASE_REVIEW.md`
 
 ## 9. Marketplace 是后面的结果
 
