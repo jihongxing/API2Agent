@@ -283,7 +283,12 @@ func (h Handler) ImportReplaceRegistry(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := h.ImportReplacer.ReplacePersistentRegistry(r.Context(), incoming, registry.ImportReplaceOptions{
 		ProjectID:      principal.ProjectID,
+		SubjectID:      principal.SubjectID,
 		ActorID:        principal.ActorID,
+		OrganizationID: principal.OrganizationID,
+		AuthMethod:     principal.AuthMethod,
+		TokenID:        principal.TokenID,
+		LocalPrivate:   principal.LocalPrivate,
 		RequestID:      requestID,
 		IdempotencyKey: idempotencyKey,
 		Source:         source,

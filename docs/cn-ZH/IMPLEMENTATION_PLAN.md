@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Hosted Admin Authenticator Integration Closeout Complete
+Hosted Admin Trusted Gateway Service Dogfood Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 trusted-gateway hosted admin authenticator 的 service-level dogfood。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Tooling Re-entry hardening backlog 已经完成，当前 Go Control Plane gate 是 trusted-gateway hosted admin service dogfood 的 closeout。
 
 实现语言决策：
 
@@ -772,11 +772,17 @@ Go Control Plane Minimum v0
   - remaining hosted-readiness risks 已文档化。
   - 下一项任务收窄为 admin mutation idempotency store design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_IMPORT_REPLACE_SNAPSHOT_PROPAGATION_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0 已完成：
+  - hosted/trusted-gateway service mode 不传 `--admin-token` 即可启动。
+  - trusted gateway success、missing gateway auth 和 missing permission 已通过真实 HTTP 验证。
+  - Postgres audit 和 idempotency records 保留 trusted principal evidence。
+  - dogfood 修复了 import/replace audit metadata，使其包含 hosted principal evidence。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
 ```
 
 参考：
@@ -791,6 +797,7 @@ Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`
 
 ## 9. Marketplace 是后面的结果
 

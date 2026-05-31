@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Hosted Admin Authenticator Integration Closeout Complete
+Hosted Admin Trusted Gateway Service Dogfood Complete
 ```
 
 Strategic thesis:
@@ -786,6 +786,7 @@ Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0 - com
 Go Control Plane Hosted Admin Authenticator Integration Design v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0 - complete
 Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0 - complete
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0 - complete
 ```
 
 ## 8.8 Phase 5.8: Tooling Re-entry Phase
@@ -937,7 +938,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -993,29 +994,30 @@ Go Control Plane Hosted Admin Identity Boundary Closeout + Phase Review v0
 Go Control Plane Hosted Admin Authenticator Integration Design v0
 Go Control Plane Hosted Admin Authenticator Integration Implementation v0
 Go Control Plane Hosted Admin Authenticator Integration Closeout + Phase Review v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
 ```
 
 Next local entry slice:
 
 ```text
-Go Control Plane Hosted Admin Trusted Gateway Service Dogfood v0
+Go Control Plane Hosted Admin Trusted Gateway Service Dogfood Closeout + Phase Review v0
 ```
 
-This is now the next engineering task after hosted admin authenticator integration closeout is complete.
+This is now the next engineering task after hosted trusted-gateway service dogfood is complete.
 
 Scope:
 
-1. Run the local Control Plane service in hosted/trusted-gateway mode.
-2. Exercise trusted gateway success, missing gateway auth, and missing permission over HTTP.
-3. Verify service startup does not require a local/private admin token in hosted/trusted-gateway mode.
+1. Review the hosted/trusted-gateway dogfood results against the authenticator design.
+2. Confirm audit and idempotency identity evidence is sufficient for this slice.
+3. Capture residual gateway, permission-source, secret-rotation, and tenant-partitioning risks.
 4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- hosted/trusted-gateway service mode is dogfooded over HTTP.
-- auth failure responses match the stable error envelope.
-- trusted gateway claims produce the expected admin principal behavior.
-- if Postgres is used, audit/idempotency identity evidence is verified.
+- trusted-gateway service dogfood acceptance criteria are reviewed.
+- the import/replace audit metadata fix is accounted for in phase judgment.
+- remaining hosted deployment risks are documented.
+- the next hosted Control Plane readiness gap is explicit.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1030,6 +1032,18 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`
+
+Completed hosted trusted-gateway service dogfood result:
+
+- the Control Plane service starts in hosted/trusted-gateway mode without `--admin-token`.
+- real HTTP validation returned `200` with trusted gateway headers.
+- missing gateway authorization returned `401 AUTH_ERROR`.
+- missing endpoint permission returned `403 AUTHZ_DENIED`.
+- Postgres audit rows preserve trusted actor, subject, project, organization, auth method, token id, and `local_private=false`.
+- Postgres idempotency rows use trusted gateway project and actor scope.
+- import/replace audit metadata was fixed to include hosted principal evidence.
+- See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`.
 
 Completed propagation closeout result:
 

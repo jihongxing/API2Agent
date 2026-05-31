@@ -13,7 +13,12 @@ import (
 
 type ImportReplaceOptions struct {
 	ProjectID      string
+	SubjectID      string
 	ActorID        string
+	OrganizationID string
+	AuthMethod     string
+	TokenID        string
+	LocalPrivate   bool
 	RequestID      string
 	IdempotencyKey string
 	Source         string
@@ -650,6 +655,22 @@ func importReplaceAuditMetadata(opts ImportReplaceOptions, result ImportReplaceR
 	}
 	if result.PreviousRegistryFingerprint != "" {
 		metadata["previous_registry_fingerprint"] = result.PreviousRegistryFingerprint
+	}
+	if opts.ProjectID != "" {
+		metadata["project_id"] = opts.ProjectID
+	}
+	if opts.SubjectID != "" {
+		metadata["principal_subject_id"] = opts.SubjectID
+	}
+	if opts.OrganizationID != "" {
+		metadata["organization_id"] = opts.OrganizationID
+	}
+	if opts.AuthMethod != "" {
+		metadata["auth_method"] = opts.AuthMethod
+		metadata["local_private"] = strconv.FormatBool(opts.LocalPrivate)
+	}
+	if opts.TokenID != "" {
+		metadata["token_id"] = opts.TokenID
 	}
 	if opts.IdempotencyKey != "" {
 		scope := idempotencyScope(opts)

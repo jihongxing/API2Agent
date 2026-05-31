@@ -297,6 +297,9 @@ func TestImportReplaceRegistryUsesHostedPrincipalForIdentityScope(t *testing.T) 
 	if replacer.options.ProjectID != "project-hosted" || replacer.options.ActorID != "hosted-actor" {
 		t.Fatalf("expected hosted principal identity scope, got %#v", replacer.options)
 	}
+	if replacer.options.SubjectID != "subject-hosted" || replacer.options.OrganizationID != "org-hosted" || replacer.options.AuthMethod != registry.AdminAuthMethodHostedAdminToken || replacer.options.TokenID != "token-123" || replacer.options.LocalPrivate {
+		t.Fatalf("expected hosted principal evidence, got %#v", replacer.options)
+	}
 }
 
 func TestHostedAdminPermissionDeniedBeforeMutation(t *testing.T) {
@@ -456,6 +459,9 @@ func TestTrustedGatewayImportReplacePassesPrincipalScope(t *testing.T) {
 	}
 	if replacer.options.ProjectID != "project-2" || replacer.options.ActorID != "trusted-actor" || replacer.options.RequestID != "req-gateway" || replacer.options.IdempotencyKey != "idem-gateway" {
 		t.Fatalf("unexpected import options: %#v", replacer.options)
+	}
+	if replacer.options.SubjectID != "principal-1" || replacer.options.OrganizationID != "org-1" || replacer.options.AuthMethod != registry.AdminAuthMethodTrustedGateway || replacer.options.TokenID != "token-1" || replacer.options.LocalPrivate {
+		t.Fatalf("expected trusted gateway principal evidence, got %#v", replacer.options)
 	}
 }
 

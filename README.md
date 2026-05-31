@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: dogfood the trusted-gateway hosted admin Control Plane service over real HTTP; next work remains out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
+Current focus: close out the trusted-gateway hosted admin Control Plane service dogfood; next work remains out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
@@ -90,6 +90,7 @@ English:
 - [Hosted Admin Authenticator Integration Design](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md)
 - [Hosted Admin Authenticator Integration Implementation Report](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md)
 - [Hosted Admin Authenticator Integration Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md)
+- [Hosted Admin Trusted Gateway Service Dogfood Report](docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md)
 - [Next Session Handoff - 2026-06-01](docs/en-US/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/en-US/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/en-US/ROUTING_POLICY.md)
@@ -159,6 +160,7 @@ English:
 - [Hosted Admin Authenticator Integration Design](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md)
 - [Hosted Admin Authenticator Integration Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md)
 - [Hosted Admin Authenticator Integration Closeout + Phase Review](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md)
+- [Hosted Admin Trusted Gateway Service Dogfood 报告](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md)
 - [下一次会话交接 - 2026-06-01](docs/cn-ZH/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/cn-ZH/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/cn-ZH/ROUTING_POLICY.md)

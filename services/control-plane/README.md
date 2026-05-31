@@ -140,6 +140,8 @@ The HTTP layer now resolves admin requests into `registry.AdminPrincipal` before
 
 Trusted gateway hosted mode can be enabled with `--admin-identity-mode hosted --admin-authenticator trusted_gateway --trusted-gateway-secret <secret>`. In that mode, the service validates `X-API2Agent-Gateway-Authorization: Bearer <secret>` before reading trusted `X-API2Agent-*` principal, project, role, and permission claims.
 
+Hosted/trusted-gateway mode has been dogfooded against a real service process and live Postgres without `--admin-token`.
+
 Private admin import/replace endpoint:
 
 - It is Postgres mutation only and reuses `ReplacePersistentRegistry`.
@@ -164,3 +166,4 @@ Hosted admin identity closeout review: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED
 Hosted admin authenticator integration design: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`.
 Hosted admin authenticator integration implementation report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`.
 Hosted admin authenticator integration closeout review: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`.
+Hosted admin trusted gateway service dogfood report: `../../docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_TRUSTED_GATEWAY_SERVICE_DOGFOOD_REPORT.md`.

@@ -78,7 +78,13 @@ func TestReplacePersistentRegistryReplacesRowsAndWritesRevisionAndAudit(t *testi
 	defer db.Close()
 
 	result, err := ReplacePersistentRegistry(context.Background(), db, incoming, ImportReplaceOptions{
+		ProjectID:      "project-hosted",
+		SubjectID:      "subject-hosted",
 		ActorID:        "tester",
+		OrganizationID: "org-hosted",
+		AuthMethod:     AdminAuthMethodTrustedGateway,
+		TokenID:        "token-hosted",
+		LocalPrivate:   false,
 		RequestID:      "req-replace",
 		IdempotencyKey: "idem-replace",
 		Source:         "test-registry.json",
@@ -109,6 +115,9 @@ func TestReplacePersistentRegistryReplacesRowsAndWritesRevisionAndAudit(t *testi
 	event := script.rows.AdminAuditEvents[0]
 	if event.Metadata["mutation_mode"] != "import_replace" || event.Metadata["previous_registry_fingerprint"] == "" {
 		t.Fatalf("unexpected admin audit metadata: %#v", event)
+	}
+	if event.Metadata["project_id"] != "project-hosted" || event.Metadata["principal_subject_id"] != "subject-hosted" || event.Metadata["organization_id"] != "org-hosted" || event.Metadata["auth_method"] != AdminAuthMethodTrustedGateway || event.Metadata["token_id"] != "token-hosted" || event.Metadata["local_private"] != "false" {
+		t.Fatalf("unexpected principal audit metadata: %#v", event.Metadata)
 	}
 	if !containsExec(script.execQueries, "DELETE FROM providers") {
 		t.Fatalf("expected mutable row deletion: %#v", script.execQueries)
