@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Design Complete
+Agent Capability Compiler OpenAPI Server Handling Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI server handling implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI server handling closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Implementation v0
+Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Implementation v0
+Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -873,11 +873,17 @@ Go Control Plane Minimum v0
   - additive IR metadata、deterministic selection rules、relative server URL policy、profile hints、generated artifact effects、tests、dogfood 和 non-goals 已定义。
   - 下一项 OpenAPI hardening task 是 server handling implementation。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`。
+- Agent Capability Compiler OpenAPI Server Handling Implementation v0 已完成：
+  - document/path/operation server metadata 已作为 additive generated package metadata 保留。
+  - server variables、selected server provenance、relative URL detection 和 profile hints 已实现。
+  - README、inspect 和 diagnostics 现在会暴露 server choices 和 override guidance。
+  - loopback dogfood 已通过 package-wide 和 tool-specific base URL overrides。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Implementation v0
+Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
 ```
 
 参考：
@@ -911,6 +917,7 @@ Agent Capability Compiler OpenAPI Server Handling Implementation v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace 是后面的结果
 

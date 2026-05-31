@@ -93,9 +93,39 @@ def test_resolves_server_variables_and_overrides() -> None:
     tools = {tool.name: tool for tool in capability.tools}
 
     assert capability.base_url == "https://api.example.com/v1"
+    assert capability.servers[0].url == "https://api.example.com/{version}"
+    assert capability.servers[0].resolved_url == "https://api.example.com/v1"
+    assert capability.servers[0].variables["version"].default == "v1"
     assert tools["get_public"].base_url is None
+    assert tools["get_public"].server_source == "document"
     assert tools["get_admin"].base_url == "https://admin.example.com/v2"
+    assert tools["get_admin"].server_source == "path"
     assert tools["get_regional"].base_url == "https://us.example.com"
+    assert tools["get_regional"].server_source == "operation"
+
+
+def test_preserves_openapi_server_choices_and_profile_hints() -> None:
+    capability = parse_openapi_file(FIXTURES / "server_choices.yaml")
+    tools = {tool.name: tool for tool in capability.tools}
+
+    assert capability.base_url == "https://api.example.com/v1"
+    assert len(capability.servers) == 3
+    assert capability.servers[1].profile_hints == ["staging"]
+    assert capability.servers[2].is_relative is True
+    assert "relative" in capability.servers[2].profile_hints
+
+    public = tools["get_public"]
+    assert public.base_url is None
+    assert public.servers[0].source == "document"
+
+    admin = tools["get_admin"]
+    assert admin.base_url == "https://admin.example.com"
+    assert admin.servers[0].profile_hints == ["admin"]
+
+    regional = tools["get_regional"]
+    assert regional.base_url == "https://us.example.com"
+    assert regional.servers[0].variables["region"].enum == ["us", "eu"]
+    assert "regional" in regional.servers[0].profile_hints
 
 
 def test_normalizes_schema_composition() -> None:

@@ -269,10 +269,17 @@ def inspect(
         raise typer.BadParameter("--limit must be greater than 0.")
 
     auth = capability.get("auth") or {}
+    servers = capability.get("servers") or []
     typer.echo(f"Capability: {capability.get('name', 'unknown')}")
     typer.echo(f"Version: {capability.get('version', 'unknown')}")
     typer.echo(f"Base URL: {capability.get('base_url') or '(none)'}")
     typer.echo(f"Auth: {_format_auth(auth)}")
+    if servers:
+        typer.echo(
+            "Servers: "
+            + f"{len(servers)}"
+            + _format_server_hints(servers)
+        )
     tools = capability.get("tools") or []
     if tools:
         summary = _tool_summary(tools)
@@ -319,9 +326,10 @@ def inspect(
 
         required_label = ", ".join(required) if required else "none"
         base_label = f" base={tool.get('base_url')}" if tool.get("base_url") else ""
+        server_label = f" server={tool.get('server_source')}" if tool.get("server_source") in {"path", "operation"} else ""
         typer.echo(
             f"  - {tool.get('name')}: {tool.get('method')} {tool.get('path')} "
-            f"[{tool.get('safety', 'unknown')}] required={required_label}{base_label}"
+            f"[{tool.get('safety', 'unknown')}] required={required_label}{base_label}{server_label}"
         )
         for detail in _format_tool_details(tool):
             typer.echo(f"    {detail}")
@@ -1125,6 +1133,17 @@ def _tool_summary(tools: list[dict]) -> dict:
         "top_tags": _top_counts(tag_counts, label_key="tag"),
         "top_path_prefixes": _top_counts(prefix_counts, label_key="prefix"),
     }
+
+
+def _format_server_hints(servers: list[dict]) -> str:
+    hints = sorted({
+        hint
+        for server in servers
+        for hint in (server.get("profile_hints") or [])
+    })
+    if not hints:
+        return ""
+    return " hints=" + ",".join(hints)
 
 
 def _path_prefix(path: str) -> str:

@@ -96,6 +96,19 @@ def test_generated_auth_docs_include_security_combinations(tmp_path: Path) -> No
     assert "SECURITY_COMBINATIONS_API_API_KEY=" in auth_env
 
 
+def test_generated_readme_lists_openapi_server_choices(tmp_path: Path) -> None:
+    capability = parse_openapi_file(FIXTURES / "server_choices.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+
+    assert "Known OpenAPI servers:" in readme
+    assert "`https://api.example.com/v1` (document hints=production)" in readme
+    assert "`https://staging.example.com/v1` (document hints=staging)" in readme
+    assert "`/api/v3` (document relative hints=relative)" in readme
+    assert "`get_admin`: GET /admin [read] [auth: inherit] [server: path]" in readme
+
+
 def test_generate_package_refuses_non_empty_output_without_force(tmp_path: Path) -> None:
     capability = parse_openapi_file(FIXTURES / "basic.yaml")
     output_dir = tmp_path / "api2agent-output"

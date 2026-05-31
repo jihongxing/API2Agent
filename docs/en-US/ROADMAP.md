@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Design Complete
+Agent Capability Compiler OpenAPI Server Handling Implementation Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Implementation v0
+Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane

@@ -9,6 +9,7 @@ def render_readme(capability: Capability, diagnostics: dict | None = None) -> st
     region_note = "No provider region metadata configured."
     if capability.provider_region:
         region_note = f"Provider region: `{capability.provider_region}`."
+    server_section = _server_section(capability)
 
     tools = "\n".join(_format_tool(tool) for tool in capability.tools)
     first_tool = capability.tools[0] if capability.tools else None
@@ -36,6 +37,8 @@ Set `API2AGENT_PROVIDER_REGION` at runtime to override the generated provider-re
 ## Base URL Override
 
 Generated tools use the OpenAPI/curl base URL by default. For local, staging, or region-specific endpoints, override it at runtime:
+
+{server_section}
 
 ```bash
 API2AGENT_BASE_URL=http://127.0.0.1:9001
@@ -137,7 +140,8 @@ def _diagnostics_section(diagnostics: dict | None) -> str:
 
 
 def _format_tool(tool) -> str:
-    lines = [f"- `{tool.name}`: {tool.method} {tool.path} [{tool.safety}] [{_format_auth(tool.auth)}]"]
+    server = f" [server: {tool.server_source}]" if tool.server_source in {"path", "operation"} else ""
+    lines = [f"- `{tool.name}`: {tool.method} {tool.path} [{tool.safety}] [{_format_auth(tool.auth)}]{server}"]
     by_location = {"path": [], "query": [], "header": []}
     for parameter in tool.parameters:
         by_location[parameter.location].append(parameter)
@@ -166,6 +170,25 @@ def _auth_note(capability: Capability) -> str:
     if not env_names:
         return "No auth detected."
     return "Copy auth.env.example to .env and set " + ", ".join(f"`{name}`" for name in env_names) + "."
+
+
+def _server_section(capability: Capability) -> str:
+    servers = capability.servers or []
+    if not servers:
+        return "No OpenAPI servers were detected. Set `API2AGENT_BASE_URL` before execution."
+
+    lines = ["Known OpenAPI servers:"]
+    for server in servers:
+        hints = f" hints={','.join(server.profile_hints)}" if server.profile_hints else ""
+        relative = " relative" if server.is_relative else ""
+        description = f" - {server.description}" if server.description else ""
+        lines.append(
+            f"- `{server.resolved_url}` ({server.source}{relative}{hints}){description}"
+        )
+    if any(server.is_relative for server in servers):
+        lines.append("")
+        lines.append("Relative server URLs require `API2AGENT_BASE_URL` to provide the real provider origin.")
+    return "\n".join(lines)
 
 
 def _format_auth(auth) -> str:

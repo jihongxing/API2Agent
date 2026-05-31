@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: implement OpenAPI server handling after design; next work remains API-first and out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
+Current focus: close out OpenAPI server handling after implementation; next work remains API-first and out of public CRUD, vault, billing, marketplace, automatic propagation, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
@@ -80,6 +80,7 @@ English:
 - [Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation Report](docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_IMPLEMENTATION_REPORT.md)
 - [Agent Capability Compiler OpenAPI Security Requirement Combinations Closeout + Phase Review](docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md)
 - [Agent Capability Compiler OpenAPI Server Handling Design](docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md)
+- [Agent Capability Compiler OpenAPI Server Handling Implementation Report](docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md)
 - [Stage Consolidation Before Import/Replace](docs/en-US/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
 - [Persistent Registry Import/Replace Transaction Design](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
 - [Persistent Registry Import/Replace CLI Implementation Report](docs/en-US/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)
@@ -168,6 +169,7 @@ English:
 - [Agent Capability Compiler OpenAPI Security Requirement Combinations Implementation 报告](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_IMPLEMENTATION_REPORT.md)
 - [Agent Capability Compiler OpenAPI Security Requirement Combinations Closeout + Phase Review](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md)
 - [Agent Capability Compiler OpenAPI Server Handling Design](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md)
+- [Agent Capability Compiler OpenAPI Server Handling Implementation 报告](docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md)
 - [Import/Replace 前阶段总结与加固](docs/cn-ZH/API2AGENT_STAGE_CONSOLIDATION_BEFORE_IMPORT_REPLACE.md)
 - [Persistent Registry Import/Replace Transaction Design](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_TRANSACTION_DESIGN.md)
 - [Persistent Registry Import/Replace CLI Implementation 报告](docs/cn-ZH/GO_CONTROL_PLANE_PERSISTENT_REGISTRY_IMPORT_REPLACE_CLI_IMPLEMENTATION_REPORT.md)

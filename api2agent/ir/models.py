@@ -34,6 +34,24 @@ class SecurityRequirements(BaseModel):
     alternatives: list[SecurityAlternative] = Field(default_factory=list)
 
 
+class ServerVariable(BaseModel):
+    default: str | None = None
+    enum: list[str] = Field(default_factory=list)
+    description: str | None = None
+
+
+class ServerConfig(BaseModel):
+    url: str
+    resolved_url: str
+    description: str | None = None
+    variables: dict[str, ServerVariable] = Field(default_factory=dict)
+    source: Literal["document", "path", "operation"] = "document"
+    path: str | None = None
+    operation_id: str | None = None
+    profile_hints: list[str] = Field(default_factory=list)
+    is_relative: bool = False
+
+
 class Parameter(BaseModel):
     name: str
     location: Literal["path", "query", "header"]
@@ -78,6 +96,8 @@ class Tool(BaseModel):
     safety: SafetyLevel = SafetyLevel.UNKNOWN
     auth: AuthConfig | None = None
     security_requirements: SecurityRequirements | None = None
+    servers: list[ServerConfig] = Field(default_factory=list)
+    server_source: Literal["document", "path", "operation"] | None = None
 
 
 class Capability(BaseModel):
@@ -86,6 +106,7 @@ class Capability(BaseModel):
     base_url: str = ""
     auth: AuthConfig = Field(default_factory=AuthConfig)
     security_requirements: SecurityRequirements | None = None
+    servers: list[ServerConfig] = Field(default_factory=list)
     tools: list[Tool] = Field(default_factory=list)
     provider_region: str | None = None
     provider_regions: list[str] = Field(default_factory=list)

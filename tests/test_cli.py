@@ -536,6 +536,16 @@ def test_inspect_command_prints_large_package_summary(tmp_path) -> None:
     assert "Large package hint:" in result.output
 
 
+def test_inspect_command_prints_server_summary(tmp_path) -> None:
+    package_dir = generate_package(parse_openapi_file(Path("tests/fixtures/openapi/server_choices.yaml")), tmp_path / "package")
+
+    result = runner.invoke(app, ["inspect", str(package_dir)])
+
+    assert result.exit_code == 0
+    assert "Servers: 3 hints=production,relative,staging" in result.output
+    assert "get_admin: GET /admin [read] required=none base=https://admin.example.com server=path" in result.output
+
+
 def test_ledger_command_prints_json_rows(tmp_path) -> None:
     db = tmp_path / "usage.sqlite"
     store = UsageStore(db)

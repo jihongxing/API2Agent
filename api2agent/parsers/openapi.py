@@ -10,8 +10,10 @@ from api2agent.ir.models import (
     Parameter,
     RequestBody,
     ResponseShape,
+    ServerConfig,
     SecurityAlternative,
     SecurityRequirements,
+    ServerVariable,
     Tool,
 )
 from api2agent.safety import classify_method
@@ -38,11 +40,12 @@ def parse_openapi(
 ) -> Capability:
     info = document.get("info") or {}
     capability_name = snake_name(name or info.get("title") or "api")
-    base_url = _first_server_url(document)
+    document_servers = _server_configs_from(document.get("servers"), source="document")
+    base_url = document_servers[0].resolved_url if document_servers else ""
     schemes = _extract_security_schemes(document, capability_name)
     security_requirements = _security_requirements_for(document.get("security"), schemes)
     auth = _extract_auth(document, capability_name, schemes, security_requirements)
-    tools = _extract_tools(document, base_url, auth, schemes, filters)
+    tools = _extract_tools(document, base_url, document_servers, auth, schemes, filters)
 
     return Capability(
         name=capability_name,
@@ -50,6 +53,7 @@ def parse_openapi(
         base_url=base_url,
         auth=auth,
         security_requirements=security_requirements,
+        servers=document_servers,
         tools=tools,
         source=source,
     )
@@ -105,6 +109,84 @@ def _first_server_url_from(servers: Any) -> str | None:
             url = url.replace("{" + str(name) + "}", str(default))
 
     return url
+
+
+def _server_configs_from(
+    servers: Any,
+    *,
+    source: str,
+    path: str | None = None,
+    operation_id: str | None = None,
+) -> list[ServerConfig]:
+    if not isinstance(servers, list):
+        return []
+
+    configs: list[ServerConfig] = []
+    for raw_server in servers:
+        if not isinstance(raw_server, dict):
+            continue
+        raw_url = str(raw_server.get("url") or "")
+        variables = _server_variables(raw_server.get("variables") or {})
+        resolved_url = _resolve_server_url(raw_url, variables)
+        configs.append(
+            ServerConfig(
+                url=raw_url,
+                resolved_url=resolved_url,
+                description=raw_server.get("description"),
+                variables=variables,
+                source=source,
+                path=path,
+                operation_id=operation_id,
+                profile_hints=_server_profile_hints(raw_url, raw_server.get("description"), variables),
+                is_relative=_is_relative_server_url(raw_url),
+            )
+        )
+    return configs
+
+
+def _server_variables(raw_variables: dict[str, Any]) -> dict[str, ServerVariable]:
+    variables: dict[str, ServerVariable] = {}
+    if not isinstance(raw_variables, dict):
+        return variables
+    for name, raw_variable in raw_variables.items():
+        if not isinstance(raw_variable, dict):
+            continue
+        variables[str(name)] = ServerVariable(
+            default=str(raw_variable["default"]) if raw_variable.get("default") is not None else None,
+            enum=[str(item) for item in raw_variable.get("enum") or []],
+            description=raw_variable.get("description"),
+        )
+    return variables
+
+
+def _resolve_server_url(raw_url: str, variables: dict[str, ServerVariable]) -> str:
+    url = raw_url
+    for name, variable in variables.items():
+        if variable.default is not None:
+            url = url.replace("{" + name + "}", variable.default)
+    return url
+
+
+def _server_profile_hints(raw_url: str, description: Any, variables: dict[str, ServerVariable]) -> list[str]:
+    text = f"{raw_url} {description or ''}".lower()
+    hints: list[str] = []
+    if "sandbox" in text:
+        hints.append("sandbox")
+    if any(marker in text for marker in ["staging", "stage", "test"]):
+        hints.append("staging")
+    if any(marker in text for marker in ["prod", "production"]) or "api." in text:
+        hints.append("production")
+    if "admin" in text:
+        hints.append("admin")
+    if "region" in text or any(name.lower() == "region" for name in variables):
+        hints.append("regional")
+    if _is_relative_server_url(raw_url):
+        hints.append("relative")
+    return sorted(set(hints))
+
+
+def _is_relative_server_url(raw_url: str) -> bool:
+    return bool(raw_url) and not raw_url.startswith(("http://", "https://"))
 
 
 def _extract_security_schemes(document: dict[str, Any], capability_name: str) -> dict[str, AuthConfig]:
@@ -179,6 +261,7 @@ def _extract_auth(
 def _extract_tools(
     document: dict[str, Any],
     default_base_url: str,
+    document_servers: list[ServerConfig],
     capability_auth: AuthConfig,
     schemes: dict[str, AuthConfig],
     filters: ToolFilter | None = None,
@@ -191,7 +274,7 @@ def _extract_tools(
             continue
 
         path_parameters = _extract_parameters(path_item.get("parameters") or [], document)
-        path_base_url = _first_server_url_from(path_item.get("servers"))
+        path_servers = _server_configs_from(path_item.get("servers"), source="path", path=str(path))
 
         for method, operation in path_item.items():
             if method not in HTTP_METHODS or not isinstance(operation, dict):
@@ -201,12 +284,19 @@ def _extract_tools(
                 continue
 
             operation = _resolve_refs(document, operation)
-            operation_base_url = _first_server_url_from(operation.get("servers"))
-            tool_base_url = operation_base_url or path_base_url
+            operation_id = operation.get("operationId")
+            operation_servers = _server_configs_from(
+                operation.get("servers"),
+                source="operation",
+                path=str(path),
+                operation_id=str(operation_id) if operation_id else None,
+            )
+            selected_servers = operation_servers or path_servers or document_servers
+            selected_server = selected_servers[0] if selected_servers else None
+            tool_base_url = selected_server.resolved_url if selected_server else None
             operation_parameters = _extract_parameters(operation.get("parameters") or [], document)
             request_body = _extract_request_body(operation.get("requestBody"), document)
             responses = _extract_responses(operation.get("responses") or {}, document)
-            operation_id = operation.get("operationId")
             tool_name = snake_name(operation_id or f"{method}_{path}")
             description = operation.get("summary") or operation.get("description") or f"{method.upper()} {path}"
             tool_auth = _tool_auth_override(operation, capability_auth, schemes)
@@ -231,6 +321,8 @@ def _extract_tools(
                     safety=classify_method(method),
                     auth=tool_auth,
                     security_requirements=tool_security_requirements,
+                    servers=selected_servers,
+                    server_source=selected_server.source if selected_server else None,
                 )
             )
             if filters is not None and filters.max_tools is not None and len(tools) >= filters.max_tools:

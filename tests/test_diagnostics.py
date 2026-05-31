@@ -155,3 +155,15 @@ def test_diagnose_reports_openapi_security_combinations() -> None:
     assert "query_api_key_auth" in finding_ids
     assert "cookie_api_key_auth" in finding_ids
     assert "metadata_only_oauth" in finding_ids
+
+
+def test_diagnose_reports_openapi_server_metadata() -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/server_choices.yaml"))
+    diagnostics = diagnose_capability(capability)
+    finding_ids = {finding["id"] for finding in diagnostics["findings"]}
+
+    assert "multiple_servers_present" in finding_ids
+    assert "relative_server_url" in finding_ids
+    assert "server_variables_present" in finding_ids
+    assert "path_server_override" in finding_ids
+    assert "operation_server_override" in finding_ids

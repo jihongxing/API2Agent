@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Design Complete
+Agent Capability Compiler OpenAPI Server Handling Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI server handling implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI server handling closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Implementation v0
+Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Implementation v0
+Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -873,11 +873,17 @@ Current Phase 6 progress:
   - additive IR metadata, deterministic selection rules, relative server URL policy, profile hints, generated artifact effects, tests, dogfood, and non-goals are defined.
   - the next OpenAPI hardening task is server handling implementation.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`.
+- Agent Capability Compiler OpenAPI Server Handling Implementation v0 is complete:
+  - document/path/operation server metadata is preserved as additive generated package metadata.
+  - server variables, selected server provenance, relative URL detection, and profile hints are implemented.
+  - README, inspect, and diagnostics now expose server choices and override guidance.
+  - loopback dogfood passed for package-wide and tool-specific base URL overrides.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Server Handling Implementation v0
+Agent Capability Compiler OpenAPI Server Handling Closeout + Phase Review v0
 ```
 
 References:
@@ -911,6 +917,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SECURITY_REQUIREMENT_COMBINATIONS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SERVER_HANDLING_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace Is Later
 

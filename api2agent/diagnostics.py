@@ -109,6 +109,7 @@ def diagnose_capability(
                 {},
             )
         )
+    findings.extend(_server_findings(capability.name, "capability", capability.servers))
 
     if not capability.provider_region:
         findings.append(
@@ -126,6 +127,12 @@ def diagnose_capability(
     tool_auth_overrides = 0
     for tool in tools:
         findings.extend(_tool_findings(tool))
+        if tool.server_source != "document":
+            findings.extend(_server_findings(tool.name, "tool", tool.servers))
+        if tool.server_source == "path":
+            findings.append(_server_override_finding("path_server_override", tool))
+        if tool.server_source == "operation":
+            findings.append(_server_override_finding("operation_server_override", tool))
         if tool.auth is not None:
             tool_auth_overrides += 1
 
@@ -351,6 +358,7 @@ def _metrics(capability: Capability) -> dict[str, int]:
         ),
         "tools_with_auth": sum(1 for tool in tools if tool.auth is not None and tool.auth.type != "none"),
         "tools_with_tool_base_url": sum(1 for tool in tools if tool.base_url),
+        "server_count": len(capability.servers) + sum(len(tool.servers) for tool in tools if tool.server_source != "document"),
     }
 
 
@@ -458,6 +466,77 @@ def _auth_location_finding(finding_id: str, name: str, kind: str, auth: AuthConf
         {"kind": kind, "name": name},
         "Verify generated runner and proxy credential injection before production Agent use.",
         {"scheme_name": auth.scheme_name, "location": auth.location, "name": auth.name},
+    )
+
+
+def _server_findings(name: str, kind: str, servers: list[Any]) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    if len(servers) > 1:
+        findings.append(
+            _finding(
+                "multiple_servers_present",
+                "info",
+                "execution",
+                "OpenAPI source defines multiple server choices.",
+                {"kind": kind, "name": name},
+                "Review README server choices and use API2AGENT_BASE_URL when targeting a non-default environment.",
+                {"server_count": len(servers), "servers": [server.resolved_url for server in servers]},
+            )
+        )
+
+    profile_sets = [set(server.profile_hints) for server in servers if server.profile_hints]
+    distinct_profiles = sorted({hint for hints in profile_sets for hint in hints if hint != "production"})
+    if len(distinct_profiles) > 1:
+        findings.append(
+            _finding(
+                "ambiguous_server_profiles",
+                "info",
+                "execution",
+                "OpenAPI servers include multiple environment/profile hints.",
+                {"kind": kind, "name": name},
+                "Choose the intended runtime target explicitly with API2AGENT_BASE_URL or a tool-specific override.",
+                {"profile_hints": distinct_profiles},
+            )
+        )
+
+    for server in servers:
+        if server.is_relative:
+            findings.append(
+                _finding(
+                    "relative_server_url",
+                    "warning",
+                    "execution",
+                    "OpenAPI server URL is relative and needs a runtime origin.",
+                    {"kind": kind, "name": name},
+                    "Set API2AGENT_BASE_URL to the real provider origin before execution.",
+                    {"url": server.url, "resolved_url": server.resolved_url},
+                )
+            )
+        if server.variables:
+            findings.append(
+                _finding(
+                    "server_variables_present",
+                    "info",
+                    "execution",
+                    "OpenAPI server URL uses variables.",
+                    {"kind": kind, "name": name},
+                    "Review resolved server defaults and override the base URL at runtime when needed.",
+                    {"variables": sorted(server.variables), "resolved_url": server.resolved_url},
+                )
+            )
+    return findings
+
+
+def _server_override_finding(finding_id: str, tool: Tool) -> dict[str, Any]:
+    source = "path-level" if finding_id == "path_server_override" else "operation-level"
+    return _finding(
+        finding_id,
+        "info",
+        "execution",
+        f"Tool uses an OpenAPI {source} server override.",
+        _tool_location(tool),
+        "Review tool base URL before runtime execution or proxy wiring.",
+        {"base_url": tool.base_url, "server_source": tool.server_source},
     )
 
 

@@ -1,0 +1,52 @@
+openapi: 3.0.3
+info:
+  title: Server Choices API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/{version}
+    description: Production API
+    variables:
+      version:
+        default: v1
+        enum:
+          - v1
+          - v2
+        description: API version
+  - url: https://staging.example.com/{version}
+    description: Staging API
+    variables:
+      version:
+        default: v1
+  - url: /api/v3
+    description: Relative Petstore-style API
+paths:
+  /public:
+    get:
+      operationId: getPublic
+      responses:
+        "200":
+          description: OK
+  /admin:
+    servers:
+      - url: https://admin.example.com
+        description: Admin API
+    get:
+      operationId: getAdmin
+      responses:
+        "200":
+          description: OK
+  /regional:
+    get:
+      operationId: getRegional
+      servers:
+        - url: https://{region}.example.com
+          description: Regional API
+          variables:
+            region:
+              default: us
+              enum:
+                - us
+                - eu
+      responses:
+        "200":
+          description: OK
