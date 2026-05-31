@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Implementation Complete
+Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout + Phase Review v0
+Agent Capability Compiler Diagnostics Score Calibration Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout + Phase Review v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler Diagnostics Score Calibration Design v0.
 
 Scope:
 
@@ -1073,6 +1073,13 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`
+
+Completed Agent capability compiler OpenAPI real-spec calibration harness closeout result:
+
+- the local calibration harness is accepted as complete.
+- the first evidence-driven next gap is diagnostics score calibration for metadata-rich packages.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed Agent capability compiler OpenAPI real-spec calibration harness implementation result:
 
