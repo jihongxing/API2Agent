@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0.
 
 Scope:
 
@@ -1069,6 +1069,15 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_IMPLEMENTATION_REPORT.md`
+
+Completed Agent capability compiler OpenAPI JSON Schema keyword coverage implementation result:
+
+- compact keyword summaries, deterministic keyword-hint examples, inspect schema hint counts, diagnostics, fixture coverage, and local dogfood are implemented.
+- raw schema compatibility remains intact, and Tier 2 advanced keywords are diagnosed rather than treated as validator semantics.
+- the full Python suite passed with 205 tests.
+- the next OpenAPI hardening task is JSON Schema keyword coverage closeout.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_IMPLEMENTATION_REPORT.md`.
 
 Completed Agent capability compiler OpenAPI JSON Schema keyword coverage design result:
 

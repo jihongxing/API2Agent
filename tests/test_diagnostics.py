@@ -208,3 +208,29 @@ def test_diagnose_reports_response_shape_documentation_hints() -> None:
     assert "default_response_present" in finding_ids
     assert "multiple_response_content_types" in finding_ids
     assert "response_polymorphic_schema" in finding_ids
+
+
+def test_diagnose_reports_json_schema_keyword_hints() -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/schema_keywords.yaml"))
+    diagnostics = diagnose_capability(capability)
+    finding_ids = {finding["id"] for finding in diagnostics["findings"]}
+
+    assert "schema_keywords_present" in finding_ids
+    assert "string_constraints_present" in finding_ids
+    assert "numeric_constraints_present" in finding_ids
+    assert "array_constraints_present" in finding_ids
+    assert "const_schema_present" in finding_ids
+    assert "deprecated_schema_fields" in finding_ids
+    assert "pattern_schema_present" in finding_ids
+    assert "unsupported_schema_keywords_present" in finding_ids
+    assert "conditional_schema_present" in finding_ids
+    assert "dependent_schema_present" in finding_ids
+
+    deprecated_findings = [
+        finding for finding in diagnostics["findings"] if finding["id"] == "deprecated_schema_fields"
+    ]
+    conditional_findings = [
+        finding for finding in diagnostics["findings"] if finding["id"] == "conditional_schema_present"
+    ]
+    assert any(finding["severity"] == "warning" for finding in deprecated_findings)
+    assert any(finding["severity"] == "warning" for finding in conditional_findings)

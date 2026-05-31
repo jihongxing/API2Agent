@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI JSON Schema keyword coverage implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI JSON Schema keyword coverage closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -935,11 +935,16 @@ Go Control Plane Minimum v0
   - Tier 1 display/example keywords、Tier 2 diagnostics-only keywords、compatibility strategy、generated artifact effects、tests、dogfood 和 non-goals 已定义。
   - 下一项 OpenAPI hardening task 是 JSON Schema keyword coverage implementation。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`。
+- Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0 已完成：
+  - compact keyword summaries、deterministic keyword-hint examples、inspect schema hint counts、diagnostics、fixture coverage 和 local dogfood 已实现。
+  - raw schema compatibility 保持 intact，Tier 2 advanced keywords 会被诊断，而不是被当作 validator semantics 处理。
+  - full Python suite 已通过 205 tests。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
 ```
 
 参考：

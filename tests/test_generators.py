@@ -162,6 +162,34 @@ def test_response_shape_documentation_affects_readme(tmp_path: Path) -> None:
     assert "password:string" not in readme
 
 
+def test_json_schema_keyword_coverage_affects_docs_examples_and_tools(tmp_path: Path) -> None:
+    capability = parse_openapi_file(FIXTURES / "schema_keywords.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+    manual_write_test = (output_dir / "manual_write_test.py").read_text(encoding="utf-8")
+    tools_json = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert "user_id string format=uuid required" in readme
+    assert "email string format=email maxLength=254" in readme
+    assert "status:string const=active" in readme
+    assert "age:integer min=0 max=150" in readme
+    assert r"code:string pattern=^[A-Z]{3}-\d{4}$" in readme
+    assert "tags:array[string] minItems=1 maxItems=5 uniqueItems" in readme
+    assert "legacy_code:string deprecated" in readme
+    assert "'email': 'user@example.com'" in manual_write_test
+    assert "'age': 1" in manual_write_test
+    assert "'tags': ['example', 'example']" in manual_write_test
+    assert "'status': 'active'" in manual_write_test
+
+    body_schema = tools_json[1]["function"]["parameters"]["properties"]["body"]
+    assert body_schema["properties"]["email"]["format"] == "email"
+    assert body_schema["properties"]["tags"]["minItems"] == 2
+    assert body_schema["properties"]["status"]["const"] == "active"
+    assert body_schema["dependentRequired"]["email"] == ["status"]
+    assert body_schema["if"]["properties"]["status"]["const"] == "active"
+
+
 def test_generate_package_refuses_non_empty_output_without_force(tmp_path: Path) -> None:
     capability = parse_openapi_file(FIXTURES / "basic.yaml")
     output_dir = tmp_path / "api2agent-output"

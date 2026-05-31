@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI JSON Schema keyword coverage implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI JSON Schema keyword coverage closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -935,11 +935,16 @@ Current Phase 6 progress:
   - Tier 1 display/example keywords, Tier 2 diagnostics-only keywords, compatibility strategy, generated artifact effects, tests, dogfood, and non-goals are defined.
   - the next OpenAPI hardening task is JSON Schema keyword coverage implementation.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`.
+- Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0 is complete:
+  - compact keyword summaries, deterministic keyword-hint examples, inspect schema hint counts, diagnostics, fixture coverage, and local dogfood are implemented.
+  - raw schema compatibility remains intact, and Tier 2 advanced keywords are diagnosed rather than treated as validator semantics.
+  - the full Python suite passed with 205 tests.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
 ```
 
 References:

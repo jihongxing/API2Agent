@@ -241,6 +241,29 @@ def test_preserves_openapi_response_shape_metadata() -> None:
     assert legacy.examples == []
 
 
+def test_preserves_json_schema_keyword_metadata() -> None:
+    capability = parse_openapi_file(FIXTURES / "schema_keywords.yaml")
+    tools = {tool.name: tool for tool in capability.tools}
+
+    get_user = tools["get_keyword_user"]
+    assert get_user.parameters[0].schema_["format"] == "uuid"
+    assert get_user.parameters[1].schema_["maxLength"] == 254
+
+    response_schema = get_user.responses[0].schema_
+    assert response_schema["properties"]["status"]["const"] == "active"
+    assert response_schema["properties"]["code"]["pattern"] == r"^[A-Z]{3}-\d{4}$"
+    assert response_schema["properties"]["tags"]["uniqueItems"] is True
+    assert response_schema["properties"]["metadata"]["patternProperties"]["^x-"]["type"] == "string"
+
+    create_profile = tools["create_keyword_profile"]
+    assert create_profile.request_body is not None
+    body_schema = create_profile.request_body.schema_
+    assert body_schema["dependentRequired"]["email"] == ["status"]
+    assert body_schema["if"]["properties"]["status"]["const"] == "active"
+    assert body_schema["properties"]["rating"]["exclusiveMaximum"] == 5
+    assert body_schema["properties"]["step"]["multipleOf"] == 5
+
+
 def test_preserves_openapi_security_requirement_combinations() -> None:
     capability = parse_openapi_file(FIXTURES / "security_combinations.yaml")
     tools = {tool.name: tool for tool in capability.tools}

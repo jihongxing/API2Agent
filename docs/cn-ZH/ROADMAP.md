@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Design Complete
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0
+Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Implementation v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage Closeout + Phase Review v0。
 
 范围：
 
@@ -1069,6 +1069,15 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_RESPONSE_SHAPE_DOCUMENTATION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_DESIGN.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_IMPLEMENTATION_REPORT.md`
+
+已完成 Agent capability compiler OpenAPI JSON Schema keyword coverage implementation 结果：
+
+- compact keyword summaries、deterministic keyword-hint examples、inspect schema hint counts、diagnostics、fixture coverage 和 local dogfood 已实现。
+- raw schema compatibility 保持 intact，Tier 2 advanced keywords 会被诊断，而不是被当作 validator semantics 处理。
+- full Python suite 已通过 205 tests。
+- 下一项 OpenAPI hardening task 是 JSON Schema keyword coverage closeout。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_JSON_SCHEMA_KEYWORD_COVERAGE_IMPLEMENTATION_REPORT.md`。
 
 已完成 Agent capability compiler OpenAPI JSON Schema keyword coverage design 结果：
 

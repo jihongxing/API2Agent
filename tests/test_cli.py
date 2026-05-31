@@ -583,6 +583,21 @@ def test_inspect_command_prints_response_shape_details(tmp_path) -> None:
     assert "default default application/json object {error:string, code:string?}" in result.output
 
 
+def test_inspect_command_prints_json_schema_keyword_hints(tmp_path) -> None:
+    package_dir = generate_package(parse_openapi_file(Path("tests/fixtures/openapi/schema_keywords.yaml")), tmp_path / "package")
+
+    result = runner.invoke(app, ["inspect", str(package_dir)])
+
+    assert result.exit_code == 0
+    assert "Schema hints:" in result.output
+    assert "string_constraints=" in result.output
+    assert "numeric_constraints=" in result.output
+    assert "array_constraints=" in result.output
+    assert "unsupported_schema_keywords=" in result.output
+    assert "path: user_id string format=uuid required" in result.output
+    assert "body: object {email:string format=email minLength=6 maxLength=254" in result.output
+
+
 def test_ledger_command_prints_json_rows(tmp_path) -> None:
     db = tmp_path / "usage.sqlite"
     store = UsageStore(db)

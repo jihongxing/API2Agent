@@ -10,6 +10,46 @@ SchemaDirection = Literal["neutral", "request", "response"]
 LARGE_OBJECT_PROPERTY_THRESHOLD = 12
 MAX_SCHEMA_BRANCHES = 3
 MAX_OBJECT_FIELDS = 8
+MAX_MARKER_VALUE_LENGTH = 48
+
+STRING_CONSTRAINT_KEYWORDS = {"format", "pattern", "minLength", "maxLength"}
+NUMERIC_CONSTRAINT_KEYWORDS = {"minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"}
+ARRAY_CONSTRAINT_KEYWORDS = {"minItems", "maxItems", "uniqueItems"}
+VISIBLE_SCHEMA_KEYWORDS = (
+    "format",
+    "pattern",
+    "minLength",
+    "maxLength",
+    "minimum",
+    "maximum",
+    "exclusiveMinimum",
+    "exclusiveMaximum",
+    "minItems",
+    "maxItems",
+    "uniqueItems",
+    "const",
+    "deprecated",
+)
+UNSUPPORTED_SCHEMA_KEYWORDS = (
+    "multipleOf",
+    "minProperties",
+    "maxProperties",
+    "patternProperties",
+    "propertyNames",
+    "dependentRequired",
+    "dependentSchemas",
+    "if",
+    "then",
+    "else",
+    "not",
+    "contains",
+    "minContains",
+    "maxContains",
+    "unevaluatedProperties",
+    "unevaluatedItems",
+)
+CONDITIONAL_SCHEMA_KEYWORDS = {"if", "then", "else", "not"}
+DEPENDENT_SCHEMA_KEYWORDS = {"dependentRequired", "dependentSchemas"}
 
 
 def shape_schema(schema: dict[str, Any], *, direction: SchemaDirection = "neutral") -> dict[str, Any]:
@@ -286,6 +326,32 @@ def _discriminator_branch_summaries(
 
 def _schema_markers(schema: dict[str, Any], *, direction: SchemaDirection) -> list[str]:
     markers: list[str] = []
+    if "format" in schema:
+        markers.append(f"format={_marker_value(schema['format'])}")
+    if "pattern" in schema:
+        markers.append(f"pattern={_marker_value(schema['pattern'])}")
+    if "minLength" in schema:
+        markers.append(f"minLength={_marker_value(schema['minLength'])}")
+    if "maxLength" in schema:
+        markers.append(f"maxLength={_marker_value(schema['maxLength'])}")
+    if "minimum" in schema:
+        markers.append(f"min={_marker_value(schema['minimum'])}")
+    if "maximum" in schema:
+        markers.append(f"max={_marker_value(schema['maximum'])}")
+    if "exclusiveMinimum" in schema:
+        markers.append(f"exclusiveMin={_marker_value(schema['exclusiveMinimum'])}")
+    if "exclusiveMaximum" in schema:
+        markers.append(f"exclusiveMax={_marker_value(schema['exclusiveMaximum'])}")
+    if "minItems" in schema:
+        markers.append(f"minItems={_marker_value(schema['minItems'])}")
+    if "maxItems" in schema:
+        markers.append(f"maxItems={_marker_value(schema['maxItems'])}")
+    if schema.get("uniqueItems") is True:
+        markers.append("uniqueItems")
+    if "const" in schema:
+        markers.append(f"const={_marker_value(schema['const'])}")
+    if schema.get("deprecated") is True:
+        markers.append("deprecated")
     if is_nullable_schema(schema):
         markers.append("nullable")
     if direction == "neutral":
@@ -298,6 +364,14 @@ def _schema_markers(schema: dict[str, Any], *, direction: SchemaDirection) -> li
     elif direction == "response" and schema.get("readOnly") is True:
         markers.append("readOnly")
     return markers
+
+
+def _marker_value(value: Any) -> str:
+    text = str(value)
+    text = " ".join(text.split())
+    if len(text) > MAX_MARKER_VALUE_LENGTH:
+        return text[: MAX_MARKER_VALUE_LENGTH - 3] + "..."
+    return text
 
 
 def _primary_type(schema: dict[str, Any]) -> str | None:
@@ -322,6 +396,26 @@ def _collect_schema_hints(schema: dict[str, Any], counter: Counter[str], *, dept
         counter["read_only"] += 1
     if schema.get("writeOnly") is True:
         counter["write_only"] += 1
+    if any(key in schema for key in VISIBLE_SCHEMA_KEYWORDS + UNSUPPORTED_SCHEMA_KEYWORDS):
+        counter["schema_keywords"] += 1
+    if any(key in schema for key in STRING_CONSTRAINT_KEYWORDS):
+        counter["string_constraints"] += 1
+    if any(key in schema for key in NUMERIC_CONSTRAINT_KEYWORDS):
+        counter["numeric_constraints"] += 1
+    if any(key in schema for key in ARRAY_CONSTRAINT_KEYWORDS):
+        counter["array_constraints"] += 1
+    if "const" in schema:
+        counter["const_schema"] += 1
+    if schema.get("deprecated") is True:
+        counter["deprecated_schema_fields"] += 1
+    if "pattern" in schema:
+        counter["pattern_schema"] += 1
+    if any(key in schema for key in UNSUPPORTED_SCHEMA_KEYWORDS):
+        counter["unsupported_schema_keywords"] += 1
+    if any(key in schema for key in CONDITIONAL_SCHEMA_KEYWORDS):
+        counter["conditional_schema"] += 1
+    if any(key in schema for key in DEPENDENT_SCHEMA_KEYWORDS):
+        counter["dependent_schema"] += 1
     if "additionalProperties" in schema:
         counter["maps"] += 1
     info = discriminator_info_without_branch_checks(schema)
@@ -376,6 +470,26 @@ def _schema_has_hint(schema: dict[str, Any], hint: str, *, depth: int) -> bool:
         return schema.get("readOnly") is True
     if hint == "write_only":
         return schema.get("writeOnly") is True
+    if hint == "schema_keywords":
+        return any(key in schema for key in VISIBLE_SCHEMA_KEYWORDS + UNSUPPORTED_SCHEMA_KEYWORDS)
+    if hint == "string_constraints":
+        return any(key in schema for key in STRING_CONSTRAINT_KEYWORDS)
+    if hint == "numeric_constraints":
+        return any(key in schema for key in NUMERIC_CONSTRAINT_KEYWORDS)
+    if hint == "array_constraints":
+        return any(key in schema for key in ARRAY_CONSTRAINT_KEYWORDS)
+    if hint == "const_schema":
+        return "const" in schema
+    if hint == "deprecated_schema_fields":
+        return schema.get("deprecated") is True
+    if hint == "pattern_schema":
+        return "pattern" in schema
+    if hint == "unsupported_schema_keywords":
+        return any(key in schema for key in UNSUPPORTED_SCHEMA_KEYWORDS)
+    if hint == "conditional_schema":
+        return any(key in schema for key in CONDITIONAL_SCHEMA_KEYWORDS)
+    if hint == "dependent_schema":
+        return any(key in schema for key in DEPENDENT_SCHEMA_KEYWORDS)
     if hint == "maps":
         return "additionalProperties" in schema
     if hint == "discriminators":

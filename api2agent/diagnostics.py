@@ -307,7 +307,14 @@ def _tool_findings(tool: Tool) -> list[dict[str, Any]]:
     for response in tool.responses:
         findings.extend(_response_schema_findings(tool, response))
     for parameter in tool.parameters:
-        findings.extend(_schema_complexity_findings(tool, parameter.schema_ or {}, f"parameter:{parameter.name}"))
+        findings.extend(
+            _schema_complexity_findings(
+                tool,
+                parameter.schema_ or {},
+                f"parameter:{parameter.name}",
+                deprecated_severity="warning" if parameter.required else "info",
+            )
+        )
 
     if tool.auth is not None:
         if tool.auth.type == "unknown":
@@ -359,7 +366,15 @@ def _request_body_findings(tool: Tool, request_body: RequestBody) -> list[dict[s
                 {"content_type": request_body.content_type, "paths": read_only_paths},
             )
         )
-    findings.extend(_schema_complexity_findings(tool, schema, "request_body"))
+    findings.extend(
+        _schema_complexity_findings(
+            tool,
+            schema,
+            "request_body",
+            request_schema=True,
+            deprecated_severity="warning" if _has_required_deprecated_property(schema) else "info",
+        )
+    )
     return findings
 
 
@@ -493,7 +508,14 @@ def _response_schema_findings(tool: Tool, response: ResponseShape) -> list[dict[
     return findings
 
 
-def _schema_complexity_findings(tool: Tool, schema: dict[str, Any], label: str) -> list[dict[str, Any]]:
+def _schema_complexity_findings(
+    tool: Tool,
+    schema: dict[str, Any],
+    label: str,
+    *,
+    request_schema: bool = False,
+    deprecated_severity: str = "info",
+) -> list[dict[str, Any]]:
     if not schema:
         return []
 
@@ -535,6 +557,76 @@ def _schema_complexity_findings(tool: Tool, schema: dict[str, Any], label: str) 
             "Schema contains a large object shape.",
             "Consider examples/defaults or endpoint filtering if Agent input selection becomes noisy.",
         ),
+        (
+            "schema_keywords",
+            "schema_keywords_present",
+            "info",
+            "Schema includes JSON Schema keyword constraints.",
+            "Review generated summaries and examples so Agent prompts preserve these constraints.",
+        ),
+        (
+            "string_constraints",
+            "string_constraints_present",
+            "info",
+            "Schema includes string constraints such as format, pattern, or length bounds.",
+            "Review generated examples and docs for format and length-sensitive inputs.",
+        ),
+        (
+            "numeric_constraints",
+            "numeric_constraints_present",
+            "info",
+            "Schema includes numeric bounds.",
+            "Review generated examples for in-range numeric values.",
+        ),
+        (
+            "array_constraints",
+            "array_constraints_present",
+            "info",
+            "Schema includes array cardinality or uniqueness constraints.",
+            "Review generated examples for representative array sizes.",
+        ),
+        (
+            "const_schema",
+            "const_schema_present",
+            "info",
+            "Schema includes const values.",
+            "Use const-aware examples to verify fixed discriminator or status-like values.",
+        ),
+        (
+            "deprecated_schema_fields",
+            "deprecated_schema_fields",
+            deprecated_severity,
+            "Schema includes deprecated fields.",
+            "Avoid relying on deprecated request fields unless the API requires them.",
+        ),
+        (
+            "pattern_schema",
+            "pattern_schema_present",
+            "info",
+            "Schema includes regex pattern constraints.",
+            "Review pattern constraints manually; v0 examples do not synthesize regex-matching values.",
+        ),
+        (
+            "unsupported_schema_keywords",
+            "unsupported_schema_keywords_present",
+            "info",
+            "Schema includes advanced JSON Schema keywords preserved as metadata only.",
+            "Review source schema semantics before relying on generated examples as full validation samples.",
+        ),
+        (
+            "conditional_schema",
+            "conditional_schema_present",
+            "warning" if request_schema else "info",
+            "Schema includes conditional keywords.",
+            "Add source examples for conditional request bodies because generated examples do not validate full branches.",
+        ),
+        (
+            "dependent_schema",
+            "dependent_schema_present",
+            "warning" if request_schema else "info",
+            "Schema includes dependent schema keywords.",
+            "Add source examples for dependent request bodies because generated examples do not validate full dependencies.",
+        ),
     ]
 
     for hint, finding_id, severity, message, recommendation in hint_specs:
@@ -557,6 +649,34 @@ def _schema_complexity_findings(tool: Tool, schema: dict[str, Any], label: str) 
         )
     findings.extend(_discriminator_findings(tool, schema, label))
     return findings
+
+
+def _has_required_deprecated_property(schema: dict[str, Any]) -> bool:
+    if not isinstance(schema, dict):
+        return False
+
+    required = {str(item) for item in schema.get("required") or []}
+    properties = schema.get("properties") or {}
+    if isinstance(properties, dict):
+        for name, child in properties.items():
+            if str(name) in required and isinstance(child, dict) and child.get("deprecated") is True:
+                return True
+            if isinstance(child, dict) and _has_required_deprecated_property(child):
+                return True
+
+    items = schema.get("items")
+    if isinstance(items, dict) and _has_required_deprecated_property(items):
+        return True
+
+    for key in ("oneOf", "anyOf", "allOf"):
+        branches = schema.get(key)
+        if isinstance(branches, list) and any(
+            _has_required_deprecated_property(branch) for branch in branches if isinstance(branch, dict)
+        ):
+            return True
+
+    additional = schema.get("additionalProperties")
+    return isinstance(additional, dict) and _has_required_deprecated_property(additional)
 
 
 def _discriminator_findings(tool: Tool, schema: dict[str, Any], label: str) -> list[dict[str, Any]]:
