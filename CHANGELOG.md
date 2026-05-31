@@ -300,11 +300,12 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage implemented with compact keyword summaries, deterministic keyword-hint examples, inspect schema hint counts, diagnostics for visible and advanced keywords, fixture coverage, and local dogfood.
 - Agent Capability Compiler OpenAPI JSON Schema Keyword Coverage closeout completed; bounded keyword coverage can close and the next compiler hardening target is real-spec calibration design.
 - Agent Capability Compiler OpenAPI Real-Spec Calibration design completed with corpus slots, metric contract, status thresholds, harness behavior, artifact strategy, tests, dogfood, and API-first non-goals.
+- Agent Capability Compiler OpenAPI Real-Spec Calibration Harness implemented with local offline calibration script, purpose-labeled corpus cases, machine-readable result artifact, status classification, fixture/synthetic-large coverage, and dogfood.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
-- Full test suite: `205 passed`.
+- Full test suite: `210 passed`.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Implementation v0.
+- Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout + Phase Review v0.

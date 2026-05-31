@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Design Complete
+Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI real-spec calibration harness implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI real-spec calibration harness closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Implementation v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Implementation v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -949,11 +949,15 @@ Current Phase 6 progress:
   - calibration-after-keyword-coverage rationale, corpus slots, metric contract, status thresholds, harness behavior, artifact strategy, tests, dogfood, and non-goals are defined.
   - the next compiler hardening task is a local real-spec calibration harness implementation.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_DESIGN.md`.
+- Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Implementation v0 is complete:
+  - local offline calibration script, purpose-labeled corpus cases, machine-readable result artifact, status classification, fixture/synthetic-large coverage, and dogfood are implemented.
+  - the full Python suite passed with 210 tests.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_SPEC_CALIBRATION_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Implementation v0
+Agent Capability Compiler OpenAPI Real-Spec Calibration Harness Closeout + Phase Review v0
 ```
 
 References:
