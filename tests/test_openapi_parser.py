@@ -116,3 +116,26 @@ def test_normalizes_schema_composition() -> None:
     lookup_schema = tool.parameters[0].schema_
     assert lookup_schema["oneOf"][0]["type"] == "string"
     assert lookup_schema["oneOf"][1]["type"] == "integer"
+
+
+def test_preserves_openapi_examples_and_defaults() -> None:
+    capability = parse_openapi_file(FIXTURES / "examples_defaults.yaml")
+    tools = {tool.name: tool for tool in capability.tools}
+
+    get_user = tools["get_user_by_example"]
+    assert get_user.parameters[0].name == "user_id"
+    assert get_user.parameters[0].example == "user_123"
+    assert get_user.parameters[1].name == "include"
+    assert get_user.parameters[1].examples == ["profile"]
+    assert get_user.parameters[2].name == "X-Trace-Id"
+    assert get_user.parameters[2].schema_["default"] == "trace-123"
+
+    create_order = tools["create_order_with_example"]
+    assert create_order.request_body is not None
+    assert create_order.request_body.example == {"sku": "sku_123", "quantity": 2}
+    assert create_order.request_body.schema_["properties"]["sku"]["example"] == "fallback_sku"
+
+    update_order = tools["update_order_with_property_examples"]
+    assert update_order.parameters[0].schema_["enum"][0] == "order_123"
+    assert update_order.request_body is not None
+    assert update_order.request_body.schema_["properties"]["status"]["enum"][0] == "shipped"

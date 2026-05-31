@@ -66,6 +66,23 @@ def test_generated_readme_includes_parameter_and_body_details(tmp_path: Path) ->
     assert "api2agent test . --tool" in readme
 
 
+def test_generated_readme_and_tests_use_openapi_examples(tmp_path: Path) -> None:
+    capability = parse_openapi_file(FIXTURES / "examples_defaults.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+    smoke_test = (output_dir / "smoke_test.py").read_text(encoding="utf-8")
+    manual_write_test = (output_dir / "manual_write_test.py").read_text(encoding="utf-8")
+
+    assert "user_id string required example=user_123" in readme
+    assert "X-Trace-Id string default=trace-123 required example=trace-123" in readme
+    assert "'user_id': 'user_123'" in readme
+    assert "'X-Trace-Id': 'trace-123'" in readme
+    assert "'user_id': 'user_123'" in smoke_test
+    assert "'X-Trace-Id': 'trace-123'" in smoke_test
+    assert "'body': {'sku': 'sku_123', 'quantity': 2}" in manual_write_test
+
+
 def test_generate_package_refuses_non_empty_output_without_force(tmp_path: Path) -> None:
     capability = parse_openapi_file(FIXTURES / "basic.yaml")
     output_dir = tmp_path / "api2agent-output"

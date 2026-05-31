@@ -1,5 +1,6 @@
 import json
 
+from api2agent.generators.examples import example_for_parameter, example_for_request_body, example_value
 from api2agent.ir.models import Capability
 
 
@@ -147,7 +148,10 @@ def _format_tool(tool) -> str:
 
     if tool.request_body is not None:
         required = " required" if tool.request_body.required else ""
-        lines.append(f"  - body: {_format_schema(tool.request_body.schema_)}{required}")
+        example = ""
+        if tool.request_body.example is not None or tool.request_body.examples or _schema_has_example(tool.request_body.schema_):
+            example = f" example={example_for_request_body(tool.request_body)}"
+        lines.append(f"  - body: {_format_schema(tool.request_body.schema_)}{required}{example}")
 
     return "\n".join(lines)
 
@@ -179,7 +183,10 @@ def _tool_base_url_suffix(tool_name: str) -> str:
 
 def _format_parameter(parameter) -> str:
     required = " required" if parameter.required else ""
-    return f"{parameter.name} {_format_schema(parameter.schema_)}{required}"
+    example = ""
+    if parameter.example is not None or parameter.examples or _schema_has_example(parameter.schema_):
+        example = f" example={example_for_parameter(parameter)}"
+    return f"{parameter.name} {_format_schema(parameter.schema_)}{required}{example}"
 
 
 def _format_schema(schema: dict) -> str:
@@ -209,30 +216,22 @@ def _example_params(tool) -> dict:
 
     params = {}
     for parameter in tool.parameters:
-        if parameter.required or "default" in parameter.schema_:
-            params[parameter.name] = parameter.schema_.get("default", _example_value(parameter.schema_))
+        if parameter.required or _parameter_has_example(parameter):
+            params[parameter.name] = example_for_parameter(parameter)
 
     if tool.request_body is not None and tool.request_body.required:
-        params["body"] = _example_value(tool.request_body.schema_)
+        params["body"] = example_for_request_body(tool.request_body)
 
     return params
 
 
 def _example_value(schema: dict):
-    schema_type = schema.get("type")
-    if "default" in schema:
-        return schema["default"]
-    if schema_type == "object":
-        return {
-            name: _example_value(value)
-            for name, value in (schema.get("properties") or {}).items()
-        }
-    if schema_type == "array":
-        return [_example_value(schema.get("items") or {})]
-    if schema_type == "integer":
-        return 1
-    if schema_type == "number":
-        return 1
-    if schema_type == "boolean":
-        return True
-    return "example"
+    return example_value(schema)
+
+
+def _schema_has_example(schema: dict) -> bool:
+    return any(key in schema for key in ["default", "example", "examples", "enum"])
+
+
+def _parameter_has_example(parameter) -> bool:
+    return parameter.example is not None or bool(parameter.examples) or _schema_has_example(parameter.schema_)

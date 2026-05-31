@@ -301,6 +301,8 @@ def _extract_parameters(raw_parameters: list[Any], document: dict[str, Any]) -> 
                 required=bool(raw.get("required")),
                 schema=_resolve_schema(document, raw.get("schema") or {}),
                 description=raw.get("description"),
+                example=_extract_example_value(raw.get("example")),
+                examples=_extract_examples(raw.get("examples")),
             )
         )
 
@@ -326,6 +328,8 @@ def _extract_request_body(raw_body: Any, document: dict[str, Any]) -> RequestBod
         required=bool(raw_body.get("required")),
         content_type="application/json" if "application/json" in content else next(iter(content.keys()), "application/json"),
         schema=_resolve_schema(document, json_content.get("schema") or {}),
+        example=_extract_example_value(json_content.get("example")),
+        examples=_extract_examples(json_content.get("examples")),
     )
 
 
@@ -382,6 +386,26 @@ def _resolve_schema(document: dict[str, Any], raw_schema: Any) -> dict[str, Any]
     resolved = _resolve_refs(document, raw_schema)
     normalized = _normalize_schema(resolved)
     return normalized if isinstance(normalized, dict) else {}
+
+
+def _extract_example_value(raw_example: Any) -> Any | None:
+    return raw_example if raw_example is not None else None
+
+
+def _extract_examples(raw_examples: Any) -> list[Any]:
+    if raw_examples is None:
+        return []
+    if isinstance(raw_examples, list):
+        return [item for item in raw_examples if item is not None]
+    if isinstance(raw_examples, dict):
+        examples: list[Any] = []
+        for raw in raw_examples.values():
+            if isinstance(raw, dict) and "value" in raw:
+                examples.append(raw["value"])
+            elif raw is not None:
+                examples.append(raw)
+        return examples
+    return [raw_examples]
 
 
 def _normalize_schema(schema: Any) -> Any:

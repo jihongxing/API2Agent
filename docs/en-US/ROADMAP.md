@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Real-World Hardening Design Complete
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Implementation Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane

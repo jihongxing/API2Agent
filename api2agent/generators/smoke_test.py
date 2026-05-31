@@ -1,4 +1,5 @@
 from api2agent.ir.models import Capability, SafetyLevel
+from api2agent.generators.examples import example_for_parameter, example_for_request_body, example_value
 
 
 def render_smoke_test(capability: Capability) -> str:
@@ -16,10 +17,12 @@ if __name__ == "__main__":
 '''
 
     params = {
-        parameter.name: _example_value(parameter.schema_)
+        parameter.name: example_for_parameter(parameter)
         for parameter in read_tool.parameters
         if parameter.required
     }
+    if read_tool.request_body is not None and read_tool.request_body.required:
+        params["body"] = example_for_request_body(read_tool.request_body)
 
     return f'''"""Generated smoke test."""
 
@@ -56,12 +59,12 @@ if __name__ == "__main__":
 '''
 
     params = {
-        parameter.name: _example_value(parameter.schema_)
+        parameter.name: example_for_parameter(parameter)
         for parameter in write_tool.parameters
         if parameter.required
     }
     if write_tool.request_body is not None and write_tool.request_body.required:
-        params["body"] = _example_value(write_tool.request_body.schema_)
+        params["body"] = example_for_request_body(write_tool.request_body)
 
     return f'''"""Generated manual write test.
 
@@ -91,19 +94,4 @@ if __name__ == "__main__":
 
 
 def _example_value(schema: dict) -> object:
-    schema_type = schema.get("type")
-    if schema_type == "object":
-        properties = schema.get("properties") or {}
-        return {
-            name: _example_value(value)
-            for name, value in properties.items()
-        } or {}
-    if schema_type == "array":
-        return [_example_value(schema.get("items") or {})]
-    if schema_type == "integer":
-        return 1
-    if schema_type == "number":
-        return 1
-    if schema_type == "boolean":
-        return True
-    return "example"
+    return example_value(schema)

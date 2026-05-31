@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Real-World Hardening Design Complete
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI examples/defaults propagation implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI examples/defaults propagation closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -842,11 +842,16 @@ Go Control Plane Minimum v0
   - current parser baseline 和 gaps 已文档化。
   - source fields、additive IR changes、deterministic example selection order、generated artifact effects、tests 和 dogfood 已定义。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`。
+- Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0 已完成：
+  - OpenAPI parameter/body examples 和 examples maps 已保留进 additive IR fields。
+  - README first-call commands、parameter/body details、smoke tests 和 manual write tests 现在会先使用 source examples/defaults/enums，再回落到 generic fallbacks。
+  - local generated-runner dogfood 已在 safe loopback target 上通过 read 和 opt-in write calls。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
 ```
 
 参考：
@@ -874,6 +879,7 @@ Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace 是后面的结果
 

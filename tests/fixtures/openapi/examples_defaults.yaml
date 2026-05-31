@@ -1,0 +1,100 @@
+openapi: 3.0.3
+info:
+  title: Example Defaults API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+paths:
+  /users/{user_id}:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        example: user_123
+        schema:
+          type: string
+    get:
+      operationId: getUserByExample
+      summary: Get user by example
+      parameters:
+        - name: include
+          in: query
+          required: false
+          examples:
+            profile:
+              value: profile
+          schema:
+            type: string
+        - name: X-Trace-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            default: trace-123
+      responses:
+        "200":
+          description: OK
+  /orders:
+    post:
+      operationId: createOrderWithExample
+      summary: Create order with example
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              sku: sku_123
+              quantity: 2
+            schema:
+              type: object
+              required:
+                - sku
+                - quantity
+              properties:
+                sku:
+                  type: string
+                  example: fallback_sku
+                quantity:
+                  type: integer
+                  default: 1
+                priority:
+                  type: string
+                  enum:
+                    - normal
+                    - high
+      responses:
+        "201":
+          description: Created
+  /orders/{order_id}:
+    patch:
+      operationId: updateOrderWithPropertyExamples
+      summary: Update order with property examples
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - order_123
+              - order_456
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - shipped
+                    - pending
+                note:
+                  type: string
+                  default: leave at door
+      responses:
+        "200":
+          description: OK

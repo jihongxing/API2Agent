@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Real-World Hardening Design Complete
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI examples/defaults propagation implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI examples/defaults propagation closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -842,11 +842,16 @@ Current Phase 6 progress:
   - current parser baseline and gaps are documented.
   - source fields, additive IR changes, deterministic example selection order, generated artifact effects, tests, and dogfood are defined.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`.
+- Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0 is complete:
+  - OpenAPI parameter/body examples and examples maps are preserved into additive IR fields.
+  - README first-call commands, parameter/body details, smoke tests, and manual write tests now use source examples/defaults/enums before generic fallbacks.
+  - local generated-runner dogfood passed for read and opt-in write calls against a safe loopback target.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
 ```
 
 References:
@@ -874,6 +879,7 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_EXAMPLES_DEFAULTS_IMPLEMENTATION_REPORT.md`
 
 ## 9. Marketplace Is Later
 

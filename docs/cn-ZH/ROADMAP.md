@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Real-World Hardening Design Complete
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Implementation Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane

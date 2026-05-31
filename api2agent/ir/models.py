@@ -24,6 +24,8 @@ class Parameter(BaseModel):
     required: bool = False
     schema_: dict[str, Any] = Field(default_factory=dict, alias="schema")
     description: str | None = None
+    example: Any | None = None
+    examples: list[Any] = Field(default_factory=list)
 
     model_config = {"populate_by_name": True}
 
@@ -32,6 +34,8 @@ class RequestBody(BaseModel):
     required: bool = False
     content_type: str = "application/json"
     schema_: dict[str, Any] = Field(default_factory=dict, alias="schema")
+    example: Any | None = None
+    examples: list[Any] = Field(default_factory=list)
 
     model_config = {"populate_by_name": True}
 
