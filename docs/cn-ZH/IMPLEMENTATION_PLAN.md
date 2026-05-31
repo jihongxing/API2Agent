@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler Quality Diagnostics Closeout Complete
+Agent Capability Compiler OpenAPI Real-World Hardening Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI real-world hardening design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI examples/defaults propagation implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Real-World Hardening Design v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Real-World Hardening Design v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -837,11 +837,16 @@ Go Control Plane Minimum v0
   - remaining risks 是 real-spec calibration、advisory-only diagnostics、shallow schema quality 和 broader OpenAPI complexity。
   - 下一项 compiler expansion task 是 OpenAPI real-world hardening design。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`。
+- Agent Capability Compiler OpenAPI Real-World Hardening Design v0 已完成：
+  - examples/defaults propagation 被选为第一项 OpenAPI hardening implementation slice。
+  - current parser baseline 和 gaps 已文档化。
+  - source fields、additive IR changes、deterministic example selection order、generated artifact effects、tests 和 dogfood 已定义。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Real-World Hardening Design v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
 ```
 
 参考：
@@ -868,6 +873,7 @@ Agent Capability Compiler OpenAPI Real-World Hardening Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
 
 ## 9. Marketplace 是后面的结果
 

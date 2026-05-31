@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler Quality Diagnostics Closeout Complete
+Agent Capability Compiler OpenAPI Real-World Hardening Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Real-World Hardening Design v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1058,6 +1058,15 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
+
+Completed Agent capability compiler OpenAPI real-world hardening design result:
+
+- examples/defaults propagation is selected as the first OpenAPI hardening implementation slice.
+- current parser baseline and gaps are documented.
+- additive IR fields and deterministic example selection order are specified.
+- generated README/test params, diagnostics evidence, tests, and dogfood expectations are defined.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`.
 
 Completed Agent capability compiler quality diagnostics closeout result:
 

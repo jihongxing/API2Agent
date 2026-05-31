@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler Quality Diagnostics Closeout Complete
+Agent Capability Compiler OpenAPI Real-World Hardening Design Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Real-World Hardening Design v0
+Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1058,6 +1058,15 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`
+
+已完成 Agent capability compiler OpenAPI real-world hardening design 结果：
+
+- examples/defaults propagation 被选为第一项 OpenAPI hardening implementation slice。
+- current parser baseline 和 gaps 已文档化。
+- additive IR fields 和 deterministic example selection order 已指定。
+- generated README/test params、diagnostics evidence、tests 和 dogfood expectations 已定义。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_REAL_WORLD_HARDENING_DESIGN.md`。
 
 已完成 Agent capability compiler quality diagnostics closeout 结果：
 

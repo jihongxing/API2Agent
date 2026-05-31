@@ -278,6 +278,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler Expansion design completed; the first implementation slice is quality diagnostics for generated OpenAPI/curl capability packages.
 - Agent Capability Compiler Quality Diagnostics implemented with `diagnostics.json`, deterministic findings, diagnostics summary output during generation, `api2agent diagnose`, README/inspect summaries, and regression coverage.
 - Agent Capability Compiler Quality Diagnostics closeout completed; diagnostics can close and the next compiler expansion target is OpenAPI real-world hardening design.
+- Agent Capability Compiler OpenAPI Real-World Hardening design completed; the first implementation slice is examples/defaults propagation into IR, README/test params, and diagnostics evidence.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -285,4 +286,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Real-World Hardening Design v0.
+- Agent Capability Compiler OpenAPI Examples + Defaults Propagation v0.
