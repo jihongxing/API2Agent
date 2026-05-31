@@ -33,6 +33,21 @@ from api2agent.schema_shaping import SchemaDirection, merge_schema_hint_counts, 
 
 app = typer.Typer(help="Turn APIs into verified Agent capability packages.")
 LARGE_PACKAGE_TOOL_WARNING_THRESHOLD = 50
+SUMMARY_LIST_LIMIT = 5
+TOOL_RESPONSE_SUMMARY_LIMIT = 2
+SUMMARY_DETAIL_MAX_CHARS = 180
+SCHEMA_HINT_PRIORITY = [
+    "conditional_schema",
+    "dependent_schema",
+    "unsupported_schema_keywords",
+    "deprecated_schema_fields",
+    "schema_keywords",
+    "string_constraints",
+    "numeric_constraints",
+    "array_constraints",
+    "discriminators",
+    "discriminator_mappings",
+]
 DECISION_USAGE_CONTRACT_VERSION = "decision_usage.v0.1"
 REPLAY_CONTRACT_VERSION = "replay.v0.1"
 GOLDEN_TRACE_CONTRACT_VERSION = "golden_trace.v0.1"
@@ -293,22 +308,22 @@ def inspect(
         if summary["top_tags"]:
             typer.echo(
                 "Top tags: "
-                + ", ".join(f"{item['tag']}({item['count']})" for item in summary["top_tags"])
+                + _format_ranked_items(summary["top_tags"], label_key="tag")
             )
         if summary["top_path_prefixes"]:
             typer.echo(
                 "Top path prefixes: "
-                + ", ".join(f"{item['prefix']}({item['count']})" for item in summary["top_path_prefixes"])
+                + _format_ranked_items(summary["top_path_prefixes"], label_key="prefix")
             )
         if summary["schema_hints"]:
             typer.echo(
                 "Schema hints: "
-                + ", ".join(f"{key}={value}" for key, value in summary["schema_hints"].items())
+                + _format_counts(summary["schema_hints"], priority=SCHEMA_HINT_PRIORITY)
             )
         if summary["response_categories"]:
             typer.echo(
                 "Response categories: "
-                + ", ".join(f"{key}={value}" for key, value in summary["response_categories"].items())
+                + _format_counts(summary["response_categories"])
             )
         if len(tools) > LARGE_PACKAGE_TOOL_WARNING_THRESHOLD:
             typer.echo(
@@ -1188,6 +1203,34 @@ def _top_counts(counts: dict[str, int], *, label_key: str, limit: int = 5) -> li
     return [{label_key: key, "count": value} for key, value in ranked[:limit]]
 
 
+def _format_ranked_items(items: list[dict], *, label_key: str, limit: int = SUMMARY_LIST_LIMIT) -> str:
+    visible = items[:limit]
+    rendered = [f"{item[label_key]}({item['count']})" for item in visible]
+    omitted = len(items) - len(visible)
+    if omitted > 0:
+        rendered.append(f"+{omitted} more")
+    return ", ".join(rendered)
+
+
+def _format_counts(counts: dict[str, int], *, priority: list[str] | None = None, limit: int = SUMMARY_LIST_LIMIT) -> str:
+    priority = priority or []
+    priority_index = {key: index for index, key in enumerate(priority)}
+    ranked = sorted(
+        counts.items(),
+        key=lambda item: (
+            priority_index.get(item[0], len(priority)),
+            -item[1],
+            item[0],
+        ),
+    )
+    visible = ranked[:limit]
+    rendered = [f"{key}={value}" for key, value in visible]
+    omitted = len(ranked) - len(visible)
+    if omitted > 0:
+        rendered.append(f"+{omitted} more")
+    return ", ".join(rendered)
+
+
 def _missing_replay_fields(event: UsageEvent) -> list[str]:
     missing = []
     if not event.request_metadata:
@@ -1235,24 +1278,66 @@ def _format_tool_details(tool: dict) -> list[str]:
 
     for location, parameters in by_location.items():
         if parameters:
-            details.append(f"{location}: " + ", ".join(_format_parameter(parameter) for parameter in parameters))
+            details.append(_clip_detail(f"{location}: " + ", ".join(_format_parameter(parameter) for parameter in parameters)))
 
     request_body = tool.get("request_body") or {}
     if request_body:
         required = " required" if request_body.get("required") else ""
-        details.append(f"body: {_format_schema(request_body.get('schema') or {}, direction='request')}{required}")
+        details.append(_clip_detail(f"body: {_format_schema(request_body.get('schema') or {}, direction='request')}{required}"))
 
     responses = tool.get("responses") or []
     if responses:
+        response_summaries = _select_response_summaries(responses, limit=TOOL_RESPONSE_SUMMARY_LIMIT)
+        omitted = len(responses) - len(response_summaries)
+        suffix = f"; +{omitted} more responses" if omitted > 0 else ""
         details.append(
-            "responses: "
-            + "; ".join(
-                format_response_summary(response, include_description=False, include_example=False)
-                for response in responses[:5]
+            _clip_detail(
+                "responses: "
+                + "; ".join(
+                    format_response_summary(response, include_description=False, include_example=False)
+                    for response in response_summaries
+                )
+                + suffix
             )
         )
 
     return details
+
+
+def _clip_detail(text: str, *, max_chars: int = SUMMARY_DETAIL_MAX_CHARS) -> str:
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 4].rstrip() + " ..."
+
+
+def _select_response_summaries(responses: list[dict], *, limit: int) -> list[dict]:
+    if len(responses) <= limit:
+        return responses
+
+    selected: list[dict] = []
+    selected_ids: set[int] = set()
+    categories = response_category_counts(responses)
+    priority = ["success", "client_error", "default", "server_error", "redirect", "unknown"]
+    for category in priority:
+        if category not in categories:
+            continue
+        for index, response in enumerate(responses):
+            if index in selected_ids:
+                continue
+            if response_category_counts([response]).get(category):
+                selected.append(response)
+                selected_ids.add(index)
+                break
+        if len(selected) >= limit:
+            return selected
+
+    for index, response in enumerate(responses):
+        if index in selected_ids:
+            continue
+        selected.append(response)
+        if len(selected) >= limit:
+            break
+    return selected
 
 
 def _format_parameter(parameter: dict) -> str:

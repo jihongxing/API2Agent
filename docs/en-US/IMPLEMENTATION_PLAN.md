@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Design Complete
+Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI summary noise reduction implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI summary noise reduction closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -975,11 +975,15 @@ Current Phase 6 progress:
   - noise taxonomy, bounded summary budgets, risk-first rendering order, repeated finding folding, README/inspect/diagnostics text effects, calibration summary-density metrics, tests, dogfood, and non-goals are defined.
   - the next compiler hardening task is OpenAPI summary noise reduction implementation.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_DESIGN.md`.
+- Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0 is complete:
+  - compact inspect aggregate rendering, representative response previews, line clipping, grouped diagnostics text, README package overview/key caveats, calibration summary-density metrics, regression coverage, and dogfood are implemented.
+  - the full Python suite passed with 213 tests.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
 ```
 
 References:

@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Design Complete
+Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI summary noise reduction implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI summary noise reduction closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -975,11 +975,15 @@ Go Control Plane Minimum v0
   - noise taxonomy、bounded summary budgets、risk-first rendering order、repeated finding folding、README/inspect/diagnostics text effects、calibration summary-density metrics、tests、dogfood 和 non-goals 已定义。
   - 下一项 compiler hardening task 是 OpenAPI summary noise reduction implementation。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_DESIGN.md`。
+- Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0 已完成：
+  - compact inspect aggregate rendering、representative response previews、line clipping、grouped diagnostics text、README package overview/key caveats、calibration summary-density metrics、regression coverage 和 dogfood 已实现。
+  - full Python suite 已通过 213 tests。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Summary Noise Reduction Implementation v0
+Agent Capability Compiler OpenAPI Summary Noise Reduction Closeout + Phase Review v0
 ```
 
 参考：

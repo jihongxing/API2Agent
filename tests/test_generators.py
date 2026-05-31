@@ -59,6 +59,9 @@ def test_generated_readme_includes_parameter_and_body_details(tmp_path: Path) ->
 
     readme = (output_dir / "README.md").read_text(encoding="utf-8")
 
+    assert "## Package Overview" in readme
+    assert "- Tools: 1" in readme
+    assert "- Diagnostics: warn score=" in readme
     assert "query: verbose string default=true" in readme
     assert "header: X-Trace-Id string default=trace-123" in readme
     assert "body: object {name:string?, active:boolean?} required" in readme
@@ -90,6 +93,7 @@ def test_generated_auth_docs_include_security_combinations(tmp_path: Path) -> No
     readme = (output_dir / "README.md").read_text(encoding="utf-8")
     auth_env = (output_dir / "auth.env.example").read_text(encoding="utf-8")
 
+    assert "Key caveats: success_response_without_schema(5), weak_tool_description(5)" in readme
     assert "auth: combined api_key via header:X-API-Key" in readme
     assert "api_key via query:api_key" in readme
     assert "api_key via cookie:session" in readme

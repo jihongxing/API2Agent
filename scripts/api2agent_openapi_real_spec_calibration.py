@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from api2agent.cli import _format_tool_details, _tool_summary
+from api2agent.cli import SCHEMA_HINT_PRIORITY, _format_counts, _format_tool_details, _tool_summary
 from api2agent.filters import ToolFilter
 from api2agent.generators.examples import example_for_parameter, example_for_request_body
 from api2agent.generators.package import generate_package
@@ -234,6 +234,7 @@ def case_metrics(
     schema_hint_counts = _capability_schema_hint_counts(tools)
     response_counts = merge_response_category_counts(tools)
     finding_counts = _finding_counts(diagnostics.get("findings") or [])
+    inspect_lines = [*inspect_excerpt, *sample_tool_details]
     return {
         "case_id": case.case_id,
         "purpose": case.purpose,
@@ -256,9 +257,14 @@ def case_metrics(
         "diagnostics_score": diagnostics.get("score"),
         "diagnostics_summary": diagnostics.get("summary") or {},
         "finding_counts": finding_counts,
+        "repeated_finding_groups": sum(1 for count in finding_counts.values() if count > 1),
         "readme_bytes": _file_size(package_dir / "README.md"),
+        "readme_tool_section_lines": _readme_tool_section_lines(package_dir / "README.md"),
         "capability_bytes": _file_size(package_dir / "capability.json"),
         "generation_ms": generation_ms,
+        "inspect_line_count": len(inspect_lines),
+        "sample_tool_detail_line_count": len(sample_tool_details),
+        "max_inspect_line_chars": max((len(line) for line in inspect_lines), default=0),
         "inspect_excerpt": inspect_excerpt[:5],
         "sample_tool_details": sample_tool_details[:5],
         "first_call_params": first_call_params,
@@ -320,10 +326,16 @@ def build_recommendations(cases: list[dict[str, Any]]) -> list[str]:
     fail_cases = [case["case_id"] for case in cases if case.get("status") == "fail"]
     large_cases = [case["case_id"] for case in cases if case.get("tool_count", 0) > 50]
     low_score_cases = [case["case_id"] for case in cases if isinstance(case.get("diagnostics_score"), int | float) and case["diagnostics_score"] < 60]
+    long_line_cases = [case["case_id"] for case in cases if case.get("max_inspect_line_chars", 0) > 180]
+    repeated_finding_cases = [case["case_id"] for case in cases if case.get("repeated_finding_groups", 0) > 3]
     if large_cases:
         recommendations.append("Review filter guidance and inspect truncation for large packages: " + ", ".join(large_cases))
     if low_score_cases:
         recommendations.append("Review diagnostics precision for low-score packages: " + ", ".join(low_score_cases))
+    if long_line_cases:
+        recommendations.append("Review summary line density for long inspect lines: " + ", ".join(long_line_cases))
+    if repeated_finding_cases:
+        recommendations.append("Review repeated diagnostics grouping for noisy packages: " + ", ".join(repeated_finding_cases))
     if fail_cases:
         recommendations.append("Fix failed calibration cases before expanding the corpus: " + ", ".join(fail_cases))
     if warn_cases and not recommendations:
@@ -342,9 +354,9 @@ def inspect_summary(capability_json: dict[str, Any]) -> tuple[list[str], list[st
         "Safety: " + ", ".join(f"{key}={value}" for key, value in summary["safety_counts"].items()),
     ]
     if summary["schema_hints"]:
-        lines.append("Schema hints: " + ", ".join(f"{key}={value}" for key, value in summary["schema_hints"].items()))
+        lines.append("Schema hints: " + _format_counts(summary["schema_hints"], priority=SCHEMA_HINT_PRIORITY))
     if summary["response_categories"]:
-        lines.append("Response categories: " + ", ".join(f"{key}={value}" for key, value in summary["response_categories"].items()))
+        lines.append("Response categories: " + _format_counts(summary["response_categories"]))
 
     sample_tool = next((tool for tool in tools if tool.get("safety") == "read"), None) or (tools[0] if tools else None)
     details: list[str] = []
@@ -490,9 +502,14 @@ def _skipped_case(case: CalibrationCase, reason: str) -> dict[str, Any]:
         "diagnostics_score": None,
         "diagnostics_summary": {},
         "finding_counts": {},
+        "repeated_finding_groups": 0,
         "readme_bytes": 0,
+        "readme_tool_section_lines": 0,
         "capability_bytes": 0,
         "generation_ms": 0,
+        "inspect_line_count": 0,
+        "sample_tool_detail_line_count": 0,
+        "max_inspect_line_chars": 0,
         "inspect_excerpt": [],
         "sample_tool_details": [],
         "first_call_params": {},
@@ -520,6 +537,18 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _file_size(path: Path) -> int:
     return path.stat().st_size if path.exists() else 0
+
+
+def _readme_tool_section_lines(path: Path) -> int:
+    if not path.exists():
+        return 0
+    lines = path.read_text(encoding="utf-8").splitlines()
+    try:
+        start = lines.index("## Tools") + 1
+    except ValueError:
+        return 0
+    end = next((index for index in range(start, len(lines)) if lines[index].startswith("## ") and index > start), len(lines))
+    return max(0, end - start)
 
 
 def _reset_directory(path: Path, *, within: Path) -> None:

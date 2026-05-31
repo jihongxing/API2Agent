@@ -185,6 +185,17 @@ def test_diagnose_command_works_without_diagnostics_artifact(tmp_path) -> None:
     assert "Diagnostics:" in result.output
 
 
+def test_diagnose_command_groups_repeated_findings(tmp_path) -> None:
+    capability = parse_openapi_file(Path("tests/fixtures/openapi/security_combinations.yaml"))
+    package_dir = generate_package(capability, tmp_path / "package")
+
+    result = runner.invoke(app, ["diagnose", str(package_dir)])
+
+    assert result.exit_code == 0
+    assert "weak_tool_description x5" in result.output
+    assert "success_response_without_schema x5" in result.output
+
+
 def test_inspect_prints_diagnostics_summary(tmp_path) -> None:
     capability = parse_curl("curl https://api.example.com/items")
     package_dir = generate_package(capability, tmp_path / "package")

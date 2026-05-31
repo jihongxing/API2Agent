@@ -579,8 +579,8 @@ def test_inspect_command_prints_response_shape_details(tmp_path) -> None:
     assert "client_error=" in result.output
     assert "success=" in result.output
     assert "responses: 200 success application/json object {id:string readOnly, name:string}" in result.output
-    assert "204 success no documented body" in result.output
-    assert "default default application/json object {error:string, code:string?}" in result.output
+    assert "400 client_error application/json object {error:string, code:string?}" in result.output
+    assert "+2 more responses" in result.output
 
 
 def test_inspect_command_prints_json_schema_keyword_hints(tmp_path) -> None:
@@ -590,10 +590,10 @@ def test_inspect_command_prints_json_schema_keyword_hints(tmp_path) -> None:
 
     assert result.exit_code == 0
     assert "Schema hints:" in result.output
-    assert "string_constraints=" in result.output
-    assert "numeric_constraints=" in result.output
-    assert "array_constraints=" in result.output
-    assert "unsupported_schema_keywords=" in result.output
+    assert "conditional_schema=1" in result.output
+    assert "dependent_schema=1" in result.output
+    assert "unsupported_schema_keywords=3" in result.output
+    assert "+5 more" in result.output
     assert "path: user_id string format=uuid required" in result.output
     assert "body: object {email:string format=email minLength=6 maxLength=254" in result.output
 

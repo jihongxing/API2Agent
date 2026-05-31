@@ -295,15 +295,29 @@ def format_diagnostics(diagnostics: dict[str, Any]) -> list[str]:
         lines.append("No findings.")
         return lines
 
-    for finding in findings:
+    for finding, count in _group_findings(findings):
         severity = finding.get("severity", "info")
         finding_id = finding.get("id", "unknown")
         message = finding.get("message", "")
-        lines.append(f"- [{severity}] {finding_id}: {message}")
+        count_label = f" x{count}" if count > 1 else ""
+        lines.append(f"- [{severity}] {finding_id}{count_label}: {message}")
         recommendation = finding.get("recommendation")
         if recommendation:
             lines.append(f"  recommendation: {recommendation}")
     return lines
+
+
+def _group_findings(findings: list[dict[str, Any]]) -> list[tuple[dict[str, Any], int]]:
+    grouped: dict[tuple[str, str, str], tuple[dict[str, Any], int]] = {}
+    for finding in findings:
+        key = (
+            str(finding.get("severity") or "info"),
+            str(finding.get("id") or "unknown"),
+            str(finding.get("message") or ""),
+        )
+        representative, count = grouped.get(key, (finding, 0))
+        grouped[key] = (representative, count + 1)
+    return list(grouped.values())
 
 
 def _tool_findings(tool: Tool) -> list[dict[str, Any]]:
