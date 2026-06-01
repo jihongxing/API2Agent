@@ -360,6 +360,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation design completed with draft/change table ownership, serializable promotion and rollback transaction boundaries, idempotency reuse, audit evidence rules, private response shape, gateway read-model compatibility, and Hosted Control Plane completion estimate updated to 75%.
 - Go Control Plane Hosted Permission Policy Mutation Durable Graph Apply Semantics implemented with promotion-time draft change replay into hosted subject, membership, role, binding, and grant graph tables plus policy-version graph apply metadata.
 - Go Control Plane Hosted Permission Policy Mutation Rollback Graph Semantics readiness guarded with explicit policy-version-only rollback metadata and regression coverage that hosted graph rows are not silently rewound.
+- Go Control Plane Hosted Permission Policy Mutation Read Model Consistency dogfood added for promotion-written hosted graph rows, policy evidence after rollback, and the v0 policy-version-only rollback boundary.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.

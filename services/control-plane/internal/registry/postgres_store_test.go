@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -163,6 +164,16 @@ func (c *scriptedRegistryConn) rowsFor(query string, args []driver.NamedValue) (
 		return c.selectPolicyDraftChangeSeq(args)
 	case strings.Contains(query, "FROM hosted_policy_mutation_draft_changes"):
 		return c.selectPolicyDraftChanges(args)
+	case strings.Contains(query, "SELECT policy_source, policy_version, policy_fingerprint") && strings.Contains(query, "FROM hosted_policy_versions"):
+		return newScriptedRows([]string{"policy_source", "policy_version", "policy_fingerprint"}, c.hostedReadModelPolicyValues()), nil
+	case strings.Contains(query, "SELECT id, status") && strings.Contains(query, "FROM hosted_subjects"):
+		return newScriptedRows([]string{"id", "status"}, c.hostedReadModelSubjectValues(namedString(args, 0))), nil
+	case strings.Contains(query, "SELECT actor_id, project_id, organization_id, status") && strings.Contains(query, "FROM hosted_project_memberships"):
+		return newScriptedRows([]string{"actor_id", "project_id", "organization_id", "status"}, c.hostedReadModelMembershipValues(namedString(args, 0), namedString(args, 1))), nil
+	case strings.Contains(query, "SELECT DISTINCT g.permission") && strings.Contains(query, "FROM hosted_role_bindings") && strings.Contains(query, "hosted_permission_grants"):
+		return newScriptedRows([]string{"permission"}, c.hostedReadModelPermissionValues(namedString(args, 0), namedString(args, 1), namedString(args, 2))), nil
+	case strings.Contains(query, "SELECT r.id") && strings.Contains(query, "FROM hosted_role_bindings"):
+		return newScriptedRows([]string{"id"}, c.hostedReadModelRoleValues(namedString(args, 0), namedString(args, 1), namedString(args, 2))), nil
 	case strings.Contains(query, "SELECT policy_version, policy_fingerprint, status") && strings.Contains(query, "FROM hosted_policy_versions") && strings.Contains(query, "status = 'active'"):
 		return c.selectActiveHostedPolicyVersion(args)
 	case strings.Contains(query, "SELECT policy_version, policy_fingerprint, status") && strings.Contains(query, "FROM hosted_policy_versions"):
@@ -845,6 +856,76 @@ func snapshotConfigValues(rows []PersistentSnapshotConfigRow) [][]driver.Value {
 		out = append(out, []driver.Value{row.ID, row.Version, fetchedAt, row.TTL, row.Source, row.Status})
 	}
 	return out
+}
+
+func (c *scriptedRegistryConn) hostedReadModelPolicyValues() [][]driver.Value {
+	out := [][]driver.Value{}
+	for _, row := range c.script.rows.HostedPolicyVersions {
+		if row.Status == "active" {
+			out = append(out, []driver.Value{row.PolicySource, row.PolicyVersion, row.PolicyFingerprint})
+		}
+	}
+	return out
+}
+
+func (c *scriptedRegistryConn) hostedReadModelSubjectValues(externalSubjectRef string) [][]driver.Value {
+	out := [][]driver.Value{}
+	for _, row := range c.script.rows.HostedSubjects {
+		if row.ExternalSubjectRef == externalSubjectRef {
+			out = append(out, []driver.Value{row.ID, row.Status})
+		}
+	}
+	return out
+}
+
+func (c *scriptedRegistryConn) hostedReadModelMembershipValues(subjectID string, projectID string) [][]driver.Value {
+	out := [][]driver.Value{}
+	for _, row := range c.script.rows.HostedMemberships {
+		if row.SubjectID == subjectID && row.ProjectID == projectID {
+			out = append(out, []driver.Value{row.ActorID, row.ProjectID, row.OrganizationID, row.Status})
+		}
+	}
+	return out
+}
+
+func (c *scriptedRegistryConn) hostedReadModelRoleValues(subjectID string, projectID string, organizationID string) [][]driver.Value {
+	roleStatus := map[string]string{}
+	for _, row := range c.script.rows.HostedRoles {
+		roleStatus[row.ID] = row.Status
+	}
+	out := [][]driver.Value{}
+	for _, row := range c.script.rows.HostedRoleBindings {
+		if row.SubjectID == subjectID && row.ProjectID == projectID && row.OrganizationID == organizationID && row.Status == "active" && roleStatus[row.RoleID] == "active" {
+			out = append(out, []driver.Value{row.RoleID})
+		}
+	}
+	sortScriptedValues(out)
+	return out
+}
+
+func (c *scriptedRegistryConn) hostedReadModelPermissionValues(subjectID string, projectID string, organizationID string) [][]driver.Value {
+	activeRoles := map[string]bool{}
+	for _, values := range c.hostedReadModelRoleValues(subjectID, projectID, organizationID) {
+		activeRoles[values[0].(string)] = true
+	}
+	permissions := map[string]bool{}
+	for _, row := range c.script.rows.HostedGrants {
+		if activeRoles[row.RoleID] && row.Status == "active" {
+			permissions[row.Permission] = true
+		}
+	}
+	out := [][]driver.Value{}
+	for permission := range permissions {
+		out = append(out, []driver.Value{permission})
+	}
+	sortScriptedValues(out)
+	return out
+}
+
+func sortScriptedValues(values [][]driver.Value) {
+	slices.SortFunc(values, func(left []driver.Value, right []driver.Value) int {
+		return strings.Compare(left[0].(string), right[0].(string))
+	})
 }
 
 func tMustJSON(value any) []byte {

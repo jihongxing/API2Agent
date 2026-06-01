@@ -286,3 +286,40 @@ Completion:
 
 - rollback graph semantics readiness lane: 100%
 - Hosted Control Plane phase estimate: 81%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Read Model Consistency Dogfood v0
+
+Commit: pending until this dogfood slice is committed
+
+Changed:
+
+- added registry-level dogfood that promotes hosted policy draft changes into durable hosted graph rows and resolves them through the existing read model
+- extended the persistent scripted Postgres fixture so the same mutation-written graph rows answer hosted read model queries
+- proved promoted subject, membership, role, binding, and grant rows produce an allowed hosted permission decision with policy-v2 evidence
+- proved rollback changes read-model policy evidence to the rollback version while preserving the v0 policy-version-only graph boundary
+
+Validation:
+
+- `go test ./internal/registry -run "TestPostgresHostedPermissionPolicyMutationReadModelConsistencyDogfood" -v`
+- `go test ./internal/registry -run "TestPostgresHostedPermissionPolicyMutation|TestHostedPermissionReadModel"`
+- `go test ./internal/registry`
+- `go test ./...`
+
+Decision:
+
+- read model consistency dogfood lane is complete for v0
+- promotion-written graph rows are compatible with the hosted permission read model
+- rollback read-model evidence is explicit but does not claim historical graph rewind
+- no standalone dogfood report or closeout document was created under the new documentation policy
+- Hosted Control Plane completion estimate moves to 82%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Private Endpoint Read Model Consistency Wiring v0`
+
+Completion:
+
+- read model consistency dogfood lane: 100%
+- Hosted Control Plane phase estimate: 82%

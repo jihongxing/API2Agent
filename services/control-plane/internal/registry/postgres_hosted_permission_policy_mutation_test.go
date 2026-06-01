@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestPostgresHostedPermissionPolicyMutationWritesDraftChangeReviewAndAudit(t *testing.T) {
@@ -207,6 +209,102 @@ func TestPostgresHostedPermissionPolicyMutationPromoteAppliesGraphChanges(t *tes
 	}
 	if got := script.rows.HostedPolicyVersions[1].Metadata["draft_change_count"]; got != "5" {
 		t.Fatalf("expected policy version metadata to record graph apply count, got %#v", script.rows.HostedPolicyVersions[1].Metadata)
+	}
+}
+
+func TestPostgresHostedPermissionPolicyMutationReadModelConsistencyDogfood(t *testing.T) {
+	rows := hostedPolicyMutationRows()
+	rows.PolicyMutationDrafts = append(rows.PolicyMutationDrafts, PersistentPolicyMutationDraftRow{
+		ID:                     "draft-consistency",
+		ProjectID:              "project-a",
+		OrganizationID:         "org-a",
+		PolicySource:           "hosted_permission_store",
+		BasePolicyVersion:      "policy-v1",
+		DraftPolicyVersion:     "policy-v2",
+		DraftPolicyFingerprint: "sha256:policy-v2",
+		Status:                 "review_requested",
+		ActorID:                "admin-a",
+	})
+	rows.PolicyDraftChanges = append(rows.PolicyDraftChanges,
+		hostedPolicyDraftChange("draft-consistency", 1, "subject", "upsert", "subject-a", map[string]string{
+			"subject_id":           "subject-a",
+			"external_subject_ref": "dogfood/idp/admin",
+			"display_name":         "Dogfood Admin",
+		}),
+		hostedPolicyDraftChange("draft-consistency", 2, "membership", "upsert", "subject-a:project-a", map[string]string{
+			"subject_id": "subject-a",
+			"actor_id":   "actor-a",
+		}),
+		hostedPolicyDraftChange("draft-consistency", 3, "role", "upsert", "policy-admin", map[string]string{
+			"role_id":    "policy-admin",
+			"name":       "Policy Admin",
+			"scope_type": "project",
+		}),
+		hostedPolicyDraftChange("draft-consistency", 4, "role_binding", "upsert", "subject-a:policy-admin", map[string]string{
+			"subject_id": "subject-a",
+			"role_id":    "policy-admin",
+		}),
+		hostedPolicyDraftChange("draft-consistency", 5, "permission_grant", "upsert", "policy-admin:promote", map[string]string{
+			"role_id":    "policy-admin",
+			"permission": PermissionHostedPermissionPolicyPromote,
+			"scope_type": "project",
+		}),
+	)
+	db, script := openScriptedRegistryDB(t, rows)
+	defer db.Close()
+
+	promoteOpts := hostedPolicyMutationOptions("req-consistency-promote", "raw-idempotency-key-consistency-promote")
+	promoteOpts.DraftID = "draft-consistency"
+	if _, err := PromoteHostedPermissionPolicyDraft(context.Background(), db, promoteOpts); err != nil {
+		t.Fatalf("promote consistency draft: %v", err)
+	}
+
+	resolvedAt := time.Date(2026, 6, 2, 1, 0, 0, 0, time.UTC)
+	afterPromote, err := NewHostedPermissionReadModel(db).Resolve(context.Background(), HostedPermissionLookupRequest{
+		PublicPrincipalID:  "public-admin",
+		ExternalSubjectRef: "dogfood/idp/admin",
+		ProjectID:          "project-a",
+		TokenID:            "gateway-token-admin",
+		RequiredPermission: PermissionHostedPermissionPolicyPromote,
+		ResolvedAt:         resolvedAt,
+	})
+	if err != nil {
+		t.Fatalf("resolve after promotion: %v", err)
+	}
+	if !afterPromote.Allowed || afterPromote.PolicyVersion != "policy-v2" || afterPromote.PolicyFingerprint != "sha256:policy-v2" {
+		t.Fatalf("expected read model to allow promoted graph permission with policy-v2 evidence, got %#v", afterPromote)
+	}
+	if !slices.Contains(afterPromote.Roles, "policy-admin") || !slices.Contains(afterPromote.Permissions, PermissionHostedPermissionPolicyPromote) {
+		t.Fatalf("read model did not consume promoted graph rows: %#v", afterPromote)
+	}
+
+	rollbackOpts := hostedPolicyMutationOptions("req-consistency-rollback", "raw-idempotency-key-consistency-rollback")
+	rollbackOpts.TargetPolicyVersion = "policy-v1"
+	rollbackOpts.DraftPolicyVersion = "policy-v1-rollback-1"
+	rollbackOpts.MutationFingerprint = ""
+	if _, err := RollbackHostedPermissionPolicy(context.Background(), db, rollbackOpts); err != nil {
+		t.Fatalf("rollback consistency policy: %v", err)
+	}
+	afterRollback, err := NewHostedPermissionReadModel(db).Resolve(context.Background(), HostedPermissionLookupRequest{
+		PublicPrincipalID:  "public-admin",
+		ExternalSubjectRef: "dogfood/idp/admin",
+		ProjectID:          "project-a",
+		TokenID:            "gateway-token-admin",
+		RequiredPermission: PermissionHostedPermissionPolicyPromote,
+		ResolvedAt:         resolvedAt.Add(time.Minute),
+	})
+	if err != nil {
+		t.Fatalf("resolve after rollback: %v", err)
+	}
+	if !afterRollback.Allowed || afterRollback.PolicyVersion != "policy-v1-rollback-1" || afterRollback.PolicyFingerprint != "sha256:policy-v1" {
+		t.Fatalf("expected rollback to change policy evidence without silently rewinding graph permission, got %#v", afterRollback)
+	}
+	if !slices.Contains(afterRollback.Permissions, PermissionHostedPermissionPolicyPromote) {
+		t.Fatalf("rollback should not claim graph rewind in read model dogfood: %#v", afterRollback)
+	}
+	rollbackMetadata := script.rows.HostedPolicyVersions[len(script.rows.HostedPolicyVersions)-1].Metadata
+	if rollbackMetadata["graph_rollback_status"] != "not_applied" {
+		t.Fatalf("rollback metadata should explain read-model consistency boundary: %#v", rollbackMetadata)
 	}
 }
 
