@@ -159,6 +159,14 @@ func (c *scriptedRegistryConn) rowsFor(query string, args []driver.NamedValue) (
 		return c.insertIdempotencyRecord(query, args)
 	case strings.Contains(query, "SELECT id, request_fingerprint, status, response_body"):
 		return c.selectIdempotencyRecord(args)
+	case strings.Contains(query, "SELECT COALESCE(MAX(change_seq), 0)"):
+		return c.selectPolicyDraftChangeSeq(args)
+	case strings.Contains(query, "SELECT policy_version, policy_fingerprint, status") && strings.Contains(query, "FROM hosted_policy_versions") && strings.Contains(query, "status = 'active'"):
+		return c.selectActiveHostedPolicyVersion(args)
+	case strings.Contains(query, "SELECT policy_version, policy_fingerprint, status") && strings.Contains(query, "FROM hosted_policy_versions"):
+		return c.selectHostedPolicyVersion(args)
+	case strings.Contains(query, "SELECT id, project_id, organization_id, policy_source, base_policy_version"):
+		return c.selectPolicyMutationDraft(args)
 	case strings.Contains(query, "INSERT INTO registry_revisions"):
 		if err := c.applyExec(query, args); err != nil {
 			return nil, err
@@ -234,6 +242,46 @@ func (c *scriptedRegistryConn) selectIdempotencyRecord(args []driver.NamedValue)
 		}
 	}
 	return newScriptedRows([]string{"id", "request_fingerprint", "status", "response_body"}, nil), nil
+}
+
+func (c *scriptedRegistryConn) selectActiveHostedPolicyVersion(args []driver.NamedValue) (driver.Rows, error) {
+	for _, row := range c.script.rows.HostedPolicyVersions {
+		if row.PolicySource == namedString(args, 0) && row.Status == "active" {
+			return newScriptedRows([]string{"policy_version", "policy_fingerprint", "status"}, [][]driver.Value{{row.PolicyVersion, row.PolicyFingerprint, row.Status}}), nil
+		}
+	}
+	return newScriptedRows([]string{"policy_version", "policy_fingerprint", "status"}, nil), nil
+}
+
+func (c *scriptedRegistryConn) selectHostedPolicyVersion(args []driver.NamedValue) (driver.Rows, error) {
+	for _, row := range c.script.rows.HostedPolicyVersions {
+		if row.PolicySource == namedString(args, 0) && row.PolicyVersion == namedString(args, 1) {
+			return newScriptedRows([]string{"policy_version", "policy_fingerprint", "status"}, [][]driver.Value{{row.PolicyVersion, row.PolicyFingerprint, row.Status}}), nil
+		}
+	}
+	return newScriptedRows([]string{"policy_version", "policy_fingerprint", "status"}, nil), nil
+}
+
+func (c *scriptedRegistryConn) selectPolicyMutationDraft(args []driver.NamedValue) (driver.Rows, error) {
+	for _, row := range c.script.rows.PolicyMutationDrafts {
+		if row.ID == namedString(args, 0) {
+			return newScriptedRows(
+				[]string{"id", "project_id", "organization_id", "policy_source", "base_policy_version", "draft_policy_version", "draft_policy_fingerprint", "status", "actor_id"},
+				[][]driver.Value{{row.ID, row.ProjectID, row.OrganizationID, row.PolicySource, row.BasePolicyVersion, row.DraftPolicyVersion, row.DraftPolicyFingerprint, row.Status, row.ActorID}},
+			), nil
+		}
+	}
+	return newScriptedRows([]string{"id", "project_id", "organization_id", "policy_source", "base_policy_version", "draft_policy_version", "draft_policy_fingerprint", "status", "actor_id"}, nil), nil
+}
+
+func (c *scriptedRegistryConn) selectPolicyDraftChangeSeq(args []driver.NamedValue) (driver.Rows, error) {
+	maxSeq := 0
+	for _, row := range c.script.rows.PolicyDraftChanges {
+		if row.DraftID == namedString(args, 0) && row.ChangeSeq > maxSeq {
+			maxSeq = row.ChangeSeq
+		}
+	}
+	return newScriptedRows([]string{"coalesce"}, [][]driver.Value{{int64(maxSeq)}}), nil
 }
 
 func (c *scriptedRegistryConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
@@ -364,7 +412,21 @@ func (c *scriptedRegistryConn) applyExec(query string, args []driver.NamedValue)
 			SourceRevision:      namedString(args, 3),
 		})
 	case strings.Contains(query, "INSERT INTO admin_audit_events"):
-		metadata, err := parseJSONMap(namedBytes(args, 7))
+		resourceType := namedString(args, 2)
+		resourceIDArg := 3
+		requestIDArg := 4
+		outcomeArg := 5
+		errorTypeArg := 6
+		metadataArg := 7
+		if strings.Contains(query, "'hosted_permission_policy'") {
+			resourceType = "hosted_permission_policy"
+			resourceIDArg = 2
+			requestIDArg = 3
+			outcomeArg = 4
+			errorTypeArg = 5
+			metadataArg = 6
+		}
+		metadata, err := parseJSONMap(namedBytes(args, metadataArg))
 		if err != nil {
 			return err
 		}
@@ -373,12 +435,115 @@ func (c *scriptedRegistryConn) applyExec(query string, args []driver.NamedValue)
 			ID:           id,
 			ActorID:      namedString(args, 0),
 			Action:       namedString(args, 1),
-			ResourceType: namedString(args, 2),
-			ResourceID:   namedString(args, 3),
-			RequestID:    namedString(args, 4),
-			Outcome:      namedString(args, 5),
-			ErrorType:    namedString(args, 6),
+			ResourceType: resourceType,
+			ResourceID:   namedString(args, resourceIDArg),
+			RequestID:    namedString(args, requestIDArg),
+			Outcome:      namedString(args, outcomeArg),
+			ErrorType:    namedString(args, errorTypeArg),
 			Metadata:     metadata,
+		})
+	case strings.Contains(query, "INSERT INTO hosted_policy_mutation_drafts"):
+		metadata, err := parseJSONMap(namedBytes(args, 8))
+		if err != nil {
+			return err
+		}
+		c.script.rows.PolicyMutationDrafts = append(c.script.rows.PolicyMutationDrafts, PersistentPolicyMutationDraftRow{
+			ID:                     namedString(args, 0),
+			ProjectID:              namedString(args, 1),
+			OrganizationID:         namedString(args, 2),
+			PolicySource:           namedString(args, 3),
+			BasePolicyVersion:      namedString(args, 4),
+			DraftPolicyVersion:     namedString(args, 5),
+			DraftPolicyFingerprint: namedString(args, 6),
+			Status:                 "draft",
+			ActorID:                namedString(args, 7),
+			Metadata:               metadata,
+		})
+	case strings.Contains(query, "INSERT INTO hosted_policy_mutation_draft_changes"):
+		summary, err := parseJSONMap(namedBytes(args, 8))
+		if err != nil {
+			return err
+		}
+		id := int64(len(c.script.rows.PolicyDraftChanges) + 1)
+		c.script.rows.PolicyDraftChanges = append(c.script.rows.PolicyDraftChanges, PersistentPolicyDraftChangeRow{
+			ID:               id,
+			DraftID:          namedString(args, 0),
+			ChangeSeq:        namedInt(args, 1),
+			ObjectType:       namedString(args, 2),
+			Operation:        namedString(args, 3),
+			ObjectID:         namedString(args, 4),
+			ProjectID:        namedString(args, 5),
+			OrganizationID:   namedString(args, 6),
+			PatchFingerprint: namedString(args, 7),
+			PatchSummary:     summary,
+		})
+	case strings.Contains(query, "UPDATE hosted_policy_mutation_drafts") && strings.Contains(query, "review_requested_by"):
+		metadata, err := parseJSONMap(namedBytes(args, 2))
+		if err != nil {
+			return err
+		}
+		for i := range c.script.rows.PolicyMutationDrafts {
+			if c.script.rows.PolicyMutationDrafts[i].ID == namedString(args, 3) {
+				row := &c.script.rows.PolicyMutationDrafts[i]
+				row.Status = "review_requested"
+				row.ReviewRequestedBy = namedString(args, 0)
+				row.DraftPolicyFingerprint = namedString(args, 1)
+				row.Metadata = metadata
+				return nil
+			}
+		}
+		return fmt.Errorf("policy mutation draft %s not found", namedString(args, 3))
+	case strings.Contains(query, "UPDATE hosted_policy_mutation_drafts") && strings.Contains(query, "promoted_policy_version"):
+		for i := range c.script.rows.PolicyMutationDrafts {
+			if c.script.rows.PolicyMutationDrafts[i].ID == namedString(args, 1) {
+				row := &c.script.rows.PolicyMutationDrafts[i]
+				row.Status = "promoted"
+				row.PromotedPolicyVersion = namedString(args, 0)
+				return nil
+			}
+		}
+		return fmt.Errorf("policy mutation draft %s not found", namedString(args, 1))
+	case strings.Contains(query, "UPDATE hosted_policy_mutation_drafts") && strings.Contains(query, "admin_audit_event_id"):
+		auditID := namedInt64(args, 0)
+		for i := range c.script.rows.PolicyMutationDrafts {
+			if c.script.rows.PolicyMutationDrafts[i].ID == namedString(args, 1) {
+				c.script.rows.PolicyMutationDrafts[i].AdminAuditEventID = &auditID
+				return nil
+			}
+		}
+		return fmt.Errorf("policy mutation draft %s not found", namedString(args, 1))
+	case strings.Contains(query, "UPDATE hosted_policy_mutation_drafts") && strings.Contains(query, "draft_policy_fingerprint"):
+		metadata, err := parseJSONMap(namedBytes(args, 1))
+		if err != nil {
+			return err
+		}
+		for i := range c.script.rows.PolicyMutationDrafts {
+			if c.script.rows.PolicyMutationDrafts[i].ID == namedString(args, 2) {
+				c.script.rows.PolicyMutationDrafts[i].DraftPolicyFingerprint = namedString(args, 0)
+				c.script.rows.PolicyMutationDrafts[i].Metadata = metadata
+				return nil
+			}
+		}
+		return fmt.Errorf("policy mutation draft %s not found", namedString(args, 2))
+	case strings.Contains(query, "UPDATE hosted_policy_versions"):
+		for i := range c.script.rows.HostedPolicyVersions {
+			if c.script.rows.HostedPolicyVersions[i].PolicySource == namedString(args, 0) && c.script.rows.HostedPolicyVersions[i].PolicyVersion == namedString(args, 1) && c.script.rows.HostedPolicyVersions[i].Status == "active" {
+				c.script.rows.HostedPolicyVersions[i].Status = "superseded"
+				return nil
+			}
+		}
+		return fmt.Errorf("active hosted policy version %s/%s not found", namedString(args, 0), namedString(args, 1))
+	case strings.Contains(query, "INSERT INTO hosted_policy_versions"):
+		metadata, err := parseJSONMap(namedBytes(args, 3))
+		if err != nil {
+			return err
+		}
+		c.script.rows.HostedPolicyVersions = append(c.script.rows.HostedPolicyVersions, PersistentHostedPolicyVersionRow{
+			PolicySource:      namedString(args, 0),
+			PolicyVersion:     namedString(args, 1),
+			PolicyFingerprint: namedString(args, 2),
+			Status:            "active",
+			Metadata:          metadata,
 		})
 	case strings.Contains(query, "UPDATE admin_mutation_idempotency_records") && strings.Contains(query, "replay_count"):
 		id := namedInt64(args, 1)
@@ -391,20 +556,50 @@ func (c *scriptedRegistryConn) applyExec(query string, args []driver.NamedValue)
 		}
 		return fmt.Errorf("idempotency record %d not found", id)
 	case strings.Contains(query, "UPDATE admin_mutation_idempotency_records"):
-		id := namedInt64(args, 9)
+		idIndex := 9
+		statusIndex := 0
+		bodyIndex := 1
+		fingerprintIndex := 2
+		registryFingerprintIndex := 3
+		previousFingerprintIndex := 4
+		snapshotVersionIndex := 5
+		noopIndex := 6
+		revisionIndex := 7
+		auditIndex := 8
+		if len(args) == 7 {
+			idIndex = 6
+			statusIndex = -1
+			bodyIndex = 0
+			fingerprintIndex = 1
+			registryFingerprintIndex = 2
+			previousFingerprintIndex = 3
+			snapshotVersionIndex = 4
+			noopIndex = -1
+			revisionIndex = -1
+			auditIndex = 5
+		}
+		id := namedInt64(args, idIndex)
 		for i := range c.script.rows.IdempotencyRecords {
 			if c.script.rows.IdempotencyRecords[i].ID == id {
 				row := &c.script.rows.IdempotencyRecords[i]
 				row.Status = "succeeded"
-				row.ResponseStatusCode = namedInt(args, 0)
-				row.ResponseBody = string(namedBytes(args, 1))
-				row.ResponseFingerprint = namedString(args, 2)
-				row.RegistryFingerprint = namedString(args, 3)
-				row.PreviousRegistryFingerprint = namedString(args, 4)
-				row.SnapshotVersion = namedString(args, 5)
-				row.Noop = namedBool(args, 6)
-				row.RegistryRevisionID = namedInt64Ptr(args, 7)
-				row.AdminAuditEventID = namedInt64Ptr(args, 8)
+				if statusIndex >= 0 {
+					row.ResponseStatusCode = namedInt(args, statusIndex)
+				} else {
+					row.ResponseStatusCode = 200
+				}
+				row.ResponseBody = string(namedBytes(args, bodyIndex))
+				row.ResponseFingerprint = namedString(args, fingerprintIndex)
+				row.RegistryFingerprint = namedString(args, registryFingerprintIndex)
+				row.PreviousRegistryFingerprint = namedString(args, previousFingerprintIndex)
+				row.SnapshotVersion = namedString(args, snapshotVersionIndex)
+				if noopIndex >= 0 {
+					row.Noop = namedBool(args, noopIndex)
+				}
+				if revisionIndex >= 0 {
+					row.RegistryRevisionID = namedInt64Ptr(args, revisionIndex)
+				}
+				row.AdminAuditEventID = namedInt64Ptr(args, auditIndex)
 				return nil
 			}
 		}

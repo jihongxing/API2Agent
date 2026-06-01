@@ -186,6 +186,66 @@ CREATE INDEX admin_mutation_idempotency_records_expires_at
 CREATE INDEX admin_mutation_idempotency_records_request_fingerprint
   ON admin_mutation_idempotency_records (request_fingerprint);
 
+CREATE TABLE hosted_policy_mutation_drafts (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES projects(id) DEFERRABLE INITIALLY DEFERRED,
+  organization_id TEXT NOT NULL,
+  policy_source TEXT NOT NULL,
+  base_policy_version TEXT NOT NULL,
+  draft_policy_version TEXT NOT NULL,
+  draft_policy_fingerprint TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL CHECK (status IN ('draft', 'review_requested', 'promoted', 'abandoned', 'failed')),
+  actor_id TEXT NOT NULL,
+  review_requested_by TEXT NOT NULL DEFAULT '',
+  review_requested_at TIMESTAMPTZ,
+  promoted_policy_version TEXT NOT NULL DEFAULT '',
+  promoted_at TIMESTAMPTZ,
+  admin_audit_event_id BIGINT REFERENCES admin_audit_events(id),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (organization_id <> ''),
+  CHECK (policy_source <> ''),
+  CHECK (base_policy_version <> ''),
+  CHECK (draft_policy_version <> ''),
+  CHECK (actor_id <> ''),
+  CHECK (draft_policy_fingerprint = '' OR draft_policy_fingerprint LIKE 'sha256:%')
+);
+
+CREATE UNIQUE INDEX hosted_policy_mutation_drafts_source_version_unique
+  ON hosted_policy_mutation_drafts (policy_source, draft_policy_version);
+
+CREATE UNIQUE INDEX hosted_policy_mutation_drafts_one_open_actor
+  ON hosted_policy_mutation_drafts (project_id, policy_source, actor_id)
+  WHERE status IN ('draft', 'review_requested');
+
+CREATE INDEX hosted_policy_mutation_drafts_project_status
+  ON hosted_policy_mutation_drafts (project_id, status);
+
+CREATE TABLE hosted_policy_mutation_draft_changes (
+  id BIGSERIAL PRIMARY KEY,
+  draft_id TEXT NOT NULL REFERENCES hosted_policy_mutation_drafts(id) ON DELETE CASCADE,
+  change_seq INTEGER NOT NULL,
+  object_type TEXT NOT NULL CHECK (object_type IN ('subject', 'membership', 'role', 'role_binding', 'permission_grant')),
+  operation TEXT NOT NULL CHECK (operation IN ('upsert', 'revoke', 'disable')),
+  object_id TEXT NOT NULL,
+  project_id TEXT NOT NULL REFERENCES projects(id) DEFERRABLE INITIALLY DEFERRED,
+  organization_id TEXT NOT NULL,
+  patch_fingerprint TEXT NOT NULL,
+  patch_summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (change_seq > 0),
+  CHECK (object_id <> ''),
+  CHECK (organization_id <> ''),
+  CHECK (patch_fingerprint LIKE 'sha256:%')
+);
+
+CREATE UNIQUE INDEX hosted_policy_mutation_draft_changes_sequence_unique
+  ON hosted_policy_mutation_draft_changes (draft_id, change_seq);
+
+CREATE INDEX hosted_policy_mutation_draft_changes_project
+  ON hosted_policy_mutation_draft_changes (project_id, draft_id);
+
 CREATE TABLE hosted_subjects (
   id TEXT PRIMARY KEY,
   external_subject_ref TEXT NOT NULL DEFAULT '',

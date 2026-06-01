@@ -114,3 +114,37 @@ Completion:
 
 - durable private implementation design lane: 100%
 - Hosted Control Plane phase estimate: 75%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
+
+Commit: pending until this implementation slice is committed
+
+Changed:
+
+- added private Postgres-backed hosted permission policy draft, draft-change, review, promotion, and rollback mutation helpers
+- persisted canonical draft change evidence without changing the active read model before promotion
+- reused admin mutation idempotency records for promotion/rollback replay and conflict handling
+- reused admin audit events with hashed idempotency metadata and secret-safe patch summaries
+- extended persistent test rows and the scripted registry DB to cover hosted policy versions, mutation drafts, and draft changes
+
+Validation:
+
+- `go test ./internal/registry -run "TestPostgresHostedPermissionPolicyMutation|TestPersistentRegistrySQLSchemaContainsHostedPolicyMutationDraftBoundary"`
+- `go test ./internal/registry`
+
+Decision:
+
+- durable private implementation lane is complete for v0
+- no per-slice implementation report or closeout document was created under the new documentation policy
+- Hosted Control Plane completion estimate moves to 77%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Durable Private Endpoint/Service Wiring v0`
+
+Completion:
+
+- durable private implementation lane: 100%
+- Hosted Control Plane phase estimate: 77%

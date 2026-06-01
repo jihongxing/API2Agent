@@ -16,6 +16,9 @@ type PersistentRegistryRows struct {
 	ArtifactPublications []PersistentArtifactPublicationRow `json:"snapshot_artifact_publications"`
 	AdminAuditEvents     []PersistentAdminAuditEventRow     `json:"admin_audit_events"`
 	IdempotencyRecords   []PersistentIdempotencyRecordRow   `json:"admin_mutation_idempotency_records"`
+	HostedPolicyVersions []PersistentHostedPolicyVersionRow `json:"hosted_policy_versions"`
+	PolicyMutationDrafts []PersistentPolicyMutationDraftRow `json:"hosted_policy_mutation_drafts"`
+	PolicyDraftChanges   []PersistentPolicyDraftChangeRow   `json:"hosted_policy_mutation_draft_changes"`
 }
 
 type PersistentProjectRow struct {
@@ -141,6 +144,43 @@ type PersistentIdempotencyRecordRow struct {
 	AdminAuditEventID           *int64            `json:"admin_audit_event_id,omitempty"`
 	ReplayCount                 int64             `json:"replay_count"`
 	LastReplayRequestID         string            `json:"last_replay_request_id,omitempty"`
+}
+
+type PersistentHostedPolicyVersionRow struct {
+	PolicySource      string            `json:"policy_source"`
+	PolicyVersion     string            `json:"policy_version"`
+	PolicyFingerprint string            `json:"policy_fingerprint"`
+	Status            string            `json:"status"`
+	Metadata          map[string]string `json:"metadata"`
+}
+
+type PersistentPolicyMutationDraftRow struct {
+	ID                     string            `json:"id"`
+	ProjectID              string            `json:"project_id"`
+	OrganizationID         string            `json:"organization_id"`
+	PolicySource           string            `json:"policy_source"`
+	BasePolicyVersion      string            `json:"base_policy_version"`
+	DraftPolicyVersion     string            `json:"draft_policy_version"`
+	DraftPolicyFingerprint string            `json:"draft_policy_fingerprint"`
+	Status                 string            `json:"status"`
+	ActorID                string            `json:"actor_id"`
+	ReviewRequestedBy      string            `json:"review_requested_by,omitempty"`
+	PromotedPolicyVersion  string            `json:"promoted_policy_version,omitempty"`
+	AdminAuditEventID      *int64            `json:"admin_audit_event_id,omitempty"`
+	Metadata               map[string]string `json:"metadata"`
+}
+
+type PersistentPolicyDraftChangeRow struct {
+	ID               int64             `json:"id,omitempty"`
+	DraftID          string            `json:"draft_id"`
+	ChangeSeq        int               `json:"change_seq"`
+	ObjectType       string            `json:"object_type"`
+	Operation        string            `json:"operation"`
+	ObjectID         string            `json:"object_id"`
+	ProjectID        string            `json:"project_id"`
+	OrganizationID   string            `json:"organization_id"`
+	PatchFingerprint string            `json:"patch_fingerprint"`
+	PatchSummary     map[string]string `json:"patch_summary"`
 }
 
 func MapRegistryToPersistentRows(reg Registry) (PersistentRegistryRows, error) {

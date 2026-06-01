@@ -28,6 +28,8 @@ func TestPersistentRegistrySQLSchemaContainsRequiredTablesAndConstraints(t *test
 		"CREATE TABLE snapshot_artifact_publications",
 		"CREATE TABLE admin_audit_events",
 		"CREATE TABLE admin_mutation_idempotency_records",
+		"CREATE TABLE hosted_policy_mutation_drafts",
+		"CREATE TABLE hosted_policy_mutation_draft_changes",
 		"metadata ? 'base_url'",
 		"default_mode TEXT NOT NULL DEFAULT '' CHECK (default_mode = '' OR default_mode IN",
 		"routing_policies_one_active_global",
@@ -43,6 +45,37 @@ func TestPersistentRegistrySQLSchemaContainsRequiredTablesAndConstraints(t *test
 	for _, item := range required {
 		if !strings.Contains(schema, item) {
 			t.Fatalf("schema missing %q", item)
+		}
+	}
+}
+
+func TestPersistentRegistrySQLSchemaContainsHostedPolicyMutationDraftBoundary(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "schema", "postgres", "001_persistent_registry_store.sql"))
+	if err != nil {
+		t.Fatalf("read sql schema: %v", err)
+	}
+	schema := string(data)
+
+	required := []string{
+		"CREATE TABLE hosted_policy_mutation_drafts",
+		"CREATE TABLE hosted_policy_mutation_draft_changes",
+		"hosted_policy_mutation_drafts_source_version_unique",
+		"hosted_policy_mutation_drafts_one_open_actor",
+		"hosted_policy_mutation_drafts_project_status",
+		"hosted_policy_mutation_draft_changes_sequence_unique",
+		"hosted_policy_mutation_draft_changes_project",
+		"status TEXT NOT NULL CHECK (status IN ('draft', 'review_requested', 'promoted', 'abandoned', 'failed'))",
+		"object_type TEXT NOT NULL CHECK (object_type IN ('subject', 'membership', 'role', 'role_binding', 'permission_grant'))",
+		"operation TEXT NOT NULL CHECK (operation IN ('upsert', 'revoke', 'disable'))",
+		"admin_audit_event_id BIGINT REFERENCES admin_audit_events(id)",
+		"REFERENCES hosted_policy_mutation_drafts(id) ON DELETE CASCADE",
+		"CHECK (draft_policy_fingerprint = '' OR draft_policy_fingerprint LIKE 'sha256:%')",
+		"CHECK (patch_fingerprint LIKE 'sha256:%')",
+		"patch_summary JSONB NOT NULL DEFAULT '{}'::jsonb",
+	}
+	for _, item := range required {
+		if !strings.Contains(schema, item) {
+			t.Fatalf("hosted policy mutation draft schema missing %q", item)
 		}
 	}
 }
