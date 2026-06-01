@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission store read model live Postgres dogfood closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood 和 dogfood closeout 已完成。
+状态：hosted permission read model gateway runtime wiring design 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout 和 gateway runtime wiring design 已完成。
 
 目标：
 
@@ -1027,30 +1027,32 @@ Go Control Plane Hosted Permission Store Read Model v0
 Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
 Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 ```
 
-由于 real Postgres read-model proof 已经关闭，下一项 immediate project task 是 gateway runtime wiring 的精确 contract design，然后再实现。
+由于 gateway runtime wiring contract 已记录，下一项 immediate project task 是 implementation。
 
 范围：
 
-1. 设计 hosted read model 的 gateway runtime permission-source interface。
-2. 定义 public principal input、external subject reference handling、project context、token id evidence、timeout/unavailable behavior 和 stale/ambiguous policy handling。
-3. 定义 trusted header mapping from read-model decisions。
-4. 定义 implementation tests 和 dogfood requirements。
-5. public auth provider implementation、production gateway deployment、decision persistence 和 public management surfaces 保持 out of scope。
+1. 给 local gateway harness/runtime 增加 hosted read-model permission-source mode。
+2. 保留 static fixture mode 用于 focused tests。
+3. 配置后调用 Postgres 上的 `HostedPermissionReadModel.Resolve`。
+4. 把 read-model decisions 映射为 gateway-issued trusted headers。
+5. 证明 success、fail-closed denial、header stripping、Control Plane second-gate behavior、zero decision persistence 和 secret-safe dogfood artifacts。
 6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- gateway runtime wiring design 已记录。
-- fail-closed behavior、trusted-header safety 和 Control Plane second-gate authority 保持明确。
-- runtime implementation、persistence、OAuth/OIDC、public CRUD 和 production deployment 保持 deferred。
+- gateway runtime 有 hosted read-model permission-source mode。
+- real Postgres dogfood 证明 read-model-backed gateway decisions。
+- fail-closed behavior、trusted-header safety 和 Control Plane second-gate authority 保持 intact。
+- persistence、OAuth/OIDC、public CRUD 和 production deployment 保持 deferred。
 - 不包含 granular CRUD API、OAuth/OIDC、vault、billing、marketplace、workflow、provider onboarding、production gateway deployment 或 automatic propagation 工作。
 
 参考：
@@ -1091,6 +1093,7 @@ Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

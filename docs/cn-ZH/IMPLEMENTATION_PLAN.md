@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout Complete
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission read model gateway runtime wiring design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission read model gateway runtime wiring implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1107,11 +1107,16 @@ Go Control Plane Minimum v0
   - remaining risks 是 gateway runtime wiring、decision persistence、seed/migration lifecycle、policy write lifecycle、real public identity lifecycle、production gateway deployment 和 provider ownership hardening。
   - 下一项 hosted-readiness task 是 hosted read-model permission source 的 gateway runtime wiring design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0 已完成：
+  - design 定义了 gateway runtime permission-source interface、read-model request/decision shape、public principal inputs、project context、endpoint mapping、trusted header mapping、timeout/unavailable behavior、tests 和 dogfood requirements。
+  - runtime implementation、decision persistence、public CRUD、OAuth/OIDC、production gateway deployment、vault、billing、marketplace、workflow 和 automatic propagation 保持 out of scope。
+  - 下一项 hosted-readiness task 是 gateway runtime wiring implementation。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 ```
 
 参考：
@@ -1152,6 +1157,7 @@ Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

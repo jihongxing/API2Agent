@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout Complete
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission read model gateway runtime wiring design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission read model gateway runtime wiring implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1107,11 +1107,16 @@ Current Phase 6 progress:
   - remaining risks are gateway runtime wiring, decision persistence, seed/migration lifecycle, policy write lifecycle, real public identity lifecycle, production gateway deployment, and provider ownership hardening.
   - the next hosted-readiness task is gateway runtime wiring design for the hosted read-model permission source.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`.
+- Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0 is complete:
+  - the design specifies the gateway runtime permission-source interface, read-model request/decision shape, public principal inputs, project context, endpoint mapping, trusted header mapping, timeout/unavailable behavior, tests, and dogfood requirements.
+  - runtime implementation, decision persistence, public CRUD, OAuth/OIDC, production gateway deployment, vault, billing, marketplace, workflow, and automatic propagation remain out of scope.
+  - the next hosted-readiness task is gateway runtime wiring implementation.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 ```
 
 References:
@@ -1152,6 +1157,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
