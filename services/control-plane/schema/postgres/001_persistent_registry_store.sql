@@ -14,7 +14,7 @@ CREATE TABLE projects (
 
 CREATE TABLE api_keys (
   id TEXT PRIMARY KEY,
-  project_id TEXT NOT NULL REFERENCES projects(id),
+  project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   key_prefix TEXT NOT NULL DEFAULT '',
   key_hash TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL CHECK (status IN ('active', 'disabled', 'revoked')),
@@ -204,7 +204,7 @@ CREATE TABLE hosted_project_memberships (
   id BIGSERIAL PRIMARY KEY,
   subject_id TEXT NOT NULL REFERENCES hosted_subjects(id),
   actor_id TEXT NOT NULL,
-  project_id TEXT NOT NULL REFERENCES projects(id),
+  project_id TEXT NOT NULL REFERENCES projects(id) DEFERRABLE INITIALLY DEFERRED,
   organization_id TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('active', 'suspended', 'revoked')),
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -242,7 +242,7 @@ CREATE TABLE hosted_role_bindings (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  FOREIGN KEY (subject_id, project_id) REFERENCES hosted_project_memberships(subject_id, project_id),
+  FOREIGN KEY (subject_id, project_id) REFERENCES hosted_project_memberships(subject_id, project_id) DEFERRABLE INITIALLY DEFERRED,
   CHECK (organization_id <> '')
 );
 
@@ -296,7 +296,7 @@ CREATE TABLE hosted_permission_decisions (
   id TEXT PRIMARY KEY,
   subject_id TEXT NOT NULL REFERENCES hosted_subjects(id),
   actor_id TEXT NOT NULL,
-  project_id TEXT NOT NULL REFERENCES projects(id),
+  project_id TEXT NOT NULL REFERENCES projects(id) DEFERRABLE INITIALLY DEFERRED,
   organization_id TEXT NOT NULL,
   token_id TEXT NOT NULL DEFAULT '',
   required_permission TEXT NOT NULL DEFAULT '',

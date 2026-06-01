@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design Complete
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission read model gateway runtime wiring implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission read model gateway runtime wiring closeout。
 
 实现语言决策：
 
@@ -122,12 +122,13 @@ docs/
 
 ```text
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1112,11 +1113,18 @@ Go Control Plane Minimum v0
   - runtime implementation、decision persistence、public CRUD、OAuth/OIDC、production gateway deployment、vault、billing、marketplace、workflow 和 automatic propagation 保持 out of scope。
   - 下一项 hosted-readiness task 是 gateway runtime wiring implementation。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`。
+- Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0 已完成：
+  - local gateway harness 现在有 hosted read-model permission-source mode，通过 local Go lookup helper 和 Postgres DSN 支撑。
+  - static fixture mode 仍保留给 focused tests。
+  - live Postgres dogfood 证明 gateway-local public auth、read-model allow/deny decisions、trusted header injection、Control Plane second-gate behavior、no active/ambiguous policy 503、zero persisted permission decisions 和 secret-safe evidence。
+  - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、decision persistence、vault、billing、marketplace、workflow 和 automatic propagation 仍然 out of scope。
+  - 下一项 hosted-readiness task 是 gateway runtime wiring closeout and phase review。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
 ```
 
 参考：

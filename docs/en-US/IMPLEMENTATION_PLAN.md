@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design Complete
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission read model gateway runtime wiring implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission read model gateway runtime wiring closeout.
 
 Implementation language decision:
 
@@ -122,12 +122,13 @@ Next tooling task:
 
 ```text
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1112,11 +1113,18 @@ Current Phase 6 progress:
   - runtime implementation, decision persistence, public CRUD, OAuth/OIDC, production gateway deployment, vault, billing, marketplace, workflow, and automatic propagation remain out of scope.
   - the next hosted-readiness task is gateway runtime wiring implementation.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`.
+- Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0 is complete:
+  - the local gateway harness now has a hosted read-model permission-source mode backed by a local Go lookup helper and Postgres DSN.
+  - static fixture mode remains available for focused tests.
+  - live Postgres dogfood proves gateway-local public auth, read-model allow/deny decisions, trusted header injection, Control Plane second-gate behavior, no active/ambiguous policy 503s, zero persisted permission decisions, and secret-safe evidence.
+  - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, decision persistence, vault, billing, marketplace, workflow, and automatic propagation remain out of scope.
+  - the next hosted-readiness task is gateway runtime wiring closeout and phase review.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
 ```
 
 References:

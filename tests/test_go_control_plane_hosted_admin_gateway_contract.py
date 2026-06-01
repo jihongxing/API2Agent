@@ -154,6 +154,85 @@ def test_forwarded_headers_strip_public_identity_and_inject_trusted_claims() -> 
     assert forwarded["X-API2Agent-Permission-Decision-ID"] == decision.decision_id
 
 
+def test_read_model_permission_source_maps_helper_payload_and_fail_closed() -> None:
+    harness = load_harness_module()
+
+    class FakeResult:
+        stdout = """
+{
+  "allowed": true,
+  "status": 200,
+  "error_type": "",
+  "deny_reason": "",
+  "subject_id": "gateway-harness-principal",
+  "actor_id": "gateway-harness-actor",
+  "project_id": "gateway-harness-project",
+  "organization_id": "gateway-harness-org",
+  "token_id": "gateway-harness-token-admin",
+  "roles": ["dogfood", "project_admin"],
+  "permissions": ["control_plane.registry.validate"],
+  "required_permission": "control_plane.registry.validate",
+  "policy_source": "hosted-permission-store-fixture",
+  "policy_version": "hosted-policy-v1",
+  "policy_fingerprint": "sha256:hosted-permission-store-fixture-v1",
+  "decision_id": "decision-readmodel",
+  "permission_source": "hosted-permission-store-fixture",
+  "resolved_at": "2026-06-01T00:00:00Z"
+}
+"""
+
+    calls = []
+    original_run = harness.run
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return FakeResult()
+
+    harness.run = fake_run
+    try:
+        source = harness.HostedReadModelPermissionSource(
+            postgres_dsn="postgres://api2agent:secret@127.0.0.1:5432/api2agent?sslmode=disable",
+            lookup_binary=harness.Path("lookup"),
+        )
+        decision = harness.resolve_gateway_admin_principal(
+            {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}"},
+            harness.PERMISSION_REGISTRY_VALIDATE,
+            permission_source=source,
+        )
+    finally:
+        harness.run = original_run
+
+    assert decision.allowed
+    assert decision.decision_id == "decision-readmodel"
+    assert decision.actor_id == harness.HARNESS_ACTOR_ID
+    assert harness.PERMISSION_REGISTRY_VALIDATE in decision.permissions
+    assert calls
+    assert "--external-subject-ref" in calls[0]
+    assert "dogfood/idp/admin" in calls[0]
+    assert harness.PUBLIC_ADMIN_TOKEN not in calls[0]
+
+    def failing_run(cmd, **kwargs):
+        raise RuntimeError("lookup failed")
+
+    harness.run = failing_run
+    try:
+        source = harness.HostedReadModelPermissionSource(
+            postgres_dsn="postgres://api2agent:secret@127.0.0.1:5432/api2agent?sslmode=disable",
+            lookup_binary=harness.Path("lookup"),
+        )
+        failed = harness.resolve_gateway_admin_principal(
+            {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}"},
+            harness.PERMISSION_REGISTRY_VALIDATE,
+            permission_source=source,
+        )
+    finally:
+        harness.run = original_run
+
+    assert not failed.allowed
+    assert failed.status == 503
+    assert failed.error_type == "PERMISSION_SOURCE_UNAVAILABLE"
+
+
 def test_endpoint_permission_map_covers_hosted_admin_gateway_routes() -> None:
     harness = load_harness_module()
 
