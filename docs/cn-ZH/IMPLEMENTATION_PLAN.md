@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Closeout Complete
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence integrity hardening design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence integrity hardening implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1143,11 +1143,16 @@ Go Control Plane Minimum v0
   - remaining risks 是 duplicate/conflicting decision integrity、sentinel schema semantics、harness-scoped persistence、retention/privacy、real public identity lifecycle 和 policy write lifecycle。
   - 下一项 hosted-readiness task 是 hosted permission decision persistence integrity hardening design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0 已完成：
+  - design 定义了 controlled evidence comparison、duplicate-equivalent no-op behavior、conflicting duplicate `PERMISSION_DECISION_INTEGRITY_CONFLICT`、caller failure semantics、sentinel constraints、metadata allowlist、retention/privacy stance、tests 和 live dogfood probes。
+  - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
+  - 下一项 hosted-readiness task 是 hosted permission decision persistence integrity hardening implementation。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
 ```
 
 参考：
@@ -1192,6 +1197,7 @@ Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Desi
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_DESIGN.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

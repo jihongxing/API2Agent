@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Closeout Complete
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design Complete
 ```
 
 Strategic thesis:
@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission decision persistence closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, and decision persistence closeout are complete.
+Status: hosted permission decision persistence integrity hardening design complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, and decision persistence integrity hardening design are complete.
 
 Goal:
 
@@ -1033,31 +1033,34 @@ Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + 
 Go Control Plane Hosted Permission Decision Persistence Design v0
 Go Control Plane Hosted Permission Decision Persistence Implementation v0
 Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
 ```
 
-This hosted-readiness hardening design slice is now the immediate next project task because append-only hosted permission decision persistence is implemented, dogfooded, and accepted for local v0.
+This hosted-readiness implementation slice is now the immediate next project task because duplicate/conflicting decision integrity behavior is designed.
 
 Scope:
 
-1. Design duplicate/conflicting decision evidence integrity behavior.
-2. Decide whether to keep, constrain, or replace sentinel evidence for partial failures.
-3. Define metadata allowlist, redaction, retention, and tenant privacy expectations.
-4. Identify any schema/index/constraint hardening needed for persisted decisions.
-5. Define tests and live dogfood evidence for the hardening slice.
+1. Implement explicit duplicate-equivalent and duplicate-conflict handling for hosted permission decision persistence.
+2. Raise `PERMISSION_DECISION_INTEGRITY_CONFLICT` for conflicting controlled evidence.
+3. Keep allowed conflict fail-closed before forwarding and preserve denied/source-unavailable caller-visible responses.
+4. Constrain sentinel evidence to expected authenticated partial-failure families.
+5. Prove metadata allowlist and secret-safety behavior with tests and live dogfood.
 6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, provider onboarding, OAuth/OIDC, public CRUD, policy write APIs, Data Plane mutable reads, or production gateway deployment.
 
 Exit criteria:
 
-- duplicate decision conflict semantics are explicit.
-- sentinel/partial-failure row semantics are explicitly accepted or replaced.
-- metadata retention/privacy expectations are documented.
-- implementation tests and live dogfood requirements are defined.
+- equivalent duplicate decisions are accepted as no-op success.
+- conflicting duplicate decisions produce explicit integrity evidence.
+- allowed conflict fails closed before forwarding.
+- denied/source-unavailable conflict preserves original fail-closed response and records local evidence.
+- sentinel and metadata constraints are tested.
+- live dogfood includes duplicate-equivalent and duplicate-conflict probes.
 - OAuth/OIDC, public CRUD, production deployment, vault, billing, marketplace, workflow, provider onboarding, policy write APIs, Data Plane mutable reads, and automatic propagation remain deferred.
 
 References:

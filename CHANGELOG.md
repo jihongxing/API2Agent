@@ -339,6 +339,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Decision Persistence design completed with append-only decision evidence ownership, row shape, source-unavailable sentinel evidence, write timing, persistence-failure semantics, secret-safe metadata, retention boundaries, tests, dogfood, and non-goals.
 - Go Control Plane Hosted Permission Decision Persistence implemented with gateway-owned append-only decision writes, source-unavailable sentinel evidence, auth-failure persistence skips, allowed-write-failure fail-closed behavior, regression coverage, and live Postgres dogfood proving 15 secret-safe decision rows.
 - Go Control Plane Hosted Permission Decision Persistence closeout completed; the local v0 proof is accepted, with duplicate/conflicting decision integrity, sentinel schema semantics, production gateway integration, and retention/privacy left as explicit hardening risks.
+- Go Control Plane Hosted Permission Decision Persistence Integrity Hardening design completed with controlled evidence comparison, duplicate conflict semantics, sentinel constraints, metadata allowlist, retention/privacy stance, test requirements, and dogfood probes.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -346,4 +347,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0.
+- Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0.
