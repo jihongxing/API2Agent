@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Closeout Complete
+Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission store read model live Postgres dogfood。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission store read model live Postgres dogfood closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
+Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
+Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1096,11 +1096,17 @@ Go Control Plane Minimum v0
   - remaining risks 是 live Postgres seeded proof、gateway runtime wiring、decision persistence、seed/migration lifecycle、policy write lifecycle、real public identity lifecycle、production gateway deployment 和 provider ownership hardening。
   - 下一项 hosted-readiness task 是 read model 的 live Postgres dogfood。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0 已完成：
+  - 真实 local Postgres dogfood 现在会 apply schema、seed hosted permission rows，并用 pgx 调用 internal read model。
+  - allowed admin evidence、missing membership、suspended membership、revoked/missing permission、no active policy 和 ambiguous active policy 已在真实 SQL 上证明。
+  - decision evidence 保持 secret-safe，且 v0 中 `hosted_permission_decisions` 保持为空。
+  - 下一项 hosted-readiness task 是 live Postgres dogfood closeout and phase review。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
+Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout + Phase Review v0
 ```
 
 参考：
@@ -1139,6 +1145,7 @@ Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_REPORT.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
