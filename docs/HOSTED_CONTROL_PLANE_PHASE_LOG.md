@@ -23,7 +23,7 @@ Completion:
 
 Task: Go Control Plane Hosted Permission Policy Mutation Idempotency Replay Evidence Review + Hosted Control Plane Phase Closeout v0
 
-Commit: `ee84ca3 Close hosted control plane local v0`
+Commit: `a49d383 Close hosted control plane local v0`
 
 Changed:
 
