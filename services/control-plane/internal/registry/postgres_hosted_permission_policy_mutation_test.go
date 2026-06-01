@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"slices"
 	"strings"
 	"testing"
@@ -112,6 +113,11 @@ func TestPostgresHostedPermissionPolicyMutationPromoteReplaysAndRejectsConflicts
 	if record.IdempotencyKeyHash == "raw-idempotency-key-promote" || record.IdempotencyKeyPrefix == "raw-idempotency-key-promote" {
 		t.Fatalf("raw idempotency key leaked into record: %#v", record)
 	}
+	if record.AdminAuditEventID == nil || first.AdminAuditEventID == 0 || *record.AdminAuditEventID != first.AdminAuditEventID || first.IdempotencyRecordID != record.ID {
+		t.Fatalf("expected idempotency/audit linkage evidence: result=%#v record=%#v", first, record)
+	}
+	assertHostedPolicyMutationNoRawValue(t, "raw-idempotency-key-promote", script.rows.IdempotencyRecords, script.rows.AdminAuditEvents, script.rows.HostedPolicyVersions)
+	auditCount := len(script.rows.AdminAuditEvents)
 
 	replayOpts := opts
 	replayOpts.RequestID = "req-promote-replay"
@@ -119,12 +125,13 @@ func TestPostgresHostedPermissionPolicyMutationPromoteReplaysAndRejectsConflicts
 	if err != nil {
 		t.Fatalf("replay hosted policy promotion: %v", err)
 	}
-	if !replayed.Replayed || replayed.PolicyVersion != first.PolicyVersion {
+	if !replayed.Replayed || replayed.PolicyVersion != first.PolicyVersion || replayed.PolicyFingerprint != first.PolicyFingerprint || replayed.IdempotencyRecordID != first.IdempotencyRecordID || replayed.AdminAuditEventID != first.AdminAuditEventID {
 		t.Fatalf("unexpected replay result: first=%#v replay=%#v", first, replayed)
 	}
-	if len(script.rows.HostedPolicyVersions) != 2 || script.rows.IdempotencyRecords[0].ReplayCount != 1 {
+	if len(script.rows.HostedPolicyVersions) != 2 || len(script.rows.AdminAuditEvents) != auditCount || script.rows.IdempotencyRecords[0].ReplayCount != 1 || script.rows.IdempotencyRecords[0].LastReplayRequestID != "req-promote-replay" {
 		t.Fatalf("replay should not create another version and should update replay metadata: versions=%#v idem=%#v", script.rows.HostedPolicyVersions, script.rows.IdempotencyRecords[0])
 	}
+	assertHostedPolicyMutationNoRawValue(t, "raw-idempotency-key-promote", script.rows.IdempotencyRecords, script.rows.AdminAuditEvents, script.rows.HostedPolicyVersions)
 
 	conflictOpts := opts
 	conflictOpts.RequestID = "req-promote-conflict"
@@ -210,6 +217,74 @@ func TestPostgresHostedPermissionPolicyMutationPromoteAppliesGraphChanges(t *tes
 	if got := script.rows.HostedPolicyVersions[1].Metadata["draft_change_count"]; got != "5" {
 		t.Fatalf("expected policy version metadata to record graph apply count, got %#v", script.rows.HostedPolicyVersions[1].Metadata)
 	}
+}
+
+func TestPostgresHostedPermissionPolicyMutationPromoteReplayDoesNotReapplyGraphOrAudit(t *testing.T) {
+	rows := hostedPolicyMutationRows()
+	rows.PolicyMutationDrafts = append(rows.PolicyMutationDrafts, PersistentPolicyMutationDraftRow{
+		ID:                     "draft-replay-graph",
+		ProjectID:              "project-a",
+		OrganizationID:         "org-a",
+		PolicySource:           "hosted_permission_store",
+		BasePolicyVersion:      "policy-v1",
+		DraftPolicyVersion:     "policy-v2",
+		DraftPolicyFingerprint: "sha256:policy-v2",
+		Status:                 "review_requested",
+		ActorID:                "admin-a",
+	})
+	rows.PolicyDraftChanges = append(rows.PolicyDraftChanges,
+		hostedPolicyDraftChange("draft-replay-graph", 1, "subject", "upsert", "subject-a", map[string]string{
+			"subject_id":           "subject-a",
+			"external_subject_ref": "dogfood/idp/admin",
+		}),
+		hostedPolicyDraftChange("draft-replay-graph", 2, "membership", "upsert", "subject-a:project-a", map[string]string{
+			"subject_id": "subject-a",
+			"actor_id":   "actor-a",
+		}),
+		hostedPolicyDraftChange("draft-replay-graph", 3, "role", "upsert", "policy-admin", map[string]string{
+			"role_id":    "policy-admin",
+			"name":       "Policy Admin",
+			"scope_type": "project",
+		}),
+		hostedPolicyDraftChange("draft-replay-graph", 4, "role_binding", "upsert", "subject-a:policy-admin", map[string]string{
+			"subject_id": "subject-a",
+			"role_id":    "policy-admin",
+		}),
+		hostedPolicyDraftChange("draft-replay-graph", 5, "permission_grant", "upsert", "policy-admin:promote", map[string]string{
+			"role_id":    "policy-admin",
+			"permission": PermissionHostedPermissionPolicyPromote,
+			"scope_type": "project",
+		}),
+	)
+	db, script := openScriptedRegistryDB(t, rows)
+	defer db.Close()
+
+	opts := hostedPolicyMutationOptions("req-replay-graph-first", "raw-idempotency-key-replay-graph")
+	opts.DraftID = "draft-replay-graph"
+	first, err := PromoteHostedPermissionPolicyDraft(context.Background(), db, opts)
+	if err != nil {
+		t.Fatalf("promote graph replay draft: %v", err)
+	}
+	counts := hostedPolicyGraphCounts(script.rows)
+	auditCount := len(script.rows.AdminAuditEvents)
+	versionCount := len(script.rows.HostedPolicyVersions)
+
+	replayOpts := opts
+	replayOpts.RequestID = "req-replay-graph-second"
+	replayed, err := PromoteHostedPermissionPolicyDraft(context.Background(), db, replayOpts)
+	if err != nil {
+		t.Fatalf("replay graph promotion: %v", err)
+	}
+	if !replayed.Replayed || replayed.PolicyVersion != first.PolicyVersion || replayed.PolicyFingerprint != first.PolicyFingerprint || replayed.AdminAuditEventID != first.AdminAuditEventID {
+		t.Fatalf("unexpected replay result: first=%#v replay=%#v", first, replayed)
+	}
+	if len(script.rows.HostedPolicyVersions) != versionCount || len(script.rows.AdminAuditEvents) != auditCount || hostedPolicyGraphCounts(script.rows) != counts {
+		t.Fatalf("replay re-applied durable graph/audit writes: counts=%#v after=%#v versions=%#v audits=%#v", counts, hostedPolicyGraphCounts(script.rows), script.rows.HostedPolicyVersions, script.rows.AdminAuditEvents)
+	}
+	if script.rows.IdempotencyRecords[0].ReplayCount != 1 || script.rows.IdempotencyRecords[0].LastReplayRequestID != "req-replay-graph-second" {
+		t.Fatalf("expected replay metadata update, got %#v", script.rows.IdempotencyRecords[0])
+	}
+	assertHostedPolicyMutationNoRawValue(t, "raw-idempotency-key-replay-graph", script.rows.IdempotencyRecords, script.rows.AdminAuditEvents, script.rows.HostedPolicyVersions, script.rows.HostedSubjects, script.rows.HostedMemberships, script.rows.HostedRoles, script.rows.HostedRoleBindings, script.rows.HostedGrants)
 }
 
 func TestPostgresHostedPermissionPolicyMutationReadModelConsistencyDogfood(t *testing.T) {
@@ -446,6 +521,26 @@ func TestPostgresHostedPermissionPolicyMutationRollbackAppendsActiveVersion(t *t
 		script.rows.HostedGrants[0].Metadata["policy_version"] != "policy-v2" {
 		t.Fatalf("rollback should not silently rewrite hosted graph rows: subjects=%#v memberships=%#v roles=%#v bindings=%#v grants=%#v", script.rows.HostedSubjects, script.rows.HostedMemberships, script.rows.HostedRoles, script.rows.HostedRoleBindings, script.rows.HostedGrants)
 	}
+
+	auditCount := len(script.rows.AdminAuditEvents)
+	versionCount := len(script.rows.HostedPolicyVersions)
+	graphCounts := hostedPolicyGraphCounts(script.rows)
+	replayOpts := opts
+	replayOpts.RequestID = "req-rollback-replay"
+	replayed, err := RollbackHostedPermissionPolicy(context.Background(), db, replayOpts)
+	if err != nil {
+		t.Fatalf("replay rollback hosted policy: %v", err)
+	}
+	if !replayed.Replayed || replayed.PolicyVersion != result.PolicyVersion || replayed.PolicyFingerprint != result.PolicyFingerprint || replayed.IdempotencyRecordID != result.IdempotencyRecordID || replayed.AdminAuditEventID != result.AdminAuditEventID {
+		t.Fatalf("unexpected rollback replay result: first=%#v replay=%#v", result, replayed)
+	}
+	if len(script.rows.HostedPolicyVersions) != versionCount || len(script.rows.AdminAuditEvents) != auditCount || hostedPolicyGraphCounts(script.rows) != graphCounts {
+		t.Fatalf("rollback replay should not append policy/audit or rewrite graph rows: versions=%#v audits=%#v graph=%#v", script.rows.HostedPolicyVersions, script.rows.AdminAuditEvents, hostedPolicyGraphCounts(script.rows))
+	}
+	if script.rows.IdempotencyRecords[0].ReplayCount != 1 || script.rows.IdempotencyRecords[0].LastReplayRequestID != "req-rollback-replay" {
+		t.Fatalf("expected rollback replay metadata update, got %#v", script.rows.IdempotencyRecords[0])
+	}
+	assertHostedPolicyMutationNoRawValue(t, "raw-idempotency-key-rollback", script.rows.IdempotencyRecords, script.rows.AdminAuditEvents, script.rows.HostedPolicyVersions)
 }
 
 func TestPostgresHostedPermissionPolicyMutationRejectsSecretUnsafePatchSummary(t *testing.T) {
@@ -504,6 +599,35 @@ func hostedPolicyMutationRows() PersistentRegistryRows {
 			PolicyFingerprint: "sha256:policy-v1",
 			Status:            "active",
 		}},
+	}
+}
+
+type hostedPolicyMutationGraphCounts struct {
+	subjects    int
+	memberships int
+	roles       int
+	bindings    int
+	grants      int
+}
+
+func hostedPolicyGraphCounts(rows PersistentRegistryRows) hostedPolicyMutationGraphCounts {
+	return hostedPolicyMutationGraphCounts{
+		subjects:    len(rows.HostedSubjects),
+		memberships: len(rows.HostedMemberships),
+		roles:       len(rows.HostedRoles),
+		bindings:    len(rows.HostedRoleBindings),
+		grants:      len(rows.HostedGrants),
+	}
+}
+
+func assertHostedPolicyMutationNoRawValue(t *testing.T, raw string, values ...any) {
+	t.Helper()
+	data, err := json.Marshal(values)
+	if err != nil {
+		t.Fatalf("marshal hosted policy mutation evidence: %v", err)
+	}
+	if strings.Contains(string(data), raw) {
+		t.Fatalf("raw secret/idempotency value %q leaked into hosted policy mutation evidence: %s", raw, data)
 	}
 }
 

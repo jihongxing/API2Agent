@@ -1,6 +1,6 @@
 # Hosted Control Plane Phase Log
 
-Status: active
+Status: complete for local v0 (100%)
 
 This is the compact running log for Hosted Control Plane work.
 
@@ -18,6 +18,45 @@ Decision:
 Next:
 Completion:
 ```
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Idempotency Replay Evidence Review + Hosted Control Plane Phase Closeout v0
+
+Commit: `ee84ca3 Close hosted control plane local v0`
+
+Changed:
+
+- strengthened durable hosted policy mutation replay evidence for promotion and rollback
+- proved promotion replay does not append policy versions, re-run hosted graph writes, or create extra admin audit events
+- proved rollback replay keeps policy-version-only rollback semantics stable without graph rewrites or extra audit/version rows
+- verified replay metadata updates `replay_count` and `last_replay_request_id` while preserving idempotency/audit linkage
+- verified raw idempotency keys do not appear in idempotency records, audit events, policy versions, or hosted graph evidence
+- preserved private trusted-gateway-only policy mutation scope and did not add public policy CRUD, OAuth/OIDC, invitation/session lifecycle, deployment, marketplace, vault, billing, workflow, automatic propagation, customer export/delete/legal-hold APIs, or Data Plane mutable Control Plane reads
+
+Validation:
+
+- `go test ./internal/registry -run "TestPostgresHostedPermissionPolicyMutation(PromoteReplaysAndRejectsConflicts|PromoteReplayDoesNotReapplyGraphOrAudit|RollbackAppendsActiveVersion)$" -v`
+- `go test ./internal/registry -run "TestPostgresHostedPermissionPolicyMutation" -v`
+- `go test ./internal/httpapi -run "TestTrustedGatewayHostedPermissionPolicyMutation|TestHostedPermissionPolicyMutation" -v`
+- `go test ./cmd/api2agent-controlplane -v`
+- `go test ./...`
+- `git diff --check`
+
+Decision:
+
+- Hosted Control Plane local v0 is accepted as 100% complete
+- hosted admin identity, trusted gateway authentication, permission source, tenant partition mutation, hosted permission store, decision persistence/retention, and private hosted policy mutation lanes now have implementation, regression, and compact phase-log evidence
+- remaining work belongs to the next phase selection rather than another Hosted Control Plane readiness slice
+
+Next:
+
+- select the post-Hosted Control Plane phase under the compact documentation policy
+
+Completion:
+
+- idempotency replay evidence review lane: 100%
+- Hosted Control Plane phase estimate: 100%
 
 ## 2026-06-02
 

@@ -365,6 +365,8 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Policy Mutation Durable Endpoint Adapter readiness guarded with production runtime adapter interface coverage, Postgres-only mutator exposure, and nil-DB fail-closed proof.
 - Go Control Plane Hosted Permission Policy Mutation Serve Boundary dogfood added for hosted trusted-gateway serve wiring, file-mode mutation unavailability, and Postgres-mode durable adapter fail-closed routing.
 - Go Control Plane Hosted Permission Policy Mutation Operational Error Semantics guarded with hosted private endpoint coverage for policy conflicts, idempotency conflicts/in-progress states, persistent store failures, audit failures, and replay failures.
+- Go Control Plane Hosted Permission Policy Mutation Idempotency Replay Evidence guarded with durable promotion/rollback replay proof that avoids duplicate policy versions, hosted graph rewrites, and extra audit events while preserving replay metadata and secret-safe evidence.
+- Hosted Control Plane local v0 phase closeout accepted at 100% under the compact documentation policy.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -372,4 +374,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0, under the new documentation policy.
+- Select the post-Hosted Control Plane phase under the compact documentation policy.
