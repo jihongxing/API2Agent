@@ -13,6 +13,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Protocol
@@ -33,6 +34,10 @@ PUBLIC_REVOKED_TOKEN = "dogfood-public-revoked-token"
 HOSTED_PERMISSION_STORE_SOURCE = "hosted-permission-store-fixture"
 HOSTED_POLICY_VERSION = "hosted-policy-v1"
 HOSTED_POLICY_FINGERPRINT = "sha256:hosted-permission-store-fixture-v1"
+HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION = "hosted-permission-decision-persistence-v0"
+HOSTED_PERMISSION_SENTINEL_POLICY_SOURCE = "hosted-permission-source-unavailable"
+HOSTED_PERMISSION_SENTINEL_POLICY_VERSION = "unavailable"
+HOSTED_PERMISSION_SENTINEL_POLICY_FINGERPRINT = "sha256:unavailable"
 STATIC_POLICY_SOURCE = HOSTED_PERMISSION_STORE_SOURCE
 STATIC_POLICY_VERSION = HOSTED_POLICY_VERSION
 
@@ -81,6 +86,8 @@ HOP_BY_HOP_RESPONSE_HEADERS = {
     "server",
     "transfer-encoding",
 }
+
+PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE = "PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE"
 
 
 @dataclass(frozen=True)
@@ -489,6 +496,43 @@ def execute_postgres(container: str, sql: str) -> None:
     )
 
 
+def contains_secret_like_material(rendered: str) -> bool:
+    lowered = rendered.lower()
+    forbidden = [
+        GATEWAY_SECRET.lower(),
+        PUBLIC_ADMIN_TOKEN.lower(),
+        PUBLIC_READONLY_TOKEN.lower(),
+        PUBLIC_NO_MEMBERSHIP_TOKEN.lower(),
+        PUBLIC_SUSPENDED_TOKEN.lower(),
+        PUBLIC_REVOKED_TOKEN.lower(),
+        "access_token",
+        "refresh_token",
+        "plaintext",
+        "authorization",
+        "cookie",
+        "vault",
+    ]
+    return any(item in lowered for item in forbidden)
+
+
+def sql_literal(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def sql_text_array(values: tuple[str, ...]) -> str:
+    if not values:
+        return "ARRAY[]::text[]"
+    return "ARRAY[" + ",".join(sql_literal(value) for value in values) + "]::text[]"
+
+
+def utc_now_rfc3339_micro() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
+def should_persist_hosted_permission_decision(decision: "GatewayPermissionDecision") -> bool:
+    return decision.error_type not in {"PUBLIC_AUTH_REQUIRED", "PUBLIC_AUTH_INVALID"}
+
+
 def create_replacement_registry(path: Path) -> dict:
     data = create_harness_project_registry(path)
     provider = data["providers"][0]
@@ -555,7 +599,8 @@ VALUES
   ('{READONLY_POLICY.principal_id}', 'dogfood/idp/readonly', 'Dogfood Readonly', 'active'),
   ('{NO_MEMBERSHIP_SUBJECT_ID}', 'dogfood/idp/no-membership', 'Dogfood No Membership', 'active'),
   ('{SUSPENDED_PRINCIPAL_ID}', 'dogfood/idp/suspended', 'Dogfood Suspended', 'active'),
-  ('{REVOKED_PRINCIPAL_ID}', 'dogfood/idp/revoked', 'Dogfood Revoked', 'active');
+  ('{REVOKED_PRINCIPAL_ID}', 'dogfood/idp/revoked', 'Dogfood Revoked', 'active'),
+  ('unknown-subject', 'dogfood/idp/unknown-subject', 'Unknown Subject Sentinel', 'disabled');
 
 INSERT INTO hosted_project_memberships (subject_id, actor_id, project_id, organization_id, status)
 VALUES
@@ -586,6 +631,9 @@ VALUES
 
 INSERT INTO hosted_policy_versions (policy_source, policy_version, policy_fingerprint, status, activated_at)
 VALUES ('{HOSTED_PERMISSION_STORE_SOURCE}', '{HOSTED_POLICY_VERSION}', '{HOSTED_POLICY_FINGERPRINT}', 'active', now());
+
+INSERT INTO hosted_policy_versions (policy_source, policy_version, policy_fingerprint, status, activated_at)
+VALUES ('{HOSTED_PERMISSION_SENTINEL_POLICY_SOURCE}', '{HOSTED_PERMISSION_SENTINEL_POLICY_VERSION}', '{HOSTED_PERMISSION_SENTINEL_POLICY_FINGERPRINT}', 'draft', NULL);
 """
 
 
@@ -915,6 +963,126 @@ class HostedReadModelPermissionSource:
         )
 
 
+class HostedPermissionDecisionPersistence:
+    def __init__(self, container: str) -> None:
+        self.container = container
+        self.fail_writes = False
+        self.failures: list[dict[str, str]] = []
+
+    def persist(
+        self,
+        decision: GatewayPermissionDecision,
+        *,
+        method: str,
+        path: str,
+        headers: Any,
+        gateway_key_id: str,
+    ) -> None:
+        if self.fail_writes:
+            raise RuntimeError("hosted permission decision persistence is unavailable")
+        decision = self._normalized_decision(decision)
+        metadata = {
+            "decision_status": decision.status,
+            "error_type": decision.error_type,
+            "permission_source": decision.permission_source,
+            "persistence_version": HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION,
+            "request_id": headers.get("X-Request-ID", ""),
+            "method": method,
+            "path": path,
+            "gateway_key_id": gateway_key_id,
+        }
+        metadata = {key: value for key, value in metadata.items() if value not in ("", None)}
+        metadata_json = json.dumps(metadata, sort_keys=True)
+        if contains_secret_like_material(metadata_json):
+            raise RuntimeError("hosted permission decision metadata contains secret-like material")
+        execute_postgres(
+            self.container,
+            f"""
+INSERT INTO hosted_permission_decisions (
+  id,
+  subject_id,
+  actor_id,
+  project_id,
+  organization_id,
+  token_id,
+  required_permission,
+  allowed,
+  deny_reason,
+  roles,
+  permissions,
+  policy_source,
+  policy_version,
+  policy_fingerprint,
+  resolved_at,
+  metadata
+) VALUES (
+  {sql_literal(decision.decision_id)},
+  {sql_literal(decision.subject_id)},
+  {sql_literal(decision.actor_id)},
+  {sql_literal(decision.project_id)},
+  {sql_literal(decision.organization_id)},
+  {sql_literal(decision.token_id)},
+  {sql_literal(decision.required_permission)},
+  {'true' if decision.allowed else 'false'},
+  {sql_literal(decision.deny_reason)},
+  {sql_text_array(decision.roles)},
+  {sql_text_array(decision.permissions)},
+  {sql_literal(decision.policy_source)},
+  {sql_literal(decision.policy_version)},
+  {sql_literal(decision.policy_fingerprint)},
+  {sql_literal(decision.resolved_at)}::timestamptz,
+  {sql_literal(metadata_json)}::jsonb
+)
+ON CONFLICT (id) DO NOTHING;
+""",
+        )
+
+    def record_failure(self, decision: GatewayPermissionDecision, error: Exception) -> None:
+        self.failures.append(
+            {
+                "decision_id": decision.decision_id,
+                "allowed": str(decision.allowed).lower(),
+                "error": str(error),
+            }
+        )
+
+    def _normalized_decision(self, decision: GatewayPermissionDecision) -> GatewayPermissionDecision:
+        subject_id = decision.subject_id or "unknown-subject"
+        actor_id = decision.actor_id or "unknown-actor"
+        project_id = decision.project_id or HARNESS_PROJECT_ID
+        organization_id = decision.organization_id or "unknown-organization"
+        policy_source = decision.policy_source or HOSTED_PERMISSION_SENTINEL_POLICY_SOURCE
+        policy_version = decision.policy_version or HOSTED_PERMISSION_SENTINEL_POLICY_VERSION
+        policy_fingerprint = decision.policy_fingerprint or HOSTED_PERMISSION_SENTINEL_POLICY_FINGERPRINT
+        decision_id = decision.decision_id or permission_decision_id(
+            subject_id=subject_id,
+            project_id=project_id,
+            required_permission=decision.required_permission,
+            policy_version=policy_version,
+            resolved_at=decision.resolved_at,
+        )
+        return GatewayPermissionDecision(
+            allowed=decision.allowed,
+            status=decision.status,
+            error_type=decision.error_type,
+            deny_reason=decision.deny_reason,
+            subject_id=subject_id,
+            actor_id=actor_id,
+            project_id=project_id,
+            organization_id=organization_id,
+            token_id=decision.token_id,
+            roles=decision.roles,
+            permissions=decision.permissions,
+            required_permission=decision.required_permission,
+            policy_source=policy_source,
+            policy_version=policy_version,
+            policy_fingerprint=policy_fingerprint,
+            decision_id=decision_id,
+            permission_source=decision.permission_source or policy_source,
+            resolved_at=decision.resolved_at,
+        )
+
+
 def resolve_gateway_admin_principal(
     headers: Any,
     endpoint_required_permission: str,
@@ -1145,8 +1313,28 @@ class GatewayHarnessHandler(BaseHTTPRequestHandler):
                 permission_source_available=self.server.permission_source_available,
                 permission_store=self.server.permission_store,
                 permission_source=self.server.permission_source,
-                resolved_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                resolved_at=utc_now_rfc3339_micro(),
             )
+            if self.server.decision_persistence is not None and should_persist_hosted_permission_decision(decision):
+                try:
+                    self.server.decision_persistence.persist(
+                        decision,
+                        method=method,
+                        path=path,
+                        headers=self.headers,
+                        gateway_key_id=self.server.gateway_key_id,
+                    )
+                except Exception as exc:
+                    self.server.decision_persistence.record_failure(decision, exc)
+                    if decision.allowed:
+                        self.write_local_error(
+                            503,
+                            PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE,
+                            "hosted permission decision persistence is unavailable",
+                            scope="platform",
+                            retryable=True,
+                        )
+                        return
             if not decision.allowed:
                 self.write_local_error(
                     decision.status,
@@ -1232,6 +1420,7 @@ class GatewayHarnessServer(ThreadingHTTPServer):
         self.permission_source_available = True
         self.permission_store = DEFAULT_PERMISSION_STORE
         self.permission_source: GatewayPermissionSource | None = None
+        self.decision_persistence: HostedPermissionDecisionPersistence | None = None
         self.force_forwarded_permissions: tuple[str, ...] | None = None
         self.permission_decisions: list[GatewayPermissionDecision] = []
 
@@ -1361,6 +1550,7 @@ def main() -> int:
 
         gateway, gateway_thread = start_gateway_harness(gateway_port, control_plane_base_url)
         gateway.permission_source = HostedReadModelPermissionSource(postgres_dsn=dsn, lookup_binary=lookup_binary)
+        gateway.decision_persistence = HostedPermissionDecisionPersistence(container)
         gateway_base_url = f"http://127.0.0.1:{gateway_port}"
         gateway_health = wait_for_health(f"{gateway_base_url}/healthz", server)
 
@@ -1406,6 +1596,25 @@ def main() -> int:
         audit_rows_after_invalid_auth = count_audit_rows(container)
         if audit_rows_after_invalid_auth != audit_rows_before_missing_auth:
             raise RuntimeError("gateway-local invalid public auth failure must not create Control Plane audit rows")
+
+        permission_decision_rows_after_invalid_auth = int(
+            query_postgres_scalar(container, "SELECT count(*) FROM hosted_permission_decisions;")
+        )
+        if permission_decision_rows_after_invalid_auth != 0:
+            raise RuntimeError("gateway auth failures must not create hosted permission decision rows")
+
+        gateway.decision_persistence.fail_writes = True
+        persistence_unavailable_status, persistence_unavailable_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={"Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}"},
+            expected_status={503},
+        )
+        gateway.decision_persistence.fail_writes = False
+        assert_error_type(persistence_unavailable_response, PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE)
+        audit_rows_after_persistence_unavailable = count_audit_rows(container)
+        if audit_rows_after_persistence_unavailable != audit_rows_before_missing_auth:
+            raise RuntimeError("allowed decision persistence failure must fail closed before Control Plane audit")
 
         gateway.permission_source_available = False
         unavailable_status, unavailable_response, _ = request_json(
@@ -1670,10 +1879,94 @@ VALUES ('hosted-permission-store-secondary', 'hosted-policy-v2', 'sha256:hosted-
             "admin_audit_events": 5,
             "idempotency_records": 2,
             "providers": 1,
-            "hosted_permission_decisions": 0,
+            "hosted_permission_decisions": 15,
         }
         if counts != expected_counts:
             raise RuntimeError(f"unexpected persistent counts: {counts}")
+
+        hosted_permission_decision_rows = query_postgres_json(
+            container,
+            f"""
+SELECT json_agg(row_to_json(t) ORDER BY resolved_at, id)
+FROM (
+  SELECT
+    id,
+    subject_id,
+    actor_id,
+    project_id,
+    organization_id,
+    token_id,
+    required_permission,
+    allowed,
+    deny_reason,
+    roles,
+    permissions,
+    policy_source,
+    policy_version,
+    policy_fingerprint,
+    resolved_at,
+    metadata->>'decision_status' AS decision_status,
+    metadata->>'error_type' AS error_type,
+    metadata->>'request_id' AS request_id,
+    metadata->>'method' AS method,
+    metadata->>'path' AS path,
+    metadata->>'gateway_key_id' AS gateway_key_id,
+    metadata->>'persistence_version' AS persistence_version,
+    row_to_json(hosted_permission_decisions)::text LIKE '%{GATEWAY_SECRET}%' AS row_contains_gateway_secret,
+    row_to_json(hosted_permission_decisions)::text LIKE '%{PUBLIC_ADMIN_TOKEN}%'
+      OR row_to_json(hosted_permission_decisions)::text LIKE '%{PUBLIC_READONLY_TOKEN}%'
+      OR row_to_json(hosted_permission_decisions)::text LIKE '%{PUBLIC_NO_MEMBERSHIP_TOKEN}%'
+      OR row_to_json(hosted_permission_decisions)::text LIKE '%{PUBLIC_SUSPENDED_TOKEN}%'
+      OR row_to_json(hosted_permission_decisions)::text LIKE '%{PUBLIC_REVOKED_TOKEN}%' AS row_contains_public_token,
+    lower(row_to_json(hosted_permission_decisions)::text) LIKE '%authorization%' AS row_contains_authorization,
+    lower(row_to_json(hosted_permission_decisions)::text) LIKE '%cookie%' AS row_contains_cookie
+  FROM hosted_permission_decisions
+) AS t;
+""",
+        )
+        if len(hosted_permission_decision_rows) != expected_counts["hosted_permission_decisions"]:
+            raise RuntimeError(f"unexpected hosted permission decision row count: {hosted_permission_decision_rows}")
+        decision_status_counts: dict[str, int] = {}
+        required_permission_counts: dict[str, int] = {}
+        for decision_row in hosted_permission_decision_rows:
+            if not str(decision_row["id"]).startswith("decision-"):
+                raise RuntimeError(f"expected decision id evidence, got {decision_row}")
+            if decision_row["project_id"] != HARNESS_PROJECT_ID:
+                raise RuntimeError(f"expected gateway project context in decision row, got {decision_row}")
+            if decision_row["gateway_key_id"] != GATEWAY_KEY_ID:
+                raise RuntimeError(f"expected gateway key evidence in decision row, got {decision_row}")
+            if decision_row["persistence_version"] != HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION:
+                raise RuntimeError(f"expected persistence version evidence, got {decision_row}")
+            if (
+                decision_row["row_contains_gateway_secret"]
+                or decision_row["row_contains_public_token"]
+                or decision_row["row_contains_authorization"]
+                or decision_row["row_contains_cookie"]
+            ):
+                raise RuntimeError(f"secret-like material leaked into hosted permission decision row: {decision_row}")
+            decision_status = str(decision_row["decision_status"])
+            decision_status_counts[decision_status] = decision_status_counts.get(decision_status, 0) + 1
+            required_permission = str(decision_row["required_permission"])
+            required_permission_counts[required_permission] = required_permission_counts.get(required_permission, 0) + 1
+
+        expected_decision_status_counts = {"200": 7, "403": 5, "503": 3}
+        if decision_status_counts != expected_decision_status_counts:
+            raise RuntimeError(f"unexpected decision status counts: {decision_status_counts}")
+        if required_permission_counts.get(PERMISSION_REGISTRY_VALIDATE) != 9:
+            raise RuntimeError(f"expected nine validate decision rows, got {required_permission_counts}")
+        if required_permission_counts.get(PERMISSION_REGISTRY_IMPORT_REPLACE) != 2:
+            raise RuntimeError(f"expected two import decision rows, got {required_permission_counts}")
+        if required_permission_counts.get(PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE) != 4:
+            raise RuntimeError(f"expected four partition decision rows, got {required_permission_counts}")
+        source_unavailable_rows = [
+            row for row in hosted_permission_decision_rows if row["error_type"] == "PERMISSION_SOURCE_UNAVAILABLE"
+        ]
+        if len(source_unavailable_rows) != 3:
+            raise RuntimeError(f"expected three source-unavailable decision rows, got {source_unavailable_rows}")
+        if not any(row["policy_source"] == HOSTED_PERMISSION_SENTINEL_POLICY_SOURCE for row in source_unavailable_rows):
+            raise RuntimeError(f"expected sentinel policy evidence for unavailable decisions: {source_unavailable_rows}")
+        if any(row["request_id"] in {"dogfood-gateway-contract-readonly-import", "dogfood-gateway-contract-readonly-partition"} and row["allowed"] for row in hosted_permission_decision_rows):
+            raise RuntimeError(f"readonly mutation denials must persist as denied rows: {hosted_permission_decision_rows}")
 
         audit_rows = query_postgres_json(
             container,
@@ -1820,6 +2113,10 @@ FROM (
                 "audit_rows_before_missing_public_auth": audit_rows_before_missing_auth,
                 "audit_rows_after_missing_public_auth": audit_rows_after_missing_auth,
                 "audit_rows_after_invalid_public_auth": audit_rows_after_invalid_auth,
+                "permission_decision_rows_after_invalid_public_auth": permission_decision_rows_after_invalid_auth,
+                "persistence_unavailable_status": persistence_unavailable_status,
+                "persistence_unavailable_error_type": persistence_unavailable_response.get("error", {}).get("error_type"),
+                "audit_rows_after_persistence_unavailable": audit_rows_after_persistence_unavailable,
                 "audit_rows_after_permission_source_unavailable": audit_rows_after_unavailable,
                 "audit_rows_after_missing_membership": audit_rows_after_no_membership,
                 "audit_rows_after_suspended_membership": audit_rows_after_suspended_membership,
@@ -1875,7 +2172,13 @@ FROM (
                     }
                     for decision in gateway.permission_decisions
                 ],
+                "permission_decision_persistence_failures": (
+                    gateway.decision_persistence.failures if gateway.decision_persistence is not None else []
+                ),
                 "audit_counts": counts,
+                "hosted_permission_decision_status_counts": decision_status_counts,
+                "hosted_permission_decision_required_permission_counts": required_permission_counts,
+                "hosted_permission_decision_rows": hosted_permission_decision_rows,
                 "audit_rows": audit_rows,
                 "idempotency_rows": idempotency_rows,
                 "replacement_registry": str(replacement_path),

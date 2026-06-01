@@ -233,6 +233,112 @@ def test_read_model_permission_source_maps_helper_payload_and_fail_closed() -> N
     assert failed.error_type == "PERMISSION_SOURCE_UNAVAILABLE"
 
 
+def test_hosted_permission_decision_persistence_writes_secret_safe_sql() -> None:
+    harness = load_harness_module()
+    captured_sql = []
+    original_execute_postgres = harness.execute_postgres
+
+    def fake_execute_postgres(container, sql):
+        captured_sql.append(sql)
+
+    decision = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}", "X-Request-ID": "req-persist-1"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+    )
+    harness.execute_postgres = fake_execute_postgres
+    try:
+        persistence = harness.HostedPermissionDecisionPersistence("container")
+        persistence.persist(
+            decision,
+            method="POST",
+            path="/v1/admin/registry/validate",
+            headers={"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}", "X-Request-ID": "req-persist-1"},
+            gateway_key_id=harness.GATEWAY_KEY_ID,
+        )
+    finally:
+        harness.execute_postgres = original_execute_postgres
+
+    assert captured_sql
+    sql = captured_sql[0]
+    assert "INSERT INTO hosted_permission_decisions" in sql
+    assert '"request_id": "req-persist-1"' in sql
+    assert harness.HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION in sql
+    assert harness.HOSTED_POLICY_FINGERPRINT in sql
+    assert harness.PUBLIC_ADMIN_TOKEN not in sql
+    assert harness.GATEWAY_SECRET not in sql
+    assert "Authorization" not in sql
+
+
+def test_hosted_permission_decision_persistence_normalizes_unavailable_decision() -> None:
+    harness = load_harness_module()
+    captured_sql = []
+    original_execute_postgres = harness.execute_postgres
+
+    def fake_execute_postgres(container, sql):
+        captured_sql.append(sql)
+
+    decision = harness.GatewayPermissionDecision(
+        allowed=False,
+        status=503,
+        error_type="PERMISSION_SOURCE_UNAVAILABLE",
+        deny_reason="hosted permission read model is unavailable",
+        subject_id="",
+        actor_id="",
+        project_id="",
+        organization_id="",
+        token_id="",
+        roles=(),
+        permissions=(),
+        required_permission=harness.PERMISSION_REGISTRY_VALIDATE,
+        policy_source="",
+        policy_version="",
+        policy_fingerprint="",
+        decision_id="",
+        permission_source="",
+        resolved_at="2026-06-02T00:00:00.000000Z",
+    )
+    harness.execute_postgres = fake_execute_postgres
+    try:
+        persistence = harness.HostedPermissionDecisionPersistence("container")
+        persistence.persist(
+            decision,
+            method="POST",
+            path="/v1/admin/registry/validate",
+            headers={"X-Request-ID": "req-unavailable"},
+            gateway_key_id=harness.GATEWAY_KEY_ID,
+        )
+    finally:
+        harness.execute_postgres = original_execute_postgres
+
+    assert captured_sql
+    sql = captured_sql[0]
+    assert "'unknown-subject'" in sql
+    assert "'unknown-actor'" in sql
+    assert harness.HOSTED_PERMISSION_SENTINEL_POLICY_SOURCE in sql
+    assert harness.HOSTED_PERMISSION_SENTINEL_POLICY_VERSION in sql
+    assert harness.HOSTED_PERMISSION_SENTINEL_POLICY_FINGERPRINT in sql
+    assert "decision-" in sql
+
+
+def test_hosted_permission_decision_persistence_skips_auth_failures_only() -> None:
+    harness = load_harness_module()
+
+    missing = harness.resolve_gateway_admin_principal({}, harness.PERMISSION_REGISTRY_VALIDATE)
+    invalid = harness.resolve_gateway_admin_principal(
+        {"Authorization": "Bearer unknown-public-token"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+    )
+    unavailable_after_auth = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+        permission_source_available=False,
+    )
+
+    assert not harness.should_persist_hosted_permission_decision(missing)
+    assert not harness.should_persist_hosted_permission_decision(invalid)
+    assert harness.should_persist_hosted_permission_decision(unavailable_after_auth)
+
+
 def test_endpoint_permission_map_covers_hosted_admin_gateway_routes() -> None:
     harness = load_harness_module()
 

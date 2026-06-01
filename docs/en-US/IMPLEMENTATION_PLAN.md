@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design Complete
+Go Control Plane Hosted Permission Decision Persistence Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision persistence implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision persistence closeout and phase review.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1130,11 +1130,18 @@ Current Phase 6 progress:
   - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
   - the next hosted-readiness task is hosted permission decision persistence implementation.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`.
+- Go Control Plane Hosted Permission Decision Persistence Implementation v0 is complete:
+  - the local gateway harness now persists append-only hosted permission decision rows for allowed, denied, and source-unavailable authenticated gateway decisions.
+  - missing/invalid public auth and unknown route/method failures remain outside hosted decision persistence.
+  - live Postgres dogfood proves 15 secret-safe persisted decision rows, allowed-write-failure fail-closed behavior, zero decision rows after invalid public auth, and unchanged Control Plane audit/idempotency boundaries.
+  - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
+  - the next hosted-readiness task is hosted permission decision persistence closeout and phase review.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
 ```
 
 References:

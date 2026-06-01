@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design Complete
+Go Control Plane Hosted Permission Decision Persistence Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence closeout and phase review。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1130,11 +1130,18 @@ Go Control Plane Minimum v0
   - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
   - 下一项 hosted-readiness task 是 hosted permission decision persistence implementation。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`。
+- Go Control Plane Hosted Permission Decision Persistence Implementation v0 已完成：
+  - local gateway harness 现在会为 allowed、denied 和 source-unavailable authenticated gateway decisions 写入 append-only hosted permission decision rows。
+  - missing/invalid public auth 与 unknown route/method failures 仍保持在 hosted decision persistence 之外。
+  - live Postgres dogfood 证明 15 条 secret-safe persisted decision rows、allowed-write-failure fail-closed behavior、invalid public auth 后 zero decision rows，以及 Control Plane audit/idempotency boundaries 不变。
+  - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
+  - 下一项 hosted-readiness task 是 hosted permission decision persistence closeout and phase review。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
 ```
 
 参考：

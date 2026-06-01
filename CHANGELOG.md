@@ -337,6 +337,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring implemented with a local Go read-model lookup helper, read-model-backed gateway permission-source mode, static fixture fallback, hosted permission seed rows in gateway dogfood, deferrable hosted permission project references, gateway-local fail-closed evidence, Control Plane second-gate proof, zero persisted permission decisions, and secret-safe live artifact output.
 - Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring closeout completed; the runtime wiring proof is accepted for v0, and the next hosted-readiness gap is hosted permission decision persistence design.
 - Go Control Plane Hosted Permission Decision Persistence design completed with append-only decision evidence ownership, row shape, source-unavailable sentinel evidence, write timing, persistence-failure semantics, secret-safe metadata, retention boundaries, tests, dogfood, and non-goals.
+- Go Control Plane Hosted Permission Decision Persistence implemented with gateway-owned append-only decision writes, source-unavailable sentinel evidence, auth-failure persistence skips, allowed-write-failure fail-closed behavior, regression coverage, and live Postgres dogfood proving 15 secret-safe decision rows.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -344,4 +345,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Decision Persistence Implementation v0.
+- Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0.
