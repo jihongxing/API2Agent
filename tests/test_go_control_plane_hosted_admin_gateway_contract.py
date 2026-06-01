@@ -29,8 +29,11 @@ def test_permission_source_resolves_public_principals_and_denies_before_forwardi
     assert admin.actor_id == harness.HARNESS_ACTOR_ID
     assert harness.PERMISSION_REGISTRY_IMPORT_REPLACE in admin.permissions
     assert harness.PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE in admin.permissions
-    assert admin.policy_source == harness.STATIC_POLICY_SOURCE
-    assert admin.policy_version == harness.STATIC_POLICY_VERSION
+    assert admin.policy_source == harness.HOSTED_PERMISSION_STORE_SOURCE
+    assert admin.policy_version == harness.HOSTED_POLICY_VERSION
+    assert admin.policy_fingerprint == harness.HOSTED_POLICY_FINGERPRINT
+    assert admin.required_permission == harness.PERMISSION_REGISTRY_IMPORT_REPLACE
+    assert admin.decision_id.startswith("decision-")
 
     readonly_validate = harness.resolve_gateway_admin_principal(
         {"Authorization": f"Bearer {harness.PUBLIC_READONLY_TOKEN}"},
@@ -46,6 +49,7 @@ def test_permission_source_resolves_public_principals_and_denies_before_forwardi
     assert not readonly_import.allowed
     assert readonly_import.status == 403
     assert readonly_import.error_type == "PUBLIC_AUTHZ_DENIED"
+    assert readonly_import.policy_fingerprint == harness.HOSTED_POLICY_FINGERPRINT
 
 
 def test_permission_source_failures_are_typed_gateway_local_decisions() -> None:
@@ -69,6 +73,48 @@ def test_permission_source_failures_are_typed_gateway_local_decisions() -> None:
     )
     assert unavailable.status == 503
     assert unavailable.error_type == "PERMISSION_SOURCE_UNAVAILABLE"
+
+
+def test_permission_store_membership_revocation_and_stale_policy_fail_closed() -> None:
+    harness = load_harness_module()
+
+    no_membership = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_NO_MEMBERSHIP_TOKEN}"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+    )
+    assert no_membership.status == 403
+    assert no_membership.error_type == "PUBLIC_AUTHZ_DENIED"
+
+    suspended = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_SUSPENDED_TOKEN}"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+    )
+    assert suspended.status == 403
+    assert suspended.error_type == "PUBLIC_AUTHZ_DENIED"
+    assert suspended.project_id == harness.HARNESS_PROJECT_ID
+
+    revoked_store = harness.DEFAULT_PERMISSION_STORE.without_permission(
+        "project_revoked",
+        harness.PERMISSION_REGISTRY_VALIDATE,
+    )
+    revoked = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_REVOKED_TOKEN}"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+        permission_store=revoked_store,
+    )
+    assert revoked.status == 403
+    assert revoked.error_type == "PUBLIC_AUTHZ_DENIED"
+    assert harness.PERMISSION_REGISTRY_VALIDATE not in revoked.permissions
+    assert revoked.policy_version.endswith("-revoked")
+
+    stale = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+        permission_store=harness.DEFAULT_PERMISSION_STORE.with_stale_policy(),
+    )
+    assert stale.status == 503
+    assert stale.error_type == "PERMISSION_SOURCE_UNAVAILABLE"
+    assert stale.subject_id == harness.HARNESS_PRINCIPAL_ID
 
 
 def test_forwarded_headers_strip_public_identity_and_inject_trusted_claims() -> None:
@@ -102,6 +148,10 @@ def test_forwarded_headers_strip_public_identity_and_inject_trusted_claims() -> 
     assert forwarded["X-API2Agent-Project-ID"] == harness.HARNESS_PROJECT_ID
     assert forwarded["X-API2Agent-Gateway-Key-ID"] == harness.GATEWAY_KEY_ID
     assert harness.PERMISSION_REGISTRY_VALIDATE in forwarded["X-API2Agent-Permissions"]
+    assert forwarded["X-API2Agent-Permission-Source"] == harness.HOSTED_PERMISSION_STORE_SOURCE
+    assert forwarded["X-API2Agent-Policy-Version"] == harness.HOSTED_POLICY_VERSION
+    assert forwarded["X-API2Agent-Policy-Fingerprint"] == harness.HOSTED_POLICY_FINGERPRINT
+    assert forwarded["X-API2Agent-Permission-Decision-ID"] == decision.decision_id
 
 
 def test_endpoint_permission_map_covers_hosted_admin_gateway_routes() -> None:

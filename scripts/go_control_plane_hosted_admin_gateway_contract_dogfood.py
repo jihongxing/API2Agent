@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -26,8 +27,14 @@ GATEWAY_SECRET = "dogfood-trusted-gateway-secret-contract"
 GATEWAY_KEY_ID = "dogfood-gateway-key-contract"
 PUBLIC_ADMIN_TOKEN = "dogfood-public-admin-token"
 PUBLIC_READONLY_TOKEN = "dogfood-public-readonly-token"
-STATIC_POLICY_SOURCE = "hosted-admin-gateway-static-dogfood-policy"
-STATIC_POLICY_VERSION = "static-v1"
+PUBLIC_NO_MEMBERSHIP_TOKEN = "dogfood-public-no-membership-token"
+PUBLIC_SUSPENDED_TOKEN = "dogfood-public-suspended-token"
+PUBLIC_REVOKED_TOKEN = "dogfood-public-revoked-token"
+HOSTED_PERMISSION_STORE_SOURCE = "hosted-permission-store-fixture"
+HOSTED_POLICY_VERSION = "hosted-policy-v1"
+HOSTED_POLICY_FINGERPRINT = "sha256:hosted-permission-store-fixture-v1"
+STATIC_POLICY_SOURCE = HOSTED_PERMISSION_STORE_SOURCE
+STATIC_POLICY_VERSION = HOSTED_POLICY_VERSION
 
 HARNESS_PRINCIPAL_ID = "gateway-harness-principal"
 HARNESS_ACTOR_ID = "gateway-harness-actor"
@@ -77,7 +84,43 @@ HOP_BY_HOP_RESPONSE_HEADERS = {
 
 
 @dataclass(frozen=True)
-class StaticPolicy:
+class PublicPrincipal:
+    public_principal_id: str
+    external_subject_ref: str
+    subject_id: str
+    token_id: str
+
+
+@dataclass(frozen=True)
+class HostedSubject:
+    subject_id: str
+    status: str = "active"
+
+
+@dataclass(frozen=True)
+class HostedProjectMembership:
+    subject_id: str
+    actor_id: str
+    project_id: str
+    organization_id: str
+    status: str = "active"
+
+
+@dataclass(frozen=True)
+class HostedRoleBinding:
+    subject_id: str
+    project_id: str
+    role: str
+
+
+@dataclass(frozen=True)
+class HostedPermissionGrant:
+    role: str
+    permission: str
+
+
+@dataclass(frozen=True)
+class ResolvedHostedPrincipal:
     principal_id: str
     actor_id: str
     project_id: str
@@ -100,13 +143,16 @@ class GatewayPermissionDecision:
     token_id: str = ""
     roles: tuple[str, ...] = ()
     permissions: tuple[str, ...] = ()
-    policy_source: str = STATIC_POLICY_SOURCE
-    policy_version: str = STATIC_POLICY_VERSION
-    permission_source: str = STATIC_POLICY_SOURCE
+    required_permission: str = ""
+    policy_source: str = HOSTED_PERMISSION_STORE_SOURCE
+    policy_version: str = HOSTED_POLICY_VERSION
+    policy_fingerprint: str = HOSTED_POLICY_FINGERPRINT
+    decision_id: str = ""
+    permission_source: str = HOSTED_PERMISSION_STORE_SOURCE
     resolved_at: str = ""
 
 
-ADMIN_POLICY = StaticPolicy(
+ADMIN_POLICY = ResolvedHostedPrincipal(
     principal_id=HARNESS_PRINCIPAL_ID,
     actor_id=HARNESS_ACTOR_ID,
     project_id=HARNESS_PROJECT_ID,
@@ -122,7 +168,7 @@ ADMIN_POLICY = StaticPolicy(
         PERMISSION_DISTRIBUTION_READ_CURRENT,
     ),
 )
-READONLY_POLICY = StaticPolicy(
+READONLY_POLICY = ResolvedHostedPrincipal(
     principal_id="gateway-harness-readonly-principal",
     actor_id="gateway-harness-readonly-actor",
     project_id=HARNESS_PROJECT_ID,
@@ -131,10 +177,170 @@ READONLY_POLICY = StaticPolicy(
     roles=("control-plane-readonly", "dogfood"),
     permissions=(PERMISSION_REGISTRY_VALIDATE, PERMISSION_DISTRIBUTION_READ_CURRENT),
 )
-PUBLIC_TOKEN_POLICIES = {
-    PUBLIC_ADMIN_TOKEN: ADMIN_POLICY,
-    PUBLIC_READONLY_TOKEN: READONLY_POLICY,
+NO_MEMBERSHIP_SUBJECT_ID = "gateway-harness-no-membership-principal"
+SUSPENDED_PRINCIPAL_ID = "gateway-harness-suspended-principal"
+SUSPENDED_ACTOR_ID = "gateway-harness-suspended-actor"
+REVOKED_PRINCIPAL_ID = "gateway-harness-revoked-principal"
+REVOKED_ACTOR_ID = "gateway-harness-revoked-actor"
+
+PUBLIC_PRINCIPALS = {
+    PUBLIC_ADMIN_TOKEN: PublicPrincipal(
+        public_principal_id="public-admin",
+        external_subject_ref="dogfood/idp/admin",
+        subject_id=HARNESS_PRINCIPAL_ID,
+        token_id=HARNESS_TOKEN_ID_ADMIN,
+    ),
+    PUBLIC_READONLY_TOKEN: PublicPrincipal(
+        public_principal_id="public-readonly",
+        external_subject_ref="dogfood/idp/readonly",
+        subject_id=READONLY_POLICY.principal_id,
+        token_id=HARNESS_TOKEN_ID_READONLY,
+    ),
+    PUBLIC_NO_MEMBERSHIP_TOKEN: PublicPrincipal(
+        public_principal_id="public-no-membership",
+        external_subject_ref="dogfood/idp/no-membership",
+        subject_id=NO_MEMBERSHIP_SUBJECT_ID,
+        token_id="gateway-harness-token-no-membership",
+    ),
+    PUBLIC_SUSPENDED_TOKEN: PublicPrincipal(
+        public_principal_id="public-suspended",
+        external_subject_ref="dogfood/idp/suspended",
+        subject_id=SUSPENDED_PRINCIPAL_ID,
+        token_id="gateway-harness-token-suspended",
+    ),
+    PUBLIC_REVOKED_TOKEN: PublicPrincipal(
+        public_principal_id="public-revoked",
+        external_subject_ref="dogfood/idp/revoked",
+        subject_id=REVOKED_PRINCIPAL_ID,
+        token_id="gateway-harness-token-revoked",
+    ),
 }
+
+
+@dataclass(frozen=True)
+class HostedPermissionStore:
+    subjects: tuple[HostedSubject, ...]
+    memberships: tuple[HostedProjectMembership, ...]
+    role_bindings: tuple[HostedRoleBinding, ...]
+    permission_grants: tuple[HostedPermissionGrant, ...]
+    policy_source: str = HOSTED_PERMISSION_STORE_SOURCE
+    policy_version: str = HOSTED_POLICY_VERSION
+    policy_fingerprint: str = HOSTED_POLICY_FINGERPRINT
+    stale_policy: bool = False
+
+    def with_stale_policy(self) -> "HostedPermissionStore":
+        return HostedPermissionStore(
+            subjects=self.subjects,
+            memberships=self.memberships,
+            role_bindings=self.role_bindings,
+            permission_grants=self.permission_grants,
+            policy_source=self.policy_source,
+            policy_version=self.policy_version,
+            policy_fingerprint=self.policy_fingerprint,
+            stale_policy=True,
+        )
+
+    def without_permission(self, role: str, permission: str) -> "HostedPermissionStore":
+        grants = tuple(
+            grant for grant in self.permission_grants if not (grant.role == role and grant.permission == permission)
+        )
+        return HostedPermissionStore(
+            subjects=self.subjects,
+            memberships=self.memberships,
+            role_bindings=self.role_bindings,
+            permission_grants=grants,
+            policy_source=self.policy_source,
+            policy_version=f"{self.policy_version}-revoked",
+            policy_fingerprint=f"sha256:{hashlib.sha256(repr(grants).encode('utf-8')).hexdigest()[:16]}",
+        )
+
+    def subject(self, subject_id: str) -> HostedSubject | None:
+        matches = [subject for subject in self.subjects if subject.subject_id == subject_id]
+        if len(matches) != 1:
+            return None
+        return matches[0]
+
+    def membership(self, subject_id: str, project_id: str) -> HostedProjectMembership | None:
+        matches = [
+            membership
+            for membership in self.memberships
+            if membership.subject_id == subject_id and membership.project_id == project_id
+        ]
+        if len(matches) != 1:
+            return None
+        return matches[0]
+
+    def roles_for(self, subject_id: str, project_id: str) -> tuple[str, ...]:
+        return tuple(
+            sorted(
+                binding.role
+                for binding in self.role_bindings
+                if binding.subject_id == subject_id and binding.project_id == project_id
+            )
+        )
+
+    def permissions_for(self, roles: tuple[str, ...]) -> tuple[str, ...]:
+        permissions = sorted({grant.permission for grant in self.permission_grants if grant.role in roles})
+        return tuple(permissions)
+
+
+def default_permission_store() -> HostedPermissionStore:
+    return HostedPermissionStore(
+        subjects=(
+            HostedSubject(HARNESS_PRINCIPAL_ID),
+            HostedSubject(READONLY_POLICY.principal_id),
+            HostedSubject(NO_MEMBERSHIP_SUBJECT_ID),
+            HostedSubject(SUSPENDED_PRINCIPAL_ID),
+            HostedSubject(REVOKED_PRINCIPAL_ID),
+        ),
+        memberships=(
+            HostedProjectMembership(
+                subject_id=HARNESS_PRINCIPAL_ID,
+                actor_id=HARNESS_ACTOR_ID,
+                project_id=HARNESS_PROJECT_ID,
+                organization_id=HARNESS_ORGANIZATION_ID,
+            ),
+            HostedProjectMembership(
+                subject_id=READONLY_POLICY.principal_id,
+                actor_id=READONLY_POLICY.actor_id,
+                project_id=HARNESS_PROJECT_ID,
+                organization_id=HARNESS_ORGANIZATION_ID,
+            ),
+            HostedProjectMembership(
+                subject_id=SUSPENDED_PRINCIPAL_ID,
+                actor_id=SUSPENDED_ACTOR_ID,
+                project_id=HARNESS_PROJECT_ID,
+                organization_id=HARNESS_ORGANIZATION_ID,
+                status="suspended",
+            ),
+            HostedProjectMembership(
+                subject_id=REVOKED_PRINCIPAL_ID,
+                actor_id=REVOKED_ACTOR_ID,
+                project_id=HARNESS_PROJECT_ID,
+                organization_id=HARNESS_ORGANIZATION_ID,
+            ),
+        ),
+        role_bindings=(
+            HostedRoleBinding(HARNESS_PRINCIPAL_ID, HARNESS_PROJECT_ID, "project_admin"),
+            HostedRoleBinding(READONLY_POLICY.principal_id, HARNESS_PROJECT_ID, "project_readonly"),
+            HostedRoleBinding(SUSPENDED_PRINCIPAL_ID, HARNESS_PROJECT_ID, "project_admin"),
+            HostedRoleBinding(REVOKED_PRINCIPAL_ID, HARNESS_PROJECT_ID, "project_revoked"),
+        ),
+        permission_grants=(
+            HostedPermissionGrant("project_admin", PERMISSION_REGISTRY_VALIDATE),
+            HostedPermissionGrant("project_admin", PERMISSION_REGISTRY_IMPORT_REPLACE),
+            HostedPermissionGrant("project_admin", PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE),
+            HostedPermissionGrant("project_admin", PERMISSION_SNAPSHOT_EXPORT_ARTIFACT),
+            HostedPermissionGrant("project_admin", PERMISSION_DISTRIBUTION_PUBLISH),
+            HostedPermissionGrant("project_admin", PERMISSION_DISTRIBUTION_READ_CURRENT),
+            HostedPermissionGrant("project_readonly", PERMISSION_REGISTRY_VALIDATE),
+            HostedPermissionGrant("project_readonly", PERMISSION_DISTRIBUTION_READ_CURRENT),
+            HostedPermissionGrant("project_revoked", PERMISSION_REGISTRY_VALIDATE),
+        ),
+    )
+
+
+DEFAULT_PERMISSION_STORE = default_permission_store()
 
 
 def run(cmd: list[str], *, cwd: Path = REPO_ROOT, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
@@ -337,65 +543,173 @@ def endpoint_permission(method: str, path: str) -> str | None:
     return ENDPOINT_PERMISSIONS.get((method.upper(), path))
 
 
+def permission_decision_id(
+    *,
+    subject_id: str,
+    project_id: str,
+    required_permission: str,
+    policy_version: str,
+    resolved_at: str,
+) -> str:
+    source = "|".join([subject_id, project_id, required_permission, policy_version, resolved_at])
+    return f"decision-{hashlib.sha256(source.encode('utf-8')).hexdigest()[:16]}"
+
+
+def denied_permission_decision(
+    *,
+    status: int,
+    error_type: str,
+    deny_reason: str,
+    required_permission: str,
+    resolved_at: str,
+    store: HostedPermissionStore = DEFAULT_PERMISSION_STORE,
+    subject_id: str = "",
+    actor_id: str = "",
+    project_id: str = "",
+    organization_id: str = "",
+    token_id: str = "",
+    roles: tuple[str, ...] = (),
+    permissions: tuple[str, ...] = (),
+) -> GatewayPermissionDecision:
+    return GatewayPermissionDecision(
+        allowed=False,
+        status=status,
+        error_type=error_type,
+        deny_reason=deny_reason,
+        subject_id=subject_id,
+        actor_id=actor_id,
+        project_id=project_id,
+        organization_id=organization_id,
+        token_id=token_id,
+        roles=roles,
+        permissions=permissions,
+        required_permission=required_permission,
+        policy_source=store.policy_source,
+        policy_version=store.policy_version,
+        policy_fingerprint=store.policy_fingerprint,
+        decision_id=permission_decision_id(
+            subject_id=subject_id,
+            project_id=project_id,
+            required_permission=required_permission,
+            policy_version=store.policy_version,
+            resolved_at=resolved_at,
+        ),
+        permission_source=store.policy_source,
+        resolved_at=resolved_at,
+    )
+
+
 def resolve_gateway_admin_principal(
     headers: Any,
     endpoint_required_permission: str,
     *,
     permission_source_available: bool = True,
+    permission_store: HostedPermissionStore = DEFAULT_PERMISSION_STORE,
+    project_context: str = HARNESS_PROJECT_ID,
     resolved_at: str = "2026-06-01T00:00:00Z",
 ) -> GatewayPermissionDecision:
     if not permission_source_available:
-        return GatewayPermissionDecision(
-            allowed=False,
+        return denied_permission_decision(
             status=503,
             error_type="PERMISSION_SOURCE_UNAVAILABLE",
-            deny_reason="gateway permission source is unavailable",
+            deny_reason="hosted permission store is unavailable",
+            required_permission=endpoint_required_permission,
             resolved_at=resolved_at,
+            store=permission_store,
         )
 
     token = bearer_token(headers.get("Authorization", ""))
     if token is None:
-        return GatewayPermissionDecision(
-            allowed=False,
+        return denied_permission_decision(
             status=401,
             error_type="PUBLIC_AUTH_REQUIRED",
             deny_reason="public bearer authorization is required",
+            required_permission=endpoint_required_permission,
             resolved_at=resolved_at,
+            store=permission_store,
         )
 
-    policy = PUBLIC_TOKEN_POLICIES.get(token)
-    if policy is None:
-        return GatewayPermissionDecision(
-            allowed=False,
+    public_principal = PUBLIC_PRINCIPALS.get(token)
+    if public_principal is None:
+        return denied_permission_decision(
             status=401,
             error_type="PUBLIC_AUTH_INVALID",
             deny_reason="public bearer authorization is invalid",
+            required_permission=endpoint_required_permission,
             resolved_at=resolved_at,
+            store=permission_store,
         )
 
-    if not policy.project_id:
-        return GatewayPermissionDecision(
-            allowed=False,
+    if permission_store.stale_policy:
+        return denied_permission_decision(
+            status=503,
+            error_type="PERMISSION_SOURCE_UNAVAILABLE",
+            deny_reason="hosted permission policy view is stale or ambiguous",
+            required_permission=endpoint_required_permission,
+            resolved_at=resolved_at,
+            store=permission_store,
+            subject_id=public_principal.subject_id,
+            token_id=public_principal.token_id,
+        )
+
+    subject = permission_store.subject(public_principal.subject_id)
+    if subject is None or subject.status != "active":
+        return denied_permission_decision(
             status=403,
             error_type="PUBLIC_AUTHZ_DENIED",
-            deny_reason="public principal is missing project scope",
+            deny_reason="public principal subject is not active",
+            required_permission=endpoint_required_permission,
             resolved_at=resolved_at,
+            store=permission_store,
+            subject_id=public_principal.subject_id,
+            token_id=public_principal.token_id,
         )
 
-    if endpoint_required_permission not in policy.permissions:
-        return GatewayPermissionDecision(
-            allowed=False,
+    membership = permission_store.membership(public_principal.subject_id, project_context)
+    if membership is None:
+        return denied_permission_decision(
+            status=403,
+            error_type="PUBLIC_AUTHZ_DENIED",
+            deny_reason="public principal is missing project membership",
+            required_permission=endpoint_required_permission,
+            resolved_at=resolved_at,
+            store=permission_store,
+            subject_id=public_principal.subject_id,
+            token_id=public_principal.token_id,
+        )
+
+    if membership.status != "active":
+        return denied_permission_decision(
+            status=403,
+            error_type="PUBLIC_AUTHZ_DENIED",
+            deny_reason="public principal project membership is inactive",
+            required_permission=endpoint_required_permission,
+            resolved_at=resolved_at,
+            store=permission_store,
+            subject_id=public_principal.subject_id,
+            actor_id=membership.actor_id,
+            project_id=membership.project_id,
+            organization_id=membership.organization_id,
+            token_id=public_principal.token_id,
+        )
+
+    roles = permission_store.roles_for(public_principal.subject_id, membership.project_id)
+    permissions = permission_store.permissions_for(roles)
+    if endpoint_required_permission not in permissions:
+        return denied_permission_decision(
             status=403,
             error_type="PUBLIC_AUTHZ_DENIED",
             deny_reason="public principal lacks endpoint permission",
-            subject_id=policy.principal_id,
-            actor_id=policy.actor_id,
-            project_id=policy.project_id,
-            organization_id=policy.organization_id,
-            token_id=policy.token_id,
-            roles=policy.roles,
-            permissions=policy.permissions,
+            required_permission=endpoint_required_permission,
             resolved_at=resolved_at,
+            store=permission_store,
+            subject_id=public_principal.subject_id,
+            actor_id=membership.actor_id,
+            project_id=membership.project_id,
+            organization_id=membership.organization_id,
+            token_id=public_principal.token_id,
+            roles=roles,
+            permissions=permissions,
         )
 
     return GatewayPermissionDecision(
@@ -403,13 +717,25 @@ def resolve_gateway_admin_principal(
         status=200,
         error_type="",
         deny_reason="",
-        subject_id=policy.principal_id,
-        actor_id=policy.actor_id,
-        project_id=policy.project_id,
-        organization_id=policy.organization_id,
-        token_id=policy.token_id,
-        roles=policy.roles,
-        permissions=policy.permissions,
+        subject_id=public_principal.subject_id,
+        actor_id=membership.actor_id,
+        project_id=membership.project_id,
+        organization_id=membership.organization_id,
+        token_id=public_principal.token_id,
+        roles=roles,
+        permissions=permissions,
+        required_permission=endpoint_required_permission,
+        policy_source=permission_store.policy_source,
+        policy_version=permission_store.policy_version,
+        policy_fingerprint=permission_store.policy_fingerprint,
+        decision_id=permission_decision_id(
+            subject_id=public_principal.subject_id,
+            project_id=membership.project_id,
+            required_permission=endpoint_required_permission,
+            policy_version=permission_store.policy_version,
+            resolved_at=resolved_at,
+        ),
+        permission_source=permission_store.policy_source,
         resolved_at=resolved_at,
     )
 
@@ -442,6 +768,10 @@ def forwarded_headers(
             "X-API2Agent-Token-ID": decision.token_id,
             "X-API2Agent-Roles": ",".join(decision.roles),
             "X-API2Agent-Permissions": ",".join(permissions),
+            "X-API2Agent-Permission-Source": decision.policy_source,
+            "X-API2Agent-Policy-Version": decision.policy_version,
+            "X-API2Agent-Policy-Fingerprint": decision.policy_fingerprint,
+            "X-API2Agent-Permission-Decision-ID": decision.decision_id,
         }
     )
     return forwarded
@@ -496,14 +826,44 @@ def assert_contract_helpers() -> None:
     if not readonly_decision.allowed:
         raise RuntimeError(f"expected readonly policy decision to allow validation, got {readonly_decision}")
     readonly = forwarded_headers({}, readonly_decision, gateway_secret=GATEWAY_SECRET, gateway_key_id=GATEWAY_KEY_ID)
-    if readonly["X-API2Agent-Permissions"] != "control_plane.registry.validate,control_plane.distribution.read_current":
+    if readonly["X-API2Agent-Permissions"] != "control_plane.distribution.read_current,control_plane.registry.validate":
         raise RuntimeError(f"expected readonly policy to inject limited permissions, got {readonly}")
+    if readonly["X-API2Agent-Policy-Version"] != HOSTED_POLICY_VERSION:
+        raise RuntimeError(f"expected hosted policy version evidence, got {readonly}")
+    if readonly["X-API2Agent-Permission-Decision-ID"] == "":
+        raise RuntimeError(f"expected hosted permission decision id evidence, got {readonly}")
     readonly_import = resolve_gateway_admin_principal(
         {"Authorization": f"Bearer {PUBLIC_READONLY_TOKEN}"},
         PERMISSION_REGISTRY_IMPORT_REPLACE,
     )
     if readonly_import.allowed or readonly_import.error_type != "PUBLIC_AUTHZ_DENIED":
         raise RuntimeError(f"expected readonly import/replace to fail locally, got {readonly_import}")
+    no_membership = resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {PUBLIC_NO_MEMBERSHIP_TOKEN}"},
+        PERMISSION_REGISTRY_VALIDATE,
+    )
+    if no_membership.allowed or no_membership.error_type != "PUBLIC_AUTHZ_DENIED":
+        raise RuntimeError(f"expected no-membership principal to fail locally, got {no_membership}")
+    suspended = resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {PUBLIC_SUSPENDED_TOKEN}"},
+        PERMISSION_REGISTRY_VALIDATE,
+    )
+    if suspended.allowed or suspended.error_type != "PUBLIC_AUTHZ_DENIED":
+        raise RuntimeError(f"expected suspended membership to fail locally, got {suspended}")
+    revoked = resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {PUBLIC_REVOKED_TOKEN}"},
+        PERMISSION_REGISTRY_VALIDATE,
+        permission_store=DEFAULT_PERMISSION_STORE.without_permission("project_revoked", PERMISSION_REGISTRY_VALIDATE),
+    )
+    if revoked.allowed or revoked.error_type != "PUBLIC_AUTHZ_DENIED":
+        raise RuntimeError(f"expected revoked permission to fail locally, got {revoked}")
+    stale = resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}"},
+        PERMISSION_REGISTRY_VALIDATE,
+        permission_store=DEFAULT_PERMISSION_STORE.with_stale_policy(),
+    )
+    if stale.allowed or stale.status != 503 or stale.error_type != "PERMISSION_SOURCE_UNAVAILABLE":
+        raise RuntimeError(f"expected stale policy to fail closed, got {stale}")
     if endpoint_permission("POST", "/v1/admin/distribution/publish") != PERMISSION_DISTRIBUTION_PUBLISH:
         raise RuntimeError("expected gateway route map to include distribution publish permission")
     if endpoint_permission("GET", "/v1/admin/distribution/current") != PERMISSION_DISTRIBUTION_READ_CURRENT:
@@ -554,6 +914,7 @@ class GatewayHarnessHandler(BaseHTTPRequestHandler):
                 self.headers,
                 required_permission,
                 permission_source_available=self.server.permission_source_available,
+                permission_store=self.server.permission_store,
                 resolved_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             )
             if not decision.allowed:
@@ -639,6 +1000,7 @@ class GatewayHarnessServer(ThreadingHTTPServer):
         self.gateway_secret = gateway_secret
         self.gateway_key_id = gateway_key_id
         self.permission_source_available = True
+        self.permission_store = DEFAULT_PERMISSION_STORE
         self.force_forwarded_permissions: tuple[str, ...] | None = None
         self.permission_decisions: list[GatewayPermissionDecision] = []
 
@@ -656,7 +1018,14 @@ def count_audit_rows(container: str) -> int:
 
 def assert_no_secret_or_public_token_leaks(report: dict) -> None:
     rendered = json.dumps(report, sort_keys=True)
-    forbidden = [GATEWAY_SECRET, PUBLIC_ADMIN_TOKEN, PUBLIC_READONLY_TOKEN]
+    forbidden = [
+        GATEWAY_SECRET,
+        PUBLIC_ADMIN_TOKEN,
+        PUBLIC_READONLY_TOKEN,
+        PUBLIC_NO_MEMBERSHIP_TOKEN,
+        PUBLIC_SUSPENDED_TOKEN,
+        PUBLIC_REVOKED_TOKEN,
+    ]
     leaked = [value for value in forbidden if value in rendered]
     if leaked:
         raise RuntimeError("report artifact contains raw secret or public token")
@@ -815,6 +1184,57 @@ def main() -> int:
         audit_rows_after_unavailable = count_audit_rows(container)
         if audit_rows_after_unavailable != audit_rows_before_missing_auth:
             raise RuntimeError("gateway-local permission source failure must not create Control Plane audit rows")
+
+        no_membership_status, no_membership_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={"Authorization": f"Bearer {PUBLIC_NO_MEMBERSHIP_TOKEN}"},
+            expected_status={403},
+        )
+        assert_error_type(no_membership_response, "PUBLIC_AUTHZ_DENIED")
+        audit_rows_after_no_membership = count_audit_rows(container)
+        if audit_rows_after_no_membership != audit_rows_before_missing_auth:
+            raise RuntimeError("gateway-local missing membership denial must not create Control Plane audit rows")
+
+        suspended_membership_status, suspended_membership_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={"Authorization": f"Bearer {PUBLIC_SUSPENDED_TOKEN}"},
+            expected_status={403},
+        )
+        assert_error_type(suspended_membership_response, "PUBLIC_AUTHZ_DENIED")
+        audit_rows_after_suspended_membership = count_audit_rows(container)
+        if audit_rows_after_suspended_membership != audit_rows_before_missing_auth:
+            raise RuntimeError("gateway-local suspended membership denial must not create Control Plane audit rows")
+
+        gateway.permission_store = DEFAULT_PERMISSION_STORE.without_permission(
+            "project_revoked",
+            PERMISSION_REGISTRY_VALIDATE,
+        )
+        revoked_permission_status, revoked_permission_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={"Authorization": f"Bearer {PUBLIC_REVOKED_TOKEN}"},
+            expected_status={403},
+        )
+        gateway.permission_store = DEFAULT_PERMISSION_STORE
+        assert_error_type(revoked_permission_response, "PUBLIC_AUTHZ_DENIED")
+        audit_rows_after_revoked_permission = count_audit_rows(container)
+        if audit_rows_after_revoked_permission != audit_rows_before_missing_auth:
+            raise RuntimeError("gateway-local revoked permission denial must not create Control Plane audit rows")
+
+        gateway.permission_store = DEFAULT_PERMISSION_STORE.with_stale_policy()
+        stale_policy_status, stale_policy_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={"Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}"},
+            expected_status={503},
+        )
+        gateway.permission_store = DEFAULT_PERMISSION_STORE
+        assert_error_type(stale_policy_response, "PERMISSION_SOURCE_UNAVAILABLE")
+        audit_rows_after_stale_policy = count_audit_rows(container)
+        if audit_rows_after_stale_policy != audit_rows_before_missing_auth:
+            raise RuntimeError("gateway-local stale policy failure must not create Control Plane audit rows")
 
         validate_status, validate_response, _ = request_json(
             "POST",
@@ -1103,8 +1523,9 @@ FROM (
                 "seed_stdout": seed.stdout.strip(),
                 "control_plane_health": control_plane_health,
                 "gateway_health": gateway_health,
-                "permission_source": STATIC_POLICY_SOURCE,
-                "policy_version": STATIC_POLICY_VERSION,
+                "permission_source": HOSTED_PERMISSION_STORE_SOURCE,
+                "policy_version": HOSTED_POLICY_VERSION,
+                "policy_fingerprint": HOSTED_POLICY_FINGERPRINT,
                 "endpoint_permission_map": {
                     f"{method} {path}": permission for (method, path), permission in sorted(ENDPOINT_PERMISSIONS.items())
                 },
@@ -1118,10 +1539,22 @@ FROM (
                 "invalid_public_auth_error_type": invalid_public_auth_response.get("error", {}).get("error_type"),
                 "permission_source_unavailable_status": unavailable_status,
                 "permission_source_unavailable_error_type": unavailable_response.get("error", {}).get("error_type"),
+                "missing_membership_status": no_membership_status,
+                "missing_membership_error_type": no_membership_response.get("error", {}).get("error_type"),
+                "suspended_membership_status": suspended_membership_status,
+                "suspended_membership_error_type": suspended_membership_response.get("error", {}).get("error_type"),
+                "revoked_permission_status": revoked_permission_status,
+                "revoked_permission_error_type": revoked_permission_response.get("error", {}).get("error_type"),
+                "stale_policy_status": stale_policy_status,
+                "stale_policy_error_type": stale_policy_response.get("error", {}).get("error_type"),
                 "audit_rows_before_missing_public_auth": audit_rows_before_missing_auth,
                 "audit_rows_after_missing_public_auth": audit_rows_after_missing_auth,
                 "audit_rows_after_invalid_public_auth": audit_rows_after_invalid_auth,
                 "audit_rows_after_permission_source_unavailable": audit_rows_after_unavailable,
+                "audit_rows_after_missing_membership": audit_rows_after_no_membership,
+                "audit_rows_after_suspended_membership": audit_rows_after_suspended_membership,
+                "audit_rows_after_revoked_permission": audit_rows_after_revoked_permission,
+                "audit_rows_after_stale_policy": audit_rows_after_stale_policy,
                 "validate_status": validate_status,
                 "validate_response": {
                     "valid": validate_response.get("valid"),
@@ -1161,8 +1594,11 @@ FROM (
                         "token_id": decision.token_id,
                         "roles": list(decision.roles),
                         "permissions": list(decision.permissions),
+                        "required_permission": decision.required_permission,
                         "policy_source": decision.policy_source,
                         "policy_version": decision.policy_version,
+                        "policy_fingerprint": decision.policy_fingerprint,
+                        "decision_id": decision.decision_id,
                         "permission_source": decision.permission_source,
                         "resolved_at": decision.resolved_at,
                     }
