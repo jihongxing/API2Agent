@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1014,29 +1014,31 @@ Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 ```
 
-由于 local partition validation helper 和 tests 已实现，应先 closeout 再决定是否暴露 private hosted project mutation endpoint；这项 hosted-readiness review 现在是当前项目立即下一项任务。
+由于 local partition validation helper 已关闭，下一项 boundary 是 private hosted admin endpoint contract；这项 hosted-readiness design 现在是当前项目立即下一项任务。
 
 范围：
 
-1. Review helper 是否满足 tenant-partitioned mutation design acceptance criteria。
-2. 确认 same-project metadata changes 通过，cross-project/global changes 失败。
-3. 确认 idempotency 和 audit evidence shape 足以作为 v0。
+1. 设计 project partition replacement 的 method/path 和 request/response contract。
+2. 定义 hosted/trusted principal、permission、idempotency、audit 和 error mapping。
+3. 定义 partition validator 如何与 persistent registry replacement 组合。
 4. public CRUD、public auth provider implementation、durable permission storage 和 production gateway deployment 保持 out of scope。
 5. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- contract harness implementation 被接受，或 gaps 被文档化。
-- remaining hosted mutation risks 已排序。
-- 下一条 lane 被选择，且不增加 public CRUD 或 automatic propagation。
+- endpoint method/path、body、headers 和 response shape 明确。
+- auth/permission、idempotency、audit 和 partition error semantics 明确。
+- 与 existing replacement mechanics 的 transaction composition 明确。
+- implementation 保持 deferred。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：
@@ -1064,6 +1066,7 @@ Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout 
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
@@ -1102,6 +1105,16 @@ Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout 
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+
+已完成 tenant-partitioned registry mutation contract harness closeout 结果：
+
+- local partition validation helper 被接受为足以支撑 v0。
+- same-project、cross-project、global/platform、provider ownership、invalid registry 和 project-scoped idempotency cases 满足 design acceptance criteria。
+- 未新增 HTTP endpoint、public CRUD、production gateway deployment、automatic propagation 或 Data Plane mutable-table reads。
+- remaining risks 是 endpoint wiring、audit persistence、first-class provider ownership、project row policy、durable permissions 和 manual propagation。
+- 下一项任务是 private hosted project mutation endpoint design。
+- 详见 `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 tenant-partitioned registry mutation contract harness 结果：
 

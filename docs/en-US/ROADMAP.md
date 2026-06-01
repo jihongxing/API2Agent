@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1014,29 +1014,31 @@ Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 ```
 
-This hosted-readiness review is now the immediate next project task because the local partition validation helper and tests are implemented and should be closed before deciding whether to expose a private hosted project mutation endpoint.
+This hosted-readiness design is now the immediate next project task because the local partition validation helper is closed and the next boundary is a private hosted admin endpoint contract.
 
 Scope:
 
-1. Review whether the helper satisfies the tenant-partitioned mutation design acceptance criteria.
-2. Confirm same-project metadata changes pass and cross-project/global changes fail.
-3. Confirm idempotency and audit evidence shape is sufficient for v0.
+1. Design method/path and request/response contract for project partition replacement.
+2. Define hosted/trusted principal, permission, idempotency, audit, and error mapping.
+3. Define how the partition validator composes with persistent registry replacement.
 4. Keep public CRUD, public auth provider implementation, durable permission storage, and production gateway deployment out of scope.
 5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- contract harness implementation is accepted or gaps are documented.
-- remaining hosted mutation risks are ranked.
-- next lane is chosen without adding public CRUD or automatic propagation.
+- endpoint method/path, body, headers, and response shape are explicit.
+- auth/permission, idempotency, audit, and partition error semantics are explicit.
+- transaction composition with existing replacement mechanics is explicit.
+- implementation remains deferred.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1064,6 +1066,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
@@ -1102,6 +1105,16 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+
+Completed tenant-partitioned registry mutation contract harness closeout result:
+
+- the local partition validation helper is accepted as sufficient for v0.
+- same-project, cross-project, global/platform, provider ownership, invalid registry, and project-scoped idempotency cases satisfy the design acceptance criteria.
+- no HTTP endpoint, public CRUD, production gateway deployment, automatic propagation, or Data Plane mutable-table reads were added.
+- remaining risks are endpoint wiring, audit persistence, first-class provider ownership, project row policy, durable permissions, and manual propagation.
+- the next task is private hosted project mutation endpoint design.
+- See `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed tenant-partitioned registry mutation contract harness result:
 
