@@ -332,6 +332,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Store read model implemented with internal repeatable-read Postgres lookup for active policy, subject, project membership, active roles, grants, gateway-compatible decision evidence, fail-closed denial cases, and raw-secret-safe regression coverage.
 - Go Control Plane Hosted Permission Store read model closeout completed; the internal lookup proof is accepted for v0, and the next hosted-readiness gap is live Postgres dogfood against seeded hosted permission rows.
 - Go Control Plane Hosted Permission Store read model live Postgres dogfood completed with seeded hosted permission rows, real pgx read-model lookup, allowed admin evidence, fail-closed membership/grant/policy cases, zero persisted decision rows, and secret-safe artifact output.
+- Go Control Plane Hosted Permission Store read model live Postgres dogfood closeout completed; real Postgres lookup evidence is accepted for v0, and the next hosted-readiness gap is gateway runtime wiring design.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -339,4 +340,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout + Phase Review v0.
+- Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0.

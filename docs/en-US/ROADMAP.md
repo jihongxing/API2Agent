@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission store read model live Postgres dogfood complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, and read model live Postgres dogfood are complete.
+Status: hosted permission store read model live Postgres dogfood closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, and dogfood closeout are complete.
 
 Goal:
 
@@ -1026,30 +1026,31 @@ Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
 Go Control Plane Hosted Permission Store Read Model v0
 Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
+Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout + Phase Review v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout + Phase Review v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
 ```
 
-This hosted-readiness closeout slice is now the immediate next project task because the real Postgres seeded proof has landed and needs phase review before runtime wiring is considered.
+This hosted-readiness design slice is now the immediate next project task because the real Postgres read-model proof has closed and gateway runtime wiring needs a precise contract before implementation.
 
 Scope:
 
-1. Review whether the live Postgres dogfood satisfies the read-model acceptance criteria.
-2. Confirm real schema constraints, seeded rows, pgx lookup, fail-closed cases, zero decision persistence, and secret-safe artifact output are sufficient for v0.
-3. Identify remaining risks before gateway runtime wiring or decision persistence.
-4. Keep public auth provider implementation, production gateway deployment, gateway runtime wiring, decision persistence, and public management surfaces out of scope.
-5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
+1. Design the gateway runtime permission-source interface for the hosted read model.
+2. Define public principal input, external subject reference handling, project context, token id evidence, timeout/unavailable behavior, and stale/ambiguous policy handling.
+3. Define trusted header mapping from read-model decisions.
+4. Define implementation tests and dogfood requirements.
+5. Keep public auth provider implementation, production gateway deployment, decision persistence, and public management surfaces out of scope.
+6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- live Postgres dogfood can close, or blockers are documented.
-- policy version/fingerprint/decision id evidence remains accepted as secret-safe.
-- runtime wiring and persistence boundaries remain explicit and deferred.
-- gateway runtime wiring remains deferred.
+- gateway runtime wiring design is documented.
+- fail-closed behavior, trusted-header safety, and Control Plane second-gate authority remain explicit.
+- runtime implementation, persistence, OAuth/OIDC, public CRUD, and production deployment remain deferred.
 - no granular CRUD API, OAuth/OIDC, vault, billing, marketplace, workflow, provider onboarding, production gateway deployment, or automatic propagation work is included.
 
 References:
@@ -1089,6 +1090,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
