@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout Complete
+Go Control Plane Hosted Admin Gateway Permission Source Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This hosted-readiness work is now the immediate next project task because the Agent Capability Compiler re-entry phase is closed.
+This hosted-readiness implementation is now the immediate next project task because the permission-source design is complete.
 
 Scope:
 
@@ -1087,6 +1087,15 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
+
+Completed hosted admin gateway permission source design result:
+
+- gateway-side permission source contract is defined.
+- static dogfood policy maps public principals to trusted roles and permissions.
+- endpoint permission mapping and fail-closed semantics are specified.
+- audit/idempotency evidence and local harness dogfood expectations are defined.
+- See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`.
 
 Completed Agent capability compiler final re-entry closeout result:
 

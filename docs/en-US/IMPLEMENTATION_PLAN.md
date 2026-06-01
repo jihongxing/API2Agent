@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout Complete
+Go Control Plane Hosted Admin Gateway Permission Source Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate returns to hosted Control Plane permission-source design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted Control Plane permission-source implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1018,11 +1018,16 @@ Current Phase 6 progress:
   - future compiler work is moved to evidence-triggered backlog.
   - the next project lane returns to hosted Control Plane permission-source design.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`.
+- Go Control Plane Hosted Admin Gateway Permission Source Design v0 is complete:
+  - gateway-side permission source contract, static dogfood policy shape, endpoint permission mapping, fail-closed semantics, audit/idempotency evidence, tests, and dogfood expectations are defined.
+  - the Control Plane trusted-gateway authenticator remains the second authorization gate.
+  - the next hosted-readiness task is permission-source implementation.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 ```
 
 References:

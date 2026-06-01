@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout Complete
+Go Control Plane Hosted Admin Gateway Permission Source Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 回到 hosted Control Plane permission-source design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted Control Plane permission-source implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1018,11 +1018,16 @@ Go Control Plane Minimum v0
   - future compiler work 移入 evidence-triggered backlog。
   - 下一条 project lane 回到 hosted Control Plane permission-source design。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`。
+- Go Control Plane Hosted Admin Gateway Permission Source Design v0 已完成：
+  - gateway-side permission source contract、static dogfood policy shape、endpoint permission mapping、fail-closed semantics、audit/idempotency evidence、tests 和 dogfood expectations 已定义。
+  - Control Plane trusted-gateway authenticator 保持第二道 authorization gate。
+  - 下一项 hosted-readiness task 是 permission-source implementation。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 ```
 
 参考：

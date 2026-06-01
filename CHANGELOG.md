@@ -315,6 +315,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion implemented with a committed Apache-2.0 Petstore excerpt, source metadata, checksum validation, path containment checks, additive calibration result fields, regression coverage, and dogfood improving the default calibration run to 5 pass / 2 warn / 0 fail / 1 skipped.
 - Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion closeout completed; one required cached public-spec case is sufficient for v0 and the next task is final compiler re-entry consolidation.
 - Agent Capability Compiler final re-entry closeout completed; the compiler re-entry scope is accepted as 100% complete and the next project lane returns to hosted Control Plane permission-source design.
+- Go Control Plane Hosted Admin Gateway Permission Source design completed with gateway-side permission source contract, static dogfood policy shape, endpoint permission mapping, fail-closed semantics, audit/idempotency evidence, tests, dogfood, and non-goals.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -322,4 +323,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Admin Gateway Permission Source Design v0.
+- Go Control Plane Hosted Admin Gateway Permission Source Implementation v0.

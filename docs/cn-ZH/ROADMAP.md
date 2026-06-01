@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout Complete
+Go Control Plane Hosted Admin Gateway Permission Source Design Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-由于 Agent Capability Compiler re-entry phase 已关闭，这项 hosted-readiness work 现在是当前项目立即下一项任务。
+由于 permission-source design 已完成，这项 hosted-readiness implementation 现在是当前项目立即下一项任务。
 
 范围：
 
@@ -1087,6 +1087,15 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
+
+已完成 hosted admin gateway permission source design 结果：
+
+- gateway-side permission source contract 已定义。
+- static dogfood policy 会将 public principals 映射为 trusted roles and permissions。
+- endpoint permission mapping 和 fail-closed semantics 已指定。
+- audit/idempotency evidence 和 local harness dogfood expectations 已定义。
+- 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`。
 
 已完成 Agent capability compiler final re-entry closeout 结果：
 
