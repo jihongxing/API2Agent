@@ -320,13 +320,21 @@ func PromoteHostedPermissionPolicyDraft(ctx context.Context, db *sql.DB, opts Ho
 	if opts.BasePolicyVersion != active.Version {
 		return HostedPermissionPolicyMutationDurableResult{}, mutationError("POLICY_VERSION_CONFLICT", "caller", false, fmt.Errorf("base policy %q is stale; active policy is %q", opts.BasePolicyVersion, active.Version))
 	}
+	changes, err := loadHostedPolicyMutationDraftChanges(ctx, tx, opts.DraftID)
+	if err != nil {
+		return HostedPermissionPolicyMutationDurableResult{}, err
+	}
 	promotedVersion := opts.DraftPolicyVersion
 	metadata := hostedPermissionPolicyMutationMetadata(opts, map[string]string{
 		"previous_policy_version":     active.Version,
 		"previous_policy_fingerprint": active.Fingerprint,
 		"policy_version":              promotedVersion,
 		"policy_fingerprint":          opts.MutationFingerprint,
+		"draft_change_count":          fmt.Sprint(len(changes)),
 	})
+	if err := applyHostedPolicyMutationDraftChanges(ctx, tx, changes, promotedVersion); err != nil {
+		return HostedPermissionPolicyMutationDurableResult{}, err
+	}
 	if err := supersedeHostedPolicyVersion(ctx, tx, opts.PolicySource, active.Version); err != nil {
 		return HostedPermissionPolicyMutationDurableResult{}, err
 	}
@@ -462,6 +470,7 @@ type hostedPolicyVersionRow struct {
 	Version     string
 	Fingerprint string
 	Status      string
+	Metadata    map[string]string
 }
 
 type hostedPolicyMutationDraftRow struct {
@@ -474,6 +483,17 @@ type hostedPolicyMutationDraftRow struct {
 	DraftPolicyFingerprint string
 	Status                 string
 	ActorID                string
+}
+
+type hostedPolicyMutationDraftChangeRow struct {
+	ChangeSeq        int
+	ObjectType       string
+	Operation        string
+	ObjectID         string
+	ProjectID        string
+	OrganizationID   string
+	PatchFingerprint string
+	PatchSummary     map[string]string
 }
 
 type hostedPolicyMutationIdempotencyRequest struct {
@@ -560,13 +580,19 @@ FOR UPDATE`, policySource).Scan(&row.Version, &row.Fingerprint, &row.Status); er
 
 func loadHostedPolicyVersion(ctx context.Context, tx *sql.Tx, policySource string, policyVersion string) (hostedPolicyVersionRow, error) {
 	var row hostedPolicyVersionRow
+	var metadataRaw any
 	if err := tx.QueryRowContext(ctx, `
-SELECT policy_version, policy_fingerprint, status
+SELECT policy_version, policy_fingerprint, status, metadata
 FROM hosted_policy_versions
 WHERE policy_source = $1 AND policy_version = $2
-FOR UPDATE`, policySource, policyVersion).Scan(&row.Version, &row.Fingerprint, &row.Status); err != nil {
+FOR UPDATE`, policySource, policyVersion).Scan(&row.Version, &row.Fingerprint, &row.Status, &metadataRaw); err != nil {
 		return hostedPolicyVersionRow{}, mutationError("POLICY_VERSION_CONFLICT", "caller", false, fmt.Errorf("load hosted policy version: %w", err))
 	}
+	metadata, err := parseJSONMap(metadataRaw)
+	if err != nil {
+		return hostedPolicyVersionRow{}, mutationError("PERSISTENT_STORE_READ_FAILED", "platform", true, fmt.Errorf("decode hosted policy version metadata: %w", err))
+	}
+	row.Metadata = metadata
 	return row, nil
 }
 
@@ -591,6 +617,276 @@ func mergeHostedPolicyDraftOptions(opts HostedPermissionPolicyMutationOptions, d
 	opts.DraftPolicyVersion = defaultString(opts.DraftPolicyVersion, draft.DraftPolicyVersion)
 	opts.MutationFingerprint = defaultString(opts.MutationFingerprint, draft.DraftPolicyFingerprint)
 	return opts
+}
+
+func loadHostedPolicyMutationDraftChanges(ctx context.Context, tx *sql.Tx, draftID string) ([]hostedPolicyMutationDraftChangeRow, error) {
+	rows, err := tx.QueryContext(ctx, `
+SELECT change_seq, object_type, operation, object_id, project_id, organization_id, patch_fingerprint, patch_summary
+FROM hosted_policy_mutation_draft_changes
+WHERE draft_id = $1
+ORDER BY change_seq
+FOR UPDATE`, draftID)
+	if err != nil {
+		return nil, mutationError("PERSISTENT_STORE_READ_FAILED", "platform", true, fmt.Errorf("load hosted policy draft changes: %w", err))
+	}
+	defer rows.Close()
+
+	var changes []hostedPolicyMutationDraftChangeRow
+	for rows.Next() {
+		var change hostedPolicyMutationDraftChangeRow
+		var summaryRaw any
+		if err := rows.Scan(&change.ChangeSeq, &change.ObjectType, &change.Operation, &change.ObjectID, &change.ProjectID, &change.OrganizationID, &change.PatchFingerprint, &summaryRaw); err != nil {
+			return nil, mutationError("PERSISTENT_STORE_READ_FAILED", "platform", true, fmt.Errorf("scan hosted policy draft change: %w", err))
+		}
+		summary, err := parseJSONMap(summaryRaw)
+		if err != nil {
+			return nil, mutationError("PERSISTENT_STORE_READ_FAILED", "platform", true, fmt.Errorf("decode hosted policy draft change summary: %w", err))
+		}
+		change.PatchSummary = summary
+		changes = append(changes, change)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, mutationError("PERSISTENT_STORE_READ_FAILED", "platform", true, fmt.Errorf("iterate hosted policy draft changes: %w", err))
+	}
+	return changes, nil
+}
+
+func applyHostedPolicyMutationDraftChanges(ctx context.Context, tx *sql.Tx, changes []hostedPolicyMutationDraftChangeRow, policyVersion string) error {
+	for _, change := range changes {
+		if err := applyHostedPolicyMutationDraftChange(ctx, tx, change, policyVersion); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func applyHostedPolicyMutationDraftChange(ctx context.Context, tx *sql.Tx, change hostedPolicyMutationDraftChangeRow, policyVersion string) error {
+	switch change.ObjectType {
+	case "subject":
+		return applyHostedPolicySubjectChange(ctx, tx, change, policyVersion)
+	case "membership":
+		return applyHostedPolicyMembershipChange(ctx, tx, change, policyVersion)
+	case "role":
+		return applyHostedPolicyRoleChange(ctx, tx, change, policyVersion)
+	case "role_binding":
+		return applyHostedPolicyRoleBindingChange(ctx, tx, change, policyVersion)
+	case "permission_grant":
+		return applyHostedPolicyGrantChange(ctx, tx, change, policyVersion)
+	default:
+		return mutationError("POLICY_STATE_CONFLICT", "caller", false, fmt.Errorf("unsupported hosted policy graph object type %q", change.ObjectType))
+	}
+}
+
+func applyHostedPolicySubjectChange(ctx context.Context, tx *sql.Tx, change hostedPolicyMutationDraftChangeRow, policyVersion string) error {
+	subjectID := requiredHostedPolicyPatchValue(change, "subject_id", change.ObjectID)
+	status := hostedPolicyPatchValue(change, "status", operationStatus(change.Operation, "active", "disabled"))
+	if subjectID == "" {
+		return hostedPolicyPatchMissing(change, "subject_id")
+	}
+	metadata, err := hostedPolicyGraphMetadata(change, policyVersion)
+	if err != nil {
+		return err
+	}
+	externalRef := change.PatchSummary["external_subject_ref"]
+	displayName := change.PatchSummary["display_name"]
+	_, err = tx.ExecContext(ctx, `
+INSERT INTO hosted_subjects (id, external_subject_ref, display_name, status, metadata)
+VALUES ($1, $2, $3, $4, $5::jsonb)
+ON CONFLICT (id) DO UPDATE
+SET external_subject_ref = EXCLUDED.external_subject_ref,
+    display_name = EXCLUDED.display_name,
+    status = EXCLUDED.status,
+    metadata = hosted_subjects.metadata || EXCLUDED.metadata,
+    updated_at = now()`, subjectID, externalRef, displayName, status, metadata)
+	if err != nil {
+		return mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("apply hosted subject change: %w", err))
+	}
+	return nil
+}
+
+func applyHostedPolicyMembershipChange(ctx context.Context, tx *sql.Tx, change hostedPolicyMutationDraftChangeRow, policyVersion string) error {
+	subjectID := requiredHostedPolicyPatchValue(change, "subject_id", "")
+	actorID := requiredHostedPolicyPatchValue(change, "actor_id", "")
+	if subjectID == "" {
+		return hostedPolicyPatchMissing(change, "subject_id")
+	}
+	if actorID == "" {
+		return hostedPolicyPatchMissing(change, "actor_id")
+	}
+	status := hostedPolicyPatchValue(change, "status", operationStatus(change.Operation, "active", "revoked"))
+	metadata, err := hostedPolicyGraphMetadata(change, policyVersion)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `
+INSERT INTO hosted_project_memberships (subject_id, actor_id, project_id, organization_id, status, metadata)
+VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+ON CONFLICT (subject_id, project_id) DO UPDATE
+SET actor_id = EXCLUDED.actor_id,
+    organization_id = EXCLUDED.organization_id,
+    status = EXCLUDED.status,
+    metadata = hosted_project_memberships.metadata || EXCLUDED.metadata,
+    updated_at = now()`, subjectID, actorID, change.ProjectID, change.OrganizationID, status, metadata)
+	if err != nil {
+		return mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("apply hosted membership change: %w", err))
+	}
+	return nil
+}
+
+func applyHostedPolicyRoleChange(ctx context.Context, tx *sql.Tx, change hostedPolicyMutationDraftChangeRow, policyVersion string) error {
+	roleID := requiredHostedPolicyPatchValue(change, "role_id", change.ObjectID)
+	if roleID == "" {
+		return hostedPolicyPatchMissing(change, "role_id")
+	}
+	status := hostedPolicyPatchValue(change, "status", operationStatus(change.Operation, "active", "disabled"))
+	scopeType := hostedPolicyPatchValue(change, "scope_type", "project")
+	name := hostedPolicyPatchValue(change, "name", roleID)
+	publicAssignable := strings.EqualFold(change.PatchSummary["public_assignable"], "true")
+	metadata, err := hostedPolicyGraphMetadata(change, policyVersion)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `
+INSERT INTO hosted_roles (id, name, scope_type, public_assignable, status, metadata)
+VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+ON CONFLICT (id) DO UPDATE
+SET name = EXCLUDED.name,
+    scope_type = EXCLUDED.scope_type,
+    public_assignable = EXCLUDED.public_assignable,
+    status = EXCLUDED.status,
+    metadata = hosted_roles.metadata || EXCLUDED.metadata,
+    updated_at = now()`, roleID, name, scopeType, publicAssignable, status, metadata)
+	if err != nil {
+		return mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("apply hosted role change: %w", err))
+	}
+	return nil
+}
+
+func applyHostedPolicyRoleBindingChange(ctx context.Context, tx *sql.Tx, change hostedPolicyMutationDraftChangeRow, policyVersion string) error {
+	subjectID := requiredHostedPolicyPatchValue(change, "subject_id", "")
+	roleID := requiredHostedPolicyPatchValue(change, "role_id", "")
+	if subjectID == "" {
+		return hostedPolicyPatchMissing(change, "subject_id")
+	}
+	if roleID == "" {
+		return hostedPolicyPatchMissing(change, "role_id")
+	}
+	status := hostedPolicyPatchValue(change, "status", operationStatus(change.Operation, "active", "revoked"))
+	source := hostedPolicyPatchValue(change, "source", "operator")
+	metadata, err := hostedPolicyGraphMetadata(change, policyVersion)
+	if err != nil {
+		return err
+	}
+	if change.Operation != "upsert" {
+		_, err = tx.ExecContext(ctx, `
+UPDATE hosted_role_bindings
+SET status = $1,
+    metadata = metadata || $2::jsonb,
+    updated_at = now()
+WHERE subject_id = $3 AND project_id = $4 AND role_id = $5`, status, metadata, subjectID, change.ProjectID, roleID)
+		if err != nil {
+			return mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("apply hosted role binding status change: %w", err))
+		}
+		return nil
+	}
+	_, err = tx.ExecContext(ctx, `
+INSERT INTO hosted_role_bindings (subject_id, project_id, organization_id, role_id, status, source, metadata)
+VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+ON CONFLICT (subject_id, project_id, role_id) WHERE status = 'active'
+DO UPDATE
+SET organization_id = EXCLUDED.organization_id,
+    status = EXCLUDED.status,
+    source = EXCLUDED.source,
+    metadata = hosted_role_bindings.metadata || EXCLUDED.metadata,
+    updated_at = now()`, subjectID, change.ProjectID, change.OrganizationID, roleID, status, source, metadata)
+	if err != nil {
+		return mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("apply hosted role binding change: %w", err))
+	}
+	return nil
+}
+
+func applyHostedPolicyGrantChange(ctx context.Context, tx *sql.Tx, change hostedPolicyMutationDraftChangeRow, policyVersion string) error {
+	roleID := requiredHostedPolicyPatchValue(change, "role_id", "")
+	permission := requiredHostedPolicyPatchValue(change, "permission", "")
+	if roleID == "" {
+		return hostedPolicyPatchMissing(change, "role_id")
+	}
+	if permission == "" {
+		return hostedPolicyPatchMissing(change, "permission")
+	}
+	scopeType := hostedPolicyPatchValue(change, "scope_type", "project")
+	status := hostedPolicyPatchValue(change, "status", operationStatus(change.Operation, "active", "revoked"))
+	metadata, err := hostedPolicyGraphMetadata(change, policyVersion)
+	if err != nil {
+		return err
+	}
+	if change.Operation != "upsert" {
+		_, err = tx.ExecContext(ctx, `
+UPDATE hosted_permission_grants
+SET status = $1,
+    metadata = metadata || $2::jsonb,
+    updated_at = now()
+WHERE role_id = $3 AND permission = $4 AND scope_type = $5`, status, metadata, roleID, permission, scopeType)
+		if err != nil {
+			return mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("apply hosted permission grant status change: %w", err))
+		}
+		return nil
+	}
+	_, err = tx.ExecContext(ctx, `
+INSERT INTO hosted_permission_grants (role_id, permission, scope_type, status, metadata)
+VALUES ($1, $2, $3, $4, $5::jsonb)
+ON CONFLICT (role_id, permission, scope_type) WHERE status = 'active'
+DO UPDATE
+SET status = EXCLUDED.status,
+    metadata = hosted_permission_grants.metadata || EXCLUDED.metadata,
+    updated_at = now()`, roleID, permission, scopeType, status, metadata)
+	if err != nil {
+		return mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("apply hosted permission grant change: %w", err))
+	}
+	return nil
+}
+
+func hostedPolicyGraphMetadata(change hostedPolicyMutationDraftChangeRow, policyVersion string) ([]byte, error) {
+	metadata := map[string]string{
+		"source":               hostedPermissionPolicyMutationSource,
+		"policy_version":       policyVersion,
+		"change_seq":           fmt.Sprint(change.ChangeSeq),
+		"patch_fingerprint":    change.PatchFingerprint,
+		"mutation_object_type": change.ObjectType,
+		"mutation_operation":   change.Operation,
+	}
+	data, err := json.Marshal(metadata)
+	if err != nil {
+		return nil, mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("encode hosted policy graph metadata: %w", err))
+	}
+	return data, nil
+}
+
+func requiredHostedPolicyPatchValue(change hostedPolicyMutationDraftChangeRow, key string, fallback string) string {
+	value := strings.TrimSpace(change.PatchSummary[key])
+	if value != "" {
+		return value
+	}
+	return strings.TrimSpace(fallback)
+}
+
+func hostedPolicyPatchValue(change hostedPolicyMutationDraftChangeRow, key string, fallback string) string {
+	value := strings.TrimSpace(change.PatchSummary[key])
+	if value != "" {
+		return value
+	}
+	return fallback
+}
+
+func hostedPolicyPatchMissing(change hostedPolicyMutationDraftChangeRow, key string) error {
+	return mutationError("POLICY_STATE_CONFLICT", "caller", false, fmt.Errorf("draft change %d %s/%s is missing %s", change.ChangeSeq, change.ObjectType, change.ObjectID, key))
+}
+
+func operationStatus(operation string, upsertStatus string, inactiveStatus string) string {
+	if operation == "upsert" {
+		return upsertStatus
+	}
+	return inactiveStatus
 }
 
 func normalizeHostedPermissionPolicyDraftChange(change HostedPermissionPolicyDraftChange, opts HostedPermissionPolicyMutationOptions) HostedPermissionPolicyDraftChange {

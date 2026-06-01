@@ -216,3 +216,39 @@ Completion:
 
 - private endpoint dogfood lane: 100%
 - Hosted Control Plane phase estimate: 79%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Durable Graph Apply Semantics v0
+
+Commit: pending until this implementation slice is committed
+
+Changed:
+
+- applied hosted policy mutation draft changes into the durable hosted permission graph during promotion
+- covered subject, project membership, role, role binding, and permission grant upserts plus binding/grant revocation status changes
+- recorded `draft_change_count` and graph apply metadata on promoted policy versions and graph rows
+- extended persistent registry fixtures and scripted Postgres tests for graph row mutation evidence
+
+Validation:
+
+- `go test ./internal/registry -run "TestPostgresHostedPermissionPolicyMutationPromoteAppliesGraph|TestPostgresHostedPermissionPolicyMutation"`
+- `go test ./internal/registry`
+- `go test ./...`
+
+Decision:
+
+- durable graph apply semantics lane is complete for v0
+- promotion now mutates the hosted permission read graph instead of only appending policy versions
+- rollback remains append-style; historical graph rewind is not claimed because graph rows are not versioned
+- no per-slice implementation report, dogfood report, or closeout document was created under the new documentation policy
+- Hosted Control Plane completion estimate moves to 80%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Rollback Graph Semantics Readiness Review v0`
+
+Completion:
+
+- durable graph apply semantics lane: 100%
+- Hosted Control Plane phase estimate: 80%

@@ -161,6 +161,8 @@ func (c *scriptedRegistryConn) rowsFor(query string, args []driver.NamedValue) (
 		return c.selectIdempotencyRecord(args)
 	case strings.Contains(query, "SELECT COALESCE(MAX(change_seq), 0)"):
 		return c.selectPolicyDraftChangeSeq(args)
+	case strings.Contains(query, "FROM hosted_policy_mutation_draft_changes"):
+		return c.selectPolicyDraftChanges(args)
 	case strings.Contains(query, "SELECT policy_version, policy_fingerprint, status") && strings.Contains(query, "FROM hosted_policy_versions") && strings.Contains(query, "status = 'active'"):
 		return c.selectActiveHostedPolicyVersion(args)
 	case strings.Contains(query, "SELECT policy_version, policy_fingerprint, status") && strings.Contains(query, "FROM hosted_policy_versions"):
@@ -256,10 +258,10 @@ func (c *scriptedRegistryConn) selectActiveHostedPolicyVersion(args []driver.Nam
 func (c *scriptedRegistryConn) selectHostedPolicyVersion(args []driver.NamedValue) (driver.Rows, error) {
 	for _, row := range c.script.rows.HostedPolicyVersions {
 		if row.PolicySource == namedString(args, 0) && row.PolicyVersion == namedString(args, 1) {
-			return newScriptedRows([]string{"policy_version", "policy_fingerprint", "status"}, [][]driver.Value{{row.PolicyVersion, row.PolicyFingerprint, row.Status}}), nil
+			return newScriptedRows([]string{"policy_version", "policy_fingerprint", "status", "metadata"}, [][]driver.Value{{row.PolicyVersion, row.PolicyFingerprint, row.Status, tMustJSON(row.Metadata)}}), nil
 		}
 	}
-	return newScriptedRows([]string{"policy_version", "policy_fingerprint", "status"}, nil), nil
+	return newScriptedRows([]string{"policy_version", "policy_fingerprint", "status", "metadata"}, nil), nil
 }
 
 func (c *scriptedRegistryConn) selectPolicyMutationDraft(args []driver.NamedValue) (driver.Rows, error) {
@@ -282,6 +284,16 @@ func (c *scriptedRegistryConn) selectPolicyDraftChangeSeq(args []driver.NamedVal
 		}
 	}
 	return newScriptedRows([]string{"coalesce"}, [][]driver.Value{{int64(maxSeq)}}), nil
+}
+
+func (c *scriptedRegistryConn) selectPolicyDraftChanges(args []driver.NamedValue) (driver.Rows, error) {
+	values := [][]driver.Value{}
+	for _, row := range c.script.rows.PolicyDraftChanges {
+		if row.DraftID == namedString(args, 0) {
+			values = append(values, []driver.Value{int64(row.ChangeSeq), row.ObjectType, row.Operation, row.ObjectID, row.ProjectID, row.OrganizationID, row.PatchFingerprint, tMustJSON(row.PatchSummary)})
+		}
+	}
+	return newScriptedRows([]string{"change_seq", "object_type", "operation", "object_id", "project_id", "organization_id", "patch_fingerprint", "patch_summary"}, values), nil
 }
 
 func (c *scriptedRegistryConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
@@ -477,6 +489,119 @@ func (c *scriptedRegistryConn) applyExec(query string, args []driver.NamedValue)
 			PatchFingerprint: namedString(args, 7),
 			PatchSummary:     summary,
 		})
+	case strings.Contains(query, "INSERT INTO hosted_subjects"):
+		metadata, err := parseJSONMap(namedBytes(args, 4))
+		if err != nil {
+			return err
+		}
+		upserted := PersistentHostedSubjectRow{
+			ID:                 namedString(args, 0),
+			ExternalSubjectRef: namedString(args, 1),
+			DisplayName:        namedString(args, 2),
+			Status:             namedString(args, 3),
+			Metadata:           metadata,
+		}
+		for i := range c.script.rows.HostedSubjects {
+			if c.script.rows.HostedSubjects[i].ID == upserted.ID {
+				c.script.rows.HostedSubjects[i] = upserted
+				return nil
+			}
+		}
+		c.script.rows.HostedSubjects = append(c.script.rows.HostedSubjects, upserted)
+	case strings.Contains(query, "INSERT INTO hosted_project_memberships"):
+		metadata, err := parseJSONMap(namedBytes(args, 5))
+		if err != nil {
+			return err
+		}
+		upserted := PersistentHostedMembershipRow{
+			SubjectID:      namedString(args, 0),
+			ActorID:        namedString(args, 1),
+			ProjectID:      namedString(args, 2),
+			OrganizationID: namedString(args, 3),
+			Status:         namedString(args, 4),
+			Metadata:       metadata,
+		}
+		for i := range c.script.rows.HostedMemberships {
+			if c.script.rows.HostedMemberships[i].SubjectID == upserted.SubjectID && c.script.rows.HostedMemberships[i].ProjectID == upserted.ProjectID {
+				c.script.rows.HostedMemberships[i] = upserted
+				return nil
+			}
+		}
+		c.script.rows.HostedMemberships = append(c.script.rows.HostedMemberships, upserted)
+	case strings.Contains(query, "INSERT INTO hosted_roles"):
+		metadata, err := parseJSONMap(namedBytes(args, 5))
+		if err != nil {
+			return err
+		}
+		upserted := PersistentHostedRoleRow{
+			ID:               namedString(args, 0),
+			Name:             namedString(args, 1),
+			ScopeType:        namedString(args, 2),
+			PublicAssignable: namedBool(args, 3),
+			Status:           namedString(args, 4),
+			Metadata:         metadata,
+		}
+		for i := range c.script.rows.HostedRoles {
+			if c.script.rows.HostedRoles[i].ID == upserted.ID {
+				c.script.rows.HostedRoles[i] = upserted
+				return nil
+			}
+		}
+		c.script.rows.HostedRoles = append(c.script.rows.HostedRoles, upserted)
+	case strings.Contains(query, "INSERT INTO hosted_role_bindings"):
+		metadata, err := parseJSONMap(namedBytes(args, 6))
+		if err != nil {
+			return err
+		}
+		upserted := PersistentHostedRoleBindingRow{
+			SubjectID:      namedString(args, 0),
+			ProjectID:      namedString(args, 1),
+			OrganizationID: namedString(args, 2),
+			RoleID:         namedString(args, 3),
+			Status:         namedString(args, 4),
+			Source:         namedString(args, 5),
+			Metadata:       metadata,
+		}
+		for i := range c.script.rows.HostedRoleBindings {
+			if c.script.rows.HostedRoleBindings[i].SubjectID == upserted.SubjectID && c.script.rows.HostedRoleBindings[i].ProjectID == upserted.ProjectID && c.script.rows.HostedRoleBindings[i].RoleID == upserted.RoleID {
+				c.script.rows.HostedRoleBindings[i] = upserted
+				return nil
+			}
+		}
+		c.script.rows.HostedRoleBindings = append(c.script.rows.HostedRoleBindings, upserted)
+	case strings.Contains(query, "UPDATE hosted_role_bindings"):
+		for i := range c.script.rows.HostedRoleBindings {
+			if c.script.rows.HostedRoleBindings[i].SubjectID == namedString(args, 2) && c.script.rows.HostedRoleBindings[i].ProjectID == namedString(args, 3) && c.script.rows.HostedRoleBindings[i].RoleID == namedString(args, 4) {
+				c.script.rows.HostedRoleBindings[i].Status = namedString(args, 0)
+				return nil
+			}
+		}
+	case strings.Contains(query, "INSERT INTO hosted_permission_grants"):
+		metadata, err := parseJSONMap(namedBytes(args, 4))
+		if err != nil {
+			return err
+		}
+		upserted := PersistentHostedGrantRow{
+			RoleID:     namedString(args, 0),
+			Permission: namedString(args, 1),
+			ScopeType:  namedString(args, 2),
+			Status:     namedString(args, 3),
+			Metadata:   metadata,
+		}
+		for i := range c.script.rows.HostedGrants {
+			if c.script.rows.HostedGrants[i].RoleID == upserted.RoleID && c.script.rows.HostedGrants[i].Permission == upserted.Permission && c.script.rows.HostedGrants[i].ScopeType == upserted.ScopeType {
+				c.script.rows.HostedGrants[i] = upserted
+				return nil
+			}
+		}
+		c.script.rows.HostedGrants = append(c.script.rows.HostedGrants, upserted)
+	case strings.Contains(query, "UPDATE hosted_permission_grants"):
+		for i := range c.script.rows.HostedGrants {
+			if c.script.rows.HostedGrants[i].RoleID == namedString(args, 2) && c.script.rows.HostedGrants[i].Permission == namedString(args, 3) && c.script.rows.HostedGrants[i].ScopeType == namedString(args, 4) {
+				c.script.rows.HostedGrants[i].Status = namedString(args, 0)
+				return nil
+			}
+		}
 	case strings.Contains(query, "UPDATE hosted_policy_mutation_drafts") && strings.Contains(query, "review_requested_by"):
 		metadata, err := parseJSONMap(namedBytes(args, 2))
 		if err != nil {

@@ -16,6 +16,11 @@ type PersistentRegistryRows struct {
 	ArtifactPublications []PersistentArtifactPublicationRow `json:"snapshot_artifact_publications"`
 	AdminAuditEvents     []PersistentAdminAuditEventRow     `json:"admin_audit_events"`
 	IdempotencyRecords   []PersistentIdempotencyRecordRow   `json:"admin_mutation_idempotency_records"`
+	HostedSubjects       []PersistentHostedSubjectRow       `json:"hosted_subjects"`
+	HostedMemberships    []PersistentHostedMembershipRow    `json:"hosted_project_memberships"`
+	HostedRoles          []PersistentHostedRoleRow          `json:"hosted_roles"`
+	HostedRoleBindings   []PersistentHostedRoleBindingRow   `json:"hosted_role_bindings"`
+	HostedGrants         []PersistentHostedGrantRow         `json:"hosted_permission_grants"`
 	HostedPolicyVersions []PersistentHostedPolicyVersionRow `json:"hosted_policy_versions"`
 	PolicyMutationDrafts []PersistentPolicyMutationDraftRow `json:"hosted_policy_mutation_drafts"`
 	PolicyDraftChanges   []PersistentPolicyDraftChangeRow   `json:"hosted_policy_mutation_draft_changes"`
@@ -144,6 +149,50 @@ type PersistentIdempotencyRecordRow struct {
 	AdminAuditEventID           *int64            `json:"admin_audit_event_id,omitempty"`
 	ReplayCount                 int64             `json:"replay_count"`
 	LastReplayRequestID         string            `json:"last_replay_request_id,omitempty"`
+}
+
+type PersistentHostedSubjectRow struct {
+	ID                 string            `json:"id"`
+	ExternalSubjectRef string            `json:"external_subject_ref"`
+	DisplayName        string            `json:"display_name"`
+	Status             string            `json:"status"`
+	Metadata           map[string]string `json:"metadata"`
+}
+
+type PersistentHostedMembershipRow struct {
+	SubjectID      string            `json:"subject_id"`
+	ActorID        string            `json:"actor_id"`
+	ProjectID      string            `json:"project_id"`
+	OrganizationID string            `json:"organization_id"`
+	Status         string            `json:"status"`
+	Metadata       map[string]string `json:"metadata"`
+}
+
+type PersistentHostedRoleRow struct {
+	ID               string            `json:"id"`
+	Name             string            `json:"name"`
+	ScopeType        string            `json:"scope_type"`
+	PublicAssignable bool              `json:"public_assignable"`
+	Status           string            `json:"status"`
+	Metadata         map[string]string `json:"metadata"`
+}
+
+type PersistentHostedRoleBindingRow struct {
+	SubjectID      string            `json:"subject_id"`
+	ProjectID      string            `json:"project_id"`
+	OrganizationID string            `json:"organization_id"`
+	RoleID         string            `json:"role_id"`
+	Status         string            `json:"status"`
+	Source         string            `json:"source"`
+	Metadata       map[string]string `json:"metadata"`
+}
+
+type PersistentHostedGrantRow struct {
+	RoleID     string            `json:"role_id"`
+	Permission string            `json:"permission"`
+	ScopeType  string            `json:"scope_type"`
+	Status     string            `json:"status"`
+	Metadata   map[string]string `json:"metadata"`
 }
 
 type PersistentHostedPolicyVersionRow struct {
