@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation Complete
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence production boundary live dogfood and closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence stage closeout and readiness review。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1176,11 +1176,21 @@ Go Control Plane Minimum v0
   - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
   - 下一项 hosted-readiness task 是 hosted permission decision persistence production boundary live dogfood and closeout。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0 已完成：
+  - live Postgres dogfood 通过，包含 16 条 hosted permission decision rows。
+  - 每条 persisted decision row 都有 `evidence_fingerprint` 和 `production_boundary_version=hosted-permission-decision-production-boundary-v0`。
+  - forced persistence unavailable 和 timeout 都会在 private Control Plane audit rows 创建前返回 `PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE`。
+  - transient write failure retry 一次后成功。
+  - duplicate-equivalent 和 duplicate-conflict probes 后 row counts 保持稳定，conflict 返回 `PERMISSION_DECISION_INTEGRITY_CONFLICT`。
+  - production-boundary lane completion 对 local v0 是 100%。
+  - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
+  - 下一项 hosted-readiness task 是 hosted permission decision persistence stage closeout and readiness review。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
 ```
 
 参考：
@@ -1230,6 +1240,7 @@ Go Control Plane Hosted Permission Decision Persistence Production Boundary Live
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
