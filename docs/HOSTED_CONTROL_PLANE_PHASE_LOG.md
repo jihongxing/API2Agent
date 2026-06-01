@@ -323,3 +323,40 @@ Completion:
 
 - read model consistency dogfood lane: 100%
 - Hosted Control Plane phase estimate: 82%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Private Endpoint Read Model Consistency Wiring v0
+
+Commit: pending until this wiring slice is committed
+
+Changed:
+
+- added HTTP private endpoint dogfood for trusted-gateway hosted policy mutation read-model consistency
+- drove begin, subject, membership, role, role binding, grant, review, promote, and rollback requests through `/v1/private/hosted/permission-policy/mutation`
+- verified promoted endpoint graph changes become read-model-visible for `control_plane.permission_policy.promote`
+- verified rollback changes policy evidence while preserving the v0 policy-version-only graph boundary
+- verified trusted principal project, organization, actor, and rollback idempotency key are forwarded into mutation options
+
+Validation:
+
+- `go test ./internal/httpapi -run "TestTrustedGatewayHostedPermissionPolicyMutationReadModelConsistencyWiring" -v`
+- `go test ./internal/httpapi -run "TestTrustedGatewayHostedPermissionPolicyMutation|TestHostedPermissionPolicyMutation"`
+- `go test ./internal/registry -run "TestPostgresHostedPermissionPolicyMutation|TestHostedPermissionReadModel"`
+- `go test ./...`
+
+Decision:
+
+- private endpoint read-model consistency wiring lane is complete for v0
+- trusted-gateway private mutation wiring now has endpoint-level consistency evidence without exposing public policy CRUD
+- no standalone implementation, dogfood, or closeout document was created under the new documentation policy
+- Hosted Control Plane completion estimate moves to 83%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Durable Endpoint Adapter Readiness Review v0`
+
+Completion:
+
+- private endpoint read-model consistency wiring lane: 100%
+- Hosted Control Plane phase estimate: 83%

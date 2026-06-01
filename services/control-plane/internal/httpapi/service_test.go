@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -1232,6 +1233,125 @@ func TestTrustedGatewayHostedPermissionPolicyMutationEndpointDogfood(t *testing.
 	}
 }
 
+func TestTrustedGatewayHostedPermissionPolicyMutationReadModelConsistencyWiring(t *testing.T) {
+	mutator := newEndpointReadModelConsistencyMutator()
+	handler := newPostgresHostedPolicyMutationHandlerWithMutator(mutator)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+
+	before := mutator.resolve(registry.PermissionHostedPermissionPolicyPromote, time.Date(2026, 6, 2, 1, 0, 0, 0, time.UTC))
+	if before.Allowed {
+		t.Fatalf("expected promote denied before endpoint mutation, got %#v", before)
+	}
+
+	begin := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationBeginDraftOperation, registry.PermissionHostedPermissionPolicyDraftWrite, "", map[string]any{
+		"policy_source":        "hosted_permission_store",
+		"base_policy_version":  "policy-v1",
+		"draft_policy_version": "policy-v2",
+	})
+	changeSubject := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationApplyChangeOperation, registry.PermissionHostedPermissionPolicyDraftWrite, "", map[string]any{
+		"draft_id": begin.Result.DraftID,
+		"change": map[string]any{
+			"object_type": "subject",
+			"operation":   "upsert",
+			"object_id":   "subject-a",
+			"patch_summary": map[string]string{
+				"subject_id":           "subject-a",
+				"external_subject_ref": "dogfood/idp/admin",
+			},
+		},
+	})
+	if changeSubject.Result.DraftID != begin.Result.DraftID {
+		t.Fatalf("unexpected subject change response: %#v", changeSubject)
+	}
+	hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationApplyChangeOperation, registry.PermissionHostedPermissionPolicyDraftWrite, "", map[string]any{
+		"draft_id": begin.Result.DraftID,
+		"change": map[string]any{
+			"object_type": "membership",
+			"operation":   "upsert",
+			"object_id":   "subject-a:project-1",
+			"patch_summary": map[string]string{
+				"subject_id": "subject-a",
+				"actor_id":   "actor-a",
+			},
+		},
+	})
+	hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationApplyChangeOperation, registry.PermissionHostedPermissionPolicyDraftWrite, "", map[string]any{
+		"draft_id": begin.Result.DraftID,
+		"change": map[string]any{
+			"object_type": "role",
+			"operation":   "upsert",
+			"object_id":   "policy-admin",
+			"patch_summary": map[string]string{
+				"role_id":    "policy-admin",
+				"name":       "Policy Admin",
+				"scope_type": "project",
+			},
+		},
+	})
+	hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationApplyChangeOperation, registry.PermissionHostedPermissionPolicyDraftWrite, "", map[string]any{
+		"draft_id": begin.Result.DraftID,
+		"change": map[string]any{
+			"object_type": "role_binding",
+			"operation":   "upsert",
+			"object_id":   "subject-a:policy-admin",
+			"patch_summary": map[string]string{
+				"subject_id": "subject-a",
+				"role_id":    "policy-admin",
+			},
+		},
+	})
+	hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationApplyChangeOperation, registry.PermissionHostedPermissionPolicyDraftWrite, "", map[string]any{
+		"draft_id": begin.Result.DraftID,
+		"change": map[string]any{
+			"object_type": "permission_grant",
+			"operation":   "upsert",
+			"object_id":   "policy-admin:promote",
+			"patch_summary": map[string]string{
+				"role_id":    "policy-admin",
+				"permission": registry.PermissionHostedPermissionPolicyPromote,
+				"scope_type": "project",
+			},
+		},
+	})
+	review := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationRequestReviewOperation, registry.PermissionHostedPermissionPolicyRequestReview, "", map[string]any{
+		"draft_id": begin.Result.DraftID,
+	})
+	if review.Result.PolicyFingerprint == "" {
+		t.Fatalf("expected review fingerprint: %#v", review)
+	}
+	promote := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationPromoteOperation, registry.PermissionHostedPermissionPolicyPromote, "endpoint-consistency-promote-key", map[string]any{
+		"draft_id":             begin.Result.DraftID,
+		"base_policy_version":  "policy-v1",
+		"draft_policy_version": "policy-v2",
+	})
+	if promote.Result.PolicyVersion != "policy-v2" || promote.Result.PreviousPolicyVersion != "policy-v1" {
+		t.Fatalf("unexpected promote response: %#v", promote)
+	}
+	afterPromote := mutator.resolve(registry.PermissionHostedPermissionPolicyPromote, time.Date(2026, 6, 2, 1, 1, 0, 0, time.UTC))
+	if !afterPromote.Allowed || afterPromote.PolicyVersion != "policy-v2" || !slices.Contains(afterPromote.Permissions, registry.PermissionHostedPermissionPolicyPromote) {
+		t.Fatalf("expected endpoint-written graph to be read-model visible after promote, got %#v", afterPromote)
+	}
+
+	rollback := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationRollbackOperation, registry.PermissionHostedPermissionPolicyRollback, "endpoint-consistency-rollback-key", map[string]any{
+		"target_policy_version": "policy-v1",
+	})
+	if rollback.Result.PolicyVersion == "" || rollback.Result.TargetPolicyVersion != "policy-v1" {
+		t.Fatalf("unexpected rollback response: %#v", rollback)
+	}
+	afterRollback := mutator.resolve(registry.PermissionHostedPermissionPolicyPromote, time.Date(2026, 6, 2, 1, 2, 0, 0, time.UTC))
+	if !afterRollback.Allowed || afterRollback.PolicyVersion != rollback.Result.PolicyVersion || afterRollback.PolicyFingerprint != "sha256:policy-v1" {
+		t.Fatalf("expected rollback evidence without silent graph rewind, got decision=%#v rollback=%#v", afterRollback, rollback)
+	}
+	if mutator.promoteOptions.ProjectID != "project-1" || mutator.promoteOptions.OrganizationID != "org-1" || mutator.promoteOptions.ActorID != "principal-1" {
+		t.Fatalf("private endpoint did not forward trusted principal scope: %#v", mutator.promoteOptions)
+	}
+	if mutator.rollbackOptions.IdempotencyKey != "endpoint-consistency-rollback-key" {
+		t.Fatalf("private endpoint did not forward rollback idempotency key: %#v", mutator.rollbackOptions)
+	}
+}
+
 func TestExportArtifactWritesArtifactDir(t *testing.T) {
 	handler := newTestHandler(t, "")
 	outputDir := filepath.Join(t.TempDir(), "artifact")
@@ -1815,6 +1935,181 @@ func (m *recordingHostedPolicyMutator) finish() (registry.HostedPermissionPolicy
 		return registry.HostedPermissionPolicyMutationDurableResult{}, m.err
 	}
 	return m.result, nil
+}
+
+type endpointReadModelConsistencyMutator struct {
+	draftID             string
+	draftVersion        string
+	activeVersion       string
+	activeFingerprint   string
+	previousVersion     string
+	changes             []registry.HostedPermissionPolicyDraftChange
+	graphApplied        bool
+	promoteOptions      registry.HostedPermissionPolicyMutationOptions
+	rollbackOptions     registry.HostedPermissionPolicyMutationOptions
+	idempotencyRecordID int64
+}
+
+func newEndpointReadModelConsistencyMutator() *endpointReadModelConsistencyMutator {
+	return &endpointReadModelConsistencyMutator{
+		activeVersion:     "policy-v1",
+		activeFingerprint: "sha256:policy-v1",
+	}
+}
+
+func (m *endpointReadModelConsistencyMutator) BeginHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.draftID = "draft-endpoint-consistency"
+	m.draftVersion = opts.DraftPolicyVersion
+	return registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:          registry.HostedPermissionPolicyMutationBeginDraftOperation,
+		ProjectID:          opts.ProjectID,
+		OrganizationID:     opts.OrganizationID,
+		ActorID:            opts.ActorID,
+		RequestID:          opts.RequestID,
+		PolicySource:       opts.PolicySource,
+		DraftID:            m.draftID,
+		BasePolicyVersion:  opts.BasePolicyVersion,
+		DraftPolicyVersion: m.draftVersion,
+		PolicyVersion:      m.activeVersion,
+		PolicyFingerprint:  m.activeFingerprint,
+	}, nil
+}
+
+func (m *endpointReadModelConsistencyMutator) ApplyHostedPermissionPolicyDraftChange(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions, change registry.HostedPermissionPolicyDraftChange) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	if opts.DraftID != m.draftID {
+		return registry.HostedPermissionPolicyMutationDurableResult{}, registry.RegistryMutationError{ErrorType: "POLICY_STATE_CONFLICT", Scope: "caller", Underlying: fmt.Errorf("draft %q was not found", opts.DraftID)}
+	}
+	m.changes = append(m.changes, change)
+	return registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:          registry.HostedPermissionPolicyMutationApplyChangeOperation,
+		ProjectID:          opts.ProjectID,
+		OrganizationID:     opts.OrganizationID,
+		ActorID:            opts.ActorID,
+		RequestID:          opts.RequestID,
+		PolicySource:       opts.PolicySource,
+		DraftID:            opts.DraftID,
+		DraftPolicyVersion: m.draftVersion,
+		PolicyFingerprint:  "sha256:policy-v2",
+	}, nil
+}
+
+func (m *endpointReadModelConsistencyMutator) RequestHostedPermissionPolicyReview(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	return registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:          registry.HostedPermissionPolicyMutationRequestReviewOperation,
+		ProjectID:          opts.ProjectID,
+		OrganizationID:     opts.OrganizationID,
+		ActorID:            opts.ActorID,
+		RequestID:          opts.RequestID,
+		PolicySource:       opts.PolicySource,
+		DraftID:            opts.DraftID,
+		DraftPolicyVersion: m.draftVersion,
+		PolicyFingerprint:  "sha256:policy-v2",
+	}, nil
+}
+
+func (m *endpointReadModelConsistencyMutator) PromoteHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.promoteOptions = opts
+	m.previousVersion = m.activeVersion
+	m.activeVersion = opts.DraftPolicyVersion
+	m.activeFingerprint = "sha256:policy-v2"
+	m.graphApplied = true
+	m.idempotencyRecordID++
+	return registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:                 registry.HostedPermissionPolicyMutationPromoteOperation,
+		ProjectID:                 opts.ProjectID,
+		OrganizationID:            opts.OrganizationID,
+		ActorID:                   opts.ActorID,
+		RequestID:                 opts.RequestID,
+		PolicySource:              opts.PolicySource,
+		DraftID:                   opts.DraftID,
+		BasePolicyVersion:         opts.BasePolicyVersion,
+		DraftPolicyVersion:        opts.DraftPolicyVersion,
+		PreviousPolicyVersion:     m.previousVersion,
+		PolicyVersion:             m.activeVersion,
+		PreviousPolicyFingerprint: "sha256:policy-v1",
+		PolicyFingerprint:         m.activeFingerprint,
+		IdempotencyRecordID:       m.idempotencyRecordID,
+	}, nil
+}
+
+func (m *endpointReadModelConsistencyMutator) RollbackHostedPermissionPolicy(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.rollbackOptions = opts
+	previous := m.activeVersion
+	m.activeVersion = opts.TargetPolicyVersion + "-rollback"
+	m.activeFingerprint = "sha256:policy-v1"
+	m.idempotencyRecordID++
+	return registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:                 registry.HostedPermissionPolicyMutationRollbackOperation,
+		ProjectID:                 opts.ProjectID,
+		OrganizationID:            opts.OrganizationID,
+		ActorID:                   opts.ActorID,
+		RequestID:                 opts.RequestID,
+		PolicySource:              opts.PolicySource,
+		TargetPolicyVersion:       opts.TargetPolicyVersion,
+		PreviousPolicyVersion:     previous,
+		PolicyVersion:             m.activeVersion,
+		PreviousPolicyFingerprint: "sha256:policy-v2",
+		PolicyFingerprint:         m.activeFingerprint,
+		IdempotencyRecordID:       m.idempotencyRecordID,
+	}, nil
+}
+
+func (m *endpointReadModelConsistencyMutator) resolve(requiredPermission string, resolvedAt time.Time) registry.HostedPermissionDecision {
+	permissions := []string{}
+	roles := []string{}
+	if m.graphApplied && endpointChangesFormReadableGraph(m.changes, requiredPermission) {
+		permissions = append(permissions, requiredPermission)
+		roles = append(roles, "policy-admin")
+	}
+	decision := registry.HostedPermissionDecision{
+		Allowed:            slices.Contains(permissions, requiredPermission),
+		Status:             registry.HostedPermissionDecisionAllowed,
+		SubjectID:          "subject-a",
+		ActorID:            "actor-a",
+		ProjectID:          "project-1",
+		OrganizationID:     "org-1",
+		TokenID:            "token-1",
+		Roles:              roles,
+		Permissions:        permissions,
+		RequiredPermission: requiredPermission,
+		PolicySource:       "hosted_permission_store",
+		PolicyVersion:      m.activeVersion,
+		PolicyFingerprint:  m.activeFingerprint,
+		PermissionSource:   "hosted_permission_store",
+		ResolvedAt:         resolvedAt,
+	}
+	if !decision.Allowed {
+		decision.Status = registry.HostedPermissionDecisionDenied
+		decision.ErrorType = registry.HostedPermissionErrorPublicAuthzDenied
+		decision.DenyReason = registry.HostedPermissionDenyMissingEndpointPermission
+	}
+	return decision
+}
+
+func endpointChangesFormReadableGraph(changes []registry.HostedPermissionPolicyDraftChange, permission string) bool {
+	seenSubject := false
+	seenMembership := false
+	seenRole := false
+	seenBinding := false
+	seenGrant := false
+	for _, change := range changes {
+		if change.Operation != "upsert" {
+			continue
+		}
+		switch change.ObjectType {
+		case "subject":
+			seenSubject = change.PatchSummary["subject_id"] == "subject-a" && change.PatchSummary["external_subject_ref"] == "dogfood/idp/admin"
+		case "membership":
+			seenMembership = change.PatchSummary["subject_id"] == "subject-a" && change.PatchSummary["actor_id"] == "actor-a"
+		case "role":
+			seenRole = change.PatchSummary["role_id"] == "policy-admin"
+		case "role_binding":
+			seenBinding = change.PatchSummary["subject_id"] == "subject-a" && change.PatchSummary["role_id"] == "policy-admin"
+		case "permission_grant":
+			seenGrant = change.PatchSummary["role_id"] == "policy-admin" && change.PatchSummary["permission"] == permission
+		}
+	}
+	return seenSubject && seenMembership && seenRole && seenBinding && seenGrant
 }
 
 type harnessHostedPolicyMutator struct {
