@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Stage Closeout Complete
+Go Control Plane Hosted Permission Decision Retention Boundary Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision retention and customer-history boundary design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision retention boundary implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
+Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
+Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1195,11 +1195,19 @@ Current Phase 6 progress:
   - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
   - the next hosted-readiness task is hosted permission decision retention and customer-history boundary design.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md`.
+- Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0 is complete:
+  - the design sets a 90-day default retention stance for hosted permission decision rows.
+  - history visibility classes are `hidden`, `tenant_visible_candidate`, and `support_only`.
+  - tenant/project scoped query semantics, redacted customer-visible fields, access-control expectations, support/operator audit, export, deletion, cleanup, and legal-hold boundaries are documented.
+  - customer-facing decision history endpoints remain deferred.
+  - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
+  - the next hosted-readiness task is hosted permission decision retention boundary implementation.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
+Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 ```
 
 References:
@@ -1251,6 +1259,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

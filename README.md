@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: design the hosted permission decision retention and customer-history boundary after closing the full hosted permission decision persistence lane for local v0; next work remains API-first and out of public CRUD, OAuth/OIDC, vault, billing, marketplace, automatic propagation, production gateway deployment, and workflow runtime scope.
+Current focus: implement the local hosted permission decision retention boundary after designing retention, customer-history, redaction, access-control, and operator-audit rules; next work remains API-first and out of public CRUD, OAuth/OIDC, vault, billing, marketplace, automatic propagation, production gateway deployment, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
@@ -170,6 +170,7 @@ English:
 - [Hosted Permission Decision Persistence Production Boundary Implementation Report](docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md)
 - [Hosted Permission Decision Persistence Production Boundary Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md)
 - [Hosted Permission Decision Persistence Stage Closeout + Readiness Review](docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md)
+- [Hosted Permission Decision Retention + Customer History Boundary Design](docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md)
 - [Next Session Handoff - 2026-06-01](docs/en-US/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/en-US/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/en-US/ROUTING_POLICY.md)
@@ -319,6 +320,7 @@ English:
 - [Hosted Permission Decision Persistence Production Boundary 实现报告](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md)
 - [Hosted Permission Decision Persistence Production Boundary Closeout + Phase Review](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md)
 - [Hosted Permission Decision Persistence Stage Closeout + Readiness Review](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md)
+- [Hosted Permission Decision Retention + Customer History Boundary Design](docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md)
 - [下一次会话交接 - 2026-06-01](docs/cn-ZH/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/cn-ZH/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/cn-ZH/ROUTING_POLICY.md)
