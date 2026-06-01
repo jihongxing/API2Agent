@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 tenant-partitioned hosted registry mutation design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 tenant-partitioned registry mutation contract proof。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1033,11 +1033,16 @@ Go Control Plane Minimum v0
   - gateway-local denial、Control Plane second-gate behavior 和 secret-safe evidence 满足 design acceptance criteria。
   - 下一条最高风险 hosted lane 是 tenant-partitioned registry mutation design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Tenant-Partitioned Registry Mutation Design v0 已完成：
+  - project partition ownership rules、global/platform read-only objects 和 provider ownership gaps 已明确。
+  - 设计定义了 full-registry replacement 前的 partition diff validation，且不包含 public CRUD 或 automatic propagation。
+  - 下一项任务是 partition rules 的 local contract harness。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 ```
 
 参考：
@@ -1063,6 +1068,7 @@ Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

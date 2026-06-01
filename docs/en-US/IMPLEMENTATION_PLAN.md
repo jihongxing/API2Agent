@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is tenant-partitioned hosted registry mutation design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is tenant-partitioned registry mutation contract proof.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1033,11 +1033,16 @@ Current Phase 6 progress:
   - gateway-local denial, Control Plane second-gate behavior, and secret-safe evidence satisfy the design acceptance criteria.
   - the next highest-risk hosted lane is tenant-partitioned registry mutation design.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`.
+- Go Control Plane Tenant-Partitioned Registry Mutation Design v0 is complete:
+  - project partition ownership rules, global/platform read-only objects, and provider ownership gaps are explicit.
+  - the design defines partition diff validation before full-registry replacement, without public CRUD or automatic propagation.
+  - the next task is a local contract harness for partition rules.
+  - see `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 ```
 
 References:
@@ -1063,6 +1068,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

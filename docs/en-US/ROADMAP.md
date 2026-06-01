@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1012,31 +1012,32 @@ Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 ```
 
-This hosted-readiness design is now the immediate next project task because the permission-source closeout accepted v0 gateway authorization as a local proof and identified full-registry replacement as the next highest-risk hosted boundary.
+This hosted-readiness implementation is now the immediate next project task because tenant-partitioned mutation design is complete and the partition rules should be proven in a local harness before production endpoint behavior changes.
 
 Scope:
 
-1. Design tenant/project ownership boundaries for registry entities.
-2. Define the allowed hosted mutation envelope and cross-tenant rejection semantics.
-3. Define audit/idempotency scope for tenant-partitioned changes.
+1. Implement local validation helpers or contract harness coverage for partition diffs.
+2. Prove same-project metadata changes pass and cross-project/global changes fail.
+3. Prove idempotency and audit evidence shape for partition decisions.
 4. Keep public CRUD, public auth provider implementation, durable permission storage, and production gateway deployment out of scope.
 5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- tenant/project ownership rules are explicit.
-- scoped mutation boundaries are explicit.
-- cross-tenant rejection and conflict semantics are explicit.
-- audit/idempotency evidence requirements for scoped mutation are explicit.
-- migration path from full-registry replacement to tenant-scoped mutation is explicit.
+- partition validation helpers or harness tests exist.
+- same-project project/API-key/credential metadata cases pass.
+- cross-project, global routing, snapshot config, capability, and provider ownership violations fail with stable error types.
+- idempotency and audit evidence expectations are covered.
+- no production public CRUD endpoint is added.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1062,6 +1063,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
@@ -1098,6 +1100,17 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
+
+Completed tenant-partitioned registry mutation design result:
+
+- project partition ownership rules are explicit.
+- global/platform read-only objects remain protected from project-scoped mutation.
+- provider ownership is identified as a schema/metadata gap before project-owned provider mutation.
+- partition diff validation is designed as a pre-commit gate before full-registry replacement.
+- idempotency, audit evidence, snapshot boundaries, and failure semantics are defined.
+- the next task is a local contract harness for the partition rules, not public CRUD.
+- See `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`.
 
 Completed hosted admin gateway permission source closeout result:
 
