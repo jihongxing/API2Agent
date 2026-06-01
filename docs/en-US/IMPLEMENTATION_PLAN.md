@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Implementation Complete
+Go Control Plane Hosted Admin Gateway Permission Source Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted Control Plane permission-source closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is tenant-partitioned hosted registry mutation design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1028,11 +1028,16 @@ Current Phase 6 progress:
   - static policy evidence, endpoint permission mapping, typed local failures, trusted header injection, and Control Plane second-gate denial are implemented.
   - live dogfood passed with `admin_audit_events=3`, `idempotency_records=1`, and no raw public token or gateway secret leakage in evidence.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`.
+- Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0 is complete:
+  - the static dogfood permission source is accepted as a v0 trust-boundary proof, not production authorization.
+  - gateway-local denial, Control Plane second-gate behavior, and secret-safe evidence satisfy the design acceptance criteria.
+  - the next highest-risk hosted lane is tenant-partitioned registry mutation design.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
 References:
@@ -1057,6 +1062,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

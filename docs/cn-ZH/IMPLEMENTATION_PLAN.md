@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Implementation Complete
+Go Control Plane Hosted Admin Gateway Permission Source Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted Control Plane permission-source closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 tenant-partitioned hosted registry mutation design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1028,11 +1028,16 @@ Go Control Plane Minimum v0
   - static policy evidence、endpoint permission mapping、typed local failures、trusted header injection 和 Control Plane second-gate denial 已实现。
   - live dogfood 已通过，记录 `admin_audit_events=3`、`idempotency_records=1`，并确认 evidence 中无 raw public token 或 gateway secret 泄漏。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0 已完成：
+  - static dogfood permission source 被接受为 v0 trust-boundary proof，不是 production authorization。
+  - gateway-local denial、Control Plane second-gate behavior 和 secret-safe evidence 满足 design acceptance criteria。
+  - 下一条最高风险 hosted lane 是 tenant-partitioned registry mutation design。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
 参考：
@@ -1057,6 +1062,7 @@ Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review 
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

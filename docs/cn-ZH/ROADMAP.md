@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Implementation Complete
+Go Control Plane Hosted Admin Gateway Permission Source Closeout Complete
 ```
 
 战略判断：
@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted admin gateway contract harness closeout 后暂停。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway 和 local gateway contract harness 已完成。
+状态：hosted admin gateway permission-source closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness 和 gateway permission-source proof 已完成。
 
 目标：
 
@@ -1009,29 +1009,34 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Pha
 Go Control Plane Hosted Admin Gateway Contract Harness Design v0
 Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0
 Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
+Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 ```
 
-Deferred hosted-readiness slice：
+下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
-由于 permission-source design 已完成，这项 hosted-readiness implementation 现在是当前项目立即下一项任务。
+由于 permission-source closeout 已接受 v0 gateway authorization 作为 local proof，并识别出 full-registry replacement 是下一项最高风险 hosted boundary，这项 hosted-readiness design 现在是当前项目立即下一项任务。
 
 范围：
 
-1. 设计 hosted gateway 如何从 authenticated principal/project policy 推导 trusted roles 和 permissions。
-2. 定义 policy source、lookup inputs、failure semantics、audit/idempotency evidence 和 test fixtures。
-3. public auth provider implementation 和 production gateway deployment 保持 out of scope。
-4. 不实现 public CRUD、automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
+1. 设计 registry entities 的 tenant/project ownership boundaries。
+2. 定义 allowed hosted mutation envelope 和 cross-tenant rejection semantics。
+3. 定义 tenant-partitioned changes 的 audit/idempotency scope。
+4. public CRUD、public auth provider implementation、durable permission storage 和 production gateway deployment 保持 out of scope。
+5. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- permission source responsibilities 明确。
-- trusted permission claim derivation 明确。
-- policy lookup failure semantics 明确。
-- audit/idempotency evidence requirements 明确。
+- tenant/project ownership rules 明确。
+- scoped mutation boundaries 明确。
+- cross-tenant rejection 和 conflict semantics 明确。
+- scoped mutation 的 audit/idempotency evidence requirements 明确。
+- 从 full-registry replacement 到 tenant-scoped mutation 的 migration path 明确。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：
@@ -1054,6 +1059,9 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
@@ -1089,6 +1097,16 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
+
+已完成 hosted admin gateway permission source closeout 结果：
+
+- permission-source implementation slice 可以关闭。
+- static dogfood policy 被接受为 v0 trust-boundary proof，不是 production auth。
+- gateway-local denial 不创建 Control Plane audit/idempotency rows。
+- Control Plane trusted-gateway authenticator 继续作为第二道 gate，并拒绝 insufficient trusted permissions。
+- 下一条最高风险 hosted lane 是 tenant-partitioned registry mutation design。
+- 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`。
 
 已完成 hosted admin gateway permission source implementation 结果：
 

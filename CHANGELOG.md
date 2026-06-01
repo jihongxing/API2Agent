@@ -317,6 +317,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler final re-entry closeout completed; the compiler re-entry scope is accepted as 100% complete and the next project lane returns to hosted Control Plane permission-source design.
 - Go Control Plane Hosted Admin Gateway Permission Source design completed with gateway-side permission source contract, static dogfood policy shape, endpoint permission mapping, fail-closed semantics, audit/idempotency evidence, tests, dogfood, and non-goals.
 - Go Control Plane Hosted Admin Gateway Permission Source implemented in the local gateway contract harness with explicit permission decisions, static policy evidence, endpoint permission mapping, typed gateway-local failures, trusted header injection, Control Plane second-gate proof, regression coverage, and live dogfood.
+- Go Control Plane Hosted Admin Gateway Permission Source closeout completed; the static dogfood permission-source proof is accepted for v0, and the next highest-risk hosted lane is tenant-partitioned registry mutation design.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -324,4 +325,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0.
+- Go Control Plane Tenant-Partitioned Registry Mutation Design v0.

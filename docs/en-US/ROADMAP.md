@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Implementation Complete
+Go Control Plane Hosted Admin Gateway Permission Source Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: paused after hosted admin gateway contract harness closeout. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, and the local gateway contract harness are complete.
+Status: hosted admin gateway permission-source closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, and gateway permission-source proof are complete.
 
 Goal:
 
@@ -1009,29 +1009,34 @@ Go Control Plane Hosted Admin Trusted Gateway Production Boundary Closeout + Pha
 Go Control Plane Hosted Admin Gateway Contract Harness Design v0
 Go Control Plane Hosted Admin Gateway Contract Harness Implementation v0
 Go Control Plane Hosted Admin Gateway Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
+Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 ```
 
-Deferred hosted-readiness slice:
+Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 ```
 
-This hosted-readiness implementation is now the immediate next project task because the permission-source design is complete.
+This hosted-readiness design is now the immediate next project task because the permission-source closeout accepted v0 gateway authorization as a local proof and identified full-registry replacement as the next highest-risk hosted boundary.
 
 Scope:
 
-1. Design how a hosted gateway derives trusted roles and permissions from authenticated principal/project policy.
-2. Define policy source, lookup inputs, failure semantics, audit/idempotency evidence, and test fixtures.
-3. Keep public auth provider implementation and production gateway deployment out of scope.
-4. Do not implement public CRUD, automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
+1. Design tenant/project ownership boundaries for registry entities.
+2. Define the allowed hosted mutation envelope and cross-tenant rejection semantics.
+3. Define audit/idempotency scope for tenant-partitioned changes.
+4. Keep public CRUD, public auth provider implementation, durable permission storage, and production gateway deployment out of scope.
+5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- permission source responsibilities are explicit.
-- trusted permission claim derivation is explicit.
-- policy lookup failure semantics are explicit.
-- audit/idempotency evidence requirements are explicit.
+- tenant/project ownership rules are explicit.
+- scoped mutation boundaries are explicit.
+- cross-tenant rejection and conflict semantics are explicit.
+- audit/idempotency evidence requirements for scoped mutation are explicit.
+- migration path from full-registry replacement to tenant-scoped mutation is explicit.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:
@@ -1054,6 +1059,9 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
@@ -1089,6 +1097,16 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
+
+Completed hosted admin gateway permission source closeout result:
+
+- the permission-source implementation slice can close.
+- static dogfood policy is accepted as a v0 trust-boundary proof, not production auth.
+- gateway-local denial creates no Control Plane audit/idempotency rows.
+- the Control Plane trusted-gateway authenticator remains a second gate and rejects insufficient trusted permissions.
+- the next highest-risk hosted lane is tenant-partitioned registry mutation design.
+- See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed hosted admin gateway permission source implementation result:
 
