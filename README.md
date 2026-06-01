@@ -2,29 +2,29 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: implement the durable/private hosted permission policy mutation path after completing the durable transaction design; next work remains API-first and out of public CRUD, OAuth/OIDC, vault, billing, marketplace, automatic propagation, production gateway deployment, customer-facing decision history, and workflow runtime scope.
+Current focus: ship the Agent Capability Compiler release candidate. The release path is intentionally narrow: convert OpenAPI 3.x or curl input into a local Agent capability package that can be inspected, diagnosed, smoke-tested, and exposed through MCP stdio.
 
-Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
+Strategic priority: make API-to-Agent onboarding fast, reproducible, and safe enough to be the base layer for later routing, observability, hosted control, and commercial workflows.
 
 Current implementation boundary: API-first. API2Agent supports OpenAPI/curl/HTTP APIs today and must not become a workflow engine.
 
 Implementation language boundary: Python remains the Tooling reference implementation and local dogfood harness; Go owns the production Data Plane and Control Plane direction. API2Agent's neutrality is protected by language-neutral protocol artifacts, not by treating Python as the only runtime.
 
-v0.1-alpha positioning:
+v0.1 release candidate positioning:
 
 ```text
-Local Agent API Execution + Observability Layer
+Agent Capability Compiler
 ```
 
-Alpha product hook:
+Release candidate promise:
 
 ```text
-Reliability + Observability
+OpenAPI / curl -> Agent-callable capability package
 ```
 
-The alpha must prove that API2Agent makes Agent API calls more reliable, measurable, and debuggable than calling providers directly.
+The release candidate must prove that API2Agent can take an existing API description and produce artifacts an Agent developer can actually use: `capability.json`, `tools.json`, `runner.py`, `mcp_server.py`, generated docs, diagnostics, and smoke tests.
 
-Marketplace is a far-term possibility, not the current product, MVP, or active implementation phase.
+Marketplace, hosted SaaS, billing, workflow runtime, and Hosted Control Plane work are not part of the release candidate surface.
 
 Current build target:
 
@@ -71,7 +71,7 @@ Core Chinese docs:
 Project governance and active phase state:
 
 - [Documentation Policy](docs/DOCUMENTATION_POLICY.md)
-- [Hosted Control Plane Phase Log](docs/HOSTED_CONTROL_PLANE_PHASE_LOG.md)
+- [Hosted Control Plane Phase Log](docs/HOSTED_CONTROL_PLANE_PHASE_LOG.md) records the completed local v0 hosted-control work; it is not the current release-candidate focus.
 
 Historical design, implementation, dogfood, and closeout reports remain in `docs/en-US/` and `docs/cn-ZH/`. They are intentionally no longer listed one by one in this README; use `rg` or the phase log when older evidence is needed.
 
@@ -84,13 +84,28 @@ API2Agent is planned as an open-core project: the local compiler, CLI, generated
 ## First Demo
 
 ```bash
-api2agent generate examples/openapi/basic.yaml
+api2agent generate examples/openapi/basic.yaml --output api2agent-output --force
 api2agent inspect api2agent-output
+api2agent diagnose api2agent-output
 api2agent test api2agent-output
+```
+
+The generated package contains:
+
+- `capability.json` for API2Agent's neutral capability model
+- `tools.json` for OpenAI-compatible tool definitions
+- `runner.py` for local direct execution
+- `mcp_server.py` for MCP stdio clients
+- `smoke_test.py` and `manual_write_test.py`
+- generated README, examples, diagnostics, and auth env template
+
+Run the generated MCP server when you are ready to connect an MCP client:
+
+```bash
 api2agent run api2agent-output
 ```
 
-`api2agent run` starts the generated MCP stdio server and will keep the process open for an MCP client.
+`api2agent run` starts the generated MCP stdio server and keeps the process open for the client.
 
 Generation refuses to write into a non-empty output directory unless you pass `--force`.
 

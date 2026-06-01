@@ -367,11 +367,13 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Policy Mutation Operational Error Semantics guarded with hosted private endpoint coverage for policy conflicts, idempotency conflicts/in-progress states, persistent store failures, audit failures, and replay failures.
 - Go Control Plane Hosted Permission Policy Mutation Idempotency Replay Evidence guarded with durable promotion/rollback replay proof that avoids duplicate policy versions, hosted graph rewrites, and extra audit events while preserving replay metadata and secret-safe evidence.
 - Hosted Control Plane local v0 phase closeout accepted at 100% under the compact documentation policy.
+- Agent Capability Compiler release-candidate focus restored as the active product lane; README and Quickstart now lead with OpenAPI/curl to Agent capability package generation instead of hosted control or routing-ledger demos.
+- Agent Capability Compiler release-candidate smoke path verified for OpenAPI generate, inspect, diagnose, safe smoke test, and curl generate/diagnose warning behavior.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
-- Full test suite: `217 passed`.
+- Python test suite: `238 passed`.
 
 ### Planned Next
 
-- Select the post-Hosted Control Plane phase under the compact documentation policy.
+- Continue Agent Capability Compiler release-candidate hardening: packaging/install verification, generated MCP client wiring docs, and release-blocker-only fixes.

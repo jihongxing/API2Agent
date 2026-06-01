@@ -1,289 +1,178 @@
 # API2Agent Quickstart
 
-This quickstart reproduces the v0.1-alpha loop:
+This quickstart proves the release-candidate path:
 
 ```text
-one capability
-  -> two providers
-  -> benchmark comparison
-  -> failover
-  -> usage ledger
+OpenAPI 3.x / curl
+  -> API2Agent IR
+  -> Agent capability package
+  -> OpenAI tools schema
+  -> local runner
+  -> MCP stdio server
+  -> smoke test
 ```
 
-Current alpha capability:
-
-- legacy ID: `weather.get`
-- target naming rule: `weather.current.get`
-
-`weather.get` remains in code for compatibility while the alpha naming rule is introduced.
+The current release focus is the Agent Capability Compiler. Routing, proxy usage, ledgers, failover, and hosted control are useful later layers, but they are not required to prove the first publishable version.
 
 ## 1. Install
 
 ```bash
 python -m pip install -e ".[dev]"
-pytest
+python -m api2agent.cli --help
+python -m pytest
 ```
 
-Expected:
+Expected test result:
 
 ```text
-143 passed
+238 passed
 ```
 
-## 2. First SDK Call
-
-```python
-from api2agent import call
-
-result = call(
-    "weather.get",
-    {"city": "San Francisco"},
-    agent_id="quickstart_agent",
-    db=".dogfood/quickstart.sqlite",
-)
-
-print(result["ok"])
-print(result["provider_id"])
-print(result["output"])
-```
-
-This records:
-
-- routing decision
-- usage event
-- ledger row
-
-## 3. Benchmark Two Providers
-
-```python
-from api2agent.benchmark import run_weather_benchmark
-
-result = run_weather_benchmark(
-    city="San Francisco",
-    iterations=3,
-    db=".dogfood/quickstart-benchmark.sqlite",
-)
-
-print(result)
-```
-
-This compares:
-
-- `open_meteo`
-- `wttr_in`
-
-Metrics include:
-
-- total calls
-- success rate
-- p50 latency
-- p95 latency
-- estimated vs observed cost
-
-After metrics exist, a default SDK call ranks providers by observed local latency:
-
-```python
-from api2agent import call
-
-result = call(
-    "weather.get",
-    {"city": "San Francisco"},
-    db=".dogfood/quickstart-benchmark.sqlite",
-)
-
-print(result["provider_id"])
-print(result["routing_decision"]["ranked_provider_ids"])
-```
-
-## 4. Failover Demo
-
-This demo forces the primary provider to fail, then falls back to the real `wttr_in` provider.
-
-```python
-from api2agent import sdk
-from api2agent.adapters.models import AdapterResult, CostEstimate
-
-
-class ControlledFailingWeatherAdapter:
-    capability_id = "weather.get"
-    provider_id = "open_meteo"
-    tool_id = "get_current_weather"
-
-    def call(self, input):
-        return AdapterResult(
-            ok=False,
-            capability_id=self.capability_id,
-            provider_id=self.provider_id,
-            status_code=500,
-            latency_ms=12.0,
-            cost=CostEstimate(estimated_cost=0.0, observed_cost=0.0, cost_source="provider_declared"),
-            error_type="PROVIDER_ERROR",
-            error_message="controlled quickstart failure",
-        )
-
-    def estimate_cost(self, input):
-        return CostEstimate(estimated_cost=0.0, observed_cost=0.0, cost_source="provider_declared")
-
-
-sdk.OpenMeteoWeatherAdapter = ControlledFailingWeatherAdapter
-
-result = sdk.call(
-    "weather.get",
-    {"city": "San Francisco"},
-    strategy="first",
-    failover=True,
-    max_attempts=2,
-    agent_id="quickstart_failover_agent",
-    db=".dogfood/quickstart-failover.sqlite",
-)
-
-print(result["ok"])
-print(result["provider_id"])
-print(result["attempts"])
-```
-
-Expected:
-
-- first attempt: `open_meteo`, failed, `500`
-- second attempt: `wttr_in`, success, `200`
-
-## 5. Shadow Demo
-
-Shadow mode runs additional providers for benchmark data without changing the main result:
-
-```python
-from api2agent import call
-
-result = call(
-    "weather.get",
-    {"city": "San Francisco"},
-    strategy="first",
-    shadow=True,
-    db=".dogfood/quickstart-shadow.sqlite",
-)
-
-print(result["provider_id"])
-print(result["shadow_attempts"])
-```
-
-Expected:
-
-- main result provider: `open_meteo`
-- shadow provider: `wttr_in`
-- ledger includes both `direct` and `shadow` execution modes
-
-Shadow metrics are included in routing aggregates by default. CLI routing paths can opt out with:
+## 2. Generate From OpenAPI
 
 ```bash
---exclude-shadow-metrics
+python -m api2agent.cli generate examples/openapi/basic.yaml --output api2agent-output --force
 ```
 
-## 6. Inspect Ledger
+Expected output:
 
-If the `api2agent` console script is installed:
-
-```bash
-api2agent ledger --db .dogfood/quickstart-failover.sqlite --capability-id weather.get --group-by-mode --json
+```text
+Generated capability package: api2agent-output
+Diagnostics: pass ...
 ```
 
-Portable form:
+The generated directory contains:
+
+- `capability.json`
+- `tools.json`
+- `diagnostics.json`
+- `auth.env.example`
+- `README.md`
+- `runner.py`
+- `smoke_test.py`
+- `manual_write_test.py`
+- `mcp_server.py`
+- `examples/openai_agent.py`
+- `examples/claude_desktop_config.json`
+
+## 3. Inspect The Package
 
 ```bash
-python -m api2agent.cli ledger --db .dogfood/quickstart-failover.sqlite --capability-id weather.get --group-by-mode --json
-```
-
-Expected ledger shape:
-
-- one failed `open_meteo` row
-- one successful `wttr_in` row
-- both in `direct` execution mode
-
-## 7. Replay Preflight
-
-`replay` works as a preflight and audit view by default. Add `--execute` to re-run supported SDK or no-credential HTTP events.
-
-```bash
-python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
-```
-
-Current expected result:
-
-- usage event is returned
-- routing decision is returned
-- missing exact replay fields are listed
-
-Execute replay when `replayable` is `true`:
-
-```bash
-python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --json
-```
-
-Record the replay execution in the ledger without affecting routing metrics:
-
-```bash
-python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --record --json
-```
-
-## 8. Golden Trace Marker
-
-Mark a known-good usage event as a golden trace:
-
-```bash
-python -m api2agent.cli golden <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
-```
-
-List golden traces and filter ledger rows to golden baselines:
-
-```bash
-python -m api2agent.cli golden --list --db .dogfood/quickstart-failover.sqlite --capability-id weather.get --json
-python -m api2agent.cli ledger --db .dogfood/quickstart-failover.sqlite --golden-only --json
-```
-
-Golden traces are baselines for replay, benchmarks, scoring, and regression tests.
-
-## 9. Generate A Local Capability Package
-
-```bash
-api2agent generate examples/openapi/basic.yaml --force
-api2agent inspect api2agent-output
-api2agent test api2agent-output
-```
-
-Portable form:
-
-```bash
-python -m api2agent.cli generate examples/openapi/basic.yaml --force
 python -m api2agent.cli inspect api2agent-output
+```
+
+This shows the generated capability name, base URL, auth shape, safety summary, tool list, parameter requirements, and response summaries.
+
+For raw JSON:
+
+```bash
+python -m api2agent.cli inspect api2agent-output --json
+```
+
+## 4. Diagnose Readiness
+
+```bash
+python -m api2agent.cli diagnose api2agent-output
+```
+
+Diagnostics are advisory by default. They are meant to tell you whether the generated package is safe and clear enough to wire into an Agent.
+
+Common signals:
+
+- missing provider region metadata
+- missing or weak operation descriptions
+- write/delete tools that require deliberate manual testing
+- missing base URL or auth metadata
+- schema or response-shape caveats
+
+## 5. Run The Smoke Test
+
+```bash
 python -m api2agent.cli test api2agent-output
 ```
 
-Generated packages also support the local reliability loop when they are registered as providers:
+The default smoke test only runs a safe read-only path. If a generated package only contains write/delete tools, use `--allow-write` only against a target you control:
 
 ```bash
-python -m api2agent.cli call capability-registry.json \
-  --capability-id public_ip_lookup \
-  --shadow \
-  --json
-
-python -m api2agent.cli replay <generated_package_usage_event_id> \
-  --db api2agent-usage.sqlite \
-  --execute \
-  --json
+python -m api2agent.cli test api2agent-output --allow-write
 ```
 
-This proves the compiler path still works alongside the SDK execution loop, including shadow observations and local package replay.
+You can also run one generated tool directly:
 
-## 10. What This Proves
+```bash
+python -m api2agent.cli test api2agent-output --tool get_post --params "{\"post_id\": 1}"
+```
 
-API2Agent v0.1-alpha proves:
+## 6. Run The MCP Server
 
-- an Agent can call a capability instead of a raw API
-- providers can be compared under one capability
-- provider failure can be recorded and recovered with failover
-- shadow providers can collect benchmark data without changing the main result
-- every attempt can be audited through the ledger
-- failed attempts can be inspected through replay preflight
-- generated package attempts can be shadowed and replayed locally
-- known-good attempts can be marked, listed, and filtered as golden traces
+```bash
+python -m api2agent.cli run api2agent-output
+```
 
-Marketplace, hosted SaaS, and payment are intentionally out of scope.
+This starts the generated MCP stdio server and keeps the process open for an MCP client.
+
+For Claude Desktop-style wiring, start from:
+
+```text
+api2agent-output/examples/claude_desktop_config.json
+```
+
+## 7. Generate From curl
+
+Use `--curl` when you do not have an OpenAPI file yet:
+
+```bash
+python -m api2agent.cli generate \
+  --curl="curl https://api.example.com/items?verbose=true --json '{\"name\":\"demo\"}'" \
+  --output api2agent-curl-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-curl-output
+python -m api2agent.cli diagnose api2agent-curl-output
+```
+
+curl-generated write tools intentionally produce stronger diagnostics. That is useful: the compiler should make risky generated packages visible before an Agent can call them.
+
+## 8. Narrow Large APIs
+
+Large OpenAPI specs often expose too many endpoints for Agent tool selection. Filter before generating:
+
+```bash
+python -m api2agent.cli generate api.github.com.json \
+  --include-tag repos \
+  --include-path /repos \
+  --include-operation listRepos \
+  --max-tools 20 \
+  --provider-region us-east \
+  --output github-repos-agent \
+  --force
+```
+
+Filtering rules:
+
+- values for the same option are ORed
+- different filter types are intersected
+- `--max-tools` applies after other filters
+- `--include-path` accepts exact paths, substrings, or glob patterns
+
+## 9. What This Proves
+
+The release candidate proves that API2Agent can:
+
+- parse OpenAPI and curl API descriptions
+- compile them into a neutral capability model
+- generate OpenAI-compatible tool definitions
+- generate a local runner
+- generate an MCP stdio server
+- generate docs, examples, diagnostics, and test files
+- smoke-test safe generated read tools
+- warn when generated packages need human review before Agent use
+
+Out of scope for this release candidate:
+
+- hosted SaaS
+- marketplace and billing
+- workflow runtime
+- Hosted Control Plane
+- production Data Plane deployment
+- provider revenue share

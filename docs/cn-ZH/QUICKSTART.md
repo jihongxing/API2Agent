@@ -1,289 +1,178 @@
 # API2Agent Quickstart
 
-这份 quickstart 复现 v0.1-alpha loop：
+这份 quickstart 证明当前可发布候选版本的主路径：
 
 ```text
-one capability
-  -> two providers
-  -> benchmark comparison
-  -> failover
-  -> usage ledger
+OpenAPI 3.x / curl
+  -> API2Agent IR
+  -> Agent capability package
+  -> OpenAI tools schema
+  -> local runner
+  -> MCP stdio server
+  -> smoke test
 ```
 
-当前 alpha capability：
-
-- legacy ID：`weather.get`
-- 目标命名规则：`weather.current.get`
-
-`weather.get` 会为了兼容暂时保留，alpha 命名规则会逐步引入。
+当前发布重点是 Agent Capability Compiler。Routing、proxy、ledger、failover 和 hosted control 都是后续层，不是第一版可发布能力的必要证明。
 
 ## 1. 安装
 
 ```bash
 python -m pip install -e ".[dev]"
-pytest
+python -m api2agent.cli --help
+python -m pytest
 ```
 
-期望结果：
+期望测试结果：
 
 ```text
-143 passed
+238 passed
 ```
 
-## 2. 第一次 SDK 调用
-
-```python
-from api2agent import call
-
-result = call(
-    "weather.get",
-    {"city": "San Francisco"},
-    agent_id="quickstart_agent",
-    db=".dogfood/quickstart.sqlite",
-)
-
-print(result["ok"])
-print(result["provider_id"])
-print(result["output"])
-```
-
-这会记录：
-
-- routing decision
-- usage event
-- ledger row
-
-## 3. Benchmark 两个 Providers
-
-```python
-from api2agent.benchmark import run_weather_benchmark
-
-result = run_weather_benchmark(
-    city="San Francisco",
-    iterations=3,
-    db=".dogfood/quickstart-benchmark.sqlite",
-)
-
-print(result)
-```
-
-这会比较：
-
-- `open_meteo`
-- `wttr_in`
-
-Metrics 包括：
-
-- total calls
-- success rate
-- p50 latency
-- p95 latency
-- estimated vs observed cost
-
-当 metrics 存在后，默认 SDK 调用会按本地 observed latency 排序：
-
-```python
-from api2agent import call
-
-result = call(
-    "weather.get",
-    {"city": "San Francisco"},
-    db=".dogfood/quickstart-benchmark.sqlite",
-)
-
-print(result["provider_id"])
-print(result["routing_decision"]["ranked_provider_ids"])
-```
-
-## 4. Failover Demo
-
-这个 demo 会强制 primary provider 失败，然后 fallback 到真实 `wttr_in` provider。
-
-```python
-from api2agent import sdk
-from api2agent.adapters.models import AdapterResult, CostEstimate
-
-
-class ControlledFailingWeatherAdapter:
-    capability_id = "weather.get"
-    provider_id = "open_meteo"
-    tool_id = "get_current_weather"
-
-    def call(self, input):
-        return AdapterResult(
-            ok=False,
-            capability_id=self.capability_id,
-            provider_id=self.provider_id,
-            status_code=500,
-            latency_ms=12.0,
-            cost=CostEstimate(estimated_cost=0.0, observed_cost=0.0, cost_source="provider_declared"),
-            error_type="PROVIDER_ERROR",
-            error_message="controlled quickstart failure",
-        )
-
-    def estimate_cost(self, input):
-        return CostEstimate(estimated_cost=0.0, observed_cost=0.0, cost_source="provider_declared")
-
-
-sdk.OpenMeteoWeatherAdapter = ControlledFailingWeatherAdapter
-
-result = sdk.call(
-    "weather.get",
-    {"city": "San Francisco"},
-    strategy="first",
-    failover=True,
-    max_attempts=2,
-    agent_id="quickstart_failover_agent",
-    db=".dogfood/quickstart-failover.sqlite",
-)
-
-print(result["ok"])
-print(result["provider_id"])
-print(result["attempts"])
-```
-
-期望结果：
-
-- 第一次 attempt：`open_meteo`，失败，`500`
-- 第二次 attempt：`wttr_in`，成功，`200`
-
-## 5. Shadow Demo
-
-Shadow mode 会额外执行 providers 来采集 benchmark data，但不改变主结果：
-
-```python
-from api2agent import call
-
-result = call(
-    "weather.get",
-    {"city": "San Francisco"},
-    strategy="first",
-    shadow=True,
-    db=".dogfood/quickstart-shadow.sqlite",
-)
-
-print(result["provider_id"])
-print(result["shadow_attempts"])
-```
-
-期望结果：
-
-- main result provider：`open_meteo`
-- shadow provider：`wttr_in`
-- ledger 同时包含 `direct` 和 `shadow` execution modes
-
-Shadow metrics 默认会进入 routing aggregates。CLI routing path 可以用以下参数排除：
+## 2. 从 OpenAPI 生成
 
 ```bash
---exclude-shadow-metrics
+python -m api2agent.cli generate examples/openapi/basic.yaml --output api2agent-output --force
 ```
 
-## 6. Inspect Ledger
+期望输出：
 
-如果已经安装 `api2agent` console script：
-
-```bash
-api2agent ledger --db .dogfood/quickstart-failover.sqlite --capability-id weather.get --group-by-mode --json
+```text
+Generated capability package: api2agent-output
+Diagnostics: pass ...
 ```
 
-更通用的方式：
+生成目录包含：
+
+- `capability.json`
+- `tools.json`
+- `diagnostics.json`
+- `auth.env.example`
+- `README.md`
+- `runner.py`
+- `smoke_test.py`
+- `manual_write_test.py`
+- `mcp_server.py`
+- `examples/openai_agent.py`
+- `examples/claude_desktop_config.json`
+
+## 3. Inspect 生成包
 
 ```bash
-python -m api2agent.cli ledger --db .dogfood/quickstart-failover.sqlite --capability-id weather.get --group-by-mode --json
-```
-
-期望 ledger shape：
-
-- 一条失败的 `open_meteo` row
-- 一条成功的 `wttr_in` row
-- 两条都是 `direct` execution mode
-
-## 7. Replay Preflight
-
-`replay` 默认是 preflight 和 audit view。加上 `--execute` 后，可以重新执行 supported SDK 或 no-credential HTTP events。
-
-```bash
-python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
-```
-
-当前期望结果：
-
-- 返回 usage event
-- 返回 routing decision
-- 列出 exact replay 缺失字段
-
-当 `replayable` 为 `true` 时，可以执行 replay：
-
-```bash
-python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --json
-```
-
-也可以把 replay execution 记录进 ledger，但不影响 routing metrics：
-
-```bash
-python -m api2agent.cli replay <usage_event_id> --db .dogfood/quickstart-failover.sqlite --execute --record --json
-```
-
-## 8. Golden Trace Marker
-
-把 known-good usage event 标记为 golden trace：
-
-```bash
-python -m api2agent.cli golden <usage_event_id> --db .dogfood/quickstart-failover.sqlite --json
-```
-
-列出 golden traces，并把 ledger 过滤到 golden baselines：
-
-```bash
-python -m api2agent.cli golden --list --db .dogfood/quickstart-failover.sqlite --capability-id weather.get --json
-python -m api2agent.cli ledger --db .dogfood/quickstart-failover.sqlite --golden-only --json
-```
-
-Golden traces 是 replay、benchmark、scoring 和 regression tests 的基准。
-
-## 9. 生成本地 Capability Package
-
-```bash
-api2agent generate examples/openapi/basic.yaml --force
-api2agent inspect api2agent-output
-api2agent test api2agent-output
-```
-
-更通用的方式：
-
-```bash
-python -m api2agent.cli generate examples/openapi/basic.yaml --force
 python -m api2agent.cli inspect api2agent-output
+```
+
+这会展示生成后的 capability 名称、base URL、auth 形态、safety 摘要、tool 列表、参数要求和 response 摘要。
+
+查看原始 JSON：
+
+```bash
+python -m api2agent.cli inspect api2agent-output --json
+```
+
+## 4. Diagnose 可用性
+
+```bash
+python -m api2agent.cli diagnose api2agent-output
+```
+
+Diagnostics 默认是 advisory，用来判断生成包是否足够安全、清晰，能不能接给 Agent 使用。
+
+常见信号包括：
+
+- 缺少 provider region metadata
+- operation 描述缺失或过弱
+- write/delete tools 需要人工明确测试
+- 缺少 base URL 或 auth metadata
+- schema 或 response shape caveat
+
+## 5. 运行 Smoke Test
+
+```bash
 python -m api2agent.cli test api2agent-output
 ```
 
-当 generated packages 被注册为 providers 后，也支持本地 reliability loop：
+默认 smoke test 只运行安全的 read-only 路径。如果生成包只有 write/delete tools，只能在你控制的目标上显式使用 `--allow-write`：
 
 ```bash
-python -m api2agent.cli call capability-registry.json \
-  --capability-id public_ip_lookup \
-  --shadow \
-  --json
-
-python -m api2agent.cli replay <generated_package_usage_event_id> \
-  --db api2agent-usage.sqlite \
-  --execute \
-  --json
+python -m api2agent.cli test api2agent-output --allow-write
 ```
 
-这证明 compiler path 和 SDK execution loop 可以同时工作，包括 shadow observations 和 local package replay。
+也可以直接运行某个生成 tool：
 
-## 10. 证明了什么
+```bash
+python -m api2agent.cli test api2agent-output --tool get_post --params "{\"post_id\": 1}"
+```
 
-API2Agent v0.1-alpha 证明：
+## 6. 启动 MCP Server
 
-- Agent 可以调用 capability，而不是 raw API
-- 多个 providers 可以在同一个 capability 下比较
-- provider 失败可以被记录，并通过 failover 恢复
-- shadow providers 可以在不改变主结果的情况下采集 benchmark data
-- 每个 attempt 都可以通过 ledger 审计
-- 失败 attempt 可以通过 replay preflight 检查
-- generated package attempts 可以本地 shadow 和 replay
-- known-good attempts 可以被标记、列出，并作为 golden traces 过滤
+```bash
+python -m api2agent.cli run api2agent-output
+```
 
-Marketplace、hosted SaaS 和 payment 都刻意不在当前范围内。
+这会启动生成的 MCP stdio server，并保持进程打开，等待 MCP client 连接。
+
+Claude Desktop 风格的配置入口在：
+
+```text
+api2agent-output/examples/claude_desktop_config.json
+```
+
+## 7. 从 curl 生成
+
+如果还没有 OpenAPI 文件，可以先用 `--curl`：
+
+```bash
+python -m api2agent.cli generate \
+  --curl="curl https://api.example.com/items?verbose=true --json '{\"name\":\"demo\"}'" \
+  --output api2agent-curl-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-curl-output
+python -m api2agent.cli diagnose api2agent-curl-output
+```
+
+curl 生成出的 write tools 会刻意给出更强 diagnostics。这是好事：compiler 应该在 Agent 调用前把风险暴露出来。
+
+## 8. 收窄大型 API
+
+大型 OpenAPI spec 通常会暴露太多 endpoints，不适合直接给 Agent 做 tool selection。生成前先过滤：
+
+```bash
+python -m api2agent.cli generate api.github.com.json \
+  --include-tag repos \
+  --include-path /repos \
+  --include-operation listRepos \
+  --max-tools 20 \
+  --provider-region us-east \
+  --output github-repos-agent \
+  --force
+```
+
+过滤规则：
+
+- 同一个 option 的多个值是 OR
+- 不同 filter 类型之间是 AND
+- `--max-tools` 在其他 filter 之后生效
+- `--include-path` 支持精确路径、substring 或 glob pattern
+
+## 9. 证明了什么
+
+这个 release candidate 证明 API2Agent 可以：
+
+- 解析 OpenAPI 和 curl API 描述
+- 编译成中立的 capability model
+- 生成 OpenAI-compatible tools
+- 生成本地 runner
+- 生成 MCP stdio server
+- 生成 docs、examples、diagnostics 和 test files
+- 对安全的 read tools 做 smoke test
+- 在生成包需要人工审查时提前给出 warning
+
+本发布候选不包含：
+
+- hosted SaaS
+- marketplace 和 billing
+- workflow runtime
+- Hosted Control Plane
+- production Data Plane deployment
+- provider revenue share
