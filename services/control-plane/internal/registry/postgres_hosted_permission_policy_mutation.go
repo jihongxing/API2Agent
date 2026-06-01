@@ -429,6 +429,9 @@ func RollbackHostedPermissionPolicy(ctx context.Context, db *sql.DB, opts Hosted
 		"target_policy_version":       target.Version,
 		"policy_version":              rollbackVersion,
 		"policy_fingerprint":          opts.MutationFingerprint,
+		"graph_apply_mode":            "policy_version_only",
+		"graph_rollback_status":       "not_applied",
+		"graph_rollback_reason":       "hosted_graph_rows_not_versioned",
 	})
 	if err := supersedeHostedPolicyVersion(ctx, tx, opts.PolicySource, active.Version); err != nil {
 		return HostedPermissionPolicyMutationDurableResult{}, err

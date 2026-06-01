@@ -252,3 +252,37 @@ Completion:
 
 - durable graph apply semantics lane: 100%
 - Hosted Control Plane phase estimate: 80%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Rollback Graph Semantics Readiness Review v0
+
+Commit: pending until this readiness slice is committed
+
+Changed:
+
+- reviewed the durable Postgres rollback boundary after promotion-time graph apply semantics
+- kept rollback as policy-version-only for v0 because hosted graph rows are not versioned
+- added rollback policy version metadata for `graph_apply_mode`, `graph_rollback_status`, and the non-versioned graph reason
+- added regression coverage that rollback appends a new active policy version without silently rewriting hosted graph rows
+
+Validation:
+
+- `go test ./internal/registry -run "TestPostgresHostedPermissionPolicyMutationRollback|TestPostgresHostedPermissionPolicyMutation"`
+- `go test ./internal/registry`
+
+Decision:
+
+- rollback graph semantics readiness lane is complete for v0
+- historical graph rewind remains out of scope until graph row versioning or inverse draft replay is designed
+- no per-slice implementation report, dogfood report, or closeout document was created under the new documentation policy
+- Hosted Control Plane completion estimate moves to 81%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Read Model Consistency Dogfood v0`
+
+Completion:
+
+- rollback graph semantics readiness lane: 100%
+- Hosted Control Plane phase estimate: 81%

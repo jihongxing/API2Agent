@@ -316,6 +316,11 @@ func TestPostgresHostedPermissionPolicyMutationRollbackAppendsActiveVersion(t *t
 			Status:            "active",
 		},
 	)
+	rows.HostedSubjects = append(rows.HostedSubjects, PersistentHostedSubjectRow{ID: "subject-a", ExternalSubjectRef: "dogfood/idp/admin", Status: "active", Metadata: map[string]string{"policy_version": "policy-v2"}})
+	rows.HostedMemberships = append(rows.HostedMemberships, PersistentHostedMembershipRow{SubjectID: "subject-a", ActorID: "actor-a", ProjectID: "project-a", OrganizationID: "org-a", Status: "active", Metadata: map[string]string{"policy_version": "policy-v2"}})
+	rows.HostedRoles = append(rows.HostedRoles, PersistentHostedRoleRow{ID: "policy-admin", Name: "Policy Admin", ScopeType: "project", Status: "active", Metadata: map[string]string{"policy_version": "policy-v2"}})
+	rows.HostedRoleBindings = append(rows.HostedRoleBindings, PersistentHostedRoleBindingRow{SubjectID: "subject-a", ProjectID: "project-a", OrganizationID: "org-a", RoleID: "policy-admin", Status: "active", Source: "operator", Metadata: map[string]string{"policy_version": "policy-v2"}})
+	rows.HostedGrants = append(rows.HostedGrants, PersistentHostedGrantRow{RoleID: "policy-admin", Permission: "control_plane.permission_policy.promote", ScopeType: "project", Status: "active", Metadata: map[string]string{"policy_version": "policy-v2"}})
 	db, script := openScriptedRegistryDB(t, rows)
 	defer db.Close()
 
@@ -331,6 +336,17 @@ func TestPostgresHostedPermissionPolicyMutationRollbackAppendsActiveVersion(t *t
 	}
 	if len(script.rows.HostedPolicyVersions) != 3 || script.rows.HostedPolicyVersions[1].Status != "superseded" || script.rows.HostedPolicyVersions[2].Status != "active" {
 		t.Fatalf("rollback should append a new active version: %#v", script.rows.HostedPolicyVersions)
+	}
+	metadata := script.rows.HostedPolicyVersions[2].Metadata
+	if metadata["graph_apply_mode"] != "policy_version_only" || metadata["graph_rollback_status"] != "not_applied" || metadata["graph_rollback_reason"] != "hosted_graph_rows_not_versioned" {
+		t.Fatalf("rollback metadata must state graph rows were not rewound: %#v", metadata)
+	}
+	if script.rows.HostedSubjects[0].Metadata["policy_version"] != "policy-v2" ||
+		script.rows.HostedMemberships[0].Metadata["policy_version"] != "policy-v2" ||
+		script.rows.HostedRoles[0].Metadata["policy_version"] != "policy-v2" ||
+		script.rows.HostedRoleBindings[0].Metadata["policy_version"] != "policy-v2" ||
+		script.rows.HostedGrants[0].Metadata["policy_version"] != "policy-v2" {
+		t.Fatalf("rollback should not silently rewrite hosted graph rows: subjects=%#v memberships=%#v roles=%#v bindings=%#v grants=%#v", script.rows.HostedSubjects, script.rows.HostedMemberships, script.rows.HostedRoles, script.rows.HostedRoleBindings, script.rows.HostedGrants)
 	}
 }
 
