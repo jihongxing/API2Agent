@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout Complete
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Design Complete
 ```
 
 Strategic thesis:
@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission decision persistence integrity hardening closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, decision persistence integrity hardening implementation, and decision persistence integrity hardening closeout are complete.
+Status: hosted permission decision persistence production boundary design complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, decision persistence integrity hardening implementation, decision persistence integrity hardening closeout, and decision persistence production boundary design are complete.
 
 Goal:
 
@@ -1036,32 +1036,33 @@ Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review 
 Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
 Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
 Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0
 ```
 
-This hosted-readiness design slice is now the immediate next project task because local persistence and integrity semantics are implemented, dogfooded, and accepted for v0.
+This hosted-readiness implementation slice is now the immediate next project task because the production boundary design is complete and local persistence plus integrity semantics are implemented, dogfooded, and accepted for v0.
 
 Scope:
 
-1. Define production persistence ownership and process/service boundary.
-2. Define connection lifecycle, retry/backoff, fail-closed/buffering posture, and observability.
-3. Define retention/privacy expectations and customer-visible history stance.
-4. Decide whether schema hardening is required before production use.
-5. Define tests and dogfood/canary evidence for a future implementation slice.
+1. Introduce the production-shaped persistence writer boundary in the hosted admin gateway.
+2. Add bounded connection lifecycle, write timeout, and narrow retry/backoff behavior.
+3. Preserve allowed fail-closed behavior before private Control Plane forwarding.
+4. Add schema hardening for evidence fingerprint and tenant/time query support if the local migration path allows it.
+5. Extend tests and local dogfood to cover transient retry, exhausted persistence failure, duplicate conflicts, fingerprints, retention query shape, and secret-safe evidence.
 6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, provider onboarding, OAuth/OIDC, public CRUD, policy write APIs, Data Plane mutable reads, or production gateway deployment.
 
 Exit criteria:
 
-- production persistence ownership and boundary are explicit.
-- operational behavior for failures and conflicts is documented.
-- retention/privacy and customer-visible history stance are documented.
-- schema hardening decision is explicit.
-- implementation tests and dogfood/canary requirements are defined.
+- gateway-owned production-shaped persistence writer is implemented locally.
+- bounded connection/retry/timeout behavior is covered by tests.
+- allowed persistence failure and integrity conflict fail before forwarding.
+- schema evidence fingerprint and tenant/time query support are proven or explicitly deferred with tests over the documented schema.
+- local dogfood proves secret-safe rows, conflict behavior, transient retry, exhausted fail-closed behavior, and gateway-to-Control-Plane audit correlation.
 - OAuth/OIDC, public CRUD, production deployment, vault, billing, marketplace, workflow, provider onboarding, policy write APIs, Data Plane mutable reads, and automatic propagation remain deferred.
 
 References:
@@ -1103,6 +1104,15 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_DESIGN.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
