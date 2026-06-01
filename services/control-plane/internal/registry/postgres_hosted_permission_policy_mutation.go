@@ -54,14 +54,14 @@ type HostedPermissionPolicyMutationDurableResult struct {
 }
 
 type HostedPermissionPolicyDraftChange struct {
-	ChangeSeq        int
-	ObjectType       string
-	Operation        string
-	ObjectID         string
-	ProjectID        string
-	OrganizationID   string
-	PatchFingerprint string
-	PatchSummary     map[string]string
+	ChangeSeq        int               `json:"change_seq,omitempty"`
+	ObjectType       string            `json:"object_type"`
+	Operation        string            `json:"operation"`
+	ObjectID         string            `json:"object_id"`
+	ProjectID        string            `json:"project_id,omitempty"`
+	OrganizationID   string            `json:"organization_id,omitempty"`
+	PatchFingerprint string            `json:"patch_fingerprint,omitempty"`
+	PatchSummary     map[string]string `json:"patch_summary,omitempty"`
 }
 
 func BeginHostedPermissionPolicyDraft(ctx context.Context, db *sql.DB, opts HostedPermissionPolicyMutationOptions) (HostedPermissionPolicyMutationDurableResult, error) {

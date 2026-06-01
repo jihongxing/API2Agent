@@ -233,6 +233,7 @@ func serve(args []string) error {
 		AuditSink:                runtime.AuditSink,
 		ImportReplacer:           runtime.ImportReplacer,
 		ProjectPartitionReplacer: runtime.ProjectPartitionReplacer,
+		HostedPolicyMutator:      runtime.HostedPolicyMutator,
 		RegistryStore:            runtime.StoreName,
 		RegistrySource:           runtime.Source,
 		DistributionDir:          *distributionDir,
@@ -282,6 +283,7 @@ type registryRuntime struct {
 	AuditSink                registry.PersistentAuditSink
 	ImportReplacer           httpapi.RegistryImportReplacer
 	ProjectPartitionReplacer httpapi.RegistryProjectPartitionReplacer
+	HostedPolicyMutator      httpapi.HostedPermissionPolicyMutator
 	StoreName                string
 	Source                   string
 	close                    func() error
@@ -326,6 +328,7 @@ func openRegistryRuntime(ctx context.Context, storeName string, registryPath str
 			AuditSink:                registry.NewPostgresAuditSink(db),
 			ImportReplacer:           postgresRegistryImportReplacer{db: db},
 			ProjectPartitionReplacer: postgresRegistryProjectPartitionReplacer{db: db},
+			HostedPolicyMutator:      postgresHostedPermissionPolicyMutator{db: db},
 			StoreName:                "postgres",
 			Source:                   "postgres",
 			close:                    db.Close,
@@ -349,6 +352,30 @@ type postgresRegistryProjectPartitionReplacer struct {
 
 func (r postgresRegistryProjectPartitionReplacer) ReplaceProjectPartitionRegistry(ctx context.Context, reg registry.Registry, opts registry.ProjectPartitionReplaceOptions) (registry.ProjectPartitionReplaceResult, error) {
 	return registry.ReplaceProjectPartitionRegistry(ctx, r.db, reg, opts)
+}
+
+type postgresHostedPermissionPolicyMutator struct {
+	db *sql.DB
+}
+
+func (m postgresHostedPermissionPolicyMutator) BeginHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	return registry.BeginHostedPermissionPolicyDraft(ctx, m.db, opts)
+}
+
+func (m postgresHostedPermissionPolicyMutator) ApplyHostedPermissionPolicyDraftChange(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions, change registry.HostedPermissionPolicyDraftChange) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	return registry.ApplyHostedPermissionPolicyDraftChange(ctx, m.db, opts, change)
+}
+
+func (m postgresHostedPermissionPolicyMutator) RequestHostedPermissionPolicyReview(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	return registry.RequestHostedPermissionPolicyReview(ctx, m.db, opts)
+}
+
+func (m postgresHostedPermissionPolicyMutator) PromoteHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	return registry.PromoteHostedPermissionPolicyDraft(ctx, m.db, opts)
+}
+
+func (m postgresHostedPermissionPolicyMutator) RollbackHostedPermissionPolicy(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	return registry.RollbackHostedPermissionPolicy(ctx, m.db, opts)
 }
 
 func openPostgresDB(ctx context.Context, dsn string) (*sql.DB, error) {

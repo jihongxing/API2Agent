@@ -23,6 +23,7 @@ type Handler struct {
 	AuditSink                registry.PersistentAuditSink
 	ImportReplacer           RegistryImportReplacer
 	ProjectPartitionReplacer RegistryProjectPartitionReplacer
+	HostedPolicyMutator      HostedPermissionPolicyMutator
 	Authenticator            AdminAuthenticator
 	RegistryStore            string
 	RegistrySource           string
@@ -73,6 +74,14 @@ type RegistryImportReplacer interface {
 
 type RegistryProjectPartitionReplacer interface {
 	ReplaceProjectPartitionRegistry(ctx context.Context, reg registry.Registry, opts registry.ProjectPartitionReplaceOptions) (registry.ProjectPartitionReplaceResult, error)
+}
+
+type HostedPermissionPolicyMutator interface {
+	BeginHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error)
+	ApplyHostedPermissionPolicyDraftChange(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions, change registry.HostedPermissionPolicyDraftChange) (registry.HostedPermissionPolicyMutationDurableResult, error)
+	RequestHostedPermissionPolicyReview(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error)
+	PromoteHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error)
+	RollbackHostedPermissionPolicy(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error)
 }
 
 type AdminAuthenticator interface {
@@ -157,6 +166,22 @@ type ProjectPartitionReplaceResponse struct {
 	Counts                      registry.ImportReplaceCounts            `json:"counts"`
 }
 
+type HostedPermissionPolicyMutationRequest struct {
+	Operation           string                                      `json:"operation"`
+	PolicySource        string                                      `json:"policy_source,omitempty"`
+	BasePolicyVersion   string                                      `json:"base_policy_version,omitempty"`
+	DraftID             string                                      `json:"draft_id,omitempty"`
+	DraftPolicyVersion  string                                      `json:"draft_policy_version,omitempty"`
+	TargetPolicyVersion string                                      `json:"target_policy_version,omitempty"`
+	MutationFingerprint string                                      `json:"mutation_fingerprint,omitempty"`
+	Change              *registry.HostedPermissionPolicyDraftChange `json:"change,omitempty"`
+}
+
+type HostedPermissionPolicyMutationResponse struct {
+	RegistryStore string                                               `json:"registry_store"`
+	Result        registry.HostedPermissionPolicyMutationDurableResult `json:"result"`
+}
+
 type ExportArtifactRequest struct {
 	OutputDir string `json:"output_dir"`
 }
@@ -185,6 +210,7 @@ func (h Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/v1/admin/registry/validate", h.ValidateRegistry)
 	mux.HandleFunc("/v1/admin/registry/import-replace", h.ImportReplaceRegistry)
 	mux.HandleFunc("/v1/admin/registry/project-partition/replace", h.ProjectPartitionReplaceRegistry)
+	mux.HandleFunc("/v1/private/hosted/permission-policy/mutation", h.HostedPermissionPolicyMutation)
 	mux.HandleFunc("/v1/admin/snapshots/export-artifact", h.ExportArtifact)
 	mux.HandleFunc("/v1/admin/distribution/publish", h.PublishArtifact)
 	mux.HandleFunc("/v1/admin/distribution/current", h.DistributionCurrent)
@@ -439,6 +465,108 @@ func (h Handler) ProjectPartitionReplaceRegistry(w http.ResponseWriter, r *http.
 	})
 }
 
+func (h Handler) HostedPermissionPolicyMutation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed", false)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, importReplaceMaxBodyBytes)
+	var req HostedPermissionPolicyMutationRequest
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		if requestBodyTooLarge(err) {
+			writeError(w, http.StatusRequestEntityTooLarge, "REQUEST_BODY_TOO_LARGE", "caller", "request body exceeds 2 MiB limit", false)
+			return
+		}
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "invalid json body", false)
+		return
+	}
+	if err := ensureSingleJSONDocument(decoder); err != nil {
+		if requestBodyTooLarge(err) {
+			writeError(w, http.StatusRequestEntityTooLarge, "REQUEST_BODY_TOO_LARGE", "caller", "request body exceeds 2 MiB limit", false)
+			return
+		}
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "invalid json body", false)
+		return
+	}
+	req.Operation = strings.TrimSpace(req.Operation)
+	requiredPermission, ok := hostedPermissionPolicyMutationPermission(req.Operation)
+	if !ok {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "unsupported hosted permission policy mutation operation", false)
+		return
+	}
+	principal, resolved := h.resolveAdminPrincipal(w, r, requiredPermission)
+	if !resolved {
+		return
+	}
+	if principal.LocalPrivate || principal.AuthMethod != registry.AdminAuthMethodTrustedGateway {
+		writeError(w, http.StatusForbidden, "AUTHZ_DENIED", "caller", "hosted permission policy mutation requires a trusted hosted principal", false)
+		return
+	}
+	requestID := strings.TrimSpace(r.Header.Get("X-Request-ID"))
+	if requestID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "X-Request-ID is required", false)
+		return
+	}
+	idempotencyKey := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+	if hostedPermissionPolicyMutationRequiresIdempotency(req.Operation) && idempotencyKey == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "Idempotency-Key is required", false)
+		return
+	}
+	if h.registryStore() != "postgres" || h.HostedPolicyMutator == nil {
+		writeError(w, http.StatusConflict, "REGISTRY_MUTATION_UNAVAILABLE", "platform", "hosted permission policy mutation requires postgres mutation mode", false)
+		return
+	}
+	opts := registry.HostedPermissionPolicyMutationOptions{
+		ProjectID:           principal.ProjectID,
+		OrganizationID:      principal.OrganizationID,
+		ActorID:             principal.ActorID,
+		RequestID:           requestID,
+		IdempotencyKey:      idempotencyKey,
+		PolicySource:        req.PolicySource,
+		BasePolicyVersion:   req.BasePolicyVersion,
+		DraftID:             req.DraftID,
+		DraftPolicyVersion:  req.DraftPolicyVersion,
+		TargetPolicyVersion: req.TargetPolicyVersion,
+		MutationFingerprint: req.MutationFingerprint,
+	}
+	var (
+		result registry.HostedPermissionPolicyMutationDurableResult
+		err    error
+	)
+	switch req.Operation {
+	case registry.HostedPermissionPolicyMutationBeginDraftOperation:
+		result, err = h.HostedPolicyMutator.BeginHostedPermissionPolicyDraft(r.Context(), opts)
+	case registry.HostedPermissionPolicyMutationApplyChangeOperation:
+		if req.Change == nil {
+			writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "change is required for hosted permission policy draft mutation", false)
+			return
+		}
+		result, err = h.HostedPolicyMutator.ApplyHostedPermissionPolicyDraftChange(r.Context(), opts, *req.Change)
+	case registry.HostedPermissionPolicyMutationRequestReviewOperation:
+		result, err = h.HostedPolicyMutator.RequestHostedPermissionPolicyReview(r.Context(), opts)
+	case registry.HostedPermissionPolicyMutationPromoteOperation:
+		result, err = h.HostedPolicyMutator.PromoteHostedPermissionPolicyDraft(r.Context(), opts)
+	case registry.HostedPermissionPolicyMutationRollbackOperation:
+		result, err = h.HostedPolicyMutator.RollbackHostedPermissionPolicy(r.Context(), opts)
+	}
+	if err != nil {
+		h.writeRegistryMutationError(w, err)
+		return
+	}
+	if result.Replayed {
+		w.Header().Set("Idempotency-Replayed", "true")
+		if result.IdempotencyRecordID != 0 {
+			w.Header().Set("Idempotency-Record-ID", fmt.Sprint(result.IdempotencyRecordID))
+		}
+	}
+	writeJSON(w, http.StatusOK, HostedPermissionPolicyMutationResponse{
+		RegistryStore: h.registryStore(),
+		Result:        result,
+	})
+}
+
 func (h Handler) ExportArtifact(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed", false)
@@ -618,9 +746,9 @@ func (h Handler) writeRegistryMutationError(w http.ResponseWriter, err error) {
 		switch mutationErr.ErrorType {
 		case "REGISTRY_MUTATION_INVALID":
 			status = http.StatusBadRequest
-		case "AUTHZ_DENIED", "REGISTRY_PARTITION_VIOLATION":
+		case "AUTHZ_DENIED", "REGISTRY_PARTITION_VIOLATION", "POLICY_SCOPE_VIOLATION":
 			status = http.StatusForbidden
-		case "REGISTRY_MUTATION_CONFLICT", "IDEMPOTENCY_KEY_CONFLICT", "IDEMPOTENCY_REQUEST_IN_PROGRESS":
+		case "REGISTRY_MUTATION_CONFLICT", "IDEMPOTENCY_KEY_CONFLICT", "IDEMPOTENCY_REQUEST_IN_PROGRESS", "POLICY_STATE_CONFLICT", "POLICY_VERSION_CONFLICT":
 			status = http.StatusConflict
 		case "PERSISTENT_STORE_READ_FAILED", "PERSISTENT_STORE_WRITE_FAILED", "IDEMPOTENCY_STORE_READ_FAILED", "IDEMPOTENCY_STORE_WRITE_FAILED":
 			status = http.StatusServiceUnavailable
@@ -631,6 +759,25 @@ func (h Handler) writeRegistryMutationError(w http.ResponseWriter, err error) {
 		return
 	}
 	writeError(w, http.StatusInternalServerError, "REGISTRY_MUTATION_FAILED", "platform", err.Error(), true)
+}
+
+func hostedPermissionPolicyMutationPermission(operation string) (string, bool) {
+	switch operation {
+	case registry.HostedPermissionPolicyMutationBeginDraftOperation, registry.HostedPermissionPolicyMutationApplyChangeOperation:
+		return registry.PermissionHostedPermissionPolicyDraftWrite, true
+	case registry.HostedPermissionPolicyMutationRequestReviewOperation:
+		return registry.PermissionHostedPermissionPolicyRequestReview, true
+	case registry.HostedPermissionPolicyMutationPromoteOperation:
+		return registry.PermissionHostedPermissionPolicyPromote, true
+	case registry.HostedPermissionPolicyMutationRollbackOperation:
+		return registry.PermissionHostedPermissionPolicyRollback, true
+	default:
+		return "", false
+	}
+}
+
+func hostedPermissionPolicyMutationRequiresIdempotency(operation string) bool {
+	return operation == registry.HostedPermissionPolicyMutationPromoteOperation || operation == registry.HostedPermissionPolicyMutationRollbackOperation
 }
 
 func (h Handler) registryLoadFailure() (errorType string, scope string, status int, retryable bool) {

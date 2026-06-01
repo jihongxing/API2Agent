@@ -79,6 +79,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Data Plane durable event dogfood script and bilingual report for restart-safe event sequence continuity.
 - Go Data Plane httpbin IP adapter for real external public-IP fallback normalization.
 - Go Control Plane private durable hosted permission policy mutation path with draft changes, review, promotion, rollback, idempotency replay/conflict, and secret-safe audit evidence.
+- Go Control Plane private hosted permission policy mutation HTTP wiring for trusted gateway begin/change/review/promote/rollback operations.
 - Go Data Plane real external provider retry dogfood script and bilingual report.
 - Go Data Plane stage review and consolidation hardening plan.
 - Reusable Go Protocol v0.2 conformance validator and JSONL event validation command.

@@ -1,16 +1,20 @@
 package registry
 
 const (
-	PermissionRegistryValidate                = "control_plane.registry.validate"
-	PermissionRegistryImportReplace           = "control_plane.registry.import_replace"
-	PermissionRegistryProjectPartitionReplace = "control_plane.registry.project_partition_replace"
-	PermissionSnapshotExportArtifact          = "control_plane.snapshot.export_artifact"
-	PermissionDistributionPublish             = "control_plane.distribution.publish"
-	PermissionDistributionReadCurrent         = "control_plane.distribution.read_current"
-	DefaultAdminPrincipalProjectID            = "control_plane"
-	AdminAuthMethodLocalAdminToken            = "local_admin_token"
-	AdminAuthMethodHostedAdminToken           = "hosted_admin_token"
-	AdminAuthMethodTrustedGateway             = "trusted_gateway"
+	PermissionRegistryValidate                    = "control_plane.registry.validate"
+	PermissionRegistryImportReplace               = "control_plane.registry.import_replace"
+	PermissionRegistryProjectPartitionReplace     = "control_plane.registry.project_partition_replace"
+	PermissionHostedPermissionPolicyDraftWrite    = "control_plane.permission_policy.draft_write"
+	PermissionHostedPermissionPolicyRequestReview = "control_plane.permission_policy.request_review"
+	PermissionHostedPermissionPolicyPromote       = "control_plane.permission_policy.promote"
+	PermissionHostedPermissionPolicyRollback      = "control_plane.permission_policy.rollback"
+	PermissionSnapshotExportArtifact              = "control_plane.snapshot.export_artifact"
+	PermissionDistributionPublish                 = "control_plane.distribution.publish"
+	PermissionDistributionReadCurrent             = "control_plane.distribution.read_current"
+	DefaultAdminPrincipalProjectID                = "control_plane"
+	AdminAuthMethodLocalAdminToken                = "local_admin_token"
+	AdminAuthMethodHostedAdminToken               = "hosted_admin_token"
+	AdminAuthMethodTrustedGateway                 = "trusted_gateway"
 )
 
 type AdminPrincipal struct {

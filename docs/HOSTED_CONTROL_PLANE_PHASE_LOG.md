@@ -148,3 +148,38 @@ Completion:
 
 - durable private implementation lane: 100%
 - Hosted Control Plane phase estimate: 77%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Durable Private Endpoint/Service Wiring v0
+
+Commit: pending until this implementation slice is committed
+
+Changed:
+
+- wired a private hosted permission policy mutation HTTP route for trusted gateway principals
+- mapped begin/change/review/promote/rollback operations to operation-specific hosted policy permissions
+- forwarded resolved hosted principal project, organization, actor, request, idempotency, draft, policy version, and fingerprint inputs into the durable mutation service
+- connected the Postgres runtime adapter to the durable hosted policy mutation helpers
+- returned replay headers for idempotent promote/rollback responses and mapped policy conflicts to HTTP 409
+
+Validation:
+
+- `go test ./internal/httpapi -run "TestHostedPermissionPolicyMutation|TestTrustedGatewayHostedPermissionPolicyMutation|TestProjectPartitionReplaceReplayUsesOKStatus"`
+- `go test ./internal/registry ./internal/httpapi ./cmd/api2agent-controlplane`
+
+Decision:
+
+- durable private endpoint/service wiring lane is complete for v0
+- route remains private/trusted-gateway-only and does not introduce public role CRUD or customer-facing policy APIs
+- no per-slice implementation report or closeout document was created under the new documentation policy
+- Hosted Control Plane completion estimate moves to 78%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Private Endpoint Dogfood v0`
+
+Completion:
+
+- durable private endpoint/service wiring lane: 100%
+- Hosted Control Plane phase estimate: 78%

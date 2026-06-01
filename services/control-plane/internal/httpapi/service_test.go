@@ -967,6 +967,175 @@ func TestProjectPartitionReplaceReplayUsesOKStatus(t *testing.T) {
 	}
 }
 
+func TestHostedPermissionPolicyMutationRequiresTrustedGatewayPrincipal(t *testing.T) {
+	mutator := &recordingHostedPolicyMutator{}
+	handler := newPostgresHostedPolicyMutationHandlerWithMutator(mutator)
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", map[string]any{
+		"operation": registry.HostedPermissionPolicyMutationBeginDraftOperation,
+	}, "secret", map[string]string{"X-Request-ID": "req-policy-begin"})
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d: %s", response.Code, response.Body.String())
+	}
+	if mutator.calls != 0 {
+		t.Fatalf("mutation should not run for local/private principal, got %d calls", mutator.calls)
+	}
+}
+
+func TestTrustedGatewayHostedPermissionPolicyMutationBeginsDraft(t *testing.T) {
+	result := registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:          registry.HostedPermissionPolicyMutationBeginDraftOperation,
+		ProjectID:          "project-2",
+		OrganizationID:     "org-1",
+		ActorID:            "trusted-actor",
+		PolicySource:       "hosted_permission_store",
+		DraftID:            "draft-policy-v2",
+		BasePolicyVersion:  "policy-v1",
+		DraftPolicyVersion: "policy-v2",
+	}
+	mutator := &recordingHostedPolicyMutator{result: result}
+	handler := newPostgresHostedPolicyMutationHandlerWithMutator(mutator)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", map[string]any{
+		"operation":            registry.HostedPermissionPolicyMutationBeginDraftOperation,
+		"policy_source":        "hosted_permission_store",
+		"base_policy_version":  "policy-v1",
+		"draft_policy_version": "policy-v2",
+	}, "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		"X-Request-ID":           "req-policy-begin",
+		trustedActorIDHeader:     "trusted-actor",
+		trustedProjectIDHeader:   "project-2",
+		trustedPermissionsHeader: registry.PermissionHostedPermissionPolicyDraftWrite,
+	}))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if mutator.operation != registry.HostedPermissionPolicyMutationBeginDraftOperation || mutator.calls != 1 {
+		t.Fatalf("unexpected mutator call: op=%q calls=%d", mutator.operation, mutator.calls)
+	}
+	if mutator.options.ProjectID != "project-2" || mutator.options.OrganizationID != "org-1" || mutator.options.ActorID != "trusted-actor" || mutator.options.RequestID != "req-policy-begin" {
+		t.Fatalf("trusted principal scope was not forwarded: %#v", mutator.options)
+	}
+	if mutator.options.BasePolicyVersion != "policy-v1" || mutator.options.DraftPolicyVersion != "policy-v2" || mutator.options.IdempotencyKey != "" {
+		t.Fatalf("unexpected mutation options: %#v", mutator.options)
+	}
+	var body HostedPermissionPolicyMutationResponse
+	decodeResponse(t, response, &body)
+	if body.Result.DraftID != "draft-policy-v2" || body.RegistryStore != "postgres" {
+		t.Fatalf("unexpected response: %#v", body)
+	}
+}
+
+func TestTrustedGatewayHostedPermissionPolicyMutationAppliesDraftChange(t *testing.T) {
+	mutator := &recordingHostedPolicyMutator{result: registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:         registry.HostedPermissionPolicyMutationApplyChangeOperation,
+		PolicyFingerprint: "sha256:draft",
+	}}
+	handler := newPostgresHostedPolicyMutationHandlerWithMutator(mutator)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", map[string]any{
+		"operation": registry.HostedPermissionPolicyMutationApplyChangeOperation,
+		"draft_id":  "draft-policy-v2",
+		"change": map[string]any{
+			"object_type": "permission_grant",
+			"operation":   "upsert",
+			"object_id":   "grant-promote",
+			"patch_summary": map[string]string{
+				"permission": registry.PermissionHostedPermissionPolicyPromote,
+			},
+		},
+	}, "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		"X-Request-ID":           "req-policy-change",
+		trustedPermissionsHeader: registry.PermissionHostedPermissionPolicyDraftWrite,
+	}))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if mutator.operation != registry.HostedPermissionPolicyMutationApplyChangeOperation || mutator.change.ObjectType != "permission_grant" || mutator.change.PatchSummary["permission"] != registry.PermissionHostedPermissionPolicyPromote {
+		t.Fatalf("unexpected draft change forwarded: op=%q change=%#v", mutator.operation, mutator.change)
+	}
+}
+
+func TestTrustedGatewayHostedPermissionPolicyMutationPromoteRequiresIdempotencyAndReturnsReplayHeaders(t *testing.T) {
+	mutator := &recordingHostedPolicyMutator{}
+	handler := newPostgresHostedPolicyMutationHandlerWithMutator(mutator)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+	headers := trustedGatewayHeaders("gateway-secret", map[string]string{
+		"X-Request-ID":           "req-policy-promote",
+		trustedPermissionsHeader: registry.PermissionHostedPermissionPolicyPromote,
+	})
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", map[string]any{
+		"operation": registry.HostedPermissionPolicyMutationPromoteOperation,
+		"draft_id":  "draft-policy-v2",
+	}, "", headers)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected missing idempotency status 400, got %d: %s", response.Code, response.Body.String())
+	}
+	if mutator.calls != 0 {
+		t.Fatalf("mutation should not run before required headers, got %d calls", mutator.calls)
+	}
+
+	mutator.result = registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:           registry.HostedPermissionPolicyMutationPromoteOperation,
+		Replayed:            true,
+		PolicyVersion:       "policy-v2",
+		IdempotencyRecordID: 7,
+	}
+	headers["Idempotency-Key"] = "idem-policy-promote"
+	response = performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", map[string]any{
+		"operation":            registry.HostedPermissionPolicyMutationPromoteOperation,
+		"draft_id":             "draft-policy-v2",
+		"mutation_fingerprint": "sha256:policy-v2",
+		"draft_policy_version": "policy-v2",
+		"base_policy_version":  "policy-v1",
+	}, "", headers)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if response.Header().Get("Idempotency-Replayed") != "true" || response.Header().Get("Idempotency-Record-ID") != "7" {
+		t.Fatalf("expected replay headers, got %#v", response.Header())
+	}
+	if mutator.options.IdempotencyKey != "idem-policy-promote" || mutator.options.DraftID != "draft-policy-v2" || mutator.options.MutationFingerprint != "sha256:policy-v2" {
+		t.Fatalf("unexpected promote options: %#v", mutator.options)
+	}
+}
+
+func TestTrustedGatewayHostedPermissionPolicyMutationMapsPolicyErrors(t *testing.T) {
+	mutator := &recordingHostedPolicyMutator{err: registry.RegistryMutationError{
+		ErrorType:  "POLICY_VERSION_CONFLICT",
+		Scope:      "caller",
+		Retryable:  false,
+		Underlying: fmt.Errorf("base policy is stale"),
+	}}
+	handler := newPostgresHostedPolicyMutationHandlerWithMutator(mutator)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", map[string]any{
+		"operation":             registry.HostedPermissionPolicyMutationRollbackOperation,
+		"target_policy_version": "policy-v1",
+	}, "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		"X-Request-ID":           "req-policy-rollback",
+		"Idempotency-Key":        "idem-policy-rollback",
+		trustedPermissionsHeader: registry.PermissionHostedPermissionPolicyRollback,
+	}))
+	if response.Code != http.StatusConflict {
+		t.Fatalf("expected status 409, got %d: %s", response.Code, response.Body.String())
+	}
+	var errorResponse ErrorResponse
+	decodeResponse(t, response, &errorResponse)
+	if errorResponse.Error.ErrorType != "POLICY_VERSION_CONFLICT" || errorResponse.Error.Retryable {
+		t.Fatalf("unexpected error response: %#v", errorResponse)
+	}
+}
+
 func TestExportArtifactWritesArtifactDir(t *testing.T) {
 	handler := newTestHandler(t, "")
 	outputDir := filepath.Join(t.TempDir(), "artifact")
@@ -1311,6 +1480,18 @@ func newPostgresProjectPartitionHandlerWithReplacer(replacer *recordingProjectPa
 	}
 }
 
+func newPostgresHostedPolicyMutationHandlerWithMutator(mutator *recordingHostedPolicyMutator) Handler {
+	return Handler{
+		RegistryStore:       "postgres",
+		RegistrySource:      "postgres",
+		AdminToken:          "secret",
+		HostedPolicyMutator: mutator,
+		Now: func() time.Time {
+			return time.Date(2026, 5, 31, 1, 2, 3, 0, time.UTC)
+		},
+	}
+}
+
 func performRequest(handler Handler, method string, path string, body any, token string) *httptest.ResponseRecorder {
 	return performRequestWithHeaders(handler, method, path, body, token, nil)
 }
@@ -1465,6 +1646,54 @@ func (r *recordingProjectPartitionReplacer) ReplaceProjectPartitionRegistry(ctx 
 		return registry.ProjectPartitionReplaceResult{}, r.err
 	}
 	return r.result, nil
+}
+
+type recordingHostedPolicyMutator struct {
+	result    registry.HostedPermissionPolicyMutationDurableResult
+	err       error
+	calls     int
+	operation string
+	options   registry.HostedPermissionPolicyMutationOptions
+	change    registry.HostedPermissionPolicyDraftChange
+}
+
+func (m *recordingHostedPolicyMutator) BeginHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationBeginDraftOperation, opts, registry.HostedPermissionPolicyDraftChange{})
+	return m.finish()
+}
+
+func (m *recordingHostedPolicyMutator) ApplyHostedPermissionPolicyDraftChange(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions, change registry.HostedPermissionPolicyDraftChange) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationApplyChangeOperation, opts, change)
+	return m.finish()
+}
+
+func (m *recordingHostedPolicyMutator) RequestHostedPermissionPolicyReview(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationRequestReviewOperation, opts, registry.HostedPermissionPolicyDraftChange{})
+	return m.finish()
+}
+
+func (m *recordingHostedPolicyMutator) PromoteHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationPromoteOperation, opts, registry.HostedPermissionPolicyDraftChange{})
+	return m.finish()
+}
+
+func (m *recordingHostedPolicyMutator) RollbackHostedPermissionPolicy(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationRollbackOperation, opts, registry.HostedPermissionPolicyDraftChange{})
+	return m.finish()
+}
+
+func (m *recordingHostedPolicyMutator) record(operation string, opts registry.HostedPermissionPolicyMutationOptions, change registry.HostedPermissionPolicyDraftChange) {
+	m.calls++
+	m.operation = operation
+	m.options = opts
+	m.change = change
+}
+
+func (m *recordingHostedPolicyMutator) finish() (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	if m.err != nil {
+		return registry.HostedPermissionPolicyMutationDurableResult{}, m.err
+	}
+	return m.result, nil
 }
 
 type recordingAdminAuthenticator struct {
