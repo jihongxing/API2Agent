@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout Complete
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice：
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0。
+这是 hosted-readiness work 恢复时的下一项 hosted Control Plane task。当前项目立即下一项任务是 Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0。
 
 范围：
 
@@ -1083,6 +1083,14 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_DESIGN.md`
+
+已完成 Agent capability compiler OpenAPI cached real-spec corpus expansion design 结果：
+
+- source criteria、licensing/cache metadata、redaction policy、artifact layout、manifest changes、metrics、thresholds、tests 和 dogfood expectations 已定义。
+- normal calibration 保持 offline and deterministic。
+- 下一项 compiler hardening task 是 cached real-spec corpus expansion implementation。
+- 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_DESIGN.md`。
 
 已完成 Agent capability compiler OpenAPI generic example reduction closeout 结果：
 

@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout Complete
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI cached real-spec corpus expansion design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI cached real-spec corpus expansion implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -998,11 +998,16 @@ Current Phase 6 progress:
   - the Agent Capability Compiler completion estimate is 98%.
   - the next confidence gap is cached real-spec corpus expansion design.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0 is complete:
+  - source criteria, licensing/cache metadata, redaction policy, artifact layout, manifest changes, metrics, thresholds, tests, and dogfood expectations are defined.
+  - normal calibration remains offline and deterministic.
+  - the next compiler hardening task is cached real-spec corpus expansion implementation.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
 ```
 
 References:

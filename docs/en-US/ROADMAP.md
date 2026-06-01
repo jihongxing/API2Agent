@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout Complete
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0.
 
 Scope:
 
@@ -1083,6 +1083,14 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_DESIGN.md`
+
+Completed Agent capability compiler OpenAPI cached real-spec corpus expansion design result:
+
+- source criteria, licensing/cache metadata, redaction policy, artifact layout, manifest changes, metrics, thresholds, tests, and dogfood expectations are defined.
+- normal calibration remains offline and deterministic.
+- the next compiler hardening task is cached real-spec corpus expansion implementation.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_DESIGN.md`.
 
 Completed Agent capability compiler OpenAPI generic example reduction closeout result:
 
