@@ -360,3 +360,40 @@ Completion:
 
 - private endpoint read-model consistency wiring lane: 100%
 - Hosted Control Plane phase estimate: 83%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Durable Endpoint Adapter Readiness Review v0
+
+Commit: pending until this readiness slice is committed
+
+Changed:
+
+- reviewed the production `api2agent-controlplane serve` runtime adapter boundary for hosted permission policy mutation
+- added a compile-time guard that `postgresHostedPermissionPolicyMutator` satisfies the HTTP hosted policy mutator interface
+- made the Postgres runtime opener testable without changing production behavior
+- added cmd-level readiness coverage that file runtime does not expose hosted policy mutation and Postgres runtime failures stay fail-closed
+- verified the durable adapter delegates into registry helpers by asserting nil-DB promotion fails through the persistent store error path
+
+Validation:
+
+- `go test ./cmd/api2agent-controlplane -run "TestOpenRegistryRuntimeHostedPolicyMutatorBoundary" -v`
+- `go test ./internal/httpapi -run "TestTrustedGatewayHostedPermissionPolicyMutation|TestHostedPermissionPolicyMutation"`
+- `go test ./...`
+
+Decision:
+
+- durable endpoint adapter readiness lane is complete for v0
+- production serve wiring has a guarded Postgres-only hosted policy mutation adapter
+- file registry mode remains non-mutating for hosted policy policy changes
+- no standalone readiness report or closeout document was created under the new documentation policy
+- Hosted Control Plane completion estimate moves to 84%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Serve Boundary Dogfood v0`
+
+Completion:
+
+- durable endpoint adapter readiness lane: 100%
+- Hosted Control Plane phase estimate: 84%

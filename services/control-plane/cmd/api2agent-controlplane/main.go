@@ -319,7 +319,7 @@ func openRegistryRuntime(ctx context.Context, storeName string, registryPath str
 		if postgresDSN == "" {
 			return registryRuntime{}, fmt.Errorf("--postgres-dsn is required when --registry-store=postgres or API2AGENT_CONTROL_PLANE_POSTGRES_DSN must be set")
 		}
-		db, err := openPostgresDB(ctx, postgresDSN)
+		db, err := openPostgresDBForRuntime(ctx, postgresDSN)
 		if err != nil {
 			return registryRuntime{}, err
 		}
@@ -358,6 +358,8 @@ type postgresHostedPermissionPolicyMutator struct {
 	db *sql.DB
 }
 
+var _ httpapi.HostedPermissionPolicyMutator = postgresHostedPermissionPolicyMutator{}
+
 func (m postgresHostedPermissionPolicyMutator) BeginHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
 	return registry.BeginHostedPermissionPolicyDraft(ctx, m.db, opts)
 }
@@ -389,6 +391,8 @@ func openPostgresDB(ctx context.Context, dsn string) (*sql.DB, error) {
 	}
 	return db, nil
 }
+
+var openPostgresDBForRuntime = openPostgresDB
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage:")
