@@ -350,6 +350,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Decision Retention Boundary implemented locally with retention/history metadata, metadata-backed query indexes, tenant/project-scoped redacted history query helper, support/operator audit proof, cleanup candidate selection with legal-hold exclusion, regression tests, and live dogfood artifact evidence.
 - Go Control Plane Hosted Permission Decision Retention Boundary live dogfood and closeout completed; local v0 is accepted with 16 redacted history rows, cross-project isolation, support/operator audit proof, cleanup legal-hold proof, and Hosted Control Plane completion estimate updated to 72%.
 - Go Control Plane Hosted Permission Policy Mutation Boundary design completed with private mutation ownership, draft/review/promotion/rollback lifecycle, idempotency, audit, conflict, authorization, gateway read-model compatibility, contract harness requirements, and Hosted Control Plane completion estimate updated to 73%.
+- Go Control Plane Hosted Permission Policy Mutation Boundary contract harness implemented with local draft/review/promotion/rollback helpers, deterministic policy fingerprints, gateway-compatible decision proof, idempotency replay/conflict semantics, scope/stale-base conflict checks, secret-safe audit evidence, and dogfood report coverage.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -357,4 +358,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0.
+- Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0.

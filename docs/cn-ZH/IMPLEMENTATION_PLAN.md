@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design Complete
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission policy mutation boundary contract harness。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission policy mutation boundary contract harness closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1231,11 +1231,20 @@ Go Control Plane Minimum v0
   - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、customer-facing decision history、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
   - 下一项 hosted-readiness task 是 hosted permission policy mutation boundary contract harness。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`。
+- Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0 已完成：
+  - local/private policy mutation helpers 现在覆盖 draft、validation、review、promotion、rollback、idempotency、audit 和 conflict behavior。
+  - promotion 会更新 gateway read-model-compatible decision evidence。
+  - rollback 创建新的 active version，并移除 promoted grant access，不重写 historical decision evidence。
+  - idempotency replay/conflict、stale-base conflict、scope violation 和 duplicate grant conflict 已有测试覆盖。
+  - in-process dogfood report helper 证明 promotion、rollback、replay、conflict、gateway decision changes、audit count 和 secret-safe evidence。
+  - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、customer-facing decision history、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
+  - 下一项 hosted-readiness task 是 hosted permission policy mutation boundary contract harness closeout and phase review。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
 ```
 
 参考：

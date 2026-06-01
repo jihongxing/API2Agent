@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: implement the local hosted permission policy mutation boundary contract harness after completing the design; next work remains API-first and out of public CRUD, OAuth/OIDC, vault, billing, marketplace, automatic propagation, production gateway deployment, customer-facing decision history, and workflow runtime scope.
+Current focus: close out the local hosted permission policy mutation boundary contract harness after implementation; next work remains API-first and out of public CRUD, OAuth/OIDC, vault, billing, marketplace, automatic propagation, production gateway deployment, customer-facing decision history, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 
@@ -173,6 +173,8 @@ English:
 - [Hosted Permission Decision Retention + Customer History Boundary Design](docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md)
 - [Hosted Permission Decision Retention Boundary Implementation Report](docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_IMPLEMENTATION_REPORT.md)
 - [Hosted Permission Decision Retention Boundary Closeout + Phase Review](docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md)
+- [Hosted Permission Policy Mutation Boundary Design](docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md)
+- [Hosted Permission Policy Mutation Boundary Contract Harness Implementation Report](docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md)
 - [Next Session Handoff - 2026-06-01](docs/en-US/NEXT_SESSION_HANDOFF_2026_06_01.md)
 - [Capability Schema](docs/en-US/CAPABILITY_SCHEMA.md)
 - [Routing Policy](docs/en-US/ROUTING_POLICY.md)

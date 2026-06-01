@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design Complete
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is the hosted permission policy mutation boundary contract harness.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is the hosted permission policy mutation boundary contract harness closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1231,11 +1231,20 @@ Current Phase 6 progress:
   - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, customer-facing decision history, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
   - the next hosted-readiness task is hosted permission policy mutation boundary contract harness.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`.
+- Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0 is complete:
+  - local/private policy mutation helpers now cover draft, validation, review, promotion, rollback, idempotency, audit, and conflict behavior.
+  - promotion updates gateway read-model-compatible decision evidence.
+  - rollback creates a new active version and removes promoted grant access without rewriting historical decision evidence.
+  - idempotency replay/conflict, stale-base conflict, scope violation, and duplicate grant conflict are covered by tests.
+  - in-process dogfood report helper proves promotion, rollback, replay, conflict, gateway decision changes, audit count, and secret-safe evidence.
+  - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, customer-facing decision history, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
+  - the next hosted-readiness task is hosted permission policy mutation boundary contract harness closeout and phase review.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
 ```
 
 References:
