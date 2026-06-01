@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission store schema 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout 和 hosted permission-store schema 已完成。
+状态：hosted permission store schema closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema 和 schema closeout 已完成。
 
 目标：
 
@@ -1022,30 +1022,31 @@ Go Control Plane Hosted Permission Store Design v0
 Go Control Plane Hosted Permission Store Contract Harness v0
 Go Control Plane Hosted Permission Store Contract Harness Closeout + Phase Review v0
 Go Control Plane Hosted Permission Store Schema v0
+Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model v0
 ```
 
-由于 durable schema boundary 已经存在，下一项 immediate project task 是 closeout review，然后再考虑 runtime read wiring。
+由于 durable schema boundary 已经关闭，下一项 immediate project task 是 private/internal runtime lookup proof。
 
 范围：
 
-1. 对照 design 和 contract harness acceptance criteria review hosted permission-store schema。
-2. 确认 subject、membership、role、binding、grant、policy version 和 decision evidence 被表达，且不包含 raw secrets。
-3. 在任何 runtime read wiring 前记录 remaining risks。
-4. public auth provider implementation、production gateway deployment、production read wiring 和 public management surfaces 保持 out of scope。
+1. 在 hosted permission tables 上增加 internal Go read model。
+2. 从 schema 解析 subject、membership、role binding、permission grants、active policy version 和 decision evidence。
+3. 证明 missing membership、suspended membership、revoked grants、stale/no active policy 和 missing permission fail closed。
+4. public auth provider implementation、production gateway deployment、gateway runtime wiring 和 public management surfaces 保持 out of scope。
 5. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- schema slice 被接受，或 follow-up gaps 被显式列出。
-- subject、membership、role、role binding、permission grant、policy version 和 decision evidence 已表达。
-- raw public tokens、raw session tokens、OAuth tokens、gateway secrets、plaintext API keys 和 vault material 保持不进 schema。
-- runtime read wiring 保持 deferred。
+- internal read model 从 schema-backed rows 返回 hosted permission decision shape。
+- unavailable/no active policy、missing membership、suspended membership、revoked grants 和 missing permission fail closed。
+- policy version/fingerprint/decision id evidence 仍保持 secret-safe。
+- gateway runtime wiring 保持 deferred。
 - 不包含 granular CRUD API、OAuth/OIDC、vault、billing、marketplace、workflow、provider onboarding、production gateway deployment 或 automatic propagation 工作。
 
 参考：
@@ -1081,6 +1082,7 @@ Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Store Schema Complete
+Go Control Plane Hosted Permission Store Schema Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission store schema closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission store read model。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1080,11 +1080,16 @@ Go Control Plane Minimum v0
   - constraints 和 indexes 保留 private read-model boundary、fail-closed lookup evidence 和 secret-safe storage assumptions。
   - 下一项 hosted-readiness task 是 schema closeout and phase review。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0 已完成：
+  - durable hosted permission-store schema boundary 被接受为 v0。
+  - remaining risks 是 runtime read model wiring、seed/migration lifecycle、policy write lifecycle、real public identity lifecycle、production gateway deployment、runtime consistency 和 provider ownership hardening。
+  - 下一项 hosted-readiness task 是 hosted permission store read model。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model v0
 ```
 
 参考：
@@ -1120,6 +1125,7 @@ Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
