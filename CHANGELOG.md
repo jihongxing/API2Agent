@@ -363,6 +363,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Policy Mutation Read Model Consistency dogfood added for promotion-written hosted graph rows, policy evidence after rollback, and the v0 policy-version-only rollback boundary.
 - Go Control Plane Hosted Permission Policy Mutation Private Endpoint Read Model Consistency wiring dogfood added for trusted-gateway mutation requests, promoted graph visibility, rollback policy evidence, and principal/idempotency forwarding.
 - Go Control Plane Hosted Permission Policy Mutation Durable Endpoint Adapter readiness guarded with production runtime adapter interface coverage, Postgres-only mutator exposure, and nil-DB fail-closed proof.
+- Go Control Plane Hosted Permission Policy Mutation Serve Boundary dogfood added for hosted trusted-gateway serve wiring, file-mode mutation unavailability, and Postgres-mode durable adapter fail-closed routing.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.

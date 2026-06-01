@@ -246,7 +246,7 @@ func serve(args []string) error {
 	}
 	handler.Register(mux)
 	log.Printf("api2agent control plane listening on %s", *addr)
-	return http.ListenAndServe(*addr, mux)
+	return listenAndServeControlPlane(*addr, mux)
 }
 
 func requiresLocalAdminToken(identityMode string, authenticatorMode string) bool {
@@ -393,6 +393,8 @@ func openPostgresDB(ctx context.Context, dsn string) (*sql.DB, error) {
 }
 
 var openPostgresDBForRuntime = openPostgresDB
+
+var listenAndServeControlPlane = http.ListenAndServe
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage:")

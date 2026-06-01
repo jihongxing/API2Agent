@@ -397,3 +397,40 @@ Completion:
 
 - durable endpoint adapter readiness lane: 100%
 - Hosted Control Plane phase estimate: 84%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Serve Boundary Dogfood v0
+
+Commit: pending until this dogfood slice is committed
+
+Changed:
+
+- added serve-boundary dogfood for hosted trusted-gateway private policy mutation wiring
+- made `serve` listener injection testable without changing production `http.ListenAndServe` behavior
+- verified file registry serve mode rejects hosted policy mutation with `REGISTRY_MUTATION_UNAVAILABLE`
+- verified Postgres registry serve mode routes private promote requests into the durable adapter and fails closed on persistent store unavailability
+- preserved private/trusted-gateway-only mutation scope and did not expose public policy CRUD
+
+Validation:
+
+- `go test ./cmd/api2agent-controlplane -run "TestServeHostedPermissionPolicyMutationBoundaryDogfood" -v`
+- `go test ./cmd/api2agent-controlplane`
+- `go test ./internal/httpapi -run "TestTrustedGatewayHostedPermissionPolicyMutation|TestHostedPermissionPolicyMutation"`
+- `go test ./...`
+
+Decision:
+
+- serve boundary dogfood lane is complete for v0
+- hosted trusted-gateway serve wiring reaches the private policy mutation route and keeps file-mode mutation unavailable
+- no standalone dogfood report or closeout document was created under the new documentation policy
+- Hosted Control Plane completion estimate moves to 85%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Operational Error Semantics Review v0`
+
+Completion:
+
+- serve boundary dogfood lane: 100%
+- Hosted Control Plane phase estimate: 85%
