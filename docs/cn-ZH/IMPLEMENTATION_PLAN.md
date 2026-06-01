@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Store Schema Closeout Complete
+Go Control Plane Hosted Permission Store Read Model Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission store read model。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission store read model closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1085,11 +1085,17 @@ Go Control Plane Minimum v0
   - remaining risks 是 runtime read model wiring、seed/migration lifecycle、policy write lifecycle、real public identity lifecycle、production gateway deployment、runtime consistency 和 provider ownership hardening。
   - 下一项 hosted-readiness task 是 hosted permission store read model。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Permission Store Read Model v0 已完成：
+  - internal repeatable-read/read-only Go read model 可以从 hosted permission tables 解析 active policy、subject、project membership、active roles、grants 和 gateway-compatible decision evidence。
+  - missing membership、suspended membership、revoked grants、missing permission、no active policy 和 ambiguous active policy 已在 registry package tests 中 fail closed。
+  - gateway runtime wiring、decision persistence、public CRUD、OAuth/OIDC、production gateway deployment、vault、billing、marketplace、workflow 和 automatic propagation 继续保持 out of scope。
+  - 下一项 hosted-readiness task 是 read model closeout and phase review。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
 参考：
@@ -1126,6 +1132,7 @@ Go Control Plane Hosted Permission Store Read Model v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

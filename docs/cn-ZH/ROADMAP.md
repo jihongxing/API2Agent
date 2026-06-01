@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission store schema closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema 和 schema closeout 已完成。
+状态：hosted permission store read model implementation 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout 和 read model implementation 已完成。
 
 目标：
 
@@ -1023,29 +1023,30 @@ Go Control Plane Hosted Permission Store Contract Harness v0
 Go Control Plane Hosted Permission Store Contract Harness Closeout + Phase Review v0
 Go Control Plane Hosted Permission Store Schema v0
 Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
-由于 durable schema boundary 已经关闭，下一项 immediate project task 是 private/internal runtime lookup proof。
+由于 internal read-model proof 已经落地，下一项 immediate project task 是 phase review，然后再考虑 runtime wiring。
 
 范围：
 
-1. 在 hosted permission tables 上增加 internal Go read model。
-2. 从 schema 解析 subject、membership、role binding、permission grants、active policy version 和 decision evidence。
-3. 证明 missing membership、suspended membership、revoked grants、stale/no active policy 和 missing permission fail closed。
+1. Review internal read model 是否满足 schema/read-boundary acceptance criteria。
+2. 确认 repeatable-read/read-only lookup、decision evidence 和 fail-closed denial cases 对 v0 足够。
+3. 识别 gateway runtime wiring 或 decision persistence 前的 remaining risks。
 4. public auth provider implementation、production gateway deployment、gateway runtime wiring 和 public management surfaces 保持 out of scope。
 5. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- internal read model 从 schema-backed rows 返回 hosted permission decision shape。
-- unavailable/no active policy、missing membership、suspended membership、revoked grants 和 missing permission fail closed。
-- policy version/fingerprint/decision id evidence 仍保持 secret-safe。
+- read model implementation 可以关闭，或 blockers 被记录。
+- policy version/fingerprint/decision id evidence 继续被接受为 secret-safe。
+- runtime wiring 和 persistence boundaries 保持明确。
 - gateway runtime wiring 保持 deferred。
 - 不包含 granular CRUD API、OAuth/OIDC、vault、billing、marketplace、workflow、provider onboarding、production gateway deployment 或 automatic propagation 工作。
 
@@ -1083,6 +1084,7 @@ Go Control Plane Hosted Permission Store Read Model v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

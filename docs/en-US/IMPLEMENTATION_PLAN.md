@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Store Schema Closeout Complete
+Go Control Plane Hosted Permission Store Read Model Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission store read model.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission store read model closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1085,11 +1085,17 @@ Current Phase 6 progress:
   - remaining risks are runtime read model wiring, seed/migration lifecycle, policy write lifecycle, real public identity lifecycle, production gateway deployment, runtime consistency, and provider ownership hardening.
   - the next hosted-readiness task is hosted permission store read model.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`.
+- Go Control Plane Hosted Permission Store Read Model v0 is complete:
+  - an internal repeatable-read/read-only Go read model resolves active policy, subject, project membership, active roles, grants, and gateway-compatible decision evidence from hosted permission tables.
+  - missing membership, suspended membership, revoked grants, missing permission, no active policy, and ambiguous active policy now fail closed in registry package tests.
+  - gateway runtime wiring, decision persistence, public CRUD, OAuth/OIDC, production gateway deployment, vault, billing, marketplace, workflow, and automatic propagation remain out of scope.
+  - the next hosted-readiness task is read model closeout and phase review.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
 References:
@@ -1126,6 +1132,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

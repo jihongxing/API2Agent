@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission store schema closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, and schema closeout are complete.
+Status: hosted permission store read model implementation complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, and read model implementation are complete.
 
 Goal:
 
@@ -1023,29 +1023,30 @@ Go Control Plane Hosted Permission Store Contract Harness v0
 Go Control Plane Hosted Permission Store Contract Harness Closeout + Phase Review v0
 Go Control Plane Hosted Permission Store Schema v0
 Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model v0
+Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
 ```
 
-This hosted-readiness read-model slice is now the immediate next project task because the durable schema boundary has closed and needs private/internal runtime lookup proof.
+This hosted-readiness closeout slice is now the immediate next project task because the internal read-model proof has landed and needs phase review before runtime wiring is considered.
 
 Scope:
 
-1. Add an internal Go read model over the hosted permission tables.
-2. Resolve subject, membership, role binding, permission grants, active policy version, and decision evidence from the schema.
-3. Prove missing membership, suspended membership, revoked grants, stale/no active policy, and missing permission fail closed.
+1. Review whether the internal read model satisfies the schema/read-boundary acceptance criteria.
+2. Confirm repeatable-read/read-only lookup, decision evidence, and fail-closed denial cases are enough for v0.
+3. Identify remaining risks before gateway runtime wiring or decision persistence.
 4. Keep public auth provider implementation, production gateway deployment, gateway runtime wiring, and public management surfaces out of scope.
 5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- internal read model returns the hosted permission decision shape from schema-backed rows.
-- unavailable/no active policy, missing membership, suspended membership, revoked grants, and missing permission fail closed.
-- policy version/fingerprint/decision id evidence remains secret-safe.
+- read model implementation can close, or blockers are documented.
+- policy version/fingerprint/decision id evidence remains accepted as secret-safe.
+- runtime wiring and persistence boundaries remain explicit.
 - gateway runtime wiring remains deferred.
 - no granular CRUD API, OAuth/OIDC, vault, billing, marketplace, workflow, provider onboarding, production gateway deployment, or automatic propagation work is included.
 
@@ -1083,6 +1084,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
