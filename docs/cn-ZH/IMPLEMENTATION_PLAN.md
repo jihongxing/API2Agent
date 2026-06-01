@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation Complete
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission read model gateway runtime wiring closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence design。
 
 实现语言决策：
 
@@ -121,14 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1120,11 +1119,17 @@ Go Control Plane Minimum v0
   - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、decision persistence、vault、billing、marketplace、workflow 和 automatic propagation 仍然 out of scope。
   - 下一项 hosted-readiness task 是 gateway runtime wiring closeout and phase review。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0 已完成：
+  - runtime wiring proof 被接受为 v0。
+  - static fixture fallback 仍然 useful 且 bounded，live Postgres dogfood 覆盖 read-model-backed gateway path。
+  - remaining risks 是 decision persistence、dogfood-scoped helper boundary、real public identity lifecycle、policy write lifecycle、production gateway deployment 和 provider ownership hardening。
+  - 下一项 hosted-readiness task 是 hosted permission decision persistence design。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
 参考：

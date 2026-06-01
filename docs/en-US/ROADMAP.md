@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission read model gateway runtime wiring implementation complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, and gateway runtime wiring implementation are complete.
+Status: hosted permission read model gateway runtime wiring closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, and gateway runtime wiring closeout are complete.
 
 Goal:
 
@@ -1029,31 +1029,32 @@ Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
 Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeout + Phase Review v0
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
-This hosted-readiness closeout slice is now the immediate next project task because the gateway runtime wiring implementation and live dogfood evidence are complete.
+This hosted-readiness design slice is now the immediate next project task because the gateway runtime wiring proof is accepted and the next explicit contract change is decision persistence.
 
 Scope:
 
-1. Review the hosted read-model permission-source runtime wiring against the design.
-2. Confirm static fixture fallback remains useful and bounded.
-3. Confirm real Postgres dogfood proves read-model-backed gateway decisions.
-4. Confirm fail-closed behavior, trusted-header safety, Control Plane second-gate authority, zero decision persistence, and secret-safe artifacts.
-5. Decide the next hosted-readiness lane.
+1. Design append-only persistence for hosted permission decisions.
+2. Define success, denial, source-unavailable, and lookup-error persistence semantics.
+3. Define secret-safe evidence, retention boundaries, and decision ID deduplication expectations.
+4. Define how persistence write failures affect gateway allow/deny behavior.
+5. Define tests and live dogfood required before implementation.
 6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- gateway runtime wiring implementation is accepted or residual gaps are documented.
-- dogfood evidence is reviewed and linked.
-- remaining risks are ranked.
-- the next hosted-readiness slice is selected.
+- decision persistence write timing and evidence shape are specified.
+- source-unavailable and persistence-failure semantics are specified.
+- secret-safe evidence and retention rules are specified.
+- tests and live dogfood requirements are specified.
 - persistence, OAuth/OIDC, public CRUD, and production deployment remain deferred.
 - no granular CRUD API, OAuth/OIDC, vault, billing, marketplace, workflow, provider onboarding, production gateway deployment, or automatic propagation work is included.
 

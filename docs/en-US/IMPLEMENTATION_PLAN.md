@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation Complete
+Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission read model gateway runtime wiring closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision persistence design.
 
 Implementation language decision:
 
@@ -121,14 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1120,11 +1119,17 @@ Current Phase 6 progress:
   - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, decision persistence, vault, billing, marketplace, workflow, and automatic propagation remain out of scope.
   - the next hosted-readiness task is gateway runtime wiring closeout and phase review.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_IMPLEMENTATION_REPORT.md`.
+- Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0 is complete:
+  - the runtime wiring proof is accepted for v0.
+  - static fixture fallback remains useful and bounded, and live Postgres dogfood covers the read-model-backed gateway path.
+  - remaining risks are decision persistence, dogfood-scoped helper boundary, real public identity lifecycle, policy write lifecycle, production gateway deployment, and provider ownership hardening.
+  - the next hosted-readiness task is hosted permission decision persistence design.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
 References:
