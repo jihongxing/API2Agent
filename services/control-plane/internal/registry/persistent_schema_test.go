@@ -47,6 +47,75 @@ func TestPersistentRegistrySQLSchemaContainsRequiredTablesAndConstraints(t *test
 	}
 }
 
+func TestPersistentRegistrySQLSchemaContainsHostedPermissionStoreBoundary(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "schema", "postgres", "001_persistent_registry_store.sql"))
+	if err != nil {
+		t.Fatalf("read sql schema: %v", err)
+	}
+	schema := string(data)
+
+	required := []string{
+		"CREATE TABLE hosted_subjects",
+		"CREATE TABLE hosted_project_memberships",
+		"CREATE TABLE hosted_roles",
+		"CREATE TABLE hosted_role_bindings",
+		"CREATE TABLE hosted_permission_grants",
+		"CREATE TABLE hosted_policy_versions",
+		"CREATE TABLE hosted_permission_decisions",
+		"hosted_subjects_external_ref_unique",
+		"hosted_project_memberships_subject_project_unique",
+		"hosted_role_bindings_active_unique",
+		"hosted_permission_grants_active_unique",
+		"hosted_policy_versions_source_version_unique",
+		"hosted_policy_versions_one_active_source",
+		"hosted_permission_decisions_subject_project_resolved_at",
+		"subject_id TEXT NOT NULL REFERENCES hosted_subjects(id)",
+		"project_id TEXT NOT NULL REFERENCES projects(id)",
+		"FOREIGN KEY (subject_id, project_id) REFERENCES hosted_project_memberships(subject_id, project_id)",
+		"FOREIGN KEY (policy_source, policy_version) REFERENCES hosted_policy_versions(policy_source, policy_version)",
+		"status TEXT NOT NULL CHECK (status IN ('active', 'suspended', 'disabled'))",
+		"status TEXT NOT NULL CHECK (status IN ('active', 'suspended', 'revoked'))",
+		"scope_type TEXT NOT NULL CHECK (scope_type IN ('project', 'organization', 'platform'))",
+		"source TEXT NOT NULL CHECK (source IN ('seed', 'system', 'operator'))",
+		"policy_fingerprint TEXT NOT NULL",
+		"CHECK (policy_fingerprint LIKE 'sha256:%')",
+		"required_permission TEXT NOT NULL DEFAULT ''",
+		"roles TEXT[] NOT NULL DEFAULT '{}'::text[]",
+		"permissions TEXT[] NOT NULL DEFAULT '{}'::text[]",
+		"token_id TEXT NOT NULL DEFAULT ''",
+		"allowed BOOLEAN NOT NULL",
+		"deny_reason TEXT NOT NULL DEFAULT ''",
+	}
+	for _, item := range required {
+		if !strings.Contains(schema, item) {
+			t.Fatalf("hosted permission schema missing %q", item)
+		}
+	}
+}
+
+func TestHostedPermissionStoreSchemaDoesNotPersistRawSecrets(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "schema", "postgres", "001_persistent_registry_store.sql"))
+	if err != nil {
+		t.Fatalf("read sql schema: %v", err)
+	}
+	schema := string(data)
+
+	forbidden := []string{
+		"public_token",
+		"raw_token",
+		"session_token",
+		"access_token",
+		"refresh_token",
+		"gateway_secret",
+		"plaintext",
+	}
+	for _, item := range forbidden {
+		if strings.Contains(strings.ToLower(schema), item) {
+			t.Fatalf("hosted permission schema must not persist %q", item)
+		}
+	}
+}
+
 func TestMapRegistryToPersistentRowsMapsFileRegistryFixture(t *testing.T) {
 	reg := loadValidRegistry(t)
 

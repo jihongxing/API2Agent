@@ -185,3 +185,141 @@ CREATE INDEX admin_mutation_idempotency_records_expires_at
 
 CREATE INDEX admin_mutation_idempotency_records_request_fingerprint
   ON admin_mutation_idempotency_records (request_fingerprint);
+
+CREATE TABLE hosted_subjects (
+  id TEXT PRIMARY KEY,
+  external_subject_ref TEXT NOT NULL DEFAULT '',
+  display_name TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL CHECK (status IN ('active', 'suspended', 'disabled')),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX hosted_subjects_external_ref_unique
+  ON hosted_subjects (external_subject_ref)
+  WHERE external_subject_ref <> '';
+
+CREATE TABLE hosted_project_memberships (
+  id BIGSERIAL PRIMARY KEY,
+  subject_id TEXT NOT NULL REFERENCES hosted_subjects(id),
+  actor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  organization_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('active', 'suspended', 'revoked')),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (actor_id <> ''),
+  CHECK (organization_id <> '')
+);
+
+CREATE UNIQUE INDEX hosted_project_memberships_subject_project_unique
+  ON hosted_project_memberships (subject_id, project_id);
+
+CREATE INDEX hosted_project_memberships_project_status
+  ON hosted_project_memberships (project_id, status);
+
+CREATE TABLE hosted_roles (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  scope_type TEXT NOT NULL CHECK (scope_type IN ('project', 'organization', 'platform')),
+  public_assignable BOOLEAN NOT NULL DEFAULT false,
+  status TEXT NOT NULL CHECK (status IN ('active', 'disabled')),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE hosted_role_bindings (
+  id BIGSERIAL PRIMARY KEY,
+  subject_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  organization_id TEXT NOT NULL,
+  role_id TEXT NOT NULL REFERENCES hosted_roles(id),
+  status TEXT NOT NULL CHECK (status IN ('active', 'revoked')),
+  source TEXT NOT NULL CHECK (source IN ('seed', 'system', 'operator')),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  FOREIGN KEY (subject_id, project_id) REFERENCES hosted_project_memberships(subject_id, project_id),
+  CHECK (organization_id <> '')
+);
+
+CREATE UNIQUE INDEX hosted_role_bindings_active_unique
+  ON hosted_role_bindings (subject_id, project_id, role_id)
+  WHERE status = 'active';
+
+CREATE INDEX hosted_role_bindings_project_status
+  ON hosted_role_bindings (project_id, status);
+
+CREATE TABLE hosted_permission_grants (
+  id BIGSERIAL PRIMARY KEY,
+  role_id TEXT NOT NULL REFERENCES hosted_roles(id),
+  permission TEXT NOT NULL CHECK (permission <> ''),
+  scope_type TEXT NOT NULL CHECK (scope_type IN ('project', 'organization', 'platform')),
+  status TEXT NOT NULL CHECK (status IN ('active', 'revoked')),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX hosted_permission_grants_active_unique
+  ON hosted_permission_grants (role_id, permission, scope_type)
+  WHERE status = 'active';
+
+CREATE INDEX hosted_permission_grants_permission_status
+  ON hosted_permission_grants (permission, status);
+
+CREATE TABLE hosted_policy_versions (
+  id BIGSERIAL PRIMARY KEY,
+  policy_source TEXT NOT NULL,
+  policy_version TEXT NOT NULL,
+  policy_fingerprint TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('draft', 'active', 'superseded', 'revoked')),
+  activated_at TIMESTAMPTZ,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (policy_source <> ''),
+  CHECK (policy_version <> ''),
+  CHECK (policy_fingerprint LIKE 'sha256:%')
+);
+
+CREATE UNIQUE INDEX hosted_policy_versions_source_version_unique
+  ON hosted_policy_versions (policy_source, policy_version);
+
+CREATE UNIQUE INDEX hosted_policy_versions_one_active_source
+  ON hosted_policy_versions (policy_source)
+  WHERE status = 'active';
+
+CREATE TABLE hosted_permission_decisions (
+  id TEXT PRIMARY KEY,
+  subject_id TEXT NOT NULL REFERENCES hosted_subjects(id),
+  actor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL REFERENCES projects(id),
+  organization_id TEXT NOT NULL,
+  token_id TEXT NOT NULL DEFAULT '',
+  required_permission TEXT NOT NULL DEFAULT '',
+  allowed BOOLEAN NOT NULL,
+  deny_reason TEXT NOT NULL DEFAULT '',
+  roles TEXT[] NOT NULL DEFAULT '{}'::text[],
+  permissions TEXT[] NOT NULL DEFAULT '{}'::text[],
+  policy_source TEXT NOT NULL,
+  policy_version TEXT NOT NULL,
+  policy_fingerprint TEXT NOT NULL,
+  resolved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  FOREIGN KEY (policy_source, policy_version) REFERENCES hosted_policy_versions(policy_source, policy_version),
+  CHECK (id <> ''),
+  CHECK (actor_id <> ''),
+  CHECK (organization_id <> ''),
+  CHECK (required_permission <> ''),
+  CHECK (policy_fingerprint LIKE 'sha256:%')
+);
+
+CREATE INDEX hosted_permission_decisions_subject_project_resolved_at
+  ON hosted_permission_decisions (subject_id, project_id, resolved_at DESC);
+
+CREATE INDEX hosted_permission_decisions_policy_version
+  ON hosted_permission_decisions (policy_source, policy_version);

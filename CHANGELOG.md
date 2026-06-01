@@ -327,6 +327,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Store design completed with durable hosted permission-store boundary, gateway lookup contract, store model, endpoint permission mapping, fail-closed semantics, consistency/cache rules, audit evidence, and contract harness requirements.
 - Go Control Plane Hosted Permission Store contract harness implemented with store-shaped gateway lookup fixtures, subject/membership/role/grant resolution, policy version/fingerprint/decision evidence, fail-closed membership/revocation/stale-policy cases, trusted evidence headers, and regression coverage.
 - Go Control Plane Hosted Permission Store contract harness closeout completed; the local store-shaped lookup proof is accepted for v0, and the next hosted-readiness gap is durable permission store schema/read boundary.
+- Go Control Plane Hosted Permission Store schema implemented with hosted subject, membership, role, role binding, permission grant, policy version, and permission decision tables plus constraints, indexes, fingerprint checks, and raw-secret exclusion tests.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -334,4 +335,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Store Schema v0.
+- Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0.

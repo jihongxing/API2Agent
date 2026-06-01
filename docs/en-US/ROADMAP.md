@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Schema v0
+Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission store contract harness closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness, and harness closeout are complete.
+Status: hosted permission store schema complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, and hosted permission-store schema are complete.
 
 Goal:
 
@@ -1021,30 +1021,31 @@ Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogf
 Go Control Plane Hosted Permission Store Design v0
 Go Control Plane Hosted Permission Store Contract Harness v0
 Go Control Plane Hosted Permission Store Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Schema v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Store Schema v0
+Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
 ```
 
-This hosted-readiness schema slice is now the immediate next project task because the store-shaped contract proof has closed and the remaining gap is a durable internal schema/read boundary.
+This hosted-readiness closeout is now the immediate next project task because the durable schema boundary exists and should be reviewed before any runtime read wiring.
 
 Scope:
 
-1. Add durable hosted permission-store schema artifacts or migrations for subjects, memberships, roles, role bindings, permission grants, policy versions, and optional decision evidence.
-2. Preserve a private/internal read-only or seeded boundary; do not expose public role/project/user CRUD.
-3. Keep gateway-local fail-closed lookup semantics and policy version/fingerprint evidence explicit.
-4. Keep public auth provider implementation, production gateway deployment, and public management surfaces out of scope.
+1. Review the hosted permission-store schema against the design and contract harness acceptance criteria.
+2. Confirm subject, membership, role, binding, grant, policy version, and decision evidence are represented without raw secrets.
+3. Document remaining risks before any runtime read wiring.
+4. Keep public auth provider implementation, production gateway deployment, production read wiring, and public management surfaces out of scope.
 5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- durable schema/read boundary is explicit.
-- schema supports subject, membership, role, role binding, permission grant, policy version, and decision evidence.
-- lookup semantics can preserve fail-closed unavailable, missing membership, revocation, stale policy, and endpoint permission denial behavior.
-- policy version/fingerprint/decision id evidence remains secret-safe.
+- schema slice is accepted or follow-up gaps are explicitly listed.
+- subject, membership, role, role binding, permission grant, policy version, and decision evidence are represented.
+- raw public tokens, raw session tokens, OAuth tokens, gateway secrets, plaintext API keys, and vault material remain out of schema.
+- runtime read wiring remains deferred.
 - no granular CRUD API, OAuth/OIDC, vault, billing, marketplace, workflow, provider onboarding, production gateway deployment, or automatic propagation work is included.
 
 References:
@@ -1079,6 +1080,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

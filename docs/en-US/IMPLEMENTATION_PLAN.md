@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Store Contract Harness Closeout Complete
+Go Control Plane Hosted Permission Store Schema Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission store schema.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission store schema closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Store Schema v0
+Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Schema v0
+Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1075,11 +1075,16 @@ Current Phase 6 progress:
   - remaining risks are durable schema, policy write lifecycle, real public identity lifecycle, production gateway deployment, cache/consistency persistence, and provider ownership hardening.
   - the next hosted-readiness task is hosted permission store schema.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`.
+- Go Control Plane Hosted Permission Store Schema v0 is complete:
+  - hosted subject, membership, role, role binding, permission grant, policy version, and permission decision tables are defined in the Postgres schema.
+  - constraints and indexes preserve the private read-model boundary, fail-closed lookup evidence, and secret-safe storage assumptions.
+  - the next hosted-readiness task is schema closeout and phase review.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Schema v0
+Go Control Plane Hosted Permission Store Schema Closeout + Phase Review v0
 ```
 
 References:
@@ -1114,6 +1119,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
