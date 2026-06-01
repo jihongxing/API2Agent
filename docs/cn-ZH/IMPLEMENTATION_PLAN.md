@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 tenant-partitioned registry mutation private endpoint design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 tenant-partitioned registry mutation private endpoint implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1048,11 +1048,15 @@ Go Control Plane Minimum v0
   - remaining risks 是 endpoint wiring、audit persistence、first-class provider ownership、project row policy、durable permissions 和 manual propagation。
   - 下一项任务是 private hosted project mutation endpoint design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0 已完成：
+  - private hosted endpoint contract、trusted principal requirements、project-derived scope、registry-layer transaction seam、partition evidence response shape、idempotency/audit mapping 和 stable error semantics 已定义。
+  - implementation 保持 deferred 到下一项任务。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 参考：
@@ -1081,6 +1085,7 @@ Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

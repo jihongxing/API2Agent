@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design Complete
 ```
 
 战略判断：
@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted admin gateway permission-source closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness 和 gateway permission-source proof 已完成。
+状态：tenant-partitioned registry mutation private endpoint design 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation 和 private endpoint contract 已完成。
 
 目标：
 
@@ -1015,30 +1015,31 @@ Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review 
 Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
-由于 local partition validation helper 已关闭，下一项 boundary 是 private hosted admin endpoint contract；这项 hosted-readiness design 现在是当前项目立即下一项任务。
+由于 private endpoint contract 已定义，下一项 boundary 是把 hosted project mutation path 接起来，同时不把它扩成 public CRUD；这项 hosted-readiness implementation 现在是当前项目立即下一项任务。
 
 范围：
 
-1. 设计 project partition replacement 的 method/path 和 request/response contract。
-2. 定义 hosted/trusted principal、permission、idempotency、audit 和 error mapping。
-3. 定义 partition validator 如何与 persistent registry replacement 组合。
+1. 实现 project partition replacement 的 method/path 和 request/response contract。
+2. 强制 hosted/trusted principal、permission、idempotency、audit 和 error mapping。
+3. 通过 registry-layer write transaction 组合 partition validator 与 persistent registry replacement。
 4. public CRUD、public auth provider implementation、durable permission storage 和 production gateway deployment 保持 out of scope。
 5. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- endpoint method/path、body、headers 和 response shape 明确。
-- auth/permission、idempotency、audit 和 partition error semantics 明确。
-- 与 existing replacement mechanics 的 transaction composition 明确。
-- implementation 保持 deferred。
+- endpoint method/path、body、headers 和 response shape 已实现。
+- auth/permission、idempotency、audit 和 partition error semantics 有 tests 覆盖。
+- 通过 registry layer 实现与 existing replacement mechanics 的 transaction composition。
+- local dogfood 证明 hosted project partition mutation path。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：

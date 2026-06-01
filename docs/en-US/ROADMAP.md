@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design Complete
 ```
 
 Strategic thesis:
@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted admin gateway permission-source closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, and gateway permission-source proof are complete.
+Status: tenant-partitioned registry mutation private endpoint design complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, and private endpoint contract are complete.
 
 Goal:
 
@@ -1015,30 +1015,31 @@ Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review 
 Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
-This hosted-readiness design is now the immediate next project task because the local partition validation helper is closed and the next boundary is a private hosted admin endpoint contract.
+This hosted-readiness implementation is now the immediate next project task because the private endpoint contract is defined and the next boundary is wiring the hosted project mutation path without widening it into public CRUD.
 
 Scope:
 
-1. Design method/path and request/response contract for project partition replacement.
-2. Define hosted/trusted principal, permission, idempotency, audit, and error mapping.
-3. Define how the partition validator composes with persistent registry replacement.
+1. Implement method/path and request/response contract for project partition replacement.
+2. Enforce hosted/trusted principal, permission, idempotency, audit, and error mapping.
+3. Compose the partition validator with persistent registry replacement inside a registry-layer write transaction.
 4. Keep public CRUD, public auth provider implementation, durable permission storage, and production gateway deployment out of scope.
 5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- endpoint method/path, body, headers, and response shape are explicit.
-- auth/permission, idempotency, audit, and partition error semantics are explicit.
-- transaction composition with existing replacement mechanics is explicit.
-- implementation remains deferred.
+- endpoint method/path, body, headers, and response shape are implemented.
+- auth/permission, idempotency, audit, and partition error semantics are covered by tests.
+- transaction composition with existing replacement mechanics is implemented through the registry layer.
+- local dogfood proves the hosted project partition mutation path.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:

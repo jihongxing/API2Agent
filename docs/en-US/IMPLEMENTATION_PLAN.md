@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is tenant-partitioned registry mutation private endpoint design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is tenant-partitioned registry mutation private endpoint implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1048,11 +1048,15 @@ Current Phase 6 progress:
   - remaining risks are endpoint wiring, audit persistence, first-class provider ownership, project row policy, durable permissions, and manual propagation.
   - the next task is private hosted project mutation endpoint design.
   - see `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`.
+- Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0 is complete:
+  - the private hosted endpoint contract, trusted principal requirements, project-derived scope, registry-layer transaction seam, partition evidence response shape, idempotency/audit mapping, and stable error semantics are defined.
+  - implementation remains deferred to the next task.
+  - see `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 References:
@@ -1081,6 +1085,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
