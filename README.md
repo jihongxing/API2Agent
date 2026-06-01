@@ -2,7 +2,7 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: design the durable/private hosted permission policy mutation implementation after accepting the local contract harness proof; next work remains API-first and out of public CRUD, OAuth/OIDC, vault, billing, marketplace, automatic propagation, production gateway deployment, customer-facing decision history, and workflow runtime scope.
+Current focus: implement the durable/private hosted permission policy mutation path after completing the durable transaction design; next work remains API-first and out of public CRUD, OAuth/OIDC, vault, billing, marketplace, automatic propagation, production gateway deployment, customer-facing decision history, and workflow runtime scope.
 
 Strategic priority: maximize real execution data, keep API/provider onboarding cost as low as possible, and improve latency visibility. Future routing will become location-aware; see `docs/en-US/LOCATION_AWARE_ROUTING.md`.
 

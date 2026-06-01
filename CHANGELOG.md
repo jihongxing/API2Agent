@@ -354,6 +354,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Policy Mutation Boundary contract harness closeout completed; local/private mutation contract proof is accepted for v0, the lane is 100% complete, Hosted Control Plane completion estimate is updated to 74%, and the next hosted-readiness gap is durable private policy mutation implementation design.
 - Documentation policy added to stop per-slice document growth, introduce a compact Hosted Control Plane phase log, and reserve new standalone docs for durable API, storage, security, protocol, deployment, customer-data, or major product-direction boundaries.
 - README documentation navigation slimmed to core entry points; historical reports remain in `docs/` but are no longer listed one by one in the README.
+- Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation design completed with draft/change table ownership, serializable promotion and rollback transaction boundaries, idempotency reuse, audit evidence rules, private response shape, gateway read-model compatibility, and Hosted Control Plane completion estimate updated to 75%.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -361,4 +362,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0, under the new documentation policy.
+- Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0, under the new documentation policy.

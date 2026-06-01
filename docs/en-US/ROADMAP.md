@@ -951,7 +951,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1057,26 +1057,26 @@ Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Clo
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
-The local/private mutation contract proof is accepted for v0. The next task should design the durable/private implementation boundary before any hosted service endpoint or live Postgres implementation is added.
+The local/private mutation contract proof and durable/private implementation design are accepted for v0. The next task should implement the private Postgres-backed mutation path before any public policy write API, production gateway rollout, or customer-facing history/export surface is added.
 
 Scope:
 
-1. Design durable/private row ownership for policy drafts, policy versions, mutation audit, and idempotency records.
-2. Define validation, promotion, and rollback transaction boundaries.
+1. Add durable private draft/change row support and registry package mutation functions.
+2. Implement validation, promotion, and rollback transaction boundaries.
 3. Preserve idempotency replay/conflict, stale-base conflict, duplicate grant conflict, scope violation, and secret-safe audit semantics.
-4. Define private service implementation constraints without opening public policy write APIs.
-5. Set future implementation and live Postgres dogfood criteria.
+4. Keep the service private and avoid public policy write APIs.
+5. Add implementation tests and machine-readable dogfood evidence criteria.
 6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, provider onboarding, OAuth/OIDC, public CRUD, policy write APIs, Data Plane mutable reads, customer-facing decision history/export/delete/legal-hold APIs, or production gateway deployment.
 
 Exit criteria:
 
-- durable private implementation design is documented.
-- transaction and conflict semantics are mapped to durable storage.
-- private service boundary and response/audit evidence are specified.
-- live Postgres implementation dogfood criteria are explicit.
+- durable private implementation is covered by tests.
+- transaction and conflict semantics are enforced against durable storage.
+- private response/audit evidence remains secret-safe.
+- live Postgres dogfood criteria are satisfied or explicitly deferred to the next phase-log entry.
 - OAuth/OIDC, public CRUD, production deployment, vault, billing, marketplace, workflow, provider onboarding, policy write APIs, Data Plane mutable reads, and automatic propagation remain deferred.
 
 References:

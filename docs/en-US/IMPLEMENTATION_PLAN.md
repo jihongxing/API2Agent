@@ -21,7 +21,7 @@ Current phase:
 Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is durable private hosted permission policy mutation implementation design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is durable private hosted permission policy mutation implementation.
 
 Documentation operating mode:
 
@@ -127,16 +127,16 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
-This task should follow the documentation policy. Prefer code/tests plus `CHANGELOG.md` and the Hosted Control Plane phase log. Create a standalone design only if the durable private implementation boundary needs a stable storage/security/protocol decision record.
+This task should follow the documentation policy. Prefer code/tests plus `CHANGELOG.md` and the Hosted Control Plane phase log. Do not create a new implementation report or closeout document by default.
 
 ## 5. Next Major Build: Control Layer MVP
 
@@ -1257,11 +1257,19 @@ Current Phase 6 progress:
   - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, customer-facing decision history, legal-hold customer APIs, customer export/delete APIs, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
   - the next hosted-readiness task is hosted permission policy mutation durable private implementation design.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`.
+- Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0 is complete:
+  - durable private draft/change row ownership is designed.
+  - serializable promotion and rollback transaction order is explicit.
+  - idempotency reuse, audit evidence, private response shape, and gateway read-model compatibility are defined.
+  - hosted permission policy mutation durable private design lane completion is 100%.
+  - broader Hosted Control Plane phase completion is estimated at 75%.
+  - implementation should now proceed under the documentation policy without a per-slice implementation report or closeout by default.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_DURABLE_PRIVATE_IMPLEMENTATION_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
 References:

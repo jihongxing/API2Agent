@@ -81,3 +81,36 @@ Completion:
 
 - documentation governance lane: 100%
 - Hosted Control Plane phase estimate remains 74%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+
+Commit: pending until this design slice is committed
+
+Changed:
+
+- designed durable private draft and change row ownership for hosted permission policy mutation
+- mapped promotion and rollback to serializable Postgres transactions
+- reused `admin_mutation_idempotency_records` and `admin_audit_events` for replay/conflict and secret-safe evidence
+- preserved gateway read-model compatibility and Data Plane mutable-read exclusion
+- kept public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, automatic propagation, customer-facing history/export/delete/legal-hold APIs, marketplace, vault, billing, and workflow runtime out of scope
+
+Validation:
+
+- `git diff --check`
+- `git diff --cached --check`
+
+Decision:
+
+- durable private implementation design lane is complete for v0
+- Hosted Control Plane completion estimate moves to 75%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0`
+
+Completion:
+
+- durable private implementation design lane: 100%
+- Hosted Control Plane phase estimate: 75%

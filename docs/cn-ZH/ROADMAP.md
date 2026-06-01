@@ -951,7 +951,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1057,26 +1057,26 @@ Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Clo
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
-local/private mutation contract proof 已作为 v0 接受。下一项任务应先设计 durable/private implementation boundary，再进入 hosted service endpoint 或 live Postgres implementation。
+local/private mutation contract proof 和 durable/private implementation design 已作为 v0 接受。下一项任务应实现 private Postgres-backed mutation path，再考虑 public policy write API、production gateway rollout 或 customer-facing history/export surface。
 
 范围：
 
-1. 设计 policy drafts、policy versions、mutation audit 和 idempotency records 的 durable/private row ownership。
-2. 定义 validation、promotion 和 rollback transaction boundaries。
+1. 增加 durable private draft/change row support 和 registry package mutation functions。
+2. 实现 validation、promotion 和 rollback transaction boundaries。
 3. 保留 idempotency replay/conflict、stale-base conflict、duplicate grant conflict、scope violation 和 secret-safe audit semantics。
-4. 定义 private service implementation constraints，不开放 public policy write APIs。
-5. 设置后续 implementation 和 live Postgres dogfood criteria。
+4. 保持 service private，不开放 public policy write APIs。
+5. 增加 implementation tests 和 machine-readable dogfood evidence criteria。
 6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow、provider onboarding、OAuth/OIDC、public CRUD、policy write APIs、Data Plane mutable reads、customer-facing decision history/export/delete/legal-hold APIs 或 production gateway deployment。
 
 退出标准：
 
-- durable private implementation design 已文档化。
-- transaction 和 conflict semantics 已映射到 durable storage。
-- private service boundary 和 response/audit evidence 已明确。
-- live Postgres implementation dogfood criteria 已明确。
+- durable private implementation 已有 tests 覆盖。
+- transaction 和 conflict semantics 已在 durable storage 上 enforced。
+- private response/audit evidence 保持 secret-safe。
+- live Postgres dogfood criteria 已满足，或明确 deferred 到下一条 phase-log entry。
 - OAuth/OIDC、public CRUD、production deployment、vault、billing、marketplace、workflow、provider onboarding、policy write APIs、Data Plane mutable reads 和 automatic propagation 保持 deferred。
 
 参考：

@@ -21,7 +21,7 @@ OpenAPI / curl
 Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 durable private hosted permission policy mutation implementation design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 durable private hosted permission policy mutation implementation。
 
 文档运行模式：
 
@@ -127,16 +127,16 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
-该任务应遵循 documentation policy。优先更新 code/tests、`CHANGELOG.md` 和 Hosted Control Plane phase log。只有 durable private implementation boundary 需要稳定的 storage/security/protocol decision record 时，才新建 standalone design。
+该任务应遵循 documentation policy。优先更新 code/tests、`CHANGELOG.md` 和 Hosted Control Plane phase log。默认不要新建 implementation report 或 closeout document。
 
 ## 5. 下一阶段主线：Control Layer MVP
 
@@ -1257,11 +1257,19 @@ Go Control Plane Minimum v0
   - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、customer-facing decision history、legal-hold customer APIs、customer export/delete APIs、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
   - 下一项 hosted-readiness task 是 hosted permission policy mutation durable private implementation design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0 已完成：
+  - durable private draft/change row ownership 已设计。
+  - serializable promotion 和 rollback transaction order 已明确。
+  - idempotency reuse、audit evidence、private response shape 和 gateway read-model compatibility 已定义。
+  - hosted permission policy mutation durable private design lane completion 是 100%。
+  - 更大的 Hosted Control Plane phase completion 估算为 75%。
+  - implementation 现在应按 documentation policy 推进，默认不新增 per-slice implementation report 或 closeout。
+  - 详见 `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_DURABLE_PRIVATE_IMPLEMENTATION_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation v0
 ```
 
 参考：
