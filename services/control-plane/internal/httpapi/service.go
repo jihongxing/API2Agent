@@ -19,20 +19,21 @@ import (
 )
 
 type Handler struct {
-	Store                  registry.Store
-	AuditSink              registry.PersistentAuditSink
-	ImportReplacer         RegistryImportReplacer
-	Authenticator          AdminAuthenticator
-	RegistryStore          string
-	RegistrySource         string
-	DistributionDir        string
-	AdminToken             string
-	AdminIdentityMode      string
-	AdminAuthenticatorMode string
-	TrustedGatewaySecret   string
-	TrustedGatewaySecrets  []string
-	TrustedGatewayKeyID    string
-	Now                    func() time.Time
+	Store                    registry.Store
+	AuditSink                registry.PersistentAuditSink
+	ImportReplacer           RegistryImportReplacer
+	ProjectPartitionReplacer RegistryProjectPartitionReplacer
+	Authenticator            AdminAuthenticator
+	RegistryStore            string
+	RegistrySource           string
+	DistributionDir          string
+	AdminToken               string
+	AdminIdentityMode        string
+	AdminAuthenticatorMode   string
+	TrustedGatewaySecret     string
+	TrustedGatewaySecrets    []string
+	TrustedGatewayKeyID      string
+	Now                      func() time.Time
 }
 
 const importReplaceMaxBodyBytes int64 = 2 * 1024 * 1024
@@ -68,6 +69,10 @@ const (
 
 type RegistryImportReplacer interface {
 	ReplacePersistentRegistry(ctx context.Context, reg registry.Registry, opts registry.ImportReplaceOptions) (registry.ImportReplaceResult, error)
+}
+
+type RegistryProjectPartitionReplacer interface {
+	ReplaceProjectPartitionRegistry(ctx context.Context, reg registry.Registry, opts registry.ProjectPartitionReplaceOptions) (registry.ProjectPartitionReplaceResult, error)
 }
 
 type AdminAuthenticator interface {
@@ -139,6 +144,19 @@ type ImportReplaceResponse struct {
 	Counts                      registry.ImportReplaceCounts `json:"counts"`
 }
 
+type ProjectPartitionReplaceResponse struct {
+	RegistryStore               string                                  `json:"registry_store"`
+	RegistryFingerprint         string                                  `json:"registry_fingerprint"`
+	PreviousRegistryFingerprint string                                  `json:"previous_registry_fingerprint,omitempty"`
+	SnapshotVersion             string                                  `json:"snapshot_version"`
+	Noop                        bool                                    `json:"noop"`
+	Replayed                    bool                                    `json:"replayed"`
+	PartitionProjectID          string                                  `json:"partition_project_id"`
+	PartitionDiffFingerprint    string                                  `json:"partition_diff_fingerprint"`
+	PartitionCounts             registry.ProjectPartitionMutationCounts `json:"partition_counts"`
+	Counts                      registry.ImportReplaceCounts            `json:"counts"`
+}
+
 type ExportArtifactRequest struct {
 	OutputDir string `json:"output_dir"`
 }
@@ -166,6 +184,7 @@ func (h Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/healthz", h.Healthz)
 	mux.HandleFunc("/v1/admin/registry/validate", h.ValidateRegistry)
 	mux.HandleFunc("/v1/admin/registry/import-replace", h.ImportReplaceRegistry)
+	mux.HandleFunc("/v1/admin/registry/project-partition/replace", h.ProjectPartitionReplaceRegistry)
 	mux.HandleFunc("/v1/admin/snapshots/export-artifact", h.ExportArtifact)
 	mux.HandleFunc("/v1/admin/distribution/publish", h.PublishArtifact)
 	mux.HandleFunc("/v1/admin/distribution/current", h.DistributionCurrent)
@@ -317,6 +336,105 @@ func (h Handler) ImportReplaceRegistry(w http.ResponseWriter, r *http.Request) {
 		PreviousRegistryFingerprint: result.PreviousRegistryFingerprint,
 		SnapshotVersion:             result.SnapshotVersion,
 		Noop:                        result.Noop,
+		Counts:                      result.Counts,
+	})
+}
+
+func (h Handler) ProjectPartitionReplaceRegistry(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "INVALID_REQUEST", "caller", "method not allowed", false)
+		return
+	}
+	principal, ok := h.resolveAdminPrincipal(w, r, registry.PermissionRegistryProjectPartitionReplace)
+	if !ok {
+		return
+	}
+	if principal.LocalPrivate || principal.AuthMethod != registry.AdminAuthMethodTrustedGateway {
+		writeError(w, http.StatusForbidden, "AUTHZ_DENIED", "caller", "project partition replacement requires a trusted hosted principal", false)
+		return
+	}
+	requestID := strings.TrimSpace(r.Header.Get("X-Request-ID"))
+	if requestID == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "X-Request-ID is required", false)
+		return
+	}
+	idempotencyKey := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
+	if idempotencyKey == "" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "Idempotency-Key is required", false)
+		return
+	}
+	if h.registryStore() != "postgres" || h.ProjectPartitionReplacer == nil {
+		writeError(w, http.StatusConflict, "REGISTRY_MUTATION_UNAVAILABLE", "platform", "project partition replacement requires postgres mutation mode", false)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, importReplaceMaxBodyBytes)
+	var req ImportReplaceRequest
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		if requestBodyTooLarge(err) {
+			writeError(w, http.StatusRequestEntityTooLarge, "REQUEST_BODY_TOO_LARGE", "caller", "request body exceeds 2 MiB limit", false)
+			return
+		}
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "invalid json body", false)
+		return
+	}
+	if err := ensureSingleJSONDocument(decoder); err != nil {
+		if requestBodyTooLarge(err) {
+			writeError(w, http.StatusRequestEntityTooLarge, "REQUEST_BODY_TOO_LARGE", "caller", "request body exceeds 2 MiB limit", false)
+			return
+		}
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "invalid json body", false)
+		return
+	}
+	if len(req.Registry) == 0 || strings.TrimSpace(string(req.Registry)) == "null" {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "registry is required", false)
+		return
+	}
+	if req.DryRun {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "dry_run=true is reserved and not supported in v0", false)
+		return
+	}
+	var incoming registry.Registry
+	if err := json.Unmarshal(req.Registry, &incoming); err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_REQUEST", "caller", "invalid registry json", false)
+		return
+	}
+	source := strings.TrimSpace(req.Source)
+	if source == "" {
+		source = "hosted_project_partition_replace"
+	}
+	result, err := h.ProjectPartitionReplacer.ReplaceProjectPartitionRegistry(r.Context(), incoming, registry.ProjectPartitionReplaceOptions{
+		Principal:      principal,
+		RequestID:      requestID,
+		IdempotencyKey: idempotencyKey,
+		Source:         source,
+	})
+	if err != nil {
+		h.writeRegistryMutationError(w, err)
+		return
+	}
+	if result.Replayed {
+		w.Header().Set("Idempotency-Replayed", "true")
+		if result.IdempotencyRecordID != 0 {
+			w.Header().Set("Idempotency-Record-ID", fmt.Sprint(result.IdempotencyRecordID))
+		}
+	}
+	status := http.StatusCreated
+	if result.Noop || result.Replayed {
+		status = http.StatusOK
+	}
+	writeJSON(w, status, ProjectPartitionReplaceResponse{
+		RegistryStore:               h.registryStore(),
+		RegistryFingerprint:         result.RegistryFingerprint,
+		PreviousRegistryFingerprint: result.PreviousRegistryFingerprint,
+		SnapshotVersion:             result.SnapshotVersion,
+		Noop:                        result.Noop,
+		Replayed:                    result.Replayed,
+		PartitionProjectID:          result.PartitionDecision.PartitionProjectID,
+		PartitionDiffFingerprint:    result.PartitionDecision.DiffFingerprint,
+		PartitionCounts:             result.PartitionDecision.Counts,
 		Counts:                      result.Counts,
 	})
 }
@@ -500,6 +618,8 @@ func (h Handler) writeRegistryMutationError(w http.ResponseWriter, err error) {
 		switch mutationErr.ErrorType {
 		case "REGISTRY_MUTATION_INVALID":
 			status = http.StatusBadRequest
+		case "AUTHZ_DENIED", "REGISTRY_PARTITION_VIOLATION":
+			status = http.StatusForbidden
 		case "REGISTRY_MUTATION_CONFLICT", "IDEMPOTENCY_KEY_CONFLICT", "IDEMPOTENCY_REQUEST_IN_PROGRESS":
 			status = http.StatusConflict
 		case "PERSISTENT_STORE_READ_FAILED", "PERSISTENT_STORE_WRITE_FAILED", "IDEMPOTENCY_STORE_READ_FAILED", "IDEMPOTENCY_STORE_WRITE_FAILED":

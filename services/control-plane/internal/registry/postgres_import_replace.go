@@ -45,6 +45,24 @@ type ImportReplaceResult struct {
 	IdempotencyRecordID         int64               `json:"-"`
 }
 
+type ProjectPartitionReplaceOptions struct {
+	Principal      AdminPrincipal
+	RequestID      string
+	IdempotencyKey string
+	Source         string
+}
+
+type ProjectPartitionReplaceResult struct {
+	RegistryFingerprint         string                           `json:"registry_fingerprint"`
+	PreviousRegistryFingerprint string                           `json:"previous_registry_fingerprint,omitempty"`
+	SnapshotVersion             string                           `json:"snapshot_version"`
+	Noop                        bool                             `json:"noop"`
+	Counts                      ImportReplaceCounts              `json:"counts"`
+	PartitionDecision           ProjectPartitionMutationDecision `json:"partition_decision"`
+	Replayed                    bool                             `json:"-"`
+	IdempotencyRecordID         int64                            `json:"-"`
+}
+
 type RegistryMutationError struct {
 	ErrorType  string
 	Scope      string
@@ -189,6 +207,150 @@ func ReplacePersistentRegistry(ctx context.Context, db *sql.DB, reg Registry, op
 	return result, nil
 }
 
+func ReplaceProjectPartitionRegistry(ctx context.Context, db *sql.DB, proposed Registry, opts ProjectPartitionReplaceOptions) (ProjectPartitionReplaceResult, error) {
+	if db == nil {
+		return ProjectPartitionReplaceResult{}, mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("postgres registry db is required"))
+	}
+	if opts.Principal.LocalPrivate || opts.Principal.AuthMethod != AdminAuthMethodTrustedGateway {
+		return ProjectPartitionReplaceResult{}, mutationError("AUTHZ_DENIED", "caller", false, fmt.Errorf("project partition replacement requires a trusted hosted principal"))
+	}
+	if strings.TrimSpace(opts.Principal.ProjectID) == "" || strings.TrimSpace(opts.Principal.ActorID) == "" {
+		return ProjectPartitionReplaceResult{}, mutationError("AUTHZ_DENIED", "caller", false, fmt.Errorf("project partition replacement requires actor and project scope"))
+	}
+	prepared, rows, err := prepareImportReplaceRows(proposed)
+	if err != nil {
+		return ProjectPartitionReplaceResult{}, mutationError("REGISTRY_MUTATION_INVALID", "caller", false, err)
+	}
+	incomingFingerprint, err := prepared.Fingerprint()
+	if err != nil {
+		return ProjectPartitionReplaceResult{}, mutationError("REGISTRY_MUTATION_INVALID", "caller", false, err)
+	}
+	counts := importReplaceCounts(rows)
+	result := ProjectPartitionReplaceResult{
+		RegistryFingerprint: incomingFingerprint,
+		SnapshotVersion:     prepared.Snapshot.Version,
+		Counts:              counts,
+	}
+
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+		ReadOnly:  false,
+	})
+	if err != nil {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "PERSISTENT_STORE_WRITE_FAILED")
+		return ProjectPartitionReplaceResult{}, mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("begin project partition replacement transaction: %w", err))
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	locked, err := acquireRegistryMutationLock(ctx, tx)
+	if err != nil {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "PERSISTENT_STORE_WRITE_FAILED")
+		return ProjectPartitionReplaceResult{}, mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, err)
+	}
+	if !locked {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "REGISTRY_MUTATION_CONFLICT")
+		return ProjectPartitionReplaceResult{}, mutationError("REGISTRY_MUTATION_CONFLICT", "platform", true, fmt.Errorf("registry mutation lock is already held"))
+	}
+
+	current, previousFingerprint, err := currentPersistentRegistry(ctx, tx)
+	if err != nil {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "PERSISTENT_STORE_READ_FAILED")
+		return ProjectPartitionReplaceResult{}, mutationError("PERSISTENT_STORE_READ_FAILED", "platform", true, err)
+	}
+	result.PreviousRegistryFingerprint = previousFingerprint
+	decision, err := ValidateProjectPartitionMutation(current, prepared, opts.Principal.ProjectID)
+	result.PartitionDecision = decision
+	if err != nil {
+		var mutationErr RegistryMutationError
+		errorType := "REGISTRY_PARTITION_VIOLATION"
+		if errors.As(err, &mutationErr) {
+			errorType = mutationErr.ErrorType
+		}
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, errorType)
+		return ProjectPartitionReplaceResult{}, err
+	}
+
+	idempotency, err := newProjectPartitionIdempotencyRequest(opts, result)
+	if err != nil {
+		return ProjectPartitionReplaceResult{}, mutationError("REGISTRY_MUTATION_INVALID", "caller", false, err)
+	}
+	idempotencyRecord, replay, err := reserveProjectPartitionIdempotency(ctx, tx, idempotency)
+	if err != nil {
+		return ProjectPartitionReplaceResult{}, err
+	}
+	if replay {
+		if err := tx.Commit(); err != nil {
+			return ProjectPartitionReplaceResult{}, mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("commit project partition replacement replay: %w", err))
+		}
+		committed = true
+		return idempotencyRecord.Result, nil
+	}
+	result.IdempotencyRecordID = idempotencyRecord.ID
+
+	if previousFingerprint != "" && previousFingerprint == incomingFingerprint {
+		result.Noop = true
+		auditID, err := insertProjectPartitionAdminAudit(ctx, tx, opts, result, "project_partition_replace_noop", "success", "")
+		if err != nil {
+			_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "AUDIT_WRITE_FAILED")
+			return ProjectPartitionReplaceResult{}, mutationError("AUDIT_WRITE_FAILED", "platform", true, err)
+		}
+		if err := completeProjectPartitionIdempotency(ctx, tx, idempotencyRecord, result, 0, auditID); err != nil {
+			_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "IDEMPOTENCY_STORE_WRITE_FAILED")
+			return ProjectPartitionReplaceResult{}, err
+		}
+		if err := tx.Commit(); err != nil {
+			_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "PERSISTENT_STORE_WRITE_FAILED")
+			return ProjectPartitionReplaceResult{}, mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("commit project partition replacement noop: %w", err))
+		}
+		committed = true
+		return result, nil
+	}
+
+	if err := replaceMutableRegistryRows(ctx, tx, rows); err != nil {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "PERSISTENT_STORE_WRITE_FAILED")
+		return ProjectPartitionReplaceResult{}, mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, err)
+	}
+	writtenFingerprint, err := currentPersistentRegistryFingerprint(ctx, tx)
+	if err != nil {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "PERSISTENT_STORE_READ_FAILED")
+		return ProjectPartitionReplaceResult{}, mutationError("PERSISTENT_STORE_READ_FAILED", "platform", true, err)
+	}
+	if writtenFingerprint != incomingFingerprint {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "REGISTRY_MUTATION_INVALID")
+		return ProjectPartitionReplaceResult{}, mutationError("REGISTRY_MUTATION_INVALID", "caller", false, fmt.Errorf("written registry fingerprint %q does not match incoming fingerprint %q", writtenFingerprint, incomingFingerprint))
+	}
+	revisionID, err := insertRegistryRevisionTx(ctx, tx, PersistentRegistryRevisionRow{
+		RegistryFingerprint: incomingFingerprint,
+		SnapshotVersion:     prepared.Snapshot.Version,
+		SourceStore:         "postgres",
+		SourceRevision:      projectPartitionSourceRevision(opts),
+	}, opts.Principal.ActorID)
+	if err != nil {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "AUDIT_WRITE_FAILED")
+		return ProjectPartitionReplaceResult{}, mutationError("AUDIT_WRITE_FAILED", "platform", true, err)
+	}
+	auditID, err := insertProjectPartitionAdminAudit(ctx, tx, opts, result, "project_partition_replace", "success", "")
+	if err != nil {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "AUDIT_WRITE_FAILED")
+		return ProjectPartitionReplaceResult{}, mutationError("AUDIT_WRITE_FAILED", "platform", true, err)
+	}
+	if err := completeProjectPartitionIdempotency(ctx, tx, idempotencyRecord, result, revisionID, auditID); err != nil {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "IDEMPOTENCY_STORE_WRITE_FAILED")
+		return ProjectPartitionReplaceResult{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		_ = recordProjectPartitionFailureAudit(ctx, db, opts, result, "PERSISTENT_STORE_WRITE_FAILED")
+		return ProjectPartitionReplaceResult{}, mutationError("PERSISTENT_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("commit project partition replacement: %w", err))
+	}
+	committed = true
+	return result, nil
+}
+
 func prepareImportReplaceRows(reg Registry) (Registry, PersistentRegistryRows, error) {
 	canonical := CanonicalRegistry(reg)
 	if err := canonical.Validate(); err != nil {
@@ -230,6 +392,22 @@ func currentPersistentRegistryFingerprint(ctx context.Context, tx *sql.Tx) (stri
 		return "", err
 	}
 	return fingerprint, nil
+}
+
+func currentPersistentRegistry(ctx context.Context, tx *sql.Tx) (Registry, string, error) {
+	rows, err := LoadPersistentRows(ctx, tx)
+	if err != nil {
+		return Registry{}, "", err
+	}
+	reg, err := BuildRegistryFromPersistentRows(rows)
+	if err != nil {
+		return Registry{}, "", err
+	}
+	fingerprint, err := reg.Fingerprint()
+	if err != nil {
+		return Registry{}, "", err
+	}
+	return *reg, fingerprint, nil
 }
 
 func persistentRowsEmpty(rows PersistentRegistryRows) bool {
@@ -347,6 +525,21 @@ func insertImportReplaceAdminAudit(ctx context.Context, tx *sql.Tx, opts ImportR
 	})
 }
 
+func insertProjectPartitionAdminAudit(ctx context.Context, tx *sql.Tx, opts ProjectPartitionReplaceOptions, result ProjectPartitionReplaceResult, mutationMode string, outcome string, errorType string) (int64, error) {
+	return insertAdminAuditTx(ctx, tx, PersistentAdminAuditEventRow{
+		ActorID:      opts.Principal.ActorID,
+		Action:       ProjectPartitionReplaceOperation,
+		ResourceType: "registry",
+		ResourceID:   result.RegistryFingerprint,
+		RequestID:    opts.RequestID,
+		Outcome:      outcome,
+		ErrorType:    errorType,
+		Metadata: projectPartitionAuditMetadata(opts, result, map[string]string{
+			"mutation_mode": mutationMode,
+		}),
+	})
+}
+
 func insertAdminAuditTx(ctx context.Context, tx *sql.Tx, row PersistentAdminAuditEventRow) (int64, error) {
 	metadata, err := json.Marshal(row.Metadata)
 	if err != nil {
@@ -393,6 +586,34 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`, row.ActorID, row.Action, row.Re
 	return err
 }
 
+func recordProjectPartitionFailureAudit(ctx context.Context, db *sql.DB, opts ProjectPartitionReplaceOptions, result ProjectPartitionReplaceResult, errorType string) error {
+	if db == nil {
+		return nil
+	}
+	metadata := projectPartitionAuditMetadata(opts, result, map[string]string{
+		"mutation_mode": "project_partition_replace_failure",
+		"error_type":    errorType,
+	})
+	row := PersistentAdminAuditEventRow{
+		ActorID:      opts.Principal.ActorID,
+		Action:       ProjectPartitionReplaceOperation,
+		ResourceType: "registry",
+		ResourceID:   result.RegistryFingerprint,
+		RequestID:    opts.RequestID,
+		Outcome:      "failure",
+		ErrorType:    errorType,
+		Metadata:     metadata,
+	}
+	metadataJSON, err := json.Marshal(row.Metadata)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, `
+INSERT INTO admin_audit_events (actor_id, action, resource_type, resource_id, request_id, outcome, error_type, metadata)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`, row.ActorID, row.Action, row.ResourceType, row.ResourceID, row.RequestID, row.Outcome, row.ErrorType, metadataJSON)
+	return err
+}
+
 const (
 	adminMutationIdempotencyVersion = "admin-mutation-idempotency-v0"
 	importReplaceOperation          = "registry.import_replace"
@@ -414,6 +635,11 @@ type importReplaceIdempotencyRequest struct {
 type importReplaceIdempotencyRecord struct {
 	ID     int64
 	Result ImportReplaceResult
+}
+
+type projectPartitionIdempotencyRecord struct {
+	ID     int64
+	Result ProjectPartitionReplaceResult
 }
 
 type idempotencyScopeRecord struct {
@@ -459,6 +685,55 @@ func newImportReplaceIdempotencyRequest(opts ImportReplaceOptions, registryFinge
 	}, nil
 }
 
+func newProjectPartitionIdempotencyRequest(opts ProjectPartitionReplaceOptions, result ProjectPartitionReplaceResult) (importReplaceIdempotencyRequest, error) {
+	if strings.TrimSpace(opts.IdempotencyKey) == "" {
+		return importReplaceIdempotencyRequest{}, nil
+	}
+	scope := projectPartitionIdempotencyScope(opts)
+	source := strings.TrimSpace(opts.Source)
+	if source == "" {
+		source = "hosted_project_partition_replace"
+	}
+	summary := map[string]string{
+		"version":                       adminMutationIdempotencyVersion,
+		"operation":                     ProjectPartitionReplaceOperation,
+		"method":                        "POST",
+		"path":                          "/v1/admin/registry/project-partition/replace",
+		"project_id":                    opts.Principal.ProjectID,
+		"actor_id":                      opts.Principal.ActorID,
+		"proposed_registry_fingerprint": result.RegistryFingerprint,
+		"previous_registry_fingerprint": result.PreviousRegistryFingerprint,
+		"partition_diff_fingerprint":    result.PartitionDecision.DiffFingerprint,
+		"source":                        source,
+		"dry_run":                       "false",
+	}
+	fingerprint, err := hashCanonicalJSON(map[string]string{
+		"version":                       adminMutationIdempotencyVersion,
+		"operation":                     ProjectPartitionReplaceOperation,
+		"method":                        "POST",
+		"path":                          "/v1/admin/registry/project-partition/replace",
+		"project_id":                    opts.Principal.ProjectID,
+		"actor_id":                      opts.Principal.ActorID,
+		"proposed_registry_fingerprint": result.RegistryFingerprint,
+		"source":                        source,
+		"dry_run":                       "false",
+	})
+	if err != nil {
+		return importReplaceIdempotencyRequest{}, err
+	}
+	return importReplaceIdempotencyRequest{
+		Enabled:            true,
+		ProjectID:          scope.ProjectID,
+		ActorID:            scope.ActorID,
+		Operation:          scope.Operation,
+		KeyHash:            scope.KeyHash,
+		KeyPrefix:          scope.KeyPrefix,
+		RequestFingerprint: fingerprint,
+		RequestSummary:     summary,
+		FirstRequestID:     opts.RequestID,
+	}, nil
+}
+
 func idempotencyScope(opts ImportReplaceOptions) idempotencyScopeRecord {
 	projectID := strings.TrimSpace(opts.ProjectID)
 	if projectID == "" {
@@ -474,6 +749,26 @@ func idempotencyScope(opts ImportReplaceOptions) idempotencyScopeRecord {
 		ProjectID: projectID,
 		ActorID:   actorID,
 		Operation: importReplaceOperation,
+		KeyHash:   keyHash,
+		KeyPrefix: keyPrefix,
+	}
+}
+
+func projectPartitionIdempotencyScope(opts ProjectPartitionReplaceOptions) idempotencyScopeRecord {
+	projectID := strings.TrimSpace(opts.Principal.ProjectID)
+	if projectID == "" {
+		projectID = defaultIdempotencyProjectID
+	}
+	actorID := strings.TrimSpace(opts.Principal.ActorID)
+	keyHash := hashString(strings.TrimSpace(opts.IdempotencyKey))
+	keyPrefix := keyHash
+	if len(keyPrefix) > len("sha256:")+12 {
+		keyPrefix = keyPrefix[:len("sha256:")+12]
+	}
+	return idempotencyScopeRecord{
+		ProjectID: projectID,
+		ActorID:   actorID,
+		Operation: ProjectPartitionReplaceOperation,
 		KeyHash:   keyHash,
 		KeyPrefix: keyPrefix,
 	}
@@ -532,7 +827,114 @@ RETURNING id`, req.ProjectID, req.ActorID, req.Operation, req.KeyHash, req.KeyPr
 	return importReplaceIdempotencyRecord{ID: existing.ID, Result: result}, true, nil
 }
 
+func reserveProjectPartitionIdempotency(ctx context.Context, tx *sql.Tx, req importReplaceIdempotencyRequest) (projectPartitionIdempotencyRecord, bool, error) {
+	record, replay, err := reserveIdempotency(ctx, tx, req)
+	if err != nil || !replay {
+		return projectPartitionIdempotencyRecord{ID: record.ID}, replay, err
+	}
+	result, err := projectPartitionResultFromCachedResponse(record.ResponseBody)
+	if err != nil {
+		return projectPartitionIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_RESPONSE_REPLAY_FAILED", "platform", true, err)
+	}
+	result.Replayed = true
+	result.IdempotencyRecordID = record.ID
+	return projectPartitionIdempotencyRecord{ID: record.ID, Result: result}, true, nil
+}
+
+type reservedIdempotencyRecord struct {
+	ID           int64
+	ResponseBody []byte
+}
+
+func reserveIdempotency(ctx context.Context, tx *sql.Tx, req importReplaceIdempotencyRequest) (reservedIdempotencyRecord, bool, error) {
+	if !req.Enabled {
+		return reservedIdempotencyRecord{}, false, nil
+	}
+	summary, err := json.Marshal(req.RequestSummary)
+	if err != nil {
+		return reservedIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("encode idempotency request summary: %w", err))
+	}
+	var id int64
+	err = tx.QueryRowContext(ctx, `
+INSERT INTO admin_mutation_idempotency_records (
+  project_id,
+  actor_id,
+  operation,
+  idempotency_key_hash,
+  idempotency_key_prefix,
+  request_fingerprint,
+  request_summary,
+  first_request_id,
+  status,
+  expires_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, 'processing', now() + interval '30 days')
+ON CONFLICT (project_id, actor_id, operation, idempotency_key_hash) DO NOTHING
+RETURNING id`, req.ProjectID, req.ActorID, req.Operation, req.KeyHash, req.KeyPrefix, req.RequestFingerprint, summary, req.FirstRequestID).Scan(&id)
+	if err == nil {
+		return reservedIdempotencyRecord{ID: id}, false, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return reservedIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("reserve idempotency record: %w", err))
+	}
+	existing, err := loadImportReplaceIdempotencyRecord(ctx, tx, req)
+	if err != nil {
+		return reservedIdempotencyRecord{}, false, err
+	}
+	if existing.RequestFingerprint != req.RequestFingerprint {
+		return reservedIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_KEY_CONFLICT", "caller", false, fmt.Errorf("idempotency key was already used for a different request"))
+	}
+	if existing.Status != "succeeded" {
+		return reservedIdempotencyRecord{}, false, mutationError("IDEMPOTENCY_REQUEST_IN_PROGRESS", "platform", true, fmt.Errorf("idempotency request is still in progress"))
+	}
+	if err := recordImportReplaceReplay(ctx, tx, existing.ID, req.FirstRequestID); err != nil {
+		return reservedIdempotencyRecord{}, false, err
+	}
+	return reservedIdempotencyRecord{ID: existing.ID, ResponseBody: existing.ResponseBody}, true, nil
+}
+
 func completeImportReplaceIdempotency(ctx context.Context, tx *sql.Tx, record importReplaceIdempotencyRecord, result ImportReplaceResult, registryRevisionID int64, adminAuditEventID int64) error {
+	if record.ID == 0 {
+		return nil
+	}
+	body, err := json.Marshal(result)
+	if err != nil {
+		return mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("encode idempotency response body: %w", err))
+	}
+	responseFingerprint, err := hashCanonicalJSON(result)
+	if err != nil {
+		return mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("fingerprint idempotency response body: %w", err))
+	}
+	status := 201
+	if result.Noop {
+		status = 200
+	}
+	var revision any
+	if registryRevisionID != 0 {
+		revision = registryRevisionID
+	}
+	if _, err := tx.ExecContext(ctx, `
+UPDATE admin_mutation_idempotency_records
+SET status = 'succeeded',
+    response_status_code = $1,
+    response_body = $2::jsonb,
+    response_fingerprint = $3,
+    registry_fingerprint = $4,
+    previous_registry_fingerprint = $5,
+    snapshot_version = $6,
+    noop = $7,
+    registry_revision_id = $8,
+    admin_audit_event_id = $9,
+    completed_at = now(),
+    expires_at = now() + interval '30 days',
+    updated_at = now()
+WHERE id = $10`, status, body, responseFingerprint, result.RegistryFingerprint, result.PreviousRegistryFingerprint, result.SnapshotVersion, result.Noop, revision, adminAuditEventID, record.ID); err != nil {
+		return mutationError("IDEMPOTENCY_STORE_WRITE_FAILED", "platform", true, fmt.Errorf("complete idempotency record: %w", err))
+	}
+	return nil
+}
+
+func completeProjectPartitionIdempotency(ctx context.Context, tx *sql.Tx, record projectPartitionIdempotencyRecord, result ProjectPartitionReplaceResult, registryRevisionID int64, adminAuditEventID int64) error {
 	if record.ID == 0 {
 		return nil
 	}
@@ -624,6 +1026,17 @@ func importReplaceResultFromCachedResponse(data []byte) (ImportReplaceResult, er
 	return result, nil
 }
 
+func projectPartitionResultFromCachedResponse(data []byte) (ProjectPartitionReplaceResult, error) {
+	if len(data) == 0 || string(data) == "null" {
+		return ProjectPartitionReplaceResult{}, fmt.Errorf("cached idempotency response is empty")
+	}
+	var result ProjectPartitionReplaceResult
+	if err := json.Unmarshal(data, &result); err != nil {
+		return ProjectPartitionReplaceResult{}, fmt.Errorf("decode cached idempotency response: %w", err)
+	}
+	return result, nil
+}
+
 func hashCanonicalJSON(value any) (string, error) {
 	data, err := json.Marshal(value)
 	if err != nil {
@@ -690,6 +1103,63 @@ func importReplaceAuditMetadata(opts ImportReplaceOptions, result ImportReplaceR
 	return metadata
 }
 
+func projectPartitionAuditMetadata(opts ProjectPartitionReplaceOptions, result ProjectPartitionReplaceResult, extra map[string]string) map[string]string {
+	principal := opts.Principal
+	metadata := map[string]string{
+		"registry_store":              "postgres",
+		"registry_fingerprint":        result.RegistryFingerprint,
+		"snapshot_version":            result.SnapshotVersion,
+		"projects":                    strconv.Itoa(result.Counts.Projects),
+		"api_keys":                    strconv.Itoa(result.Counts.APIKeys),
+		"capabilities":                strconv.Itoa(result.Counts.Capabilities),
+		"providers":                   strconv.Itoa(result.Counts.Providers),
+		"credential_metadata":         strconv.Itoa(result.Counts.CredentialMetadata),
+		"routing_policies":            strconv.Itoa(result.Counts.RoutingPolicies),
+		"snapshot_configs":            strconv.Itoa(result.Counts.SnapshotConfigs),
+		"partition_project_id":        result.PartitionDecision.PartitionProjectID,
+		"partition_diff_fingerprint":  result.PartitionDecision.DiffFingerprint,
+		"projects_changed":            strconv.Itoa(result.PartitionDecision.Counts.ProjectsChanged),
+		"api_keys_changed":            strconv.Itoa(result.PartitionDecision.Counts.APIKeysChanged),
+		"credential_metadata_changed": strconv.Itoa(result.PartitionDecision.Counts.CredentialMetadataChanged),
+		"providers_changed":           strconv.Itoa(result.PartitionDecision.Counts.ProvidersChanged),
+		"snapshot_boundary_changed":   strconv.FormatBool(result.PartitionDecision.SnapshotBoundaryChanged),
+		"project_id":                  principal.ProjectID,
+		"principal_actor_id":          principal.ActorID,
+		"auth_method":                 principal.AuthMethod,
+		"local_private":               strconv.FormatBool(principal.LocalPrivate),
+	}
+	if result.PreviousRegistryFingerprint != "" {
+		metadata["previous_registry_fingerprint"] = result.PreviousRegistryFingerprint
+	}
+	if principal.SubjectID != "" {
+		metadata["principal_subject_id"] = principal.SubjectID
+	}
+	if principal.OrganizationID != "" {
+		metadata["organization_id"] = principal.OrganizationID
+	}
+	if principal.TokenID != "" {
+		metadata["token_id"] = principal.TokenID
+	}
+	if principal.GatewayKeyID != "" {
+		metadata["gateway_key_id"] = principal.GatewayKeyID
+	}
+	if opts.IdempotencyKey != "" {
+		scope := projectPartitionIdempotencyScope(opts)
+		metadata["idempotency_key_hash"] = scope.KeyHash
+		metadata["idempotency_key_prefix"] = scope.KeyPrefix
+	}
+	if opts.Source != "" {
+		metadata["source"] = opts.Source
+	}
+	for objectType, count := range result.PartitionDecision.RejectedCounts {
+		metadata["rejected_"+objectType] = strconv.Itoa(count)
+	}
+	for key, value := range extra {
+		metadata[key] = value
+	}
+	return metadata
+}
+
 func importReplaceCounts(rows PersistentRegistryRows) ImportReplaceCounts {
 	return ImportReplaceCounts{
 		Projects:           len(rows.Projects),
@@ -703,6 +1173,16 @@ func importReplaceCounts(rows PersistentRegistryRows) ImportReplaceCounts {
 }
 
 func importReplaceSourceRevision(opts ImportReplaceOptions) string {
+	if opts.RequestID != "" {
+		return opts.RequestID
+	}
+	if opts.IdempotencyKey != "" {
+		return opts.IdempotencyKey
+	}
+	return opts.Source
+}
+
+func projectPartitionSourceRevision(opts ProjectPartitionReplaceOptions) string {
 	if opts.RequestID != "" {
 		return opts.RequestID
 	}

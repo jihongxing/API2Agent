@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1016,30 +1016,30 @@ Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
 ```
 
-由于 private endpoint contract 已定义，下一项 boundary 是把 hosted project mutation path 接起来，同时不把它扩成 public CRUD；这项 hosted-readiness implementation 现在是当前项目立即下一项任务。
+由于 private endpoint 已实现，下一项 boundary 是用 live Postgres 和 local gateway proof 证明它，然后再 closeout。
 
 范围：
 
-1. 实现 project partition replacement 的 method/path 和 request/response contract。
-2. 强制 hosted/trusted principal、permission、idempotency、audit 和 error mapping。
-3. 通过 registry-layer write transaction 组合 partition validator 与 persistent registry replacement。
+1. 通过 real service process 和 live Postgres 跑 project partition endpoint。
+2. 证明 trusted-gateway-only access、project partition success、cross-project/global rejection、audit/idempotency evidence 和 no secret leakage。
+3. 如果 dogfood evidence 符合 design，则关闭 implementation slice。
 4. public CRUD、public auth provider implementation、durable permission storage 和 production gateway deployment 保持 out of scope。
 5. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- endpoint method/path、body、headers 和 response shape 已实现。
-- auth/permission、idempotency、audit 和 partition error semantics 有 tests 覆盖。
-- 通过 registry layer 实现与 existing replacement mechanics 的 transaction composition。
-- local dogfood 证明 hosted project partition mutation path。
+- live dogfood 证明 hosted project partition mutation path。
+- evidence 确认 audit/idempotency partition metadata 和 secret redaction。
+- closeout 记录 remaining risks 和下一条 lane。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：

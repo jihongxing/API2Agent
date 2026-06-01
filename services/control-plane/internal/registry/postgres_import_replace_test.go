@@ -296,6 +296,163 @@ func TestReplacePersistentRegistryAuditFailureRollsBackMutation(t *testing.T) {
 	}
 }
 
+func TestReplaceProjectPartitionRegistryReplacesRowsAndWritesPartitionEvidence(t *testing.T) {
+	current := tenantPartitionRegistryFixture()
+	currentRows, err := MapRegistryToPersistentRows(current)
+	if err != nil {
+		t.Fatalf("map current rows: %v", err)
+	}
+	incoming := tenantPartitionRegistryFixture()
+	incoming.APIKeys[0].Status = "disabled"
+	incoming.CredentialMetadata[0].RotationHint = "rotate-soon"
+	db, script := openScriptedRegistryDB(t, currentRows)
+	defer db.Close()
+
+	result, err := ReplaceProjectPartitionRegistry(context.Background(), db, incoming, ProjectPartitionReplaceOptions{
+		Principal: AdminPrincipal{
+			SubjectID:      "subject-alpha",
+			ActorID:        "actor-alpha",
+			ProjectID:      tenantProjectA,
+			OrganizationID: "org-alpha",
+			AuthMethod:     AdminAuthMethodTrustedGateway,
+			TokenID:        "token-alpha",
+			GatewayKeyID:   "gateway-key-alpha",
+			Permissions:    []string{PermissionRegistryProjectPartitionReplace},
+		},
+		RequestID:      "req-partition",
+		IdempotencyKey: "idem-partition",
+		Source:         "partition-test",
+	})
+	if err != nil {
+		t.Fatalf("replace project partition registry: %v", err)
+	}
+	if result.Noop || result.PartitionDecision.PartitionProjectID != tenantProjectA || result.PartitionDecision.DiffFingerprint == "" {
+		t.Fatalf("unexpected partition result: %#v", result)
+	}
+	if result.PartitionDecision.Counts.APIKeysChanged != 1 || result.PartitionDecision.Counts.CredentialMetadataChanged != 1 {
+		t.Fatalf("unexpected partition counts: %#v", result.PartitionDecision.Counts)
+	}
+	if !script.committed || script.rolledBack {
+		t.Fatalf("expected commit without rollback: committed=%v rolledBack=%v", script.committed, script.rolledBack)
+	}
+	if !containsExec(script.execQueries, "DELETE FROM providers") {
+		t.Fatalf("expected full replacement after partition validation: %#v", script.execQueries)
+	}
+	if len(script.rows.RegistryRevisions) != 2 {
+		t.Fatalf("expected registry revision, got %#v", script.rows.RegistryRevisions)
+	}
+	if len(script.rows.AdminAuditEvents) != 1 {
+		t.Fatalf("expected one admin audit event, got %#v", script.rows.AdminAuditEvents)
+	}
+	event := script.rows.AdminAuditEvents[0]
+	if event.Action != ProjectPartitionReplaceOperation || event.Metadata["mutation_mode"] != "project_partition_replace" {
+		t.Fatalf("unexpected partition audit event: %#v", event)
+	}
+	if event.Metadata["partition_project_id"] != tenantProjectA || event.Metadata["partition_diff_fingerprint"] != result.PartitionDecision.DiffFingerprint || event.Metadata["api_keys_changed"] != "1" || event.Metadata["credential_metadata_changed"] != "1" {
+		t.Fatalf("expected partition evidence metadata, got %#v", event.Metadata)
+	}
+	if event.Metadata["principal_subject_id"] != "subject-alpha" || event.Metadata["principal_actor_id"] != "actor-alpha" || event.Metadata["auth_method"] != AdminAuthMethodTrustedGateway || event.Metadata["gateway_key_id"] != "gateway-key-alpha" {
+		t.Fatalf("expected hosted principal metadata, got %#v", event.Metadata)
+	}
+	if strings.Contains(event.Metadata["idempotency_key_hash"], "idem-partition") || strings.Contains(event.Metadata["idempotency_key_prefix"], "idem-partition") {
+		t.Fatalf("raw idempotency key leaked into metadata: %#v", event.Metadata)
+	}
+	if len(script.rows.IdempotencyRecords) != 1 {
+		t.Fatalf("expected one idempotency record, got %#v", script.rows.IdempotencyRecords)
+	}
+	idempotency := script.rows.IdempotencyRecords[0]
+	if idempotency.ProjectID != tenantProjectA || idempotency.ActorID != "actor-alpha" || idempotency.Operation != ProjectPartitionReplaceOperation {
+		t.Fatalf("unexpected idempotency scope: %#v", idempotency)
+	}
+	if idempotency.ResponseStatusCode != 201 || idempotency.RegistryRevisionID == nil || idempotency.AdminAuditEventID == nil {
+		t.Fatalf("unexpected idempotency evidence: %#v", idempotency)
+	}
+	if !strings.Contains(idempotency.ResponseBody, "partition_decision") {
+		t.Fatalf("expected cached response to include partition evidence: %s", idempotency.ResponseBody)
+	}
+}
+
+func TestReplaceProjectPartitionRegistryRejectsPartitionViolationBeforeReplacingRows(t *testing.T) {
+	current := tenantPartitionRegistryFixture()
+	currentRows, err := MapRegistryToPersistentRows(current)
+	if err != nil {
+		t.Fatalf("map current rows: %v", err)
+	}
+	incoming := tenantPartitionRegistryFixture()
+	incoming.APIKeys[1].Status = "disabled"
+	db, script := openScriptedRegistryDB(t, currentRows)
+	defer db.Close()
+
+	_, err = ReplaceProjectPartitionRegistry(context.Background(), db, incoming, ProjectPartitionReplaceOptions{
+		Principal: AdminPrincipal{
+			ActorID:     "actor-alpha",
+			ProjectID:   tenantProjectA,
+			AuthMethod:  AdminAuthMethodTrustedGateway,
+			Permissions: []string{PermissionRegistryProjectPartitionReplace},
+		},
+		RequestID:      "req-partition-denied",
+		IdempotencyKey: "idem-partition-denied",
+	})
+	if err == nil {
+		t.Fatalf("expected partition violation")
+	}
+	mutationErr, ok := err.(RegistryMutationError)
+	if !ok {
+		t.Fatalf("expected RegistryMutationError, got %T: %v", err, err)
+	}
+	if mutationErr.ErrorType != "REGISTRY_PARTITION_VIOLATION" || mutationErr.Retryable {
+		t.Fatalf("unexpected partition error: %#v", mutationErr)
+	}
+	if containsExec(script.execQueries, "DELETE FROM") {
+		t.Fatalf("partition violation should not replace rows: %#v", script.execQueries)
+	}
+	if len(script.rows.IdempotencyRecords) != 0 {
+		t.Fatalf("partition violation should not reserve idempotency after denial: %#v", script.rows.IdempotencyRecords)
+	}
+}
+
+func TestReplaceProjectPartitionRegistryReplaysSameIdempotencyRequest(t *testing.T) {
+	current := tenantPartitionRegistryFixture()
+	currentRows, err := MapRegistryToPersistentRows(current)
+	if err != nil {
+		t.Fatalf("map current rows: %v", err)
+	}
+	incoming := tenantPartitionRegistryFixture()
+	incoming.APIKeys[0].Status = "disabled"
+	db, script := openScriptedRegistryDB(t, currentRows)
+	defer db.Close()
+	opts := ProjectPartitionReplaceOptions{
+		Principal: AdminPrincipal{
+			ActorID:     "actor-alpha",
+			ProjectID:   tenantProjectA,
+			AuthMethod:  AdminAuthMethodTrustedGateway,
+			Permissions: []string{PermissionRegistryProjectPartitionReplace},
+		},
+		RequestID:      "req-partition-first",
+		IdempotencyKey: "idem-partition-replay",
+	}
+
+	first, err := ReplaceProjectPartitionRegistry(context.Background(), db, incoming, opts)
+	if err != nil {
+		t.Fatalf("first partition replace: %v", err)
+	}
+	script.execQueries = nil
+	opts.RequestID = "req-partition-second"
+	replayed, err := ReplaceProjectPartitionRegistry(context.Background(), db, incoming, opts)
+	if err != nil {
+		t.Fatalf("replay partition replace: %v", err)
+	}
+	if !replayed.Replayed || replayed.RegistryFingerprint != first.RegistryFingerprint || replayed.PartitionDecision.DiffFingerprint != first.PartitionDecision.DiffFingerprint {
+		t.Fatalf("unexpected replay result: first=%#v replayed=%#v", first, replayed)
+	}
+	if containsExec(script.execQueries, "DELETE FROM") {
+		t.Fatalf("replay should not replace mutable rows: %#v", script.execQueries)
+	}
+	if script.rows.IdempotencyRecords[0].ReplayCount != 1 || script.rows.IdempotencyRecords[0].LastReplayRequestID != "req-partition-second" {
+		t.Fatalf("expected replay metadata update, got %#v", script.rows.IdempotencyRecords[0])
+	}
+}
+
 func containsExec(queries []string, pattern string) bool {
 	for _, query := range queries {
 		if strings.Contains(query, pattern) {

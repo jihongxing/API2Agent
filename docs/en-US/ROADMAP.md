@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1016,30 +1016,30 @@ Go Control Plane Tenant-Partitioned Registry Mutation Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
 ```
 
-This hosted-readiness implementation is now the immediate next project task because the private endpoint contract is defined and the next boundary is wiring the hosted project mutation path without widening it into public CRUD.
+This hosted-readiness evidence task is now the immediate next project task because the private endpoint is implemented and needs live Postgres plus local gateway proof before closeout.
 
 Scope:
 
-1. Implement method/path and request/response contract for project partition replacement.
-2. Enforce hosted/trusted principal, permission, idempotency, audit, and error mapping.
-3. Compose the partition validator with persistent registry replacement inside a registry-layer write transaction.
+1. Run the project partition endpoint through a real service process and live Postgres.
+2. Prove trusted-gateway-only access, project partition success, cross-project/global rejection, audit/idempotency evidence, and no secret leakage.
+3. Close the implementation slice if dogfood evidence matches the design.
 4. Keep public CRUD, public auth provider implementation, durable permission storage, and production gateway deployment out of scope.
 5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- endpoint method/path, body, headers, and response shape are implemented.
-- auth/permission, idempotency, audit, and partition error semantics are covered by tests.
-- transaction composition with existing replacement mechanics is implemented through the registry layer.
-- local dogfood proves the hosted project partition mutation path.
+- live dogfood proves the hosted project partition mutation path.
+- evidence confirms audit/idempotency partition metadata and secret redaction.
+- closeout records remaining risks and next lane.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:

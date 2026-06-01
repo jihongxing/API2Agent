@@ -730,6 +730,7 @@ func TestImportReplaceRegistryMapsMutationErrors(t *testing.T) {
 		status    int
 	}{
 		{"REGISTRY_MUTATION_INVALID", "caller", false, http.StatusBadRequest},
+		{"REGISTRY_PARTITION_VIOLATION", "caller", false, http.StatusForbidden},
 		{"REGISTRY_MUTATION_CONFLICT", "platform", true, http.StatusConflict},
 		{"PERSISTENT_STORE_READ_FAILED", "platform", true, http.StatusServiceUnavailable},
 		{"PERSISTENT_STORE_WRITE_FAILED", "platform", true, http.StatusServiceUnavailable},
@@ -763,6 +764,206 @@ func TestImportReplaceRegistryMapsMutationErrors(t *testing.T) {
 				t.Fatalf("unexpected error response: %#v", errorResponse)
 			}
 		})
+	}
+}
+
+func TestProjectPartitionReplaceRequiresTrustedGatewayPrincipal(t *testing.T) {
+	replacer := &recordingProjectPartitionReplacer{}
+	handler := newPostgresProjectPartitionHandlerWithReplacer(replacer)
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", importReplaceBody(t), "secret", map[string]string{
+		"X-Request-ID":    "req-partition",
+		"Idempotency-Key": "idem-partition",
+	})
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("expected local/private principal to be rejected with 403, got %d: %s", response.Code, response.Body.String())
+	}
+	if replacer.calls != 0 {
+		t.Fatalf("mutation should not run for local/private principal, got %d calls", replacer.calls)
+	}
+}
+
+func TestProjectPartitionReplaceRequiresPermissionAndHeaders(t *testing.T) {
+	replacer := &recordingProjectPartitionReplacer{}
+	handler := newPostgresProjectPartitionHandlerWithReplacer(replacer)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", importReplaceBody(t), "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		trustedPermissionsHeader: registry.PermissionRegistryImportReplace,
+		"X-Request-ID":           "req-partition",
+		"Idempotency-Key":        "idem-partition",
+	}))
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("expected broad import permission to be insufficient, got %d: %s", response.Code, response.Body.String())
+	}
+
+	response = performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", importReplaceBody(t), "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		trustedPermissionsHeader: registry.PermissionRegistryProjectPartitionReplace,
+	}))
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected missing request id status 400, got %d: %s", response.Code, response.Body.String())
+	}
+
+	response = performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", importReplaceBody(t), "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		trustedPermissionsHeader: registry.PermissionRegistryProjectPartitionReplace,
+		"X-Request-ID":           "req-partition",
+	}))
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected missing idempotency key status 400, got %d: %s", response.Code, response.Body.String())
+	}
+	if replacer.calls != 0 {
+		t.Fatalf("mutation should not run before required headers, got %d calls", replacer.calls)
+	}
+}
+
+func TestProjectPartitionReplaceRejectsInvalidBodies(t *testing.T) {
+	replacer := &recordingProjectPartitionReplacer{}
+	handler := newPostgresProjectPartitionHandlerWithReplacer(replacer)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+	headers := trustedGatewayHeaders("gateway-secret", map[string]string{
+		trustedPermissionsHeader: registry.PermissionRegistryProjectPartitionReplace,
+		"X-Request-ID":           "req-partition",
+		"Idempotency-Key":        "idem-partition",
+	})
+
+	response := performRawRequest(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", []byte(`{`), "", headers)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid json status 400, got %d: %s", response.Code, response.Body.String())
+	}
+
+	response = performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", map[string]any{"source": "missing-registry"}, "", headers)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected missing registry status 400, got %d: %s", response.Code, response.Body.String())
+	}
+
+	response = performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", map[string]any{
+		"registry":             validRegistry(),
+		"partition_project_id": "caller-project",
+	}, "", headers)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected identity override status 400, got %d: %s", response.Code, response.Body.String())
+	}
+
+	response = performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", map[string]any{
+		"registry": validRegistry(),
+		"dry_run":  true,
+	}, "", headers)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected dry_run status 400, got %d: %s", response.Code, response.Body.String())
+	}
+	if replacer.calls != 0 {
+		t.Fatalf("mutation should not run for invalid bodies, got %d calls", replacer.calls)
+	}
+}
+
+func TestProjectPartitionReplaceReturnsPartitionEvidenceAndOptions(t *testing.T) {
+	result := registry.ProjectPartitionReplaceResult{
+		RegistryFingerprint:         "sha256:new",
+		PreviousRegistryFingerprint: "sha256:old",
+		SnapshotVersion:             "snapshot_partition_v1",
+		Counts: registry.ImportReplaceCounts{
+			Projects:           2,
+			APIKeys:            2,
+			Capabilities:       1,
+			Providers:          1,
+			CredentialMetadata: 1,
+			RoutingPolicies:    1,
+			SnapshotConfigs:    1,
+		},
+		PartitionDecision: registry.ProjectPartitionMutationDecision{
+			PartitionProjectID: "project-2",
+			DiffFingerprint:    "sha256:diff",
+			Counts: registry.ProjectPartitionMutationCounts{
+				APIKeysChanged:            1,
+				CredentialMetadataChanged: 1,
+			},
+		},
+	}
+	replacer := &recordingProjectPartitionReplacer{result: result}
+	handler := newPostgresProjectPartitionHandlerWithReplacer(replacer)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", importReplaceBodyWithSource(t, "partition-upload"), "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		trustedActorIDHeader:     "trusted-actor",
+		trustedProjectIDHeader:   "project-2",
+		trustedPermissionsHeader: registry.PermissionRegistryProjectPartitionReplace,
+		"X-Request-ID":           " req-partition ",
+		"Idempotency-Key":        " idem-partition ",
+	}))
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d: %s", response.Code, response.Body.String())
+	}
+	var replaced ProjectPartitionReplaceResponse
+	decodeResponse(t, response, &replaced)
+	if replaced.RegistryStore != "postgres" || replaced.PartitionProjectID != "project-2" || replaced.PartitionDiffFingerprint != "sha256:diff" || replaced.PartitionCounts.APIKeysChanged != 1 {
+		t.Fatalf("unexpected partition response: %#v", replaced)
+	}
+	if replacer.calls != 1 {
+		t.Fatalf("expected one replacer call, got %d", replacer.calls)
+	}
+	if replacer.options.Principal.ProjectID != "project-2" || replacer.options.Principal.ActorID != "trusted-actor" || replacer.options.RequestID != "req-partition" || replacer.options.IdempotencyKey != "idem-partition" || replacer.options.Source != "partition-upload" {
+		t.Fatalf("unexpected partition options: %#v", replacer.options)
+	}
+}
+
+func TestProjectPartitionReplaceMapsPartitionViolation(t *testing.T) {
+	replacer := &recordingProjectPartitionReplacer{
+		err: registry.RegistryMutationError{
+			ErrorType:  "REGISTRY_PARTITION_VIOLATION",
+			Scope:      "caller",
+			Retryable:  false,
+			Underlying: fmt.Errorf("cross project change"),
+		},
+	}
+	handler := newPostgresProjectPartitionHandlerWithReplacer(replacer)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", importReplaceBody(t), "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		trustedPermissionsHeader: registry.PermissionRegistryProjectPartitionReplace,
+		"X-Request-ID":           "req-partition",
+		"Idempotency-Key":        "idem-partition",
+	}))
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d: %s", response.Code, response.Body.String())
+	}
+	var errorResponse ErrorResponse
+	decodeResponse(t, response, &errorResponse)
+	if errorResponse.Error.ErrorType != "REGISTRY_PARTITION_VIOLATION" || errorResponse.Error.Retryable {
+		t.Fatalf("unexpected error response: %#v", errorResponse)
+	}
+}
+
+func TestProjectPartitionReplaceReplayUsesOKStatus(t *testing.T) {
+	result := registry.ProjectPartitionReplaceResult{
+		RegistryFingerprint: "sha256:new",
+		SnapshotVersion:     "snapshot_partition_v1",
+		Replayed:            true,
+		IdempotencyRecordID: 77,
+		PartitionDecision: registry.ProjectPartitionMutationDecision{
+			PartitionProjectID: "project-1",
+			DiffFingerprint:    "sha256:diff",
+		},
+	}
+	replacer := &recordingProjectPartitionReplacer{result: result}
+	handler := newPostgresProjectPartitionHandlerWithReplacer(replacer)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/admin/registry/project-partition/replace", importReplaceBody(t), "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		trustedPermissionsHeader: registry.PermissionRegistryProjectPartitionReplace,
+		"X-Request-ID":           "req-partition",
+		"Idempotency-Key":        "idem-partition",
+	}))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected replay status 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if response.Header().Get("Idempotency-Replayed") != "true" || response.Header().Get("Idempotency-Record-ID") != "77" {
+		t.Fatalf("expected replay headers, got %#v", response.Header())
 	}
 }
 
@@ -1098,6 +1299,18 @@ func newPostgresImportHandlerWithReplacer(replacer *recordingImportReplacer) Han
 	}
 }
 
+func newPostgresProjectPartitionHandlerWithReplacer(replacer *recordingProjectPartitionReplacer) Handler {
+	return Handler{
+		RegistryStore:            "postgres",
+		RegistrySource:           "postgres",
+		AdminToken:               "secret",
+		ProjectPartitionReplacer: replacer,
+		Now: func() time.Time {
+			return time.Date(2026, 5, 31, 1, 2, 3, 0, time.UTC)
+		},
+	}
+}
+
 func performRequest(handler Handler, method string, path string, body any, token string) *httptest.ResponseRecorder {
 	return performRequestWithHeaders(handler, method, path, body, token, nil)
 }
@@ -1232,6 +1445,24 @@ func (r *recordingImportReplacer) ReplacePersistentRegistry(ctx context.Context,
 	r.options = opts
 	if r.err != nil {
 		return registry.ImportReplaceResult{}, r.err
+	}
+	return r.result, nil
+}
+
+type recordingProjectPartitionReplacer struct {
+	result  registry.ProjectPartitionReplaceResult
+	err     error
+	calls   int
+	options registry.ProjectPartitionReplaceOptions
+	reg     registry.Registry
+}
+
+func (r *recordingProjectPartitionReplacer) ReplaceProjectPartitionRegistry(ctx context.Context, reg registry.Registry, opts registry.ProjectPartitionReplaceOptions) (registry.ProjectPartitionReplaceResult, error) {
+	r.calls++
+	r.reg = reg
+	r.options = opts
+	if r.err != nil {
+		return registry.ProjectPartitionReplaceResult{}, r.err
 	}
 	return r.result, nil
 }

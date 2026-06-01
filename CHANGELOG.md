@@ -322,6 +322,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Tenant-Partitioned Registry Mutation contract harness implemented with local partition validation helpers, stable partition violation decisions, project-owned provider metadata rules, project-isolated idempotency fingerprints, and registry package tests.
 - Go Control Plane Tenant-Partitioned Registry Mutation contract harness closeout completed; the helper proof can close and the next lane is private hosted project mutation endpoint design.
 - Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint design completed with hosted/trusted principal requirements, project-derived scope, private endpoint contract, registry-layer transaction seam, partition evidence response shape, idempotency/audit mapping, and implementation test requirements.
+- Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint implemented with trusted-gateway-only project partition replacement, registry-layer same-transaction validation, project-scoped idempotency, partition audit evidence, HTTP response evidence, gateway permission mapping, and regression tests.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -329,4 +330,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0.
+- Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0.

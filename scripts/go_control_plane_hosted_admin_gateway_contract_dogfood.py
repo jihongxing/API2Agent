@@ -44,6 +44,7 @@ SPOOFED_TOKEN_ID = "spoofed-public-token-id"
 
 PERMISSION_REGISTRY_VALIDATE = "control_plane.registry.validate"
 PERMISSION_REGISTRY_IMPORT_REPLACE = "control_plane.registry.import_replace"
+PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE = "control_plane.registry.project_partition_replace"
 PERMISSION_SNAPSHOT_EXPORT_ARTIFACT = "control_plane.snapshot.export_artifact"
 PERMISSION_DISTRIBUTION_PUBLISH = "control_plane.distribution.publish"
 PERMISSION_DISTRIBUTION_READ_CURRENT = "control_plane.distribution.read_current"
@@ -51,6 +52,7 @@ PERMISSION_DISTRIBUTION_READ_CURRENT = "control_plane.distribution.read_current"
 ENDPOINT_PERMISSIONS = {
     ("POST", "/v1/admin/registry/validate"): PERMISSION_REGISTRY_VALIDATE,
     ("POST", "/v1/admin/registry/import-replace"): PERMISSION_REGISTRY_IMPORT_REPLACE,
+    ("POST", "/v1/admin/registry/project-partition/replace"): PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE,
     ("POST", "/v1/admin/snapshots/export-artifact"): PERMISSION_SNAPSHOT_EXPORT_ARTIFACT,
     ("GET", "/v1/admin/distribution/current"): PERMISSION_DISTRIBUTION_READ_CURRENT,
     ("POST", "/v1/admin/distribution/publish"): PERMISSION_DISTRIBUTION_PUBLISH,
@@ -114,6 +116,7 @@ ADMIN_POLICY = StaticPolicy(
     permissions=(
         PERMISSION_REGISTRY_VALIDATE,
         PERMISSION_REGISTRY_IMPORT_REPLACE,
+        PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE,
         PERMISSION_SNAPSHOT_EXPORT_ARTIFACT,
         PERMISSION_DISTRIBUTION_PUBLISH,
         PERMISSION_DISTRIBUTION_READ_CURRENT,
@@ -473,6 +476,11 @@ def assert_contract_helpers() -> None:
         raise RuntimeError("expected gateway route map to include distribution publish permission")
     if endpoint_permission("GET", "/v1/admin/distribution/current") != PERMISSION_DISTRIBUTION_READ_CURRENT:
         raise RuntimeError("expected gateway route map to include distribution current permission")
+    if (
+        endpoint_permission("POST", "/v1/admin/registry/project-partition/replace")
+        != PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE
+    ):
+        raise RuntimeError("expected gateway route map to include project partition replace permission")
 
 
 class GatewayHarnessHandler(BaseHTTPRequestHandler):

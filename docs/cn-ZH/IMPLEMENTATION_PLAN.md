@@ -18,7 +18,7 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation Complete
 ```
 
 Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 tenant-partitioned registry mutation private endpoint implementation。
@@ -1052,11 +1052,15 @@ Go Control Plane Minimum v0
   - private hosted endpoint contract、trusted principal requirements、project-derived scope、registry-layer transaction seam、partition evidence response shape、idempotency/audit mapping 和 stable error semantics 已定义。
   - implementation 保持 deferred 到下一项任务。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`。
+- Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0 已完成：
+  - trusted-gateway-only project partition replacement、registry-layer same-transaction validation、project-scoped idempotency、partition audit evidence、HTTP response evidence、gateway permission mapping 和 regression tests 已实现。
+  - live Postgres dogfood 是下一项 evidence task。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
 ```
 
 参考：
@@ -1086,6 +1090,7 @@ Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implement
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

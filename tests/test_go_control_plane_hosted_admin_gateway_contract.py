@@ -28,6 +28,7 @@ def test_permission_source_resolves_public_principals_and_denies_before_forwardi
     assert admin.allowed
     assert admin.actor_id == harness.HARNESS_ACTOR_ID
     assert harness.PERMISSION_REGISTRY_IMPORT_REPLACE in admin.permissions
+    assert harness.PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE in admin.permissions
     assert admin.policy_source == harness.STATIC_POLICY_SOURCE
     assert admin.policy_version == harness.STATIC_POLICY_VERSION
 
@@ -110,6 +111,10 @@ def test_endpoint_permission_map_covers_hosted_admin_gateway_routes() -> None:
     assert (
         harness.endpoint_permission("POST", "/v1/admin/registry/import-replace")
         == harness.PERMISSION_REGISTRY_IMPORT_REPLACE
+    )
+    assert (
+        harness.endpoint_permission("POST", "/v1/admin/registry/project-partition/replace")
+        == harness.PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE
     )
     assert (
         harness.endpoint_permission("POST", "/v1/admin/snapshots/export-artifact")

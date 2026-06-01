@@ -229,18 +229,19 @@ func serve(args []string) error {
 	defer runtime.Close()
 	mux := http.NewServeMux()
 	handler := httpapi.Handler{
-		Store:                  runtime.Store,
-		AuditSink:              runtime.AuditSink,
-		ImportReplacer:         runtime.ImportReplacer,
-		RegistryStore:          runtime.StoreName,
-		RegistrySource:         runtime.Source,
-		DistributionDir:        *distributionDir,
-		AdminToken:             *adminToken,
-		AdminIdentityMode:      *adminIdentityMode,
-		AdminAuthenticatorMode: *adminAuthenticator,
-		TrustedGatewaySecret:   *trustedGatewaySecret,
-		TrustedGatewaySecrets:  parseTrustedGatewaySecrets(*trustedGatewaySecrets),
-		TrustedGatewayKeyID:    *trustedGatewayKeyID,
+		Store:                    runtime.Store,
+		AuditSink:                runtime.AuditSink,
+		ImportReplacer:           runtime.ImportReplacer,
+		ProjectPartitionReplacer: runtime.ProjectPartitionReplacer,
+		RegistryStore:            runtime.StoreName,
+		RegistrySource:           runtime.Source,
+		DistributionDir:          *distributionDir,
+		AdminToken:               *adminToken,
+		AdminIdentityMode:        *adminIdentityMode,
+		AdminAuthenticatorMode:   *adminAuthenticator,
+		TrustedGatewaySecret:     *trustedGatewaySecret,
+		TrustedGatewaySecrets:    parseTrustedGatewaySecrets(*trustedGatewaySecrets),
+		TrustedGatewayKeyID:      *trustedGatewayKeyID,
 	}
 	handler.Register(mux)
 	log.Printf("api2agent control plane listening on %s", *addr)
@@ -277,12 +278,13 @@ func parseTrustedGatewaySecrets(raw string) []string {
 }
 
 type registryRuntime struct {
-	Store          registry.Store
-	AuditSink      registry.PersistentAuditSink
-	ImportReplacer httpapi.RegistryImportReplacer
-	StoreName      string
-	Source         string
-	close          func() error
+	Store                    registry.Store
+	AuditSink                registry.PersistentAuditSink
+	ImportReplacer           httpapi.RegistryImportReplacer
+	ProjectPartitionReplacer httpapi.RegistryProjectPartitionReplacer
+	StoreName                string
+	Source                   string
+	close                    func() error
 }
 
 func (r registryRuntime) Close() error {
@@ -320,12 +322,13 @@ func openRegistryRuntime(ctx context.Context, storeName string, registryPath str
 			return registryRuntime{}, err
 		}
 		return registryRuntime{
-			Store:          registry.NewPostgresStore(db),
-			AuditSink:      registry.NewPostgresAuditSink(db),
-			ImportReplacer: postgresRegistryImportReplacer{db: db},
-			StoreName:      "postgres",
-			Source:         "postgres",
-			close:          db.Close,
+			Store:                    registry.NewPostgresStore(db),
+			AuditSink:                registry.NewPostgresAuditSink(db),
+			ImportReplacer:           postgresRegistryImportReplacer{db: db},
+			ProjectPartitionReplacer: postgresRegistryProjectPartitionReplacer{db: db},
+			StoreName:                "postgres",
+			Source:                   "postgres",
+			close:                    db.Close,
 		}, nil
 	default:
 		return registryRuntime{}, fmt.Errorf("--registry-store must be file or postgres")
@@ -338,6 +341,14 @@ type postgresRegistryImportReplacer struct {
 
 func (r postgresRegistryImportReplacer) ReplacePersistentRegistry(ctx context.Context, reg registry.Registry, opts registry.ImportReplaceOptions) (registry.ImportReplaceResult, error) {
 	return registry.ReplacePersistentRegistry(ctx, r.db, reg, opts)
+}
+
+type postgresRegistryProjectPartitionReplacer struct {
+	db *sql.DB
+}
+
+func (r postgresRegistryProjectPartitionReplacer) ReplaceProjectPartitionRegistry(ctx context.Context, reg registry.Registry, opts registry.ProjectPartitionReplaceOptions) (registry.ProjectPartitionReplaceResult, error) {
+	return registry.ReplaceProjectPartitionRegistry(ctx, r.db, reg, opts)
 }
 
 func openPostgresDB(ctx context.Context, dsn string) (*sql.DB, error) {
