@@ -23,6 +23,7 @@ def test_generate_package(tmp_path: Path) -> None:
         "manual_write_test.py",
         "mcp_server.py",
         "auth.env.example",
+        "examples/claude_desktop_config.json",
     ]
 
     for filename in expected_files:
@@ -32,11 +33,16 @@ def test_generate_package(tmp_path: Path) -> None:
     tools_json = json.loads((output_dir / "tools.json").read_text())
     readme = (output_dir / "README.md").read_text(encoding="utf-8")
     smoke_test = (output_dir / "smoke_test.py").read_text(encoding="utf-8")
+    claude_config = json.loads((output_dir / "examples" / "claude_desktop_config.json").read_text(encoding="utf-8"))
 
     assert capability_json["name"] == "basic_api"
     assert tools_json[0]["function"]["name"] == "get_user"
     assert "'user_id': 'user_123'" in readme
     assert "'user_id': 'user_123'" in smoke_test
+    assert "## MCP Server" in readme
+    assert "python mcp_server.py" in readme
+    assert "examples/claude_desktop_config.json" in readme
+    assert claude_config["mcpServers"]["basic_api"]["args"][0].endswith("mcp_server.py")
 
 
 def test_generate_package_includes_guarded_manual_write_test(tmp_path: Path) -> None:

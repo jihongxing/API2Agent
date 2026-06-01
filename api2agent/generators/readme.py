@@ -98,6 +98,22 @@ result = execute_tool("{example_tool}", {example_params!r})
 print(result)
 ```
 
+## MCP Server
+
+Run the generated stdio server directly:
+
+```bash
+python mcp_server.py
+```
+
+For Claude Desktop-style clients, start from:
+
+```text
+examples/claude_desktop_config.json
+```
+
+The generated config points at this package's `mcp_server.py`. Copy it into your client configuration and add any required environment variables from `auth.env.example`.
+
 ## Proxy Mode
 
 Direct local execution is the default. To route generated calls through API2Agent Proxy for usage tracking, latency measurement, cost estimation, and quota control, start the proxy:

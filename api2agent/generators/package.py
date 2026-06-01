@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 
 from api2agent.diagnostics import diagnose_capability
@@ -31,7 +32,7 @@ def generate_package(capability: Capability, output_dir: Path, force: bool = Fal
     _write_text(output_dir / "manual_write_test.py", render_manual_write_test(capability))
     _write_text(output_dir / "mcp_server.py", render_mcp_server(capability))
     _write_text(examples_dir / "openai_agent.py", _render_openai_placeholder(capability))
-    _write_text(examples_dir / "claude_desktop_config.json", _render_claude_config_placeholder())
+    _write_text(examples_dir / "claude_desktop_config.json", _render_claude_config(capability, output_dir))
 
     return output_dir
 
@@ -82,5 +83,13 @@ print(json.dumps(tools, indent=2))
 '''
 
 
-def _render_claude_config_placeholder() -> str:
-    return '{\n  "mcpServers": {}\n}\n'
+def _render_claude_config(capability: Capability, output_dir: Path) -> str:
+    config = {
+        "mcpServers": {
+            capability.name: {
+                "command": sys.executable,
+                "args": [str((output_dir / "mcp_server.py").resolve())],
+            }
+        }
+    }
+    return json.dumps(config, indent=2) + "\n"

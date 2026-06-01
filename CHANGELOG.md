@@ -369,6 +369,8 @@ All notable API2Agent changes will be documented in this file.
 - Hosted Control Plane local v0 phase closeout accepted at 100% under the compact documentation policy.
 - Agent Capability Compiler release-candidate focus restored as the active product lane; README and Quickstart now lead with OpenAPI/curl to Agent capability package generation instead of hosted control or routing-ledger demos.
 - Agent Capability Compiler release-candidate smoke path verified for OpenAPI generate, inspect, diagnose, safe smoke test, and curl generate/diagnose warning behavior.
+- Agent Capability Compiler release-candidate packaging path verified with wheel build, isolated venv install, installed `api2agent` console script, and installed OpenAPI generate/diagnose/test smoke.
+- Generated capability packages now include a usable Claude Desktop-style MCP stdio config pointing at the generated `mcp_server.py`, plus generated README MCP wiring instructions.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -376,4 +378,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Continue Agent Capability Compiler release-candidate hardening: packaging/install verification, generated MCP client wiring docs, and release-blocker-only fixes.
+- Continue Agent Capability Compiler release-candidate hardening with release-blocker-only fixes, starting from generated OpenAI adapter example usability and final release checklist verification.
