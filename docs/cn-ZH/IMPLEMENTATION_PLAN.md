@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Implementation Complete
+Agent Capability Compiler OpenAPI Generic Example Reduction Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI generic example reduction closeout。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI cached real-spec corpus expansion design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -992,11 +992,17 @@ Go Control Plane Minimum v0
   - name-aware parameter/property examples、secret-safe placeholders、numeric/name fallbacks、calibration generic example metrics、regression coverage 和 dogfood reducing default calibration generic first-call params to zero 已实现。
   - full Python suite 已通过 217 tests。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_IMPLEMENTATION_REPORT.md`。
+- Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0 已完成：
+  - deterministic name-aware fallbacks 被接受为 complete。
+  - default generated calibration cases 现在报告 zero generic examples 和 empty generic first-call params。
+  - Agent Capability Compiler 完成度估计为 98%。
+  - 下一项 confidence gap 是 cached real-spec corpus expansion design。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
 ```
 
 参考：

@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Implementation Complete
+Agent Capability Compiler OpenAPI Generic Example Reduction Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI generic example reduction closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI cached real-spec corpus expansion design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -992,11 +992,17 @@ Current Phase 6 progress:
   - name-aware parameter/property examples, secret-safe placeholders, numeric/name fallbacks, calibration generic example metrics, regression coverage, and dogfood reducing default calibration generic first-call params to zero are implemented.
   - the full Python suite passed with 217 tests.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_IMPLEMENTATION_REPORT.md`.
+- Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0 is complete:
+  - deterministic name-aware fallbacks are accepted as complete.
+  - default generated calibration cases now report zero generic examples and empty generic first-call params.
+  - the Agent Capability Compiler completion estimate is 98%.
+  - the next confidence gap is cached real-spec corpus expansion design.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
 ```
 
 References:

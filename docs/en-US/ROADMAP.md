@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Implementation Complete
+Agent Capability Compiler OpenAPI Generic Example Reduction Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Generic Example Reduction Closeout + Phase Review v0.
+This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design v0.
 
 Scope:
 
@@ -1082,12 +1082,21 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_SUMMARY_NOISE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`
+
+Completed Agent capability compiler OpenAPI generic example reduction closeout result:
+
+- deterministic name-aware fallbacks are accepted as complete.
+- default generated calibration cases now report zero generic examples and empty generic first-call params.
+- Agent Capability Compiler completion estimate is 98%.
+- the next confidence gap is cached real-spec corpus expansion design.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_CLOSEOUT_PHASE_REVIEW.md`.
 
 Completed Agent capability compiler OpenAPI generic example reduction implementation result:
 
 - name-aware parameter/property examples, secret-safe placeholders, numeric/name fallbacks, calibration generic example metrics, regression coverage, and dogfood reducing default calibration generic first-call params to zero are implemented.
 - the full Python suite passed with 217 tests.
-- the next compiler hardening task is OpenAPI generic example reduction closeout.
+- the follow-up closeout is now complete.
 - See `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_GENERIC_EXAMPLE_REDUCTION_IMPLEMENTATION_REPORT.md`.
 
 Completed Agent capability compiler OpenAPI generic example reduction design result:
