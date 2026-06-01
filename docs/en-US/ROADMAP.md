@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout Complete
+Agent Capability Compiler Final Re-entry Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,7 +1017,7 @@ Deferred hosted-readiness slice:
 Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
-This remains the next hosted Control Plane task when hosted-readiness work resumes. The immediate next project task is Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0.
+This hosted-readiness work is now the immediate next project task because the Agent Capability Compiler re-entry phase is closed.
 
 Scope:
 
@@ -1086,6 +1086,14 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`
+
+Completed Agent capability compiler final re-entry closeout result:
+
+- the compiler re-entry scope is accepted as 100% complete.
+- future compiler work is moved to evidence-triggered backlog.
+- the next project lane returns to hosted Control Plane permission-source design.
+- See `docs/en-US/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`.
 
 Completed Agent capability compiler OpenAPI cached real-spec corpus expansion closeout result:
 

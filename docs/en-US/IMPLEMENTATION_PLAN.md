@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout Complete
+Agent Capability Compiler Final Re-entry Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is the final Agent Capability Compiler re-entry closeout and consolidation review.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate returns to hosted Control Plane permission-source design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1013,11 +1013,16 @@ Current Phase 6 progress:
   - adding more cached specs is deferred until after final compiler consolidation.
   - Agent Capability Compiler completion estimate is 99%.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_CLOSEOUT_PHASE_REVIEW.md`.
+- Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0 is complete:
+  - the compiler re-entry scope is accepted as 100% complete.
+  - future compiler work is moved to evidence-triggered backlog.
+  - the next project lane returns to hosted Control Plane permission-source design.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 References:

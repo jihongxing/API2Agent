@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout Complete
+Agent Capability Compiler Final Re-entry Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是最终 Agent Capability Compiler re-entry closeout and consolidation review。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 回到 hosted Control Plane permission-source design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1013,11 +1013,16 @@ Go Control Plane Minimum v0
   - 更多 cached specs 暂缓到 final compiler consolidation 之后。
   - Agent Capability Compiler 完成度估计为 99%。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_CLOSEOUT_PHASE_REVIEW.md`。
+- Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0 已完成：
+  - compiler re-entry scope 被接受为 100% complete。
+  - future compiler work 移入 evidence-triggered backlog。
+  - 下一条 project lane 回到 hosted Control Plane permission-source design。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler Final Re-entry Closeout + Consolidation Review v0
+Go Control Plane Hosted Admin Gateway Permission Source Design v0
 ```
 
 参考：
