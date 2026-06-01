@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Design v0
+Go Control Plane Hosted Permission Store Contract Harness v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: tenant-partitioned registry mutation private endpoint design complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, and private endpoint contract are complete.
+Status: hosted permission store design complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, and durable permission-store boundary design are complete.
 
 Goal:
 
@@ -1018,30 +1018,32 @@ Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout 
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Store Design v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Store Design v0
+Go Control Plane Hosted Permission Store Contract Harness v0
 ```
 
-This hosted-readiness design is now the immediate next project task because project-scoped mutation is constrained and the static dogfood permission source is the next hosted product gap.
+This hosted-readiness harness is now the immediate next project task because the durable permission store boundary is designed and needs a local contract proof before production storage or public CRUD.
 
 Scope:
 
-1. Design a durable hosted permission store boundary.
-2. Define how the gateway replaces static dogfood policy lookup without adding public role CRUD prematurely.
+1. Prove the hosted permission-store lookup contract with a durable-store-shaped local fixture or read model.
+2. Resolve subject, membership, role binding, permission grants, policy version/fingerprint, and decision id before forwarding.
 3. Preserve trusted-gateway header issuance, Control Plane second-gate checks, audit/idempotency evidence, and project-scoped mutation constraints.
-4. Keep public CRUD, public auth provider implementation, durable permission storage, and production gateway deployment out of scope.
+4. Keep public CRUD, public auth provider implementation, production permission storage, and production gateway deployment out of scope.
 5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- permission store data model and lookup contract are explicit.
-- failure semantics and gateway-local deny behavior are explicit.
-- implementation remains deferred.
-- no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
+- gateway lookup contract is proven through local harness tests.
+- unavailable store, missing membership, revocation, and endpoint permission denial fail closed before forwarding.
+- policy version/fingerprint/decision id appear only as secret-safe evidence.
+- Control Plane second-gate denial remains covered.
+- no granular CRUD API, OAuth/OIDC, vault, billing, marketplace, workflow, provider onboarding, production gateway deployment, or automatic propagation work is included.
 
 References:
 
@@ -1069,6 +1071,10 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_LIVE_DOGFOOD_CLOSEOUT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_DESIGN.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

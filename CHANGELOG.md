@@ -324,6 +324,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint design completed with hosted/trusted principal requirements, project-derived scope, private endpoint contract, registry-layer transaction seam, partition evidence response shape, idempotency/audit mapping, and implementation test requirements.
 - Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint implemented with trusted-gateway-only project partition replacement, registry-layer same-transaction validation, project-scoped idempotency, partition audit evidence, HTTP response evidence, gateway permission mapping, and regression tests.
 - Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint live dogfood and closeout completed with real service plus live Postgres evidence for success, replay, partition violation, gateway-local readonly denial, audit/idempotency evidence, and secret-safe artifacts.
+- Go Control Plane Hosted Permission Store design completed with durable hosted permission-store boundary, gateway lookup contract, store model, endpoint permission mapping, fail-closed semantics, consistency/cache rules, audit evidence, and contract harness requirements.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -331,4 +332,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Store Design v0.
+- Go Control Plane Hosted Permission Store Contract Harness v0.

@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Design v0
+Go Control Plane Hosted Permission Store Contract Harness v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：tenant-partitioned registry mutation private endpoint design 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation 和 private endpoint contract 已完成。
+状态：hosted permission store design 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout 和 durable permission-store boundary design 已完成。
 
 目标：
 
@@ -1018,30 +1018,32 @@ Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout 
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Store Design v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Store Design v0
+Go Control Plane Hosted Permission Store Contract Harness v0
 ```
 
-由于 project-scoped mutation 已受约束，下一项 hosted product gap 是 static dogfood permission source；这项 hosted-readiness design 现在是当前项目立即下一项任务。
+由于 durable permission store boundary 已完成设计，下一项 immediate project task 是用 local contract proof 验证 lookup boundary，然后再进入 production storage 或 public CRUD 之前的实现决策。
 
 范围：
 
-1. 设计 durable hosted permission store boundary。
-2. 定义 gateway 如何替换 static dogfood policy lookup，同时不要过早新增 public role CRUD。
+1. 用 durable-store-shaped local fixture 或 read model 证明 hosted permission-store lookup contract。
+2. 在 forward 前解析 subject、membership、role binding、permission grants、policy version/fingerprint 和 decision id。
 3. 保持 trusted-gateway header issuance、Control Plane second-gate checks、audit/idempotency evidence 和 project-scoped mutation constraints。
-4. public CRUD、public auth provider implementation、durable permission storage 和 production gateway deployment 保持 out of scope。
+4. public CRUD、public auth provider implementation、production permission storage 和 production gateway deployment 保持 out of scope。
 5. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- permission store data model 和 lookup contract 明确。
-- failure semantics 和 gateway-local deny behavior 明确。
-- implementation 保持 deferred。
-- 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
+- gateway lookup contract 通过 local harness tests 证明。
+- unavailable store、missing membership、revocation 和 endpoint permission denial 都在 forward 前 fail closed。
+- policy version/fingerprint/decision id 只作为 secret-safe evidence 出现。
+- Control Plane second-gate denial 仍被覆盖。
+- 不包含 granular CRUD API、OAuth/OIDC、vault、billing、marketplace、workflow、provider onboarding、production gateway deployment 或 automatic propagation 工作。
 
 参考：
 
@@ -1069,6 +1071,10 @@ Go Control Plane Hosted Permission Store Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_LIVE_DOGFOOD_CLOSEOUT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_DESIGN.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

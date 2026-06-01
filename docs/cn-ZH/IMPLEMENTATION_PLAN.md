@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout Complete
+Go Control Plane Hosted Permission Store Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 tenant-partitioned registry mutation private endpoint implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission store contract harness。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Store Design v0
+Go Control Plane Hosted Permission Store Contract Harness v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Design v0
+Go Control Plane Hosted Permission Store Contract Harness v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1060,11 +1060,16 @@ Go Control Plane Minimum v0
   - real service plus live Postgres dogfood 已通过，覆盖 project partition success、idempotency replay、partition violation、gateway-local readonly denial、audit/idempotency evidence 和 secret-safe artifacts。
   - project mutation endpoint slice 可以关闭。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_LIVE_DOGFOOD_CLOSEOUT.md`。
+- Go Control Plane Hosted Permission Store Design v0 已完成：
+  - durable permission-store entities、gateway lookup contract、endpoint permission mapping、failure semantics、consistency/cache rules、audit evidence 和 contract harness requirements 已定义。
+  - 设计在概念上替换 static dogfood policy，同时不加入 public role CRUD、OAuth/OIDC、production gateway deployment、marketplace、vault、billing、workflow 或 automatic propagation scope。
+  - 下一项 hosted-readiness task 是 lookup boundary 的 contract harness。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Store Design v0
+Go Control Plane Hosted Permission Store Contract Harness v0
 ```
 
 参考：
@@ -1096,6 +1101,7 @@ Go Control Plane Hosted Permission Store Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_LIVE_DOGFOOD_CLOSEOUT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_DESIGN.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
