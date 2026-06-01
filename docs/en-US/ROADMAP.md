@@ -29,8 +29,14 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Closeout Complete
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout Complete
 ```
+
+Documentation mode:
+
+- follow `docs/DOCUMENTATION_POLICY.md`
+- append compact Hosted Control Plane progress to `docs/HOSTED_CONTROL_PLANE_PHASE_LOG.md`
+- avoid new per-slice reports or closeouts unless a durable API, storage, security, protocol, deployment, customer-data, or major product-direction boundary changes
 
 Strategic thesis:
 

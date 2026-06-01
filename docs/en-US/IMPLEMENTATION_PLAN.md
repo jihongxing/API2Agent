@@ -23,6 +23,12 @@ Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Clo
 
 The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is durable private hosted permission policy mutation implementation design.
 
+Documentation operating mode:
+
+- use `docs/DOCUMENTATION_POLICY.md` as the documentation gate
+- use `docs/HOSTED_CONTROL_PLANE_PHASE_LOG.md` for compact Hosted Control Plane progress entries
+- do not create per-slice design/report/closeout documents unless a task changes a durable API, storage, security, protocol, deployment, customer-data, or major product-direction boundary
+
 Implementation language decision:
 
 ```text
@@ -129,6 +135,8 @@ Next engineering task:
 ```text
 Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
 ```
+
+This task should follow the documentation policy. Prefer code/tests plus `CHANGELOG.md` and the Hosted Control Plane phase log. Create a standalone design only if the durable private implementation boundary needs a stable storage/security/protocol decision record.
 
 ## 5. Next Major Build: Control Layer MVP
 

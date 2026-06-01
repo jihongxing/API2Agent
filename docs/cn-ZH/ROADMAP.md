@@ -29,8 +29,14 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Closeout Complete
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout Complete
 ```
+
+文档模式：
+
+- 遵循 `docs/DOCUMENTATION_POLICY.md`
+- 将 Hosted Control Plane 的 compact progress 追加到 `docs/HOSTED_CONTROL_PLANE_PHASE_LOG.md`
+- 除非 durable API、storage、security、protocol、deployment、customer-data 或 major product-direction boundary 发生变化，否则避免新增 per-slice reports 或 closeouts
 
 战略判断：
 

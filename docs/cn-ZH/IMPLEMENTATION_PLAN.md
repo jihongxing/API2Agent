@@ -23,6 +23,12 @@ Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Clo
 
 Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 durable private hosted permission policy mutation implementation design。
 
+文档运行模式：
+
+- 使用 `docs/DOCUMENTATION_POLICY.md` 作为 documentation gate
+- 使用 `docs/HOSTED_CONTROL_PLANE_PHASE_LOG.md` 记录 Hosted Control Plane 的 compact progress entries
+- 除非任务改变 durable API、storage、security、protocol、deployment、customer-data 或 major product-direction boundary，否则不要为每个 slice 新建设计/报告/closeout 文档
+
 实现语言决策：
 
 ```text
@@ -129,6 +135,8 @@ Go Control Plane Hosted Permission Policy Mutation Durable Private Implementatio
 ```text
 Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
 ```
+
+该任务应遵循 documentation policy。优先更新 code/tests、`CHANGELOG.md` 和 Hosted Control Plane phase log。只有 durable private implementation boundary 需要稳定的 storage/security/protocol decision record 时，才新建 standalone design。
 
 ## 5. 下一阶段主线：Control Layer MVP
 
