@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission read model gateway runtime wiring closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation 和 gateway runtime wiring closeout 已完成。
+状态：hosted permission decision persistence design 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout 和 decision persistence design 已完成。
 
 目标：
 
@@ -1030,31 +1030,33 @@ Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeo
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
-由于 gateway runtime wiring proof 已被接受，且下一项显式 contract change 是 decision persistence，下一项 immediate project task 是 design。
+由于 append-only hosted permission decision persistence 已完成设计，下一项 immediate project task 是 implementation。
 
 范围：
 
-1. 设计 hosted permission decisions 的 append-only persistence。
-2. 定义 success、denial、source-unavailable 和 lookup-error persistence semantics。
-3. 定义 secret-safe evidence、retention boundaries 和 decision ID deduplication expectations。
-4. 定义 persistence write failures 如何影响 gateway allow/deny behavior。
-5. 定义 implementation 前所需 tests 和 live dogfood。
+1. 为 hosted permission decisions 增加 append-only persistence。
+2. 用 secret-safe evidence 持久化 allowed、denied 和 source-unavailable decisions。
+3. 保持 missing/invalid public auth 与 unknown route/method 不进入 hosted decision persistence。
+4. 实现 persistence-failure semantics，包括 allowed decision 在 forwarding 前 fail closed。
+5. 用 live dogfood 证明 persisted rows、zero secret leakage，以及 Control Plane audit/idempotency boundaries 不变。
 6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- decision persistence write timing 和 evidence shape 已指定。
-- source-unavailable 和 persistence-failure semantics 已指定。
-- secret-safe evidence 和 retention rules 已指定。
-- tests 和 live dogfood requirements 已指定。
+- allowed、denied 和 source-unavailable gateway decisions 会持久化 expected rows。
+- missing/invalid public auth 和 unknown route/method 不持久化 hosted decision rows。
+- allowed decision persistence failure 会在 forwarding 前 fail closed。
+- persisted evidence 是 secret-safe。
+- live Postgres dogfood 证明 row counts 和 Control Plane audit/idempotency boundaries 不变。
 - persistence、OAuth/OIDC、public CRUD 和 production deployment 保持 deferred。
 - 不包含 granular CRUD API、OAuth/OIDC、vault、billing、marketplace、workflow、provider onboarding、production gateway deployment 或 automatic propagation 工作。
 

@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout Complete
+Go Control Plane Hosted Permission Decision Persistence Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision persistence design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision persistence implementation.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1125,11 +1125,16 @@ Current Phase 6 progress:
   - remaining risks are decision persistence, dogfood-scoped helper boundary, real public identity lifecycle, policy write lifecycle, production gateway deployment, and provider ownership hardening.
   - the next hosted-readiness task is hosted permission decision persistence design.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_CLOSEOUT_PHASE_REVIEW.md`.
+- Go Control Plane Hosted Permission Decision Persistence Design v0 is complete:
+  - the design specifies append-only hosted permission decision evidence, gateway ownership, row shape, source-unavailable sentinel evidence, write timing, persistence-failure behavior, secret-safe metadata, retention boundaries, tests, and live dogfood requirements.
+  - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
+  - the next hosted-readiness task is hosted permission decision persistence implementation.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
 References:

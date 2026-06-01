@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout Complete
+Go Control Plane Hosted Permission Decision Persistence Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence implementation。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1125,11 +1125,16 @@ Go Control Plane Minimum v0
   - remaining risks 是 decision persistence、dogfood-scoped helper boundary、real public identity lifecycle、policy write lifecycle、production gateway deployment 和 provider ownership hardening。
   - 下一项 hosted-readiness task 是 hosted permission decision persistence design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Permission Decision Persistence Design v0 已完成：
+  - design 定义了 append-only hosted permission decision evidence、gateway ownership、row shape、source-unavailable sentinel evidence、write timing、persistence-failure behavior、secret-safe metadata、retention boundaries、tests 和 live dogfood requirements。
+  - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
+  - 下一项 hosted-readiness task 是 hosted permission decision persistence implementation。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
 参考：

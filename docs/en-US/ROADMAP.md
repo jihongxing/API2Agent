@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission read model gateway runtime wiring closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, and gateway runtime wiring closeout are complete.
+Status: hosted permission decision persistence design complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, and decision persistence design are complete.
 
 Goal:
 
@@ -1030,31 +1030,33 @@ Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood Closeo
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Design v0
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementation v0
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Design v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Design v0
+Go Control Plane Hosted Permission Decision Persistence Implementation v0
 ```
 
-This hosted-readiness design slice is now the immediate next project task because the gateway runtime wiring proof is accepted and the next explicit contract change is decision persistence.
+This hosted-readiness implementation slice is now the immediate next project task because append-only hosted permission decision persistence is designed.
 
 Scope:
 
-1. Design append-only persistence for hosted permission decisions.
-2. Define success, denial, source-unavailable, and lookup-error persistence semantics.
-3. Define secret-safe evidence, retention boundaries, and decision ID deduplication expectations.
-4. Define how persistence write failures affect gateway allow/deny behavior.
-5. Define tests and live dogfood required before implementation.
+1. Add append-only persistence for hosted permission decisions.
+2. Persist allowed, denied, and source-unavailable decisions with secret-safe evidence.
+3. Keep missing/invalid public auth and unknown route/method outside hosted decision persistence.
+4. Enforce persistence-failure semantics, including fail-closed before forwarding allowed decisions.
+5. Prove persisted rows, zero secret leakage, and unchanged Control Plane audit/idempotency boundaries with live dogfood.
 6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- decision persistence write timing and evidence shape are specified.
-- source-unavailable and persistence-failure semantics are specified.
-- secret-safe evidence and retention rules are specified.
-- tests and live dogfood requirements are specified.
+- allowed, denied, and source-unavailable gateway decisions persist expected rows.
+- missing/invalid public auth and unknown route/method do not persist hosted decision rows.
+- allowed decision persistence failure fails closed before forwarding.
+- persisted evidence is secret-safe.
+- live Postgres dogfood proves row counts and unchanged Control Plane audit/idempotency boundaries.
 - persistence, OAuth/OIDC, public CRUD, and production deployment remain deferred.
 - no granular CRUD API, OAuth/OIDC, vault, billing, marketplace, workflow, provider onboarding, production gateway deployment, or automatic propagation work is included.
 
