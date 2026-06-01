@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1013,31 +1013,30 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
 Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 Go Control Plane Tenant-Partitioned Registry Mutation Design v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 ```
 
-由于 tenant-partitioned mutation design 已完成，partition rules 应先在 local harness 中证明，再改变 production endpoint behavior；这项 hosted-readiness implementation 现在是当前项目立即下一项任务。
+由于 local partition validation helper 和 tests 已实现，应先 closeout 再决定是否暴露 private hosted project mutation endpoint；这项 hosted-readiness review 现在是当前项目立即下一项任务。
 
 范围：
 
-1. 实现 partition diffs 的 local validation helpers 或 contract harness coverage。
-2. 证明 same-project metadata changes 通过，cross-project/global changes 失败。
-3. 证明 partition decisions 的 idempotency 和 audit evidence shape。
+1. Review helper 是否满足 tenant-partitioned mutation design acceptance criteria。
+2. 确认 same-project metadata changes 通过，cross-project/global changes 失败。
+3. 确认 idempotency 和 audit evidence shape 足以作为 v0。
 4. public CRUD、public auth provider implementation、durable permission storage 和 production gateway deployment 保持 out of scope。
 5. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- partition validation helpers 或 harness tests 存在。
-- same-project project/API-key/credential metadata cases 通过。
-- cross-project、global routing、snapshot config、capability 和 provider ownership violations 使用 stable error types 失败。
-- idempotency 和 audit evidence expectations 有覆盖。
-- 不新增 production public CRUD endpoint。
+- contract harness implementation 被接受，或 gaps 被文档化。
+- remaining hosted mutation risks 已排序。
+- 下一条 lane 被选择，且不增加 public CRUD 或 automatic propagation。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：
@@ -1064,6 +1063,7 @@ Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
@@ -1101,6 +1101,17 @@ Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+
+已完成 tenant-partitioned registry mutation contract harness 结果：
+
+- local partition validation helper `ValidateProjectPartitionMutation` 已实现。
+- same-project project/API key/credential metadata changes 通过。
+- cross-project、global routing、snapshot config、capability、provider ownership 和 platform-owned provider changes 使用 stable partition errors 失败。
+- 只有 ownership metadata 匹配 principal project 时，才允许 project-owned provider metadata changes。
+- project-scoped idempotency fingerprint evidence 已由 tests 覆盖。
+- 未新增 HTTP endpoint、public CRUD、production gateway deployment、automatic propagation 或 Data Plane mutable-table reads。
+- 详见 `docs/cn-ZH/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`。
 
 已完成 tenant-partitioned registry mutation design 结果：
 

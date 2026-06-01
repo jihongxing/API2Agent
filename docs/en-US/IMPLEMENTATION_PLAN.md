@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Design Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is tenant-partitioned registry mutation contract proof.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is tenant-partitioned registry mutation contract harness closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1038,11 +1038,16 @@ Current Phase 6 progress:
   - the design defines partition diff validation before full-registry replacement, without public CRUD or automatic propagation.
   - the next task is a local contract harness for partition rules.
   - see `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`.
+- Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0 is complete:
+  - local partition validation helpers and tests prove same-project metadata changes and cross-project/global rejection behavior.
+  - provider ownership metadata, partition violation decisions, and project-scoped idempotency fingerprint evidence are covered.
+  - no HTTP endpoint, public CRUD, automatic propagation, or production gateway deployment was added.
+  - see `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
+Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 ```
 
 References:
@@ -1069,6 +1074,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

@@ -319,6 +319,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Admin Gateway Permission Source implemented in the local gateway contract harness with explicit permission decisions, static policy evidence, endpoint permission mapping, typed gateway-local failures, trusted header injection, Control Plane second-gate proof, regression coverage, and live dogfood.
 - Go Control Plane Hosted Admin Gateway Permission Source closeout completed; the static dogfood permission-source proof is accepted for v0, and the next highest-risk hosted lane is tenant-partitioned registry mutation design.
 - Go Control Plane Tenant-Partitioned Registry Mutation design completed with project partition ownership rules, global/platform read-only boundaries, provider ownership migration options, partition diff validation, idempotency/audit evidence, and contract harness requirements.
+- Go Control Plane Tenant-Partitioned Registry Mutation contract harness implemented with local partition validation helpers, stable partition violation decisions, project-owned provider metadata rules, project-isolated idempotency fingerprints, and registry package tests.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -326,4 +327,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0.
+- Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0.
