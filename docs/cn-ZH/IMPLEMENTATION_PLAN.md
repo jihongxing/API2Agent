@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Implementation Complete
+Go Control Plane Hosted Permission Decision Persistence Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence closeout and phase review。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence integrity hardening design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1137,11 +1137,17 @@ Go Control Plane Minimum v0
   - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
   - 下一项 hosted-readiness task 是 hosted permission decision persistence closeout and phase review。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0 已完成：
+  - local v0 persistence proof 被接受。
+  - live Postgres dogfood 证明 15 条 secret-safe decision rows、gateway-local auth failures 不进入 persistence，以及 allowed-write-failure fail-closed behavior。
+  - remaining risks 是 duplicate/conflicting decision integrity、sentinel schema semantics、harness-scoped persistence、retention/privacy、real public identity lifecycle 和 policy write lifecycle。
+  - 下一项 hosted-readiness task 是 hosted permission decision persistence integrity hardening design。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
 ```
 
 参考：
@@ -1183,6 +1189,9 @@ Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review 
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

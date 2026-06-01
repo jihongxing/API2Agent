@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout Complete
+Go Control Plane Hosted Permission Decision Persistence Closeout Complete
 ```
 
 战略判断：
@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission decision persistence implementation 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design 和 decision persistence implementation 已完成。
+状态：hosted permission decision persistence closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation 和 decision persistence closeout 已完成。
 
 目标：
 
@@ -1032,31 +1032,33 @@ Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Implementat
 Go Control Plane Hosted Permission Read Model Gateway Runtime Wiring Closeout + Phase Review v0
 Go Control Plane Hosted Permission Decision Persistence Design v0
 Go Control Plane Hosted Permission Decision Persistence Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
 ```
 
-由于 append-only hosted permission decision persistence 已实现并通过 dogfood，下一项 immediate project task 是 closeout。
+由于 append-only hosted permission decision persistence 已实现、通过 dogfood，并被接受为 local v0，下一项 immediate project task 是 hardening design。
 
 范围：
 
-1. 复核 hosted permission decision persistence 是否满足 design acceptance criteria。
-2. 确认 allowed、denied 和 source-unavailable decision rows 足以作为 v0 evidence。
-3. 确认 missing/invalid public auth、unknown route/method 和 persistence-failure boundaries 的范围正确。
-4. 确认 secret-safe metadata 和 live dogfood evidence 足以关闭 implementation slice。
-5. 排序 persistence 之后的 remaining hosted-readiness risks。
-6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow、provider onboarding、OAuth/OIDC、public CRUD 或 production gateway deployment。
+1. 设计 duplicate/conflicting decision evidence integrity behavior。
+2. 决定保留、约束或替换 partial failures 的 sentinel evidence。
+3. 定义 metadata allowlist、redaction、retention 和 tenant privacy expectations。
+4. 识别 persisted decisions 所需的 schema/index/constraint hardening。
+5. 定义 hardening slice 的 tests 和 live dogfood evidence。
+6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow、provider onboarding、OAuth/OIDC、public CRUD、policy write APIs、Data Plane mutable reads 或 production gateway deployment。
 
 退出标准：
 
-- implementation report 和 dogfood artifact 已复核。
-- acceptance criteria 以 evidence 标记 pass/fail。
-- remaining risks 和下一项 hosted-readiness task 明确。
-- OAuth/OIDC、public CRUD、production deployment、vault、billing、marketplace、workflow、provider onboarding 和 automatic propagation 保持 deferred。
+- duplicate decision conflict semantics 明确。
+- sentinel/partial-failure row semantics 被明确接受或替换。
+- metadata retention/privacy expectations 已文档化。
+- implementation tests 和 live dogfood requirements 已定义。
+- OAuth/OIDC、public CRUD、production deployment、vault、billing、marketplace、workflow、provider onboarding、policy write APIs、Data Plane mutable reads 和 automatic propagation 保持 deferred。
 
 参考：
 
