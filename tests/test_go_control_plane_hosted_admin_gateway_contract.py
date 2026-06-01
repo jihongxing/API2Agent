@@ -237,15 +237,20 @@ def test_hosted_permission_decision_persistence_writes_secret_safe_sql() -> None
     harness = load_harness_module()
     captured_sql = []
     original_execute_postgres = harness.execute_postgres
+    original_query_postgres_json = harness.query_postgres_json
 
     def fake_execute_postgres(container, sql):
         captured_sql.append(sql)
+
+    def fake_query_postgres_json(container, sql):
+        return []
 
     decision = harness.resolve_gateway_admin_principal(
         {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}", "X-Request-ID": "req-persist-1"},
         harness.PERMISSION_REGISTRY_VALIDATE,
     )
     harness.execute_postgres = fake_execute_postgres
+    harness.query_postgres_json = fake_query_postgres_json
     try:
         persistence = harness.HostedPermissionDecisionPersistence("container")
         persistence.persist(
@@ -257,6 +262,7 @@ def test_hosted_permission_decision_persistence_writes_secret_safe_sql() -> None
         )
     finally:
         harness.execute_postgres = original_execute_postgres
+        harness.query_postgres_json = original_query_postgres_json
 
     assert captured_sql
     sql = captured_sql[0]
@@ -269,13 +275,188 @@ def test_hosted_permission_decision_persistence_writes_secret_safe_sql() -> None
     assert "Authorization" not in sql
 
 
+def test_hosted_permission_decision_persistence_accepts_equivalent_duplicate() -> None:
+    harness = load_harness_module()
+    captured_sql = []
+    original_execute_postgres = harness.execute_postgres
+    original_query_postgres_json = harness.query_postgres_json
+
+    def fake_execute_postgres(container, sql):
+        captured_sql.append(sql)
+
+    decision = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}", "X-Request-ID": "req-duplicate"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+        resolved_at="2026-06-02T00:00:00.000000Z",
+    )
+
+    def fake_query_postgres_json(container, sql):
+        if not captured_sql:
+            return []
+        metadata = {
+            "decision_status": decision.status,
+            "permission_source": decision.permission_source,
+            "persistence_version": harness.HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION,
+            "request_id": "req-duplicate",
+            "method": "POST",
+            "path": "/v1/admin/registry/validate",
+            "gateway_key_id": harness.GATEWAY_KEY_ID,
+        }
+        return [
+            {
+                "subject_id": decision.subject_id,
+                "actor_id": decision.actor_id,
+                "project_id": decision.project_id,
+                "organization_id": decision.organization_id,
+                "token_id": decision.token_id,
+                "required_permission": decision.required_permission,
+                "allowed": decision.allowed,
+                "deny_reason": decision.deny_reason,
+                "roles": list(decision.roles),
+                "permissions": list(decision.permissions),
+                "policy_source": decision.policy_source,
+                "policy_version": decision.policy_version,
+                "policy_fingerprint": decision.policy_fingerprint,
+                "resolved_at": "2026-06-02T00:00:00.000000Z",
+                "metadata": metadata,
+            }
+        ]
+
+    harness.execute_postgres = fake_execute_postgres
+    harness.query_postgres_json = fake_query_postgres_json
+    try:
+        persistence = harness.HostedPermissionDecisionPersistence("container")
+        persistence.persist(
+            decision,
+            method="POST",
+            path="/v1/admin/registry/validate",
+            headers={"X-Request-ID": "req-duplicate"},
+            gateway_key_id=harness.GATEWAY_KEY_ID,
+        )
+        persistence.persist(
+            decision,
+            method="POST",
+            path="/v1/admin/registry/validate",
+            headers={"X-Request-ID": "req-duplicate"},
+            gateway_key_id=harness.GATEWAY_KEY_ID,
+        )
+    finally:
+        harness.execute_postgres = original_execute_postgres
+        harness.query_postgres_json = original_query_postgres_json
+
+    assert len(captured_sql) == 1
+    assert persistence.duplicate_equivalent_count == 1
+
+
+def test_hosted_permission_decision_persistence_rejects_conflicting_duplicate() -> None:
+    harness = load_harness_module()
+    original_query_postgres_json = harness.query_postgres_json
+
+    decision = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+        resolved_at="2026-06-02T00:00:00.000000Z",
+    )
+
+    def fake_query_postgres_json(container, sql):
+        metadata = {
+            "decision_status": decision.status,
+            "permission_source": decision.permission_source,
+            "persistence_version": harness.HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION,
+            "method": "POST",
+            "path": "/v1/admin/registry/validate",
+            "gateway_key_id": harness.GATEWAY_KEY_ID,
+        }
+        return [
+            {
+                "subject_id": decision.subject_id,
+                "actor_id": decision.actor_id,
+                "project_id": decision.project_id,
+                "organization_id": decision.organization_id,
+                "token_id": decision.token_id,
+                "required_permission": decision.required_permission,
+                "allowed": decision.allowed,
+                "deny_reason": "conflicting evidence",
+                "roles": list(decision.roles),
+                "permissions": list(decision.permissions),
+                "policy_source": decision.policy_source,
+                "policy_version": decision.policy_version,
+                "policy_fingerprint": decision.policy_fingerprint,
+                "resolved_at": "2026-06-02T00:00:00.000000Z",
+                "metadata": metadata,
+            }
+        ]
+
+    harness.query_postgres_json = fake_query_postgres_json
+    try:
+        persistence = harness.HostedPermissionDecisionPersistence("container")
+        try:
+            persistence.persist(
+                decision,
+                method="POST",
+                path="/v1/admin/registry/validate",
+                headers={},
+                gateway_key_id=harness.GATEWAY_KEY_ID,
+            )
+        except RuntimeError as exc:
+            assert str(exc) == harness.PERMISSION_DECISION_INTEGRITY_CONFLICT
+        else:
+            raise AssertionError("expected integrity conflict")
+    finally:
+        harness.query_postgres_json = original_query_postgres_json
+
+    assert persistence.integrity_conflict_count == 1
+
+
+def test_hosted_permission_decision_persistence_rejects_allowed_sentinel_evidence() -> None:
+    harness = load_harness_module()
+    decision = harness.GatewayPermissionDecision(
+        allowed=True,
+        status=200,
+        error_type="",
+        deny_reason="",
+        subject_id="",
+        actor_id="",
+        project_id=harness.HARNESS_PROJECT_ID,
+        organization_id="",
+        token_id="token",
+        roles=("role",),
+        permissions=(harness.PERMISSION_REGISTRY_VALIDATE,),
+        required_permission=harness.PERMISSION_REGISTRY_VALIDATE,
+        policy_source=harness.HOSTED_PERMISSION_STORE_SOURCE,
+        policy_version=harness.HOSTED_POLICY_VERSION,
+        policy_fingerprint=harness.HOSTED_POLICY_FINGERPRINT,
+        decision_id="decision-allowed-sentinel",
+        permission_source=harness.HOSTED_PERMISSION_STORE_SOURCE,
+        resolved_at="2026-06-02T00:00:00.000000Z",
+    )
+    persistence = harness.HostedPermissionDecisionPersistence("container")
+
+    try:
+        persistence.persist(
+            decision,
+            method="POST",
+            path="/v1/admin/registry/validate",
+            headers={},
+            gateway_key_id=harness.GATEWAY_KEY_ID,
+        )
+    except RuntimeError as exc:
+        assert "allowed hosted permission decisions must not use sentinel evidence" in str(exc)
+    else:
+        raise AssertionError("expected allowed sentinel evidence rejection")
+
+
 def test_hosted_permission_decision_persistence_normalizes_unavailable_decision() -> None:
     harness = load_harness_module()
     captured_sql = []
     original_execute_postgres = harness.execute_postgres
+    original_query_postgres_json = harness.query_postgres_json
 
     def fake_execute_postgres(container, sql):
         captured_sql.append(sql)
+
+    def fake_query_postgres_json(container, sql):
+        return []
 
     decision = harness.GatewayPermissionDecision(
         allowed=False,
@@ -298,6 +479,7 @@ def test_hosted_permission_decision_persistence_normalizes_unavailable_decision(
         resolved_at="2026-06-02T00:00:00.000000Z",
     )
     harness.execute_postgres = fake_execute_postgres
+    harness.query_postgres_json = fake_query_postgres_json
     try:
         persistence = harness.HostedPermissionDecisionPersistence("container")
         persistence.persist(
@@ -309,6 +491,7 @@ def test_hosted_permission_decision_persistence_normalizes_unavailable_decision(
         )
     finally:
         harness.execute_postgres = original_execute_postgres
+        harness.query_postgres_json = original_query_postgres_json
 
     assert captured_sql
     sql = captured_sql[0]

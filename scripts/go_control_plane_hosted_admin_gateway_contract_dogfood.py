@@ -12,7 +12,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -88,6 +88,7 @@ HOP_BY_HOP_RESPONSE_HEADERS = {
 }
 
 PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE = "PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE"
+PERMISSION_DECISION_INTEGRITY_CONFLICT = "PERMISSION_DECISION_INTEGRITY_CONFLICT"
 
 
 @dataclass(frozen=True)
@@ -529,8 +530,47 @@ def utc_now_rfc3339_micro() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
+def normalize_rfc3339_micro(value: str) -> str:
+    normalized = value.replace("Z", "+00:00")
+    return datetime.fromisoformat(normalized).astimezone(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
 def should_persist_hosted_permission_decision(decision: "GatewayPermissionDecision") -> bool:
     return decision.error_type not in {"PUBLIC_AUTH_REQUIRED", "PUBLIC_AUTH_INVALID"}
+
+
+def canonical_permission_decision_evidence(decision: "GatewayPermissionDecision", metadata: dict[str, Any]) -> dict[str, Any]:
+    controlled_metadata = {
+        key: metadata[key]
+        for key in (
+            "decision_status",
+            "error_type",
+            "permission_source",
+            "request_id",
+            "method",
+            "path",
+            "gateway_key_id",
+            "persistence_version",
+        )
+        if key in metadata and metadata[key] not in ("", None)
+    }
+    return {
+        "subject_id": decision.subject_id,
+        "actor_id": decision.actor_id,
+        "project_id": decision.project_id,
+        "organization_id": decision.organization_id,
+        "token_id": decision.token_id,
+        "required_permission": decision.required_permission,
+        "allowed": bool(decision.allowed),
+        "deny_reason": decision.deny_reason,
+        "roles": sorted(decision.roles),
+        "permissions": sorted(decision.permissions),
+        "policy_source": decision.policy_source,
+        "policy_version": decision.policy_version,
+        "policy_fingerprint": decision.policy_fingerprint,
+        "resolved_at": normalize_rfc3339_micro(decision.resolved_at),
+        "metadata": controlled_metadata,
+    }
 
 
 def create_replacement_registry(path: Path) -> dict:
@@ -968,6 +1008,8 @@ class HostedPermissionDecisionPersistence:
         self.container = container
         self.fail_writes = False
         self.failures: list[dict[str, str]] = []
+        self.duplicate_equivalent_count = 0
+        self.integrity_conflict_count = 0
 
     def persist(
         self,
@@ -981,20 +1023,25 @@ class HostedPermissionDecisionPersistence:
         if self.fail_writes:
             raise RuntimeError("hosted permission decision persistence is unavailable")
         decision = self._normalized_decision(decision)
-        metadata = {
-            "decision_status": decision.status,
-            "error_type": decision.error_type,
-            "permission_source": decision.permission_source,
-            "persistence_version": HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION,
-            "request_id": headers.get("X-Request-ID", ""),
-            "method": method,
-            "path": path,
-            "gateway_key_id": gateway_key_id,
-        }
-        metadata = {key: value for key, value in metadata.items() if value not in ("", None)}
+        self._assert_sentinel_constraints(decision)
+        metadata = self._metadata(
+            decision,
+            method=method,
+            path=path,
+            headers=headers,
+            gateway_key_id=gateway_key_id,
+        )
         metadata_json = json.dumps(metadata, sort_keys=True)
         if contains_secret_like_material(metadata_json):
             raise RuntimeError("hosted permission decision metadata contains secret-like material")
+        expected_evidence = canonical_permission_decision_evidence(decision, metadata)
+        existing_evidence = self._existing_evidence(decision.decision_id)
+        if existing_evidence is not None:
+            if existing_evidence != expected_evidence:
+                self.integrity_conflict_count += 1
+                raise RuntimeError(PERMISSION_DECISION_INTEGRITY_CONFLICT)
+            self.duplicate_equivalent_count += 1
+            return
         execute_postgres(
             self.container,
             f"""
@@ -1032,8 +1079,7 @@ INSERT INTO hosted_permission_decisions (
   {sql_literal(decision.policy_fingerprint)},
   {sql_literal(decision.resolved_at)}::timestamptz,
   {sql_literal(metadata_json)}::jsonb
-)
-ON CONFLICT (id) DO NOTHING;
+);
 """,
         )
 
@@ -1042,9 +1088,106 @@ ON CONFLICT (id) DO NOTHING;
             {
                 "decision_id": decision.decision_id,
                 "allowed": str(decision.allowed).lower(),
+                "error_type": PERMISSION_DECISION_INTEGRITY_CONFLICT
+                if str(error) == PERMISSION_DECISION_INTEGRITY_CONFLICT
+                else "PERMISSION_DECISION_PERSISTENCE_FAILURE",
                 "error": str(error),
             }
         )
+
+    def _metadata(
+        self,
+        decision: GatewayPermissionDecision,
+        *,
+        method: str,
+        path: str,
+        headers: Any,
+        gateway_key_id: str,
+    ) -> dict[str, Any]:
+        metadata = {
+            "decision_status": decision.status,
+            "error_type": decision.error_type,
+            "permission_source": decision.permission_source,
+            "persistence_version": HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION,
+            "request_id": headers.get("X-Request-ID", ""),
+            "method": method,
+            "path": path,
+            "gateway_key_id": gateway_key_id,
+        }
+        return {key: value for key, value in metadata.items() if value not in ("", None)}
+
+    def _existing_evidence(self, decision_id: str) -> dict[str, Any] | None:
+        rows = query_postgres_json(
+            self.container,
+            f"""
+SELECT json_agg(row_to_json(t))
+FROM (
+  SELECT
+    subject_id,
+    actor_id,
+    project_id,
+    organization_id,
+    token_id,
+    required_permission,
+    allowed,
+    deny_reason,
+    roles,
+    permissions,
+    policy_source,
+    policy_version,
+    policy_fingerprint,
+    to_char(resolved_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS resolved_at,
+    metadata
+  FROM hosted_permission_decisions
+  WHERE id = {sql_literal(decision_id)}
+) AS t;
+""",
+        )
+        if not rows:
+            return None
+        row = rows[0]
+        metadata = row.get("metadata") or {}
+        decision = GatewayPermissionDecision(
+            allowed=bool(row["allowed"]),
+            status=int(metadata.get("decision_status", 503)),
+            error_type=str(metadata.get("error_type", "")),
+            deny_reason=str(row["deny_reason"]),
+            subject_id=str(row["subject_id"]),
+            actor_id=str(row["actor_id"]),
+            project_id=str(row["project_id"]),
+            organization_id=str(row["organization_id"]),
+            token_id=str(row["token_id"]),
+            roles=tuple(row.get("roles") or ()),
+            permissions=tuple(row.get("permissions") or ()),
+            required_permission=str(row["required_permission"]),
+            policy_source=str(row["policy_source"]),
+            policy_version=str(row["policy_version"]),
+            policy_fingerprint=str(row["policy_fingerprint"]),
+            decision_id=decision_id,
+            permission_source=str(metadata.get("permission_source", row["policy_source"])),
+            resolved_at=str(row["resolved_at"]),
+        )
+        return canonical_permission_decision_evidence(decision, metadata)
+
+    def _assert_sentinel_constraints(self, decision: GatewayPermissionDecision) -> None:
+        if decision.allowed and (
+            decision.subject_id == "unknown-subject"
+            or decision.actor_id == "unknown-actor"
+            or decision.organization_id == "unknown-organization"
+            or decision.policy_source == HOSTED_PERMISSION_SENTINEL_POLICY_SOURCE
+            or decision.policy_version == HOSTED_PERMISSION_SENTINEL_POLICY_VERSION
+            or decision.policy_fingerprint == HOSTED_PERMISSION_SENTINEL_POLICY_FINGERPRINT
+        ):
+            raise RuntimeError("allowed hosted permission decisions must not use sentinel evidence")
+        if decision.error_type not in {"PERMISSION_SOURCE_UNAVAILABLE", "PUBLIC_AUTHZ_DENIED"} and (
+            decision.subject_id == "unknown-subject"
+            or decision.actor_id == "unknown-actor"
+            or decision.organization_id == "unknown-organization"
+            or decision.policy_source == HOSTED_PERMISSION_SENTINEL_POLICY_SOURCE
+            or decision.policy_version == HOSTED_PERMISSION_SENTINEL_POLICY_VERSION
+            or decision.policy_fingerprint == HOSTED_PERMISSION_SENTINEL_POLICY_FINGERPRINT
+        ):
+            raise RuntimeError("sentinel evidence is limited to authenticated partial-failure decisions")
 
     def _normalized_decision(self, decision: GatewayPermissionDecision) -> GatewayPermissionDecision:
         subject_id = decision.subject_id or "unknown-subject"
@@ -1315,6 +1458,8 @@ class GatewayHarnessHandler(BaseHTTPRequestHandler):
                 permission_source=self.server.permission_source,
                 resolved_at=utc_now_rfc3339_micro(),
             )
+            if self.server.force_permission_decision_id is not None:
+                decision = replace(decision, decision_id=self.server.force_permission_decision_id)
             if self.server.decision_persistence is not None and should_persist_hosted_permission_decision(decision):
                 try:
                     self.server.decision_persistence.persist(
@@ -1327,10 +1472,20 @@ class GatewayHarnessHandler(BaseHTTPRequestHandler):
                 except Exception as exc:
                     self.server.decision_persistence.record_failure(decision, exc)
                     if decision.allowed:
+                        error_type = (
+                            PERMISSION_DECISION_INTEGRITY_CONFLICT
+                            if str(exc) == PERMISSION_DECISION_INTEGRITY_CONFLICT
+                            else PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE
+                        )
+                        message = (
+                            "hosted permission decision integrity conflict"
+                            if error_type == PERMISSION_DECISION_INTEGRITY_CONFLICT
+                            else "hosted permission decision persistence is unavailable"
+                        )
                         self.write_local_error(
                             503,
-                            PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE,
-                            "hosted permission decision persistence is unavailable",
+                            error_type,
+                            message,
                             scope="platform",
                             retryable=True,
                         )
@@ -1422,6 +1577,7 @@ class GatewayHarnessServer(ThreadingHTTPServer):
         self.permission_source: GatewayPermissionSource | None = None
         self.decision_persistence: HostedPermissionDecisionPersistence | None = None
         self.force_forwarded_permissions: tuple[str, ...] | None = None
+        self.force_permission_decision_id: str | None = None
         self.permission_decisions: list[GatewayPermissionDecision] = []
 
 
@@ -1968,6 +2124,64 @@ FROM (
         if any(row["request_id"] in {"dogfood-gateway-contract-readonly-import", "dogfood-gateway-contract-readonly-partition"} and row["allowed"] for row in hosted_permission_decision_rows):
             raise RuntimeError(f"readonly mutation denials must persist as denied rows: {hosted_permission_decision_rows}")
 
+        duplicate_equivalent_decision_row = next(
+            row for row in hosted_permission_decision_rows if row["request_id"] == "dogfood-gateway-contract-validate-1"
+        )
+        duplicate_equivalent_decision = GatewayPermissionDecision(
+            allowed=bool(duplicate_equivalent_decision_row["allowed"]),
+            status=int(duplicate_equivalent_decision_row["decision_status"]),
+            error_type=str(duplicate_equivalent_decision_row["error_type"] or ""),
+            deny_reason=str(duplicate_equivalent_decision_row["deny_reason"]),
+            subject_id=str(duplicate_equivalent_decision_row["subject_id"]),
+            actor_id=str(duplicate_equivalent_decision_row["actor_id"]),
+            project_id=str(duplicate_equivalent_decision_row["project_id"]),
+            organization_id=str(duplicate_equivalent_decision_row["organization_id"]),
+            token_id=str(duplicate_equivalent_decision_row["token_id"]),
+            roles=tuple(duplicate_equivalent_decision_row["roles"]),
+            permissions=tuple(duplicate_equivalent_decision_row["permissions"]),
+            required_permission=str(duplicate_equivalent_decision_row["required_permission"]),
+            policy_source=str(duplicate_equivalent_decision_row["policy_source"]),
+            policy_version=str(duplicate_equivalent_decision_row["policy_version"]),
+            policy_fingerprint=str(duplicate_equivalent_decision_row["policy_fingerprint"]),
+            decision_id=str(duplicate_equivalent_decision_row["id"]),
+            permission_source=str(duplicate_equivalent_decision_row["policy_source"]),
+            resolved_at=str(duplicate_equivalent_decision_row["resolved_at"]).replace("+00:00", "Z"),
+        )
+        gateway.decision_persistence.persist(
+            duplicate_equivalent_decision,
+            method="POST",
+            path="/v1/admin/registry/validate",
+            headers={"X-Request-ID": "dogfood-gateway-contract-validate-1"},
+            gateway_key_id=GATEWAY_KEY_ID,
+        )
+        hosted_permission_decision_rows_after_duplicate_equivalent = int(
+            query_postgres_scalar(container, "SELECT count(*) FROM hosted_permission_decisions;")
+        )
+        if hosted_permission_decision_rows_after_duplicate_equivalent != expected_counts["hosted_permission_decisions"]:
+            raise RuntimeError("equivalent duplicate decision must not create a new hosted permission decision row")
+
+        gateway.force_permission_decision_id = str(duplicate_equivalent_decision_row["id"])
+        integrity_conflict_status, integrity_conflict_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/import-replace",
+            headers={
+                "Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}",
+                "X-Request-ID": "dogfood-gateway-contract-integrity-conflict",
+            },
+            body={"registry": replacement_registry, "source": "dogfood_integrity_conflict_probe"},
+            expected_status={503},
+        )
+        gateway.force_permission_decision_id = None
+        assert_error_type(integrity_conflict_response, PERMISSION_DECISION_INTEGRITY_CONFLICT)
+        audit_rows_after_integrity_conflict = count_audit_rows(container)
+        if audit_rows_after_integrity_conflict != counts["admin_audit_events"]:
+            raise RuntimeError("allowed decision integrity conflict must fail closed before Control Plane audit")
+        hosted_permission_decision_rows_after_integrity_conflict = int(
+            query_postgres_scalar(container, "SELECT count(*) FROM hosted_permission_decisions;")
+        )
+        if hosted_permission_decision_rows_after_integrity_conflict != expected_counts["hosted_permission_decisions"]:
+            raise RuntimeError("conflicting duplicate decision must not mutate hosted permission decision rows")
+
         audit_rows = query_postgres_json(
             container,
             f"""
@@ -2152,6 +2366,12 @@ FROM (
                 "partition_violation_error_type": partition_violation_response.get("error", {}).get("error_type"),
                 "import_status": import_status,
                 "import_response": import_response,
+                "duplicate_equivalent_decision_id": duplicate_equivalent_decision_row["id"],
+                "hosted_permission_decision_rows_after_duplicate_equivalent": hosted_permission_decision_rows_after_duplicate_equivalent,
+                "integrity_conflict_status": integrity_conflict_status,
+                "integrity_conflict_error_type": integrity_conflict_response.get("error", {}).get("error_type"),
+                "audit_rows_after_integrity_conflict": audit_rows_after_integrity_conflict,
+                "hosted_permission_decision_rows_after_integrity_conflict": hosted_permission_decision_rows_after_integrity_conflict,
                 "permission_decisions": [
                     {
                         "allowed": decision.allowed,
@@ -2174,6 +2394,16 @@ FROM (
                 ],
                 "permission_decision_persistence_failures": (
                     gateway.decision_persistence.failures if gateway.decision_persistence is not None else []
+                ),
+                "permission_decision_duplicate_equivalent_count": (
+                    gateway.decision_persistence.duplicate_equivalent_count
+                    if gateway.decision_persistence is not None
+                    else 0
+                ),
+                "permission_decision_integrity_conflict_count": (
+                    gateway.decision_persistence.integrity_conflict_count
+                    if gateway.decision_persistence is not None
+                    else 0
                 ),
                 "audit_counts": counts,
                 "hosted_permission_decision_status_counts": decision_status_counts,

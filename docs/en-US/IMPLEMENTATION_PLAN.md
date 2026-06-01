@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design Complete
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision persistence integrity hardening implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision persistence integrity hardening closeout and phase review.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1148,11 +1148,18 @@ Current Phase 6 progress:
   - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
   - the next hosted-readiness task is hosted permission decision persistence integrity hardening implementation.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_DESIGN.md`.
+- Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0 is complete:
+  - the local gateway harness now compares canonical controlled evidence for duplicate decision IDs.
+  - equivalent duplicates are no-op success, conflicting duplicates raise `PERMISSION_DECISION_INTEGRITY_CONFLICT`, and allowed conflicts fail closed before forwarding.
+  - live Postgres dogfood proves duplicate-equivalent and duplicate-conflict probes leave `hosted_permission_decisions=15` and `admin_audit_events=5`.
+  - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, schema migration, and Data Plane mutable reads remain out of scope.
+  - the next hosted-readiness task is hosted permission decision persistence integrity hardening closeout and phase review.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
 ```
 
 References:
@@ -1198,6 +1205,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
