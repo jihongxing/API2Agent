@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import sys
@@ -58,6 +59,7 @@ class CalibrationCase:
     case_id: str
     purpose: str
     source_path: Path
+    metadata_path: Path | None = None
     filters: CalibrationFilters = field(default_factory=CalibrationFilters)
     expected_status: str = "pass"
     optional: bool = False
@@ -151,6 +153,14 @@ def default_manifest(*, root: Path = ROOT, inputs_dir: Path = INPUTS_DIR) -> lis
             notes="Local synthetic large-surface spec; no network dependency.",
         ),
         CalibrationCase(
+            case_id="cached_petstore_expanded",
+            purpose="cached_real_small",
+            source_path=inputs_dir / "cached-real" / "petstore_expanded.openapi.json",
+            metadata_path=inputs_dir / "cached-real" / "petstore_expanded.metadata.json",
+            expected_status="pass",
+            notes="Committed Apache-2.0 Swagger Petstore excerpt from the OpenAPI examples.",
+        ),
+        CalibrationCase(
             case_id="optional_cached_real_spec",
             purpose="large_rest",
             source_path=root / ".dogfood" / "openapi-real-spec-calibration" / "inputs" / "cached_real.openapi.json",
@@ -166,6 +176,9 @@ def run_case(case: CalibrationCase, *, generated_dir: Path, root: Path = ROOT) -
         if case.optional:
             return _skipped_case(case, "optional source_path is not present")
         return _failed_case(case, f"source_path does not exist: {case.source_path}")
+    metadata, metadata_error = cached_metadata_for_case(case, root=root)
+    if metadata_error is not None:
+        return _failed_case(case, metadata_error)
 
     package_dir = case_output_dir(generated_dir, case.case_id)
     started = time.perf_counter()
@@ -199,6 +212,7 @@ def run_case(case: CalibrationCase, *, generated_dir: Path, root: Path = ROOT) -
         package_dir=package_dir,
         capability_json=capability_json,
         diagnostics=diagnostics,
+        cached_metadata=metadata,
         generation_ms=generation_ms,
         generation_error=generation_error,
         inspect_excerpt=inspect_excerpt,
@@ -218,6 +232,7 @@ def case_metrics(
     package_dir: Path,
     capability_json: dict[str, Any],
     diagnostics: dict[str, Any],
+    cached_metadata: dict[str, Any],
     generation_ms: float,
     generation_error: str | None,
     inspect_excerpt: list[str],
@@ -240,9 +255,11 @@ def case_metrics(
         "case_id": case.case_id,
         "purpose": case.purpose,
         "source_path": str(case.source_path),
+        "metadata_path": str(case.metadata_path) if case.metadata_path else None,
         "filters": case.filters.as_dict(),
         "optional": case.optional,
         "notes": case.notes,
+        **cached_metadata,
         "package_dir": str(package_dir),
         "generated": generation_error is None,
         "generation_error": generation_error,
@@ -300,6 +317,9 @@ def classify_case_status(metrics: dict[str, Any]) -> tuple[str, list[str]]:
         reasons.append("no read tools when write/delete tools exist")
     if metrics.get("schema_hint_counts") and not metrics.get("sample_tool_details"):
         reasons.append("schema hints present but no readable inspect detail")
+    source_license = str(metrics.get("source_license") or "").lower()
+    if "review_required" in source_license:
+        reasons.append("source license metadata review required")
     return ("warn", reasons) if reasons else ("pass", [])
 
 
@@ -332,6 +352,11 @@ def build_recommendations(cases: list[dict[str, Any]]) -> list[str]:
     long_line_cases = [case["case_id"] for case in cases if case.get("max_inspect_line_chars", 0) > 180]
     repeated_finding_cases = [case["case_id"] for case in cases if case.get("repeated_finding_groups", 0) > 3]
     generic_example_cases = [case["case_id"] for case in cases if case.get("generic_example_count", 0) > 0]
+    cached_warning_cases = [
+        case["case_id"]
+        for case in cases
+        if case.get("metadata_path") and case.get("status") == "warn"
+    ]
     if large_cases:
         recommendations.append("Review filter guidance and inspect truncation for large packages: " + ", ".join(large_cases))
     if low_score_cases:
@@ -342,6 +367,8 @@ def build_recommendations(cases: list[dict[str, Any]]) -> list[str]:
         recommendations.append("Review repeated diagnostics grouping for noisy packages: " + ", ".join(repeated_finding_cases))
     if generic_example_cases:
         recommendations.append("Review generic first-call params: " + ", ".join(generic_example_cases))
+    if cached_warning_cases:
+        recommendations.append("Review cached real-spec warnings: " + ", ".join(cached_warning_cases))
     if fail_cases:
         recommendations.append("Fix failed calibration cases before expanding the corpus: " + ", ".join(fail_cases))
     if warn_cases and not recommendations:
@@ -447,6 +474,57 @@ def write_synthetic_large_spec(path: Path, *, operation_count: int = 60) -> None
     )
 
 
+REQUIRED_CACHED_METADATA_FIELDS = {
+    "case_id",
+    "purpose",
+    "source_name",
+    "source_url",
+    "source_license",
+    "source_retrieved_at",
+    "cache_policy",
+    "reduction_policy",
+    "redaction_policy",
+    "sha256",
+    "notes",
+}
+
+
+def cached_metadata_for_case(case: CalibrationCase, *, root: Path = ROOT) -> tuple[dict[str, Any], str | None]:
+    if case.metadata_path is None:
+        return {}, None
+    inputs_root = (root / ".dogfood" / "openapi-real-spec-calibration" / "inputs").resolve()
+    source_path = case.source_path.resolve()
+    metadata_path = case.metadata_path.resolve()
+    if inputs_root not in [source_path, *source_path.parents]:
+        return {}, f"cached source_path is outside calibration inputs: {case.source_path}"
+    if inputs_root not in [metadata_path, *metadata_path.parents]:
+        return {}, f"cached metadata_path is outside calibration inputs: {case.metadata_path}"
+    if not case.metadata_path.exists():
+        return {}, f"cached metadata_path does not exist: {case.metadata_path}"
+    try:
+        metadata = _read_json(case.metadata_path)
+    except Exception as exc:
+        return {}, f"cached metadata_path is invalid JSON: {type(exc).__name__}: {exc}"
+    missing = sorted(field for field in REQUIRED_CACHED_METADATA_FIELDS if not metadata.get(field))
+    if missing:
+        return {}, "cached metadata missing required fields: " + ", ".join(missing)
+    if metadata.get("case_id") != case.case_id:
+        return {}, "cached metadata case_id does not match calibration case"
+    digest = "sha256:" + hashlib.sha256(case.source_path.read_bytes()).hexdigest()
+    if metadata.get("sha256") != digest:
+        return {}, "cached metadata sha256 does not match source file"
+    return {
+        "source_name": metadata["source_name"],
+        "source_url": metadata["source_url"],
+        "source_license": metadata["source_license"],
+        "source_retrieved_at": metadata["source_retrieved_at"],
+        "cache_sha256": metadata["sha256"],
+        "cache_policy": metadata["cache_policy"],
+        "reduction_policy": metadata["reduction_policy"],
+        "redaction_policy": metadata["redaction_policy"],
+    }, None
+
+
 def case_output_dir(generated_dir: Path, case_id: str) -> Path:
     slug = _safe_slug(case_id)
     output = (generated_dir / slug).resolve()
@@ -490,6 +568,7 @@ def _skipped_case(case: CalibrationCase, reason: str) -> dict[str, Any]:
         "case_id": case.case_id,
         "purpose": case.purpose,
         "source_path": str(case.source_path),
+        "metadata_path": str(case.metadata_path) if case.metadata_path else None,
         "filters": case.filters.as_dict(),
         "optional": case.optional,
         "notes": case.notes,

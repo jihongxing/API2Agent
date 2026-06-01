@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design Complete
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI cached real-spec corpus expansion implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Local gateway contract harness closeout 后，更深的 hosted Control Plane work 暂停；当前 gate 是 OpenAPI cached real-spec corpus expansion closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout + Phase Review v0
 ```
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout + Phase Review v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1003,11 +1003,16 @@ Go Control Plane Minimum v0
   - normal calibration 保持 offline and deterministic。
   - 下一项 compiler hardening task 是 cached real-spec corpus expansion implementation。
   - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_DESIGN.md`。
+- Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0 已完成：
+  - default calibration manifest 已包含 committed Apache-2.0 Petstore excerpt。
+  - cached source metadata、checksum validation、path containment 和 additive result fields 已实现。
+  - local calibration 现在报告 5 pass、2 warn、0 fail 和 1 skipped。
+  - 详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout + Phase Review v0
 ```
 
 参考：

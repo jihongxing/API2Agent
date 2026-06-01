@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Design Complete
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI cached real-spec corpus expansion implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. Deeper hosted Control Plane work is paused after the local gateway contract harness closeout, and the current gate is OpenAPI cached real-spec corpus expansion closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1003,11 +1003,16 @@ Current Phase 6 progress:
   - normal calibration remains offline and deterministic.
   - the next compiler hardening task is cached real-spec corpus expansion implementation.
   - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_DESIGN.md`.
+- Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0 is complete:
+  - a committed Apache-2.0 Petstore excerpt is included in the default calibration manifest.
+  - cached source metadata, checksum validation, path containment, and additive result fields are implemented.
+  - local calibration now reports 5 pass, 2 warn, 0 fail, and 1 skipped.
+  - see `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0
+Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout + Phase Review v0
 ```
 
 References:

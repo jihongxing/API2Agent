@@ -312,6 +312,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler OpenAPI Generic Example Reduction implemented with name-aware parameter/property examples, secret-safe placeholders, numeric/name fallbacks, calibration generic example metrics, regression coverage, and dogfood reducing default calibration generic first-call params to zero.
 - Agent Capability Compiler OpenAPI Generic Example Reduction closeout completed; deterministic example fallback can close and the next confidence gap is cached real-spec corpus expansion design.
 - Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion design completed with source criteria, license/cache metadata, redaction policy, artifact layout, manifest changes, calibration metrics, thresholds, tests, dogfood, and API-first non-goals.
+- Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion implemented with a committed Apache-2.0 Petstore excerpt, source metadata, checksum validation, path containment checks, additive calibration result fields, regression coverage, and dogfood improving the default calibration run to 5 pass / 2 warn / 0 fail / 1 skipped.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -319,4 +320,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Implementation v0.
+- Agent Capability Compiler OpenAPI Cached Real-Spec Corpus Expansion Closeout + Phase Review v0.

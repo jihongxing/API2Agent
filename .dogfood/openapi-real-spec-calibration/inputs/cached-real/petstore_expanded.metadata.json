@@ -1,0 +1,13 @@
+{
+  "case_id": "cached_petstore_expanded",
+  "purpose": "cached_real_small",
+  "source_name": "OpenAPI Initiative Swagger Petstore expanded example",
+  "source_url": "https://github.com/OAI/OpenAPI-Specification/blob/main/examples/v3.0/petstore-expanded.yaml",
+  "source_license": "Apache-2.0",
+  "source_retrieved_at": "2026-06-01",
+  "cache_policy": "committed offline cache for deterministic compiler calibration",
+  "reduction_policy": "deterministic JSON excerpt preserving pets paths, servers, response schemas, and component references from the public example",
+  "redaction_policy": "removed contact email and externalDocs metadata; no secrets, credentials, user data, or private hostnames are present",
+  "sha256": "sha256:c41e9e47dabacb0837b78e6414bd46d24c7a78b24acdfd1ea7f80803e050b008",
+  "notes": "Cached as a small real public OpenAPI example to exercise non-fixture operation naming, request body, allOf response schema, server URL, and mixed read/write/delete tools."
+}
