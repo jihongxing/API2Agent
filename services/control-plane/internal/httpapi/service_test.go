@@ -1136,6 +1136,102 @@ func TestTrustedGatewayHostedPermissionPolicyMutationMapsPolicyErrors(t *testing
 	}
 }
 
+func TestTrustedGatewayHostedPermissionPolicyMutationEndpointDogfood(t *testing.T) {
+	mutator := newHarnessHostedPolicyMutator()
+	handler := newPostgresHostedPolicyMutationHandlerWithMutator(mutator)
+	handler.AdminIdentityMode = AdminIdentityModeHosted
+	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+	handler.TrustedGatewaySecret = "gateway-secret"
+
+	before := mutator.harness.ResolvePermission("dogfood/idp/admin", registry.PermissionHostedPermissionPolicyPromote, time.Date(2026, 6, 2, 0, 0, 0, 0, time.UTC))
+	if before.Allowed {
+		t.Fatalf("expected promote permission denied before dogfood mutation: %#v", before)
+	}
+
+	begin := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationBeginDraftOperation, registry.PermissionHostedPermissionPolicyDraftWrite, "", map[string]any{
+		"policy_source":        "hosted-permission-policy-store-fixture",
+		"base_policy_version":  "hosted-permission-policy-v1",
+		"draft_policy_version": "hosted-permission-policy-v2",
+	})
+	if begin.Result.DraftID == "" || begin.Result.BasePolicyVersion != "hosted-permission-policy-v1" {
+		t.Fatalf("unexpected begin result: %#v", begin)
+	}
+
+	change := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationApplyChangeOperation, registry.PermissionHostedPermissionPolicyDraftWrite, "", map[string]any{
+		"draft_id": begin.Result.DraftID,
+		"change": map[string]any{
+			"object_type": "permission_grant",
+			"operation":   "upsert",
+			"object_id":   "policy-admin:promote",
+			"patch_summary": map[string]string{
+				"role_id":    "policy-admin",
+				"permission": registry.PermissionHostedPermissionPolicyPromote,
+				"scope_type": "project",
+				"status":     "active",
+			},
+		},
+	})
+	if change.Result.PolicyFingerprint == "" {
+		t.Fatalf("expected draft change fingerprint evidence: %#v", change)
+	}
+
+	review := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationRequestReviewOperation, registry.PermissionHostedPermissionPolicyRequestReview, "", map[string]any{
+		"draft_id": begin.Result.DraftID,
+	})
+	if review.Result.DraftPolicyVersion != "hosted-permission-policy-v2" {
+		t.Fatalf("unexpected review result: %#v", review)
+	}
+
+	promote := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationPromoteOperation, registry.PermissionHostedPermissionPolicyPromote, "dogfood-promote-key", map[string]any{
+		"draft_id":             begin.Result.DraftID,
+		"base_policy_version":  "hosted-permission-policy-v1",
+		"draft_policy_version": "hosted-permission-policy-v2",
+	})
+	if promote.Result.PolicyVersion != "hosted-permission-policy-v2" || promote.Result.PreviousPolicyVersion != "hosted-permission-policy-v1" {
+		t.Fatalf("unexpected promote result: %#v", promote)
+	}
+	afterPromote := mutator.harness.ResolvePermission("dogfood/idp/admin", registry.PermissionHostedPermissionPolicyPromote, time.Date(2026, 6, 2, 0, 1, 0, 0, time.UTC))
+	if !afterPromote.Allowed || afterPromote.PolicyVersion != "hosted-permission-policy-v2" {
+		t.Fatalf("expected promoted permission decision, got %#v", afterPromote)
+	}
+
+	replayResponse := performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", map[string]any{
+		"operation":            registry.HostedPermissionPolicyMutationPromoteOperation,
+		"draft_id":             begin.Result.DraftID,
+		"base_policy_version":  "hosted-permission-policy-v1",
+		"draft_policy_version": "hosted-permission-policy-v2",
+	}, "", trustedGatewayHeaders("gateway-secret", map[string]string{
+		"X-Request-ID":           "req-dogfood-promote-replay",
+		"Idempotency-Key":        "dogfood-promote-key",
+		trustedPermissionsHeader: registry.PermissionHostedPermissionPolicyPromote,
+	}))
+	if replayResponse.Code != http.StatusOK {
+		t.Fatalf("expected replay status 200, got %d: %s", replayResponse.Code, replayResponse.Body.String())
+	}
+	if replayResponse.Header().Get("Idempotency-Replayed") != "true" {
+		t.Fatalf("expected replay header, got %#v", replayResponse.Header())
+	}
+	var replay HostedPermissionPolicyMutationResponse
+	decodeResponse(t, replayResponse, &replay)
+	if !replay.Result.Replayed || replay.Result.PolicyFingerprint != promote.Result.PolicyFingerprint {
+		t.Fatalf("unexpected replay result: first=%#v replay=%#v", promote, replay)
+	}
+
+	rollback := hostedPolicyMutationDogfoodRequest(t, handler, registry.HostedPermissionPolicyMutationRollbackOperation, registry.PermissionHostedPermissionPolicyRollback, "dogfood-rollback-key", map[string]any{
+		"target_policy_version": "hosted-permission-policy-v1",
+	})
+	if rollback.Result.TargetPolicyVersion != "hosted-permission-policy-v1" || rollback.Result.PreviousPolicyVersion != "hosted-permission-policy-v2" {
+		t.Fatalf("unexpected rollback result: %#v", rollback)
+	}
+	afterRollback := mutator.harness.ResolvePermission("dogfood/idp/admin", registry.PermissionHostedPermissionPolicyPromote, time.Date(2026, 6, 2, 0, 2, 0, 0, time.UTC))
+	if afterRollback.Allowed || afterRollback.PolicyVersion != rollback.Result.PolicyVersion {
+		t.Fatalf("expected rollback to remove promote permission, got %#v rollback=%#v", afterRollback, rollback)
+	}
+	if mutator.rawIdempotencyKeyLeaked("dogfood-promote-key") || mutator.rawIdempotencyKeyLeaked("dogfood-rollback-key") {
+		t.Fatalf("raw idempotency key leaked into dogfood audit metadata: %#v", mutator.harness.Audits)
+	}
+}
+
 func TestExportArtifactWritesArtifactDir(t *testing.T) {
 	handler := newTestHandler(t, "")
 	outputDir := filepath.Join(t.TempDir(), "artifact")
@@ -1480,7 +1576,7 @@ func newPostgresProjectPartitionHandlerWithReplacer(replacer *recordingProjectPa
 	}
 }
 
-func newPostgresHostedPolicyMutationHandlerWithMutator(mutator *recordingHostedPolicyMutator) Handler {
+func newPostgresHostedPolicyMutationHandlerWithMutator(mutator HostedPermissionPolicyMutator) Handler {
 	return Handler{
 		RegistryStore:       "postgres",
 		RegistrySource:      "postgres",
@@ -1490,6 +1586,31 @@ func newPostgresHostedPolicyMutationHandlerWithMutator(mutator *recordingHostedP
 			return time.Date(2026, 5, 31, 1, 2, 3, 0, time.UTC)
 		},
 	}
+}
+
+func hostedPolicyMutationDogfoodRequest(t *testing.T, handler Handler, operation string, permission string, idempotencyKey string, fields map[string]any) HostedPermissionPolicyMutationResponse {
+	t.Helper()
+	body := map[string]any{"operation": operation}
+	for key, value := range fields {
+		body[key] = value
+	}
+	headers := trustedGatewayHeaders("gateway-secret", map[string]string{
+		"X-Request-ID":           "req-dogfood-" + strings.ReplaceAll(strings.TrimPrefix(operation, "policy_mutation."), "_", "-"),
+		trustedPermissionsHeader: permission,
+	})
+	if idempotencyKey != "" {
+		headers["Idempotency-Key"] = idempotencyKey
+	}
+	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", body, "", headers)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected dogfood %s status 200, got %d: %s", operation, response.Code, response.Body.String())
+	}
+	var decoded HostedPermissionPolicyMutationResponse
+	decodeResponse(t, response, &decoded)
+	if decoded.RegistryStore != "postgres" || decoded.Result.Operation != operation {
+		t.Fatalf("unexpected dogfood %s response: %#v", operation, decoded)
+	}
+	return decoded
 }
 
 func performRequest(handler Handler, method string, path string, body any, token string) *httptest.ResponseRecorder {
@@ -1694,6 +1815,194 @@ func (m *recordingHostedPolicyMutator) finish() (registry.HostedPermissionPolicy
 		return registry.HostedPermissionPolicyMutationDurableResult{}, m.err
 	}
 	return m.result, nil
+}
+
+type harnessHostedPolicyMutator struct {
+	recordingHostedPolicyMutator
+	harness *registry.HostedPermissionPolicyMutationHarness
+}
+
+func newHarnessHostedPolicyMutator() *harnessHostedPolicyMutator {
+	return &harnessHostedPolicyMutator{
+		harness: registry.NewHostedPermissionPolicyMutationHarness(
+			"policy-mutation-project",
+			"policy-mutation-org",
+			"hosted-permission-policy-store-fixture",
+			"hosted-permission-policy-v1",
+			registry.HostedPermissionPolicySnapshot{
+				Subjects: []registry.HostedPermissionPolicySubject{
+					{ID: "subject-policy-admin", ExternalSubjectRef: "dogfood/idp/admin", Status: "active"},
+				},
+				Memberships: []registry.HostedPermissionPolicyMembership{
+					{SubjectID: "subject-policy-admin", ActorID: "actor-policy-admin", ProjectID: "policy-mutation-project", OrganizationID: "policy-mutation-org", Status: "active"},
+				},
+				Roles: []registry.HostedPermissionPolicyRole{
+					{ID: "policy-admin", Status: "active"},
+				},
+				RoleBindings: []registry.HostedPermissionPolicyRoleBinding{
+					{SubjectID: "subject-policy-admin", ProjectID: "policy-mutation-project", OrganizationID: "policy-mutation-org", RoleID: "policy-admin", Status: "active"},
+				},
+				PermissionGrants: []registry.HostedPermissionPolicyGrant{
+					{RoleID: "policy-admin", Permission: registry.PermissionHostedPermissionPolicyRequestReview, ScopeType: "project", Status: "active"},
+				},
+			},
+		),
+	}
+}
+
+func (m *harnessHostedPolicyMutator) BeginHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationBeginDraftOperation, opts, registry.HostedPermissionPolicyDraftChange{})
+	draft, err := m.harness.BeginDraft(opts.BasePolicyVersion, opts.DraftPolicyVersion)
+	if err != nil {
+		return registry.HostedPermissionPolicyMutationDurableResult{}, err
+	}
+	return registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:          registry.HostedPermissionPolicyMutationBeginDraftOperation,
+		ProjectID:          opts.ProjectID,
+		OrganizationID:     opts.OrganizationID,
+		ActorID:            opts.ActorID,
+		RequestID:          opts.RequestID,
+		PolicySource:       m.harness.PolicySource,
+		DraftID:            draft.ID,
+		BasePolicyVersion:  draft.BaseVersion,
+		DraftPolicyVersion: draft.Version,
+		PolicyVersion:      m.harness.ActiveVersion,
+		PolicyFingerprint:  m.harness.ActiveFingerprint,
+		AdminAuditEventID:  int64(len(m.harness.Audits)),
+	}, nil
+}
+
+func (m *harnessHostedPolicyMutator) ApplyHostedPermissionPolicyDraftChange(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions, change registry.HostedPermissionPolicyDraftChange) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationApplyChangeOperation, opts, change)
+	draft, err := m.draft(opts.DraftID)
+	if err != nil {
+		return registry.HostedPermissionPolicyMutationDurableResult{}, err
+	}
+	switch change.ObjectType {
+	case "permission_grant":
+		draft.UpsertGrant(registry.HostedPermissionPolicyGrant{
+			RoleID:     change.PatchSummary["role_id"],
+			Permission: change.PatchSummary["permission"],
+			ScopeType:  change.PatchSummary["scope_type"],
+			Status:     change.PatchSummary["status"],
+		})
+	default:
+		return registry.HostedPermissionPolicyMutationDurableResult{}, registry.RegistryMutationError{ErrorType: "POLICY_STATE_CONFLICT", Scope: "caller", Underlying: fmt.Errorf("unsupported dogfood change object type %q", change.ObjectType)}
+	}
+	validation, err := m.harness.ValidateDraft(draft.ID)
+	if err != nil {
+		return registry.HostedPermissionPolicyMutationDurableResult{}, err
+	}
+	return registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:          registry.HostedPermissionPolicyMutationApplyChangeOperation,
+		ProjectID:          opts.ProjectID,
+		OrganizationID:     opts.OrganizationID,
+		ActorID:            opts.ActorID,
+		RequestID:          opts.RequestID,
+		PolicySource:       m.harness.PolicySource,
+		DraftID:            draft.ID,
+		BasePolicyVersion:  draft.BaseVersion,
+		DraftPolicyVersion: draft.Version,
+		PolicyFingerprint:  validation.PolicyFingerprint,
+		AdminAuditEventID:  int64(len(m.harness.Audits)),
+	}, nil
+}
+
+func (m *harnessHostedPolicyMutator) RequestHostedPermissionPolicyReview(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationRequestReviewOperation, opts, registry.HostedPermissionPolicyDraftChange{})
+	draft, err := m.draft(opts.DraftID)
+	if err != nil {
+		return registry.HostedPermissionPolicyMutationDurableResult{}, err
+	}
+	if err := m.harness.RequestReview(draft.ID); err != nil {
+		return registry.HostedPermissionPolicyMutationDurableResult{}, err
+	}
+	return registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:          registry.HostedPermissionPolicyMutationRequestReviewOperation,
+		ProjectID:          opts.ProjectID,
+		OrganizationID:     opts.OrganizationID,
+		ActorID:            opts.ActorID,
+		RequestID:          opts.RequestID,
+		PolicySource:       m.harness.PolicySource,
+		DraftID:            draft.ID,
+		BasePolicyVersion:  draft.BaseVersion,
+		DraftPolicyVersion: draft.Version,
+		PolicyFingerprint:  opts.MutationFingerprint,
+		AdminAuditEventID:  int64(len(m.harness.Audits)),
+	}, nil
+}
+
+func (m *harnessHostedPolicyMutator) PromoteHostedPermissionPolicyDraft(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationPromoteOperation, opts, registry.HostedPermissionPolicyDraftChange{})
+	result, err := m.harness.PromoteDraft(opts.DraftID, registry.HostedPermissionPolicyMutationRequest{
+		ProjectID:          opts.ProjectID,
+		OrganizationID:     opts.OrganizationID,
+		ActorID:            opts.ActorID,
+		RequestID:          opts.RequestID,
+		IdempotencyKey:     opts.IdempotencyKey,
+		BasePolicyVersion:  opts.BasePolicyVersion,
+		DraftPolicyVersion: opts.DraftPolicyVersion,
+	})
+	if err != nil {
+		return registry.HostedPermissionPolicyMutationDurableResult{}, err
+	}
+	return hostedPolicyMutationDurableResultFromHarness(result), nil
+}
+
+func (m *harnessHostedPolicyMutator) RollbackHostedPermissionPolicy(ctx context.Context, opts registry.HostedPermissionPolicyMutationOptions) (registry.HostedPermissionPolicyMutationDurableResult, error) {
+	m.record(registry.HostedPermissionPolicyMutationRollbackOperation, opts, registry.HostedPermissionPolicyDraftChange{})
+	result, err := m.harness.RollbackPolicy(opts.TargetPolicyVersion, registry.HostedPermissionPolicyMutationRequest{
+		ProjectID:           opts.ProjectID,
+		OrganizationID:      opts.OrganizationID,
+		ActorID:             opts.ActorID,
+		RequestID:           opts.RequestID,
+		IdempotencyKey:      opts.IdempotencyKey,
+		TargetPolicyVersion: opts.TargetPolicyVersion,
+	})
+	if err != nil {
+		return registry.HostedPermissionPolicyMutationDurableResult{}, err
+	}
+	return hostedPolicyMutationDurableResultFromHarness(result), nil
+}
+
+func (m *harnessHostedPolicyMutator) draft(draftID string) (*registry.HostedPermissionPolicyDraft, error) {
+	draft, ok := m.harness.Drafts[draftID]
+	if !ok {
+		return nil, registry.RegistryMutationError{ErrorType: "POLICY_STATE_CONFLICT", Scope: "caller", Underlying: fmt.Errorf("draft %q was not found", draftID)}
+	}
+	return draft, nil
+}
+
+func (m *harnessHostedPolicyMutator) rawIdempotencyKeyLeaked(raw string) bool {
+	for _, event := range m.harness.Audits {
+		for key, value := range event.Metadata {
+			if strings.Contains(key, raw) || strings.Contains(value, raw) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func hostedPolicyMutationDurableResultFromHarness(result registry.HostedPermissionPolicyMutationResult) registry.HostedPermissionPolicyMutationDurableResult {
+	return registry.HostedPermissionPolicyMutationDurableResult{
+		Operation:                 result.Operation,
+		ProjectID:                 result.ProjectID,
+		OrganizationID:            result.OrganizationID,
+		ActorID:                   result.ActorID,
+		RequestID:                 result.RequestID,
+		Replayed:                  result.Replayed,
+		PolicySource:              result.PolicySource,
+		BasePolicyVersion:         result.BasePolicyVersion,
+		DraftPolicyVersion:        result.DraftPolicyVersion,
+		PreviousPolicyVersion:     result.PreviousPolicyVersion,
+		TargetPolicyVersion:       result.TargetPolicyVersion,
+		PolicyVersion:             result.PolicyVersion,
+		PreviousPolicyFingerprint: result.PreviousPolicyFingerprint,
+		PolicyFingerprint:         result.PolicyFingerprint,
+		IdempotencyRecordID:       result.AuditEventID,
+		AdminAuditEventID:         result.AuditEventID,
+	}
 }
 
 type recordingAdminAuthenticator struct {

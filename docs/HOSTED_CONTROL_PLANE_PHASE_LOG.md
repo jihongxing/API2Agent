@@ -183,3 +183,36 @@ Completion:
 
 - durable private endpoint/service wiring lane: 100%
 - Hosted Control Plane phase estimate: 78%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Private Endpoint Dogfood v0
+
+Commit: pending until this dogfood slice is committed
+
+Changed:
+
+- added an HTTP handler dogfood path that drives trusted gateway begin, draft change, review, promote, promote replay, and rollback
+- used a harness-backed private mutator to verify endpoint wiring, operation-specific permissions, request/idempotency headers, policy lifecycle state, gateway-compatible decisions, and secret-safe audit metadata together
+- kept evidence in tests plus this phase log instead of creating a standalone dogfood report
+
+Validation:
+
+- `go test ./internal/httpapi -run TestTrustedGatewayHostedPermissionPolicyMutationEndpointDogfood -v`
+- `go test ./internal/httpapi -run "TestHostedPermissionPolicyMutation|TestTrustedGatewayHostedPermissionPolicyMutation"`
+- `go test ./internal/registry -run "TestHostedPermissionPolicyMutation|TestPostgresHostedPermissionPolicyMutation"`
+
+Decision:
+
+- private hosted permission policy mutation endpoint dogfood lane is complete for v0
+- trusted gateway private lifecycle proof covers replay and rollback without exposing public policy CRUD
+- Hosted Control Plane completion estimate moves to 79%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Durable Graph Apply Semantics v0`
+
+Completion:
+
+- private endpoint dogfood lane: 100%
+- Hosted Control Plane phase estimate: 79%
