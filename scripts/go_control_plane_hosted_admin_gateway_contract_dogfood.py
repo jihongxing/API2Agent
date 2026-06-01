@@ -13,7 +13,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Protocol
@@ -36,6 +36,11 @@ HOSTED_POLICY_VERSION = "hosted-policy-v1"
 HOSTED_POLICY_FINGERPRINT = "sha256:hosted-permission-store-fixture-v1"
 HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION = "hosted-permission-decision-persistence-v0"
 HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION = "hosted-permission-decision-production-boundary-v0"
+HOSTED_PERMISSION_DECISION_RETENTION_POLICY_VERSION = "hosted-permission-decision-retention-v0"
+HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION = "hosted-permission-decision-history-redaction-v0"
+HOSTED_PERMISSION_DECISION_RETENTION_DAYS = 90
+HOSTED_PERMISSION_DECISION_HISTORY_VISIBILITY = "tenant_visible_candidate"
+HOSTED_PERMISSION_DECISION_SUPPORT_VISIBILITY = "support_only"
 HOSTED_PERMISSION_SENTINEL_POLICY_SOURCE = "hosted-permission-source-unavailable"
 HOSTED_PERMISSION_SENTINEL_POLICY_VERSION = "unavailable"
 HOSTED_PERMISSION_SENTINEL_POLICY_FINGERPRINT = "sha256:unavailable"
@@ -480,7 +485,10 @@ def query_postgres_json(container: str, sql: str) -> list[dict]:
     raw = query_postgres_scalar(container, sql)
     if raw == "":
         return []
-    return json.loads(raw)
+    parsed = json.loads(raw)
+    if parsed is None:
+        return []
+    return parsed
 
 
 def execute_postgres(container: str, sql: str) -> None:
@@ -540,6 +548,12 @@ def normalize_rfc3339_micro(value: str) -> str:
     return datetime.fromisoformat(normalized).astimezone(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
 
 
+def rfc3339_add_days(value: str, days: int) -> str:
+    normalized = value.replace("Z", "+00:00")
+    shifted = datetime.fromisoformat(normalized).astimezone(timezone.utc) + timedelta(days=days)
+    return shifted.isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
 def should_persist_hosted_permission_decision(decision: "GatewayPermissionDecision") -> bool:
     return decision.error_type not in {"PUBLIC_AUTH_REQUIRED", "PUBLIC_AUTH_INVALID"}
 
@@ -559,6 +573,11 @@ def canonical_permission_decision_evidence(decision: "GatewayPermissionDecision"
             "production_boundary_version",
             "persistence_timeout_ms",
             "persistence_retry_budget",
+            "retention_policy_version",
+            "retention_class",
+            "retain_until",
+            "history_visibility",
+            "redaction_policy_version",
         )
         if key in metadata and metadata[key] not in ("", None)
     }
@@ -1169,12 +1188,23 @@ INSERT INTO hosted_permission_decisions (
             "production_boundary_version": HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION,
             "persistence_timeout_ms": int(self.write_timeout_seconds * 1000),
             "persistence_retry_budget": self.max_transient_retries,
+            "retention_policy_version": HOSTED_PERMISSION_DECISION_RETENTION_POLICY_VERSION,
+            "retention_class": "security",
+            "retain_until": rfc3339_add_days(decision.resolved_at, HOSTED_PERMISSION_DECISION_RETENTION_DAYS),
+            "history_visibility": self._history_visibility(decision),
+            "redaction_policy_version": HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION,
+            "legal_hold": False,
             "request_id": headers.get("X-Request-ID", ""),
             "method": method,
             "path": path,
             "gateway_key_id": gateway_key_id,
         }
         return {key: value for key, value in metadata.items() if value not in ("", None)}
+
+    def _history_visibility(self, decision: GatewayPermissionDecision) -> str:
+        if decision.error_type == PERMISSION_DECISION_INTEGRITY_CONFLICT:
+            return HOSTED_PERMISSION_DECISION_SUPPORT_VISIBILITY
+        return HOSTED_PERMISSION_DECISION_HISTORY_VISIBILITY
 
     def _existing_evidence(self, decision_id: str) -> dict[str, Any] | None:
         rows = query_postgres_json(
@@ -1651,6 +1681,206 @@ def start_gateway_harness(port: int, control_plane_base_url: str) -> tuple[Gatew
 
 def count_audit_rows(container: str) -> int:
     return int(query_postgres_scalar(container, "SELECT count(*) FROM admin_audit_events;"))
+
+
+def hosted_permission_decision_history(
+    container: str,
+    *,
+    project_id: str,
+    start: str,
+    end: str,
+    subject_id: str = "",
+    required_permission: str = "",
+    result_family: str = "",
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    if not project_id:
+        raise ValueError("project_id is required for hosted permission decision history")
+    if limit <= 0 or limit > 100:
+        raise ValueError("history query limit must be between 1 and 100")
+    filters = [
+        f"project_id = {sql_literal(project_id)}",
+        f"resolved_at >= {sql_literal(start)}::timestamptz",
+        f"resolved_at <= {sql_literal(end)}::timestamptz",
+    ]
+    if subject_id:
+        filters.append(f"subject_id = {sql_literal(subject_id)}")
+    if required_permission:
+        filters.append(f"required_permission = {sql_literal(required_permission)}")
+    if result_family:
+        if result_family == "allowed":
+            filters.append("allowed = true")
+        elif result_family == "denied":
+            filters.append("allowed = false AND COALESCE(metadata->>'error_type', '') = 'PUBLIC_AUTHZ_DENIED'")
+        elif result_family == "source-unavailable":
+            filters.append("COALESCE(metadata->>'error_type', '') = 'PERMISSION_SOURCE_UNAVAILABLE'")
+        elif result_family == "integrity-conflict":
+            filters.append("COALESCE(metadata->>'error_type', '') = 'PERMISSION_DECISION_INTEGRITY_CONFLICT'")
+        else:
+            raise ValueError(f"unsupported result_family {result_family!r}")
+    rows = query_postgres_json(
+        container,
+        f"""
+SELECT json_agg(row_to_json(t) ORDER BY resolved_at DESC, id DESC)
+FROM (
+  SELECT
+    id,
+    subject_id,
+    actor_id,
+    project_id,
+    organization_id,
+    required_permission,
+    allowed,
+    deny_reason,
+    policy_version,
+    policy_fingerprint,
+    evidence_fingerprint,
+    resolved_at,
+    metadata->>'decision_status' AS decision_status,
+    metadata->>'error_type' AS error_type,
+    metadata->>'request_id' AS request_id,
+    metadata->>'method' AS method,
+    metadata->>'path' AS path,
+    metadata->>'retention_policy_version' AS retention_policy_version,
+    metadata->>'retention_class' AS retention_class,
+    metadata->>'retain_until' AS retain_until,
+    metadata->>'history_visibility' AS history_visibility,
+    metadata->>'redaction_policy_version' AS redaction_policy_version,
+    COALESCE((metadata->>'legal_hold')::boolean, false) AS legal_hold
+  FROM hosted_permission_decisions
+  WHERE {" AND ".join(filters)}
+  ORDER BY resolved_at DESC, id DESC
+  LIMIT {int(limit)}
+) AS t;
+""",
+    )
+    return [redact_hosted_permission_decision_history_row(row) for row in rows]
+
+
+def redact_hosted_permission_decision_history_row(row: dict[str, Any]) -> dict[str, Any]:
+    result_family = "allowed"
+    if not row.get("allowed"):
+        error_type = str(row.get("error_type") or "")
+        if error_type == "PERMISSION_SOURCE_UNAVAILABLE":
+            result_family = "source-unavailable"
+        elif error_type == "PERMISSION_DECISION_INTEGRITY_CONFLICT":
+            result_family = "integrity-conflict"
+        else:
+            result_family = "denied"
+    redacted = {
+        "decision_id": row["id"],
+        "project_id": row["project_id"],
+        "subject_ref": safe_history_ref(str(row.get("subject_id", ""))),
+        "actor_ref": safe_history_ref(str(row.get("actor_id", ""))),
+        "organization_id": row["organization_id"],
+        "required_permission": row["required_permission"],
+        "result_family": result_family,
+        "decision_status": str(row.get("decision_status") or ""),
+        "deny_reason": row.get("deny_reason") or "",
+        "policy_version": row["policy_version"],
+        "policy_fingerprint": row["policy_fingerprint"],
+        "evidence_fingerprint": row["evidence_fingerprint"],
+        "resolved_at": str(row["resolved_at"]),
+        "request_id": row.get("request_id") or "",
+        "method": row.get("method") or "",
+        "path": row.get("path") or "",
+        "retention_policy_version": row.get("retention_policy_version") or "",
+        "retention_class": row.get("retention_class") or "",
+        "retain_until": row.get("retain_until") or "",
+        "history_visibility": row.get("history_visibility") or "",
+        "redaction_policy_version": row.get("redaction_policy_version") or "",
+        "legal_hold": bool(row.get("legal_hold")),
+    }
+    rendered = json.dumps(redacted, sort_keys=True)
+    if contains_secret_like_material(rendered):
+        raise RuntimeError("redacted hosted permission decision history contains secret-like material")
+    return redacted
+
+
+def safe_history_ref(value: str) -> str:
+    if not value:
+        return ""
+    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+    return f"sha256:{digest}"
+
+
+def audit_hosted_permission_decision_history_query(
+    container: str,
+    *,
+    operator_id: str,
+    project_id: str,
+    organization_id: str,
+    request_id: str,
+    access_reason: str,
+    ticket_id: str,
+    start: str,
+    end: str,
+    result_count: int,
+) -> None:
+    metadata = {
+        "organization_id": organization_id,
+        "project_id": project_id,
+        "access_reason": access_reason,
+        "ticket_id": ticket_id,
+        "query_start": start,
+        "query_end": end,
+        "result_count_bucket": result_count_bucket(result_count),
+        "redaction_policy_version": HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION,
+        "history_visibility": HOSTED_PERMISSION_DECISION_SUPPORT_VISIBILITY,
+    }
+    metadata_json = json.dumps(metadata, sort_keys=True)
+    if contains_secret_like_material(metadata_json):
+        raise RuntimeError("hosted permission decision history audit metadata contains secret-like material")
+    execute_postgres(
+        container,
+        f"""
+INSERT INTO admin_audit_events (actor_id, action, resource_type, resource_id, request_id, outcome, error_type, metadata)
+VALUES (
+  {sql_literal(operator_id)},
+  'hosted_permission_decision_history.query',
+  'hosted_permission_decisions',
+  {sql_literal(project_id)},
+  {sql_literal(request_id)},
+  'success',
+  '',
+  {sql_literal(metadata_json)}::jsonb
+);
+""",
+    )
+
+
+def result_count_bucket(count: int) -> str:
+    if count == 0:
+        return "0"
+    if count <= 10:
+        return "1-10"
+    if count <= 100:
+        return "11-100"
+    return "100+"
+
+
+def cleanup_candidate_decision_ids(container: str, *, project_id: str, cutoff: str, limit: int = 100) -> list[str]:
+    if not project_id:
+        raise ValueError("project_id is required for cleanup candidate selection")
+    if limit <= 0 or limit > 1000:
+        raise ValueError("cleanup candidate limit must be between 1 and 1000")
+    rows = query_postgres_json(
+        container,
+        f"""
+SELECT json_agg(row_to_json(t) ORDER BY resolved_at, id)
+FROM (
+  SELECT id
+    , resolved_at
+  FROM hosted_permission_decisions
+  WHERE project_id = {sql_literal(project_id)}
+    AND metadata->>'retain_until' < {sql_literal(cutoff)}
+    AND COALESCE((metadata->>'legal_hold')::boolean, false) = false
+  ORDER BY resolved_at, id
+  LIMIT {int(limit)}
+) AS t;
+""",
+    )
+    return [str(row["id"]) for row in rows]
 
 
 def assert_no_secret_or_public_token_leaks(report: dict) -> None:
@@ -2159,6 +2389,12 @@ FROM (
     metadata->>'production_boundary_version' AS production_boundary_version,
     metadata->>'persistence_timeout_ms' AS persistence_timeout_ms,
     metadata->>'persistence_retry_budget' AS persistence_retry_budget,
+    metadata->>'retention_policy_version' AS retention_policy_version,
+    metadata->>'retention_class' AS retention_class,
+    metadata->>'retain_until' AS retain_until,
+    metadata->>'history_visibility' AS history_visibility,
+    metadata->>'redaction_policy_version' AS redaction_policy_version,
+    COALESCE((metadata->>'legal_hold')::boolean, false) AS legal_hold,
     row_to_json(hosted_permission_decisions)::text LIKE '%{GATEWAY_SECRET}%' AS row_contains_gateway_secret,
     row_to_json(hosted_permission_decisions)::text LIKE '%{PUBLIC_ADMIN_TOKEN}%'
       OR row_to_json(hosted_permission_decisions)::text LIKE '%{PUBLIC_READONLY_TOKEN}%'
@@ -2190,6 +2426,18 @@ FROM (
                 raise RuntimeError(f"expected evidence fingerprint, got {decision_row}")
             if decision_row["persistence_timeout_ms"] != "2000" or decision_row["persistence_retry_budget"] != "2":
                 raise RuntimeError(f"expected bounded persistence configuration evidence, got {decision_row}")
+            if decision_row["retention_policy_version"] != HOSTED_PERMISSION_DECISION_RETENTION_POLICY_VERSION:
+                raise RuntimeError(f"expected retention policy metadata, got {decision_row}")
+            if decision_row["retention_class"] != "security":
+                raise RuntimeError(f"expected security retention class, got {decision_row}")
+            if decision_row["history_visibility"] != HOSTED_PERMISSION_DECISION_HISTORY_VISIBILITY:
+                raise RuntimeError(f"expected tenant-visible history candidate metadata, got {decision_row}")
+            if decision_row["redaction_policy_version"] != HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION:
+                raise RuntimeError(f"expected redaction policy metadata, got {decision_row}")
+            if not decision_row["retain_until"]:
+                raise RuntimeError(f"expected retain_until metadata, got {decision_row}")
+            if decision_row["legal_hold"]:
+                raise RuntimeError(f"new persisted decision rows should not be on legal hold by default, got {decision_row}")
             if (
                 decision_row["row_contains_gateway_secret"]
                 or decision_row["row_contains_public_token"]
@@ -2394,6 +2642,133 @@ FROM (
             if idempotency_row["row_contains_gateway_secret"] or idempotency_row["row_contains_public_token"]:
                 raise RuntimeError(f"secret or public token leaked into idempotency evidence: {idempotency_row}")
 
+        history_start = "2026-01-01T00:00:00.000000Z"
+        history_end = "2026-12-31T23:59:59.000000Z"
+        decision_history_rows = hosted_permission_decision_history(
+            container,
+            project_id=HARNESS_PROJECT_ID,
+            start=history_start,
+            end=history_end,
+            limit=50,
+        )
+        if len(decision_history_rows) != expected_counts["hosted_permission_decisions"]:
+            raise RuntimeError(f"unexpected decision history row count: {decision_history_rows}")
+        if any(row["project_id"] != HARNESS_PROJECT_ID for row in decision_history_rows):
+            raise RuntimeError(f"decision history query crossed project boundary: {decision_history_rows}")
+        if any(not row["subject_ref"].startswith("sha256:") for row in decision_history_rows):
+            raise RuntimeError(f"decision history rows must redact subject references: {decision_history_rows}")
+        if any(not row["actor_ref"].startswith("sha256:") for row in decision_history_rows):
+            raise RuntimeError(f"decision history rows must redact actor references: {decision_history_rows}")
+        if any("token_id" in row for row in decision_history_rows):
+            raise RuntimeError(f"decision history rows must not expose token ids: {decision_history_rows}")
+        readonly_history_rows = hosted_permission_decision_history(
+            container,
+            project_id=HARNESS_PROJECT_ID,
+            start=history_start,
+            end=history_end,
+            result_family="denied",
+            required_permission=PERMISSION_REGISTRY_IMPORT_REPLACE,
+            limit=10,
+        )
+        if not readonly_history_rows:
+            raise RuntimeError("expected denied import decision history rows")
+        cross_project_history_rows = hosted_permission_decision_history(
+            container,
+            project_id="gateway-harness-other-project",
+            start=history_start,
+            end=history_end,
+            limit=10,
+        )
+        if cross_project_history_rows:
+            raise RuntimeError(f"cross-project decision history query must be isolated: {cross_project_history_rows}")
+        audit_rows_before_history_query = count_audit_rows(container)
+        audit_hosted_permission_decision_history_query(
+            container,
+            operator_id="dogfood-support-operator",
+            project_id=HARNESS_PROJECT_ID,
+            organization_id=HARNESS_ORGANIZATION_ID,
+            request_id="dogfood-gateway-contract-history-query",
+            access_reason="dogfood_support_case",
+            ticket_id="dogfood-case-1",
+            start=history_start,
+            end=history_end,
+            result_count=len(decision_history_rows),
+        )
+        audit_rows_after_history_query = count_audit_rows(container)
+        if audit_rows_after_history_query != audit_rows_before_history_query + 1:
+            raise RuntimeError("support/operator history query must emit an audit row")
+        history_audit_rows = query_postgres_json(
+            container,
+            f"""
+SELECT json_agg(row_to_json(t) ORDER BY id)
+FROM (
+  SELECT
+    id,
+    actor_id,
+    action,
+    resource_type,
+    resource_id,
+    request_id,
+    outcome,
+    metadata->>'project_id' AS project_id,
+    metadata->>'organization_id' AS organization_id,
+    metadata->>'access_reason' AS access_reason,
+    metadata->>'ticket_id' AS ticket_id,
+    metadata->>'result_count_bucket' AS result_count_bucket,
+    metadata->>'redaction_policy_version' AS redaction_policy_version,
+    metadata::text LIKE '%{GATEWAY_SECRET}%' AS metadata_contains_gateway_secret,
+    metadata::text LIKE '%{PUBLIC_ADMIN_TOKEN}%' OR metadata::text LIKE '%{PUBLIC_READONLY_TOKEN}%' AS metadata_contains_public_token
+  FROM admin_audit_events
+  WHERE action = 'hosted_permission_decision_history.query'
+) AS t;
+""",
+        )
+        if len(history_audit_rows) != 1:
+            raise RuntimeError(f"expected one history audit row, got {history_audit_rows}")
+        history_audit_row = history_audit_rows[0]
+        if history_audit_row["project_id"] != HARNESS_PROJECT_ID or history_audit_row["organization_id"] != HARNESS_ORGANIZATION_ID:
+            raise RuntimeError(f"history audit must preserve tenant/project scope: {history_audit_row}")
+        if history_audit_row["redaction_policy_version"] != HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION:
+            raise RuntimeError(f"history audit must record redaction policy: {history_audit_row}")
+        if history_audit_row["metadata_contains_gateway_secret"] or history_audit_row["metadata_contains_public_token"]:
+            raise RuntimeError(f"history audit metadata leaked secret material: {history_audit_row}")
+        cleanup_probe_decision_id = str(decision_history_rows[-1]["decision_id"])
+        execute_postgres(
+            container,
+            f"""
+UPDATE hosted_permission_decisions
+SET metadata = jsonb_set(
+  jsonb_set(metadata, '{{retain_until}}', to_jsonb('2026-01-01T00:00:00.000000Z'::text), true),
+  '{{legal_hold}}',
+  'true'::jsonb,
+  true
+)
+WHERE id = {sql_literal(cleanup_probe_decision_id)};
+""",
+        )
+        cleanup_candidates_with_hold = cleanup_candidate_decision_ids(
+            container,
+            project_id=HARNESS_PROJECT_ID,
+            cutoff="2026-06-02T00:00:00.000000Z",
+        )
+        if cleanup_probe_decision_id in cleanup_candidates_with_hold:
+            raise RuntimeError("cleanup candidate selection must ignore legal-hold rows")
+        execute_postgres(
+            container,
+            f"""
+UPDATE hosted_permission_decisions
+SET metadata = jsonb_set(metadata, '{{legal_hold}}', 'false'::jsonb, true)
+WHERE id = {sql_literal(cleanup_probe_decision_id)};
+""",
+        )
+        cleanup_candidates_without_hold = cleanup_candidate_decision_ids(
+            container,
+            project_id=HARNESS_PROJECT_ID,
+            cutoff="2026-06-02T00:00:00.000000Z",
+        )
+        if cleanup_probe_decision_id not in cleanup_candidates_without_hold:
+            raise RuntimeError("cleanup candidate selection must include expired rows without legal hold")
+
         report.update(
             {
                 "status": "passed",
@@ -2479,6 +2854,18 @@ FROM (
                 "integrity_conflict_error_type": integrity_conflict_response.get("error", {}).get("error_type"),
                 "audit_rows_after_integrity_conflict": audit_rows_after_integrity_conflict,
                 "hosted_permission_decision_rows_after_integrity_conflict": hosted_permission_decision_rows_after_integrity_conflict,
+                "decision_history_rows_count": len(decision_history_rows),
+                "decision_history_denied_import_rows_count": len(readonly_history_rows),
+                "decision_history_cross_project_rows_count": len(cross_project_history_rows),
+                "decision_history_redaction_policy_version": HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION,
+                "decision_history_retention_policy_version": HOSTED_PERMISSION_DECISION_RETENTION_POLICY_VERSION,
+                "decision_history_support_audit_rows_before": audit_rows_before_history_query,
+                "decision_history_support_audit_rows_after": audit_rows_after_history_query,
+                "decision_history_support_audit_rows": history_audit_rows,
+                "cleanup_probe_decision_id": cleanup_probe_decision_id,
+                "cleanup_candidates_with_legal_hold": cleanup_candidates_with_hold,
+                "cleanup_candidates_without_legal_hold": cleanup_candidates_without_hold,
+                "decision_history_rows": decision_history_rows,
                 "permission_decisions": [
                     {
                         "allowed": decision.allowed,

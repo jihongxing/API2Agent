@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Design Complete
+Go Control Plane Hosted Permission Decision Retention Boundary Implementation Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision retention boundary implementation。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision retention boundary live dogfood and closeout。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1203,11 +1203,21 @@ Go Control Plane Minimum v0
   - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
   - 下一项 hosted-readiness task 是 hosted permission decision retention boundary implementation。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md`。
+- Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0 已完成：
+  - hosted permission decision rows 现在会在 secret-safe JSON metadata 中携带 retention/history metadata。
+  - metadata-backed project/retain-until 和 project/visibility/time indexes 已存在。
+  - local/private tenant/project scoped decision-history query 返回 redacted rows，并对 subject/actor refs 做 hash。
+  - support/operator history query 会写 audit evidence。
+  - cleanup candidate selection 会排除 legal-hold rows，并包含无 legal hold 的 expired rows。
+  - live dogfood 已通过，证明 16 条 history rows、cross-project history count 0、support audit count 6 -> 7 和 legal-hold cleanup proof。
+  - customer-facing decision history endpoints、public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
+  - 下一项 hosted-readiness task 是 hosted permission decision retention boundary live dogfood and closeout。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_IMPLEMENTATION_REPORT.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
 ```
 
 参考：
@@ -1260,6 +1270,7 @@ Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

@@ -275,6 +275,12 @@ def test_hosted_permission_decision_persistence_writes_secret_safe_sql() -> None
         "production_boundary_version": harness.HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION,
         "persistence_timeout_ms": 2000,
         "persistence_retry_budget": 2,
+        "retention_policy_version": harness.HOSTED_PERMISSION_DECISION_RETENTION_POLICY_VERSION,
+        "retention_class": "security",
+        "retain_until": harness.rfc3339_add_days(decision.resolved_at, harness.HOSTED_PERMISSION_DECISION_RETENTION_DAYS),
+        "history_visibility": harness.HOSTED_PERMISSION_DECISION_HISTORY_VISIBILITY,
+        "redaction_policy_version": harness.HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION,
+        "legal_hold": False,
         "request_id": "req-persist-1",
         "method": "POST",
         "path": "/v1/admin/registry/validate",
@@ -287,6 +293,10 @@ def test_hosted_permission_decision_persistence_writes_secret_safe_sql() -> None
     assert '"request_id": "req-persist-1"' in sql
     assert harness.HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION in sql
     assert harness.HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION in sql
+    assert harness.HOSTED_PERMISSION_DECISION_RETENTION_POLICY_VERSION in sql
+    assert harness.HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION in sql
+    assert '"history_visibility": "tenant_visible_candidate"' in sql
+    assert '"retention_class": "security"' in sql
     assert harness.HOSTED_POLICY_FINGERPRINT in sql
     assert harness.PUBLIC_ADMIN_TOKEN not in sql
     assert harness.GATEWAY_SECRET not in sql
@@ -318,6 +328,12 @@ def test_hosted_permission_decision_persistence_accepts_equivalent_duplicate() -
             "production_boundary_version": harness.HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION,
             "persistence_timeout_ms": 2000,
             "persistence_retry_budget": 2,
+            "retention_policy_version": harness.HOSTED_PERMISSION_DECISION_RETENTION_POLICY_VERSION,
+            "retention_class": "security",
+            "retain_until": harness.rfc3339_add_days(decision.resolved_at, harness.HOSTED_PERMISSION_DECISION_RETENTION_DAYS),
+            "history_visibility": harness.HOSTED_PERMISSION_DECISION_HISTORY_VISIBILITY,
+            "redaction_policy_version": harness.HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION,
+            "legal_hold": False,
             "request_id": "req-duplicate",
             "method": "POST",
             "path": "/v1/admin/registry/validate",
@@ -387,6 +403,12 @@ def test_hosted_permission_decision_persistence_rejects_conflicting_duplicate() 
             "production_boundary_version": harness.HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION,
             "persistence_timeout_ms": 2000,
             "persistence_retry_budget": 2,
+            "retention_policy_version": harness.HOSTED_PERMISSION_DECISION_RETENTION_POLICY_VERSION,
+            "retention_class": "security",
+            "retain_until": harness.rfc3339_add_days(decision.resolved_at, harness.HOSTED_PERMISSION_DECISION_RETENTION_DAYS),
+            "history_visibility": harness.HOSTED_PERMISSION_DECISION_HISTORY_VISIBILITY,
+            "redaction_policy_version": harness.HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION,
+            "legal_hold": False,
             "method": "POST",
             "path": "/v1/admin/registry/validate",
             "gateway_key_id": harness.GATEWAY_KEY_ID,
@@ -624,6 +646,108 @@ def test_hosted_permission_decision_persistence_skips_auth_failures_only() -> No
     assert not harness.should_persist_hosted_permission_decision(missing)
     assert not harness.should_persist_hosted_permission_decision(invalid)
     assert harness.should_persist_hosted_permission_decision(unavailable_after_auth)
+
+
+def test_hosted_permission_decision_history_redacts_sensitive_fields() -> None:
+    harness = load_harness_module()
+    row = {
+        "id": "decision-history-1",
+        "subject_id": harness.HARNESS_PRINCIPAL_ID,
+        "actor_id": harness.HARNESS_ACTOR_ID,
+        "project_id": harness.HARNESS_PROJECT_ID,
+        "organization_id": harness.HARNESS_ORGANIZATION_ID,
+        "required_permission": harness.PERMISSION_REGISTRY_VALIDATE,
+        "allowed": True,
+        "deny_reason": "",
+        "policy_version": harness.HOSTED_POLICY_VERSION,
+        "policy_fingerprint": harness.HOSTED_POLICY_FINGERPRINT,
+        "evidence_fingerprint": "sha256:history",
+        "resolved_at": "2026-06-02T00:00:00.000000Z",
+        "decision_status": "200",
+        "error_type": "",
+        "request_id": "req-history",
+        "method": "POST",
+        "path": "/v1/admin/registry/validate",
+        "retention_policy_version": harness.HOSTED_PERMISSION_DECISION_RETENTION_POLICY_VERSION,
+        "retention_class": "security",
+        "retain_until": "2026-08-31T00:00:00.000000Z",
+        "history_visibility": harness.HOSTED_PERMISSION_DECISION_HISTORY_VISIBILITY,
+        "redaction_policy_version": harness.HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION,
+        "legal_hold": False,
+    }
+
+    redacted = harness.redact_hosted_permission_decision_history_row(row)
+
+    assert redacted["subject_ref"].startswith("sha256:")
+    assert redacted["actor_ref"].startswith("sha256:")
+    assert harness.HARNESS_PRINCIPAL_ID not in redacted.values()
+    assert harness.HARNESS_ACTOR_ID not in redacted.values()
+    assert "token_id" not in redacted
+    assert redacted["result_family"] == "allowed"
+    assert redacted["history_visibility"] == harness.HOSTED_PERMISSION_DECISION_HISTORY_VISIBILITY
+
+
+def test_hosted_permission_decision_history_requires_project_scope_and_bounds() -> None:
+    harness = load_harness_module()
+
+    try:
+        harness.hosted_permission_decision_history(
+            "container",
+            project_id="",
+            start="2026-06-02T00:00:00.000000Z",
+            end="2026-06-03T00:00:00.000000Z",
+        )
+    except ValueError as exc:
+        assert "project_id is required" in str(exc)
+    else:
+        raise AssertionError("expected project scope requirement")
+
+    try:
+        harness.hosted_permission_decision_history(
+            "container",
+            project_id=harness.HARNESS_PROJECT_ID,
+            start="2026-06-02T00:00:00.000000Z",
+            end="2026-06-03T00:00:00.000000Z",
+            limit=101,
+        )
+    except ValueError as exc:
+        assert "between 1 and 100" in str(exc)
+    else:
+        raise AssertionError("expected bounded limit requirement")
+
+
+def test_hosted_permission_decision_history_audit_is_secret_safe() -> None:
+    harness = load_harness_module()
+    captured_sql = []
+    original_execute_postgres = harness.execute_postgres
+
+    def fake_execute_postgres(container, sql):
+        captured_sql.append(sql)
+
+    harness.execute_postgres = fake_execute_postgres
+    try:
+        harness.audit_hosted_permission_decision_history_query(
+            "container",
+            operator_id="support-operator",
+            project_id=harness.HARNESS_PROJECT_ID,
+            organization_id=harness.HARNESS_ORGANIZATION_ID,
+            request_id="req-history-audit",
+            access_reason="support_case",
+            ticket_id="case-123",
+            start="2026-06-02T00:00:00.000000Z",
+            end="2026-06-03T00:00:00.000000Z",
+            result_count=7,
+        )
+    finally:
+        harness.execute_postgres = original_execute_postgres
+
+    assert captured_sql
+    sql = captured_sql[0]
+    assert "hosted_permission_decision_history.query" in sql
+    assert harness.HOSTED_PERMISSION_DECISION_REDACTION_POLICY_VERSION in sql
+    assert "1-10" in sql
+    assert harness.PUBLIC_ADMIN_TOKEN not in sql
+    assert harness.GATEWAY_SECRET not in sql
 
 
 def test_endpoint_permission_map_covers_hosted_admin_gateway_routes() -> None:

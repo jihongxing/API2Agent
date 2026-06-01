@@ -337,3 +337,9 @@ CREATE INDEX hosted_permission_decisions_policy_version
 
 CREATE INDEX hosted_permission_decisions_policy_fingerprint
   ON hosted_permission_decisions (policy_fingerprint);
+
+CREATE INDEX hosted_permission_decisions_project_retain_until
+  ON hosted_permission_decisions (project_id, (metadata->>'retain_until'));
+
+CREATE INDEX hosted_permission_decisions_project_visibility_time
+  ON hosted_permission_decisions (project_id, (metadata->>'history_visibility'), resolved_at DESC);

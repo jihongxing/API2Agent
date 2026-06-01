@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Design Complete
+Go Control Plane Hosted Permission Decision Retention Boundary Implementation Complete
 ```
 
 战略判断：
@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission decision retention boundary design 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout、decision persistence production boundary design、decision persistence production boundary implementation、decision persistence production boundary closeout、完整 decision persistence stage closeout 和 decision retention/customer-history boundary design 已完成。
+状态：hosted permission decision retention boundary implementation 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout、decision persistence production boundary design、decision persistence production boundary implementation、decision persistence production boundary closeout、完整 decision persistence stage closeout、decision retention/customer-history boundary design 和 decision retention boundary implementation 已完成。
 
 目标：
 
@@ -1041,31 +1041,31 @@ Go Control Plane Hosted Permission Decision Persistence Production Boundary Impl
 Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
 Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
 Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
+Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
 ```
 
-由于 retention/customer-history boundary 已设计完成，下一项 immediate project task 是先本地证明 retention metadata、tenant/project scoped query、redaction、support/operator audit 和 cleanup candidate selection，再考虑任何 customer-facing history endpoint。
+由于 implementation 和 live dogfood artifact 已在本地存在，下一项 immediate project task 是正式接受或拒绝 retention boundary local v0 proof，然后再打开下一项 hosted-readiness gap。
 
 范围：
 
-1. 为 hosted permission decision rows 添加或标准化 retention metadata。
-2. 添加 local/private tenant/project scoped decision-history query helper。
-3. 对 query output 应用 redaction。
-4. 为 support/operator query 添加 audit evidence。
-5. 证明 cleanup candidate selection，不暴露 customer-facing history endpoints。
+1. Review retention-boundary implementation 和 live dogfood artifact。
+2. 判断 local v0 retention/history boundary proof 是否接受。
+3. 记录 customer-facing history、export/delete、legal hold、policy mutation、identity lifecycle 和 production deployment 的 remaining risks。
+4. 选择下一项窄 hosted-readiness task。
+5. 保留 Hosted Control Plane completion estimate。
 6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow、provider onboarding、OAuth/OIDC、public CRUD、policy write APIs、Data Plane mutable reads 或 production gateway deployment。
 
 退出标准：
 
-- 新 local decision rows 带 retention/history metadata。
-- tenant/project scoped history queries 已 redacted 且隔离。
-- support/operator history queries 写 audit evidence。
-- cleanup candidate selection 遵守 retention 和 legal-hold metadata。
+- live dogfood artifact 被接受或拒绝。
+- closeout decision 记录 retention boundary local v0 是否完成。
+- 下一项 hosted-readiness task 从 remaining risks 中选择。
 - OAuth/OIDC、public CRUD、production deployment、vault、billing、marketplace、workflow、provider onboarding、policy write APIs、Data Plane mutable reads 和 automatic propagation 保持 deferred。
 
 参考：
@@ -1120,6 +1120,7 @@ Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
