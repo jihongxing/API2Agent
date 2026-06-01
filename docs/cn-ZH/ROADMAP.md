@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Implementation Complete
+Go Control Plane Hosted Permission Decision Retention Boundary Closeout Complete
 ```
 
 战略判断：
@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission decision retention boundary implementation 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout、decision persistence production boundary design、decision persistence production boundary implementation、decision persistence production boundary closeout、完整 decision persistence stage closeout、decision retention/customer-history boundary design 和 decision retention boundary implementation 已完成。
+状态：hosted permission decision retention boundary closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout、decision persistence production boundary design、decision persistence production boundary implementation、decision persistence production boundary closeout、完整 decision persistence stage closeout、decision retention/customer-history boundary design、decision retention boundary implementation 和 decision retention boundary closeout 已完成。
 
 目标：
 
@@ -1042,30 +1042,31 @@ Go Control Plane Hosted Permission Decision Persistence Production Boundary Live
 Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
 Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
 Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 ```
 
-由于 implementation 和 live dogfood artifact 已在本地存在，下一项 immediate project task 是正式接受或拒绝 retention boundary local v0 proof，然后再打开下一项 hosted-readiness gap。
+由于 decision read、persistence、production-shaped persistence 和 retention/history boundary proof 已完成 local v0，而 hosted roles、grants、memberships 和 policy versions 仍是 seed 的，下一项 immediate project task 是设计 policy mutation boundary。
 
 范围：
 
-1. Review retention-boundary implementation 和 live dogfood artifact。
-2. 判断 local v0 retention/history boundary proof 是否接受。
-3. 记录 customer-facing history、export/delete、legal hold、policy mutation、identity lifecycle 和 production deployment 的 remaining risks。
-4. 选择下一项窄 hosted-readiness task。
-5. 保留 Hosted Control Plane completion estimate。
+1. 设计 hosted roles、grants、memberships 和 policy versions 的 mutation boundary。
+2. 定义 review/promotion、rollback、idempotency、audit 和 conflict semantics。
+3. 定义 tenant/project authorization requirements，不启动 public CRUD 或 OAuth/OIDC。
+4. 定义后续 local/private implementation 的 tests 和 dogfood evidence。
+5. 将 customer-facing decision history、export/delete、legal-hold API、public identity 和 production deployment 保持 deferred。
 6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow、provider onboarding、OAuth/OIDC、public CRUD、policy write APIs、Data Plane mutable reads 或 production gateway deployment。
 
 退出标准：
 
-- live dogfood artifact 被接受或拒绝。
-- closeout decision 记录 retention boundary local v0 是否完成。
-- 下一项 hosted-readiness task 从 remaining risks 中选择。
+- hosted policy mutation boundary 已文档化。
+- review/promotion、rollback、audit、idempotency 和 conflict expectations 已明确。
+- implementation 和 dogfood evidence requirements 已定义。
 - OAuth/OIDC、public CRUD、production deployment、vault、billing、marketplace、workflow、provider onboarding、policy write APIs、Data Plane mutable reads 和 automatic propagation 保持 deferred。
 
 参考：
@@ -1121,6 +1122,7 @@ Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Cl
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

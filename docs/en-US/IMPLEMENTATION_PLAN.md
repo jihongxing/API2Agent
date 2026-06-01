@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Implementation Complete
+Go Control Plane Hosted Permission Decision Retention Boundary Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision retention boundary live dogfood and closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission policy mutation boundary design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1213,11 +1213,19 @@ Current Phase 6 progress:
   - customer-facing decision history endpoints, public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
   - the next hosted-readiness task is hosted permission decision retention boundary live dogfood and closeout.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_IMPLEMENTATION_REPORT.md`.
+- Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0 is complete:
+  - live dogfood accepted the local retention/history boundary proof.
+  - artifact evidence includes 16 redacted decision history rows, cross-project history count 0, support/operator audit count 6 -> 7, and legal-hold cleanup candidate proof.
+  - hosted permission decision retention boundary lane completion is 100% for local v0.
+  - broader Hosted Control Plane phase completion is estimated at 72%.
+  - customer-facing decision history endpoints, public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
+  - the next hosted-readiness task is hosted permission policy mutation boundary design.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 ```
 
 References:
@@ -1271,6 +1279,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_CUSTOMER_HISTORY_BOUNDARY_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
