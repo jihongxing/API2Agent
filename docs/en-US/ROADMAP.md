@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission policy mutation boundary contract harness implementation complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, decision persistence integrity hardening implementation, decision persistence integrity hardening closeout, decision persistence production boundary design, decision persistence production boundary implementation, decision persistence production boundary closeout, full decision persistence stage closeout, decision retention/customer-history boundary design, decision retention boundary implementation, decision retention boundary closeout, policy mutation boundary design, and policy mutation contract harness implementation are complete.
+Status: hosted permission policy mutation boundary contract harness closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, decision persistence integrity hardening implementation, decision persistence integrity hardening closeout, decision persistence production boundary design, decision persistence production boundary implementation, decision persistence production boundary closeout, full decision persistence stage closeout, decision retention/customer-history boundary design, decision retention boundary implementation, decision retention boundary closeout, policy mutation boundary design, policy mutation contract harness implementation, and policy mutation contract harness closeout are complete.
 
 Goal:
 
@@ -1045,31 +1045,32 @@ Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
 Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
 ```
 
-This closeout is now the immediate next project task because the local/private mutation contract helpers and tests are implemented. The closeout should decide whether the proof is accepted before a later durable/private implementation slice.
+The local/private mutation contract proof is accepted for v0. The next task should design the durable/private implementation boundary before any hosted service endpoint or live Postgres implementation is added.
 
 Scope:
 
-1. Review the contract harness implementation and test evidence.
-2. Confirm draft/review/promotion/rollback, idempotency, audit, conflict, and read-model compatibility criteria.
-3. Decide whether local/private policy mutation contract proof can close.
-4. Set the next hosted-readiness task.
-5. Preserve customer-facing decision history, export/delete, legal-hold API, public identity, and production deployment as deferred work.
-6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, provider onboarding, OAuth/OIDC, public CRUD, policy write APIs, Data Plane mutable reads, or production gateway deployment.
+1. Design durable/private row ownership for policy drafts, policy versions, mutation audit, and idempotency records.
+2. Define validation, promotion, and rollback transaction boundaries.
+3. Preserve idempotency replay/conflict, stale-base conflict, duplicate grant conflict, scope violation, and secret-safe audit semantics.
+4. Define private service implementation constraints without opening public policy write APIs.
+5. Set future implementation and live Postgres dogfood criteria.
+6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, provider onboarding, OAuth/OIDC, public CRUD, policy write APIs, Data Plane mutable reads, customer-facing decision history/export/delete/legal-hold APIs, or production gateway deployment.
 
 Exit criteria:
 
-- contract harness implementation evidence is reviewed.
-- validation and Go test results are recorded.
-- remaining risks and deferred surfaces are explicit.
-- next hosted-readiness task is named.
+- durable private implementation design is documented.
+- transaction and conflict semantics are mapped to durable storage.
+- private service boundary and response/audit evidence are specified.
+- live Postgres implementation dogfood criteria are explicit.
 - OAuth/OIDC, public CRUD, production deployment, vault, billing, marketplace, workflow, provider onboarding, policy write APIs, Data Plane mutable reads, and automatic propagation remain deferred.
 
 References:
@@ -1083,6 +1084,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`

@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission policy mutation boundary contract harness implementation 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout、decision persistence production boundary design、decision persistence production boundary implementation、decision persistence production boundary closeout、完整 decision persistence stage closeout、decision retention/customer-history boundary design、decision retention boundary implementation、decision retention boundary closeout、policy mutation boundary design 和 policy mutation contract harness implementation 已完成。
+状态：hosted permission policy mutation boundary contract harness closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout、decision persistence production boundary design、decision persistence production boundary implementation、decision persistence production boundary closeout、完整 decision persistence stage closeout、decision retention/customer-history boundary design、decision retention boundary implementation、decision retention boundary closeout、policy mutation boundary design、policy mutation contract harness implementation 和 policy mutation contract harness closeout 已完成。
 
 目标：
 
@@ -1045,31 +1045,32 @@ Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
 Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
 ```
 
-由于 local/private mutation contract helpers 和 tests 已实现，下一项 immediate project task 是 closeout。该 closeout 应判断 proof 是否可以接受，然后再进入后续 durable/private implementation slice。
+local/private mutation contract proof 已作为 v0 接受。下一项任务应先设计 durable/private implementation boundary，再进入 hosted service endpoint 或 live Postgres implementation。
 
 范围：
 
-1. Review contract harness implementation and test evidence。
-2. 确认 draft/review/promotion/rollback、idempotency、audit、conflict 和 read-model compatibility criteria。
-3. 判断 local/private policy mutation contract proof 是否可以关闭。
-4. 设置下一项 hosted-readiness task。
-5. 将 customer-facing decision history、export/delete、legal-hold API、public identity 和 production deployment 保持 deferred。
-6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow、provider onboarding、OAuth/OIDC、public CRUD、policy write APIs、Data Plane mutable reads 或 production gateway deployment。
+1. 设计 policy drafts、policy versions、mutation audit 和 idempotency records 的 durable/private row ownership。
+2. 定义 validation、promotion 和 rollback transaction boundaries。
+3. 保留 idempotency replay/conflict、stale-base conflict、duplicate grant conflict、scope violation 和 secret-safe audit semantics。
+4. 定义 private service implementation constraints，不开放 public policy write APIs。
+5. 设置后续 implementation 和 live Postgres dogfood criteria。
+6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow、provider onboarding、OAuth/OIDC、public CRUD、policy write APIs、Data Plane mutable reads、customer-facing decision history/export/delete/legal-hold APIs 或 production gateway deployment。
 
 退出标准：
 
-- contract harness implementation evidence 已 review。
-- validation 和 Go test results 已记录。
-- remaining risks 和 deferred surfaces 已明确。
-- 下一项 hosted-readiness task 已命名。
+- durable private implementation design 已文档化。
+- transaction 和 conflict semantics 已映射到 durable storage。
+- private service boundary 和 response/audit evidence 已明确。
+- live Postgres implementation dogfood criteria 已明确。
 - OAuth/OIDC、public CRUD、production deployment、vault、billing、marketplace、workflow、provider onboarding、policy write APIs、Data Plane mutable reads 和 automatic propagation 保持 deferred。
 
 参考：
@@ -1083,6 +1084,7 @@ Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Clo
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`

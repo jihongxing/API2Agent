@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Implementation Complete
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is the hosted permission policy mutation boundary contract harness closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is durable private hosted permission policy mutation implementation design.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1240,11 +1240,20 @@ Current Phase 6 progress:
   - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, customer-facing decision history, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
   - the next hosted-readiness task is hosted permission policy mutation boundary contract harness closeout and phase review.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`.
+- Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0 is complete:
+  - local/private mutation contract proof is accepted for v0.
+  - acceptance covers draft isolation, validation, review, promotion, rollback, idempotency replay/conflict, stale-base conflict, scope violation, duplicate grant conflict, gateway-compatible decision evidence, and secret-safe audit metadata.
+  - hosted permission policy mutation contract harness closeout lane completion is 100%.
+  - broader Hosted Control Plane phase completion is estimated at 74%.
+  - durable private persistence, transaction ownership, private service endpoint wiring, live Postgres dogfood, automatic propagation, and production gateway rollout remain future work.
+  - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, customer-facing decision history, legal-hold customer APIs, customer export/delete APIs, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
+  - the next hosted-readiness task is hosted permission policy mutation durable private implementation design.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout + Phase Review v0
+Go Control Plane Hosted Permission Policy Mutation Durable Private Implementation Design v0
 ```
 
 References:
@@ -1288,6 +1297,8 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_DESIGN.md`
