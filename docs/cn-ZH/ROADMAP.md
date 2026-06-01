@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design Complete
+Go Control Plane Hosted Admin Gateway Permission Source Implementation Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
+Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1088,6 +1088,16 @@ Go Control Plane Hosted Admin Gateway Permission Source Design v0
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
+
+已完成 hosted admin gateway permission source implementation 结果：
+
+- gateway-side permission decisions 已在 local contract harness 中实现。
+- static policy 会把 public principals 解析为 trusted project-scoped roles 和 permissions。
+- missing/invalid public auth、permission source unavailable、route/method mismatch 和 public authz denial 都会在 gateway 本地 fail before forwarding。
+- Control Plane trusted-gateway authenticator 继续作为第二道 gate，并会用 `AUTHZ_DENIED` 拒绝 forced insufficient trusted permissions。
+- live dogfood 已通过，audit/idempotency evidence 使用 trusted claims，且未泄漏 raw public token 或 gateway secret。
+- 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`。
 
 已完成 hosted admin gateway permission source design 结果：
 

@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design Complete
+Go Control Plane Hosted Admin Gateway Permission Source Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted Control Plane permission-source implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted Control Plane permission-source closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
+Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
+Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1023,11 +1023,16 @@ Current Phase 6 progress:
   - the Control Plane trusted-gateway authenticator remains the second authorization gate.
   - the next hosted-readiness task is permission-source implementation.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`.
+- Go Control Plane Hosted Admin Gateway Permission Source Implementation v0 is complete:
+  - the local hosted admin gateway contract harness now resolves public bearer tokens through explicit permission decisions before forwarding.
+  - static policy evidence, endpoint permission mapping, typed local failures, trusted header injection, and Control Plane second-gate denial are implemented.
+  - live dogfood passed with `admin_audit_events=3`, `idempotency_records=1`, and no raw public token or gateway secret leakage in evidence.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
+Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 ```
 
 References:
@@ -1050,6 +1055,8 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

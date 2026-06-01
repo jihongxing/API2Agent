@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Design Complete
+Go Control Plane Hosted Admin Gateway Permission Source Implementation Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Admin Gateway Permission Source Implementation v0
+Go Control Plane Hosted Admin Gateway Permission Source Closeout + Phase Review v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1088,6 +1088,16 @@ References:
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_OPENAPI_CACHED_REAL_SPEC_CORPUS_EXPANSION_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_FINAL_REENTRY_CLOSEOUT_CONSOLIDATION_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`
+
+Completed hosted admin gateway permission source implementation result:
+
+- gateway-side permission decisions are implemented in the local contract harness.
+- static policy resolves public principals into trusted project-scoped roles and permissions.
+- missing/invalid public auth, permission source unavailable, route/method mismatch, and public authz denial fail locally before forwarding.
+- the Control Plane trusted-gateway authenticator remains a second gate and rejects forced insufficient trusted permissions with `AUTHZ_DENIED`.
+- live dogfood passed with trusted audit/idempotency evidence and no raw public token or gateway secret leakage.
+- See `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_GATEWAY_PERMISSION_SOURCE_IMPLEMENTATION_REPORT.md`.
 
 Completed hosted admin gateway permission source design result:
 

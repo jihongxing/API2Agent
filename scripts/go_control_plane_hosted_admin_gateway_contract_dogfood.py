@@ -26,6 +26,8 @@ GATEWAY_SECRET = "dogfood-trusted-gateway-secret-contract"
 GATEWAY_KEY_ID = "dogfood-gateway-key-contract"
 PUBLIC_ADMIN_TOKEN = "dogfood-public-admin-token"
 PUBLIC_READONLY_TOKEN = "dogfood-public-readonly-token"
+STATIC_POLICY_SOURCE = "hosted-admin-gateway-static-dogfood-policy"
+STATIC_POLICY_VERSION = "static-v1"
 
 HARNESS_PRINCIPAL_ID = "gateway-harness-principal"
 HARNESS_ACTOR_ID = "gateway-harness-actor"
@@ -40,16 +42,24 @@ SPOOFED_PROJECT_ID = "spoofed-public-project"
 SPOOFED_ORGANIZATION_ID = "spoofed-public-org"
 SPOOFED_TOKEN_ID = "spoofed-public-token-id"
 
-FORWARDED_PATHS = {
-    ("GET", "/healthz"),
-    ("POST", "/v1/admin/registry/validate"),
-    ("POST", "/v1/admin/registry/import-replace"),
+PERMISSION_REGISTRY_VALIDATE = "control_plane.registry.validate"
+PERMISSION_REGISTRY_IMPORT_REPLACE = "control_plane.registry.import_replace"
+PERMISSION_SNAPSHOT_EXPORT_ARTIFACT = "control_plane.snapshot.export_artifact"
+PERMISSION_DISTRIBUTION_PUBLISH = "control_plane.distribution.publish"
+PERMISSION_DISTRIBUTION_READ_CURRENT = "control_plane.distribution.read_current"
+
+ENDPOINT_PERMISSIONS = {
+    ("POST", "/v1/admin/registry/validate"): PERMISSION_REGISTRY_VALIDATE,
+    ("POST", "/v1/admin/registry/import-replace"): PERMISSION_REGISTRY_IMPORT_REPLACE,
+    ("POST", "/v1/admin/snapshots/export-artifact"): PERMISSION_SNAPSHOT_EXPORT_ARTIFACT,
+    ("GET", "/v1/admin/distribution/current"): PERMISSION_DISTRIBUTION_READ_CURRENT,
+    ("POST", "/v1/admin/distribution/publish"): PERMISSION_DISTRIBUTION_PUBLISH,
 }
-PATHS_WITH_METHODS = {
-    "/healthz": {"GET"},
-    "/v1/admin/registry/validate": {"POST"},
-    "/v1/admin/registry/import-replace": {"POST"},
-}
+HEALTH_PATHS = {("GET", "/healthz")}
+FORWARDED_PATHS = set(ENDPOINT_PERMISSIONS) | HEALTH_PATHS
+PATHS_WITH_METHODS: dict[str, set[str]] = {"/healthz": {"GET"}}
+for endpoint_method, endpoint_path in ENDPOINT_PERMISSIONS:
+    PATHS_WITH_METHODS.setdefault(endpoint_path, set()).add(endpoint_method)
 SAFE_REQUEST_HEADERS = {
     "content-type": "Content-Type",
     "x-request-id": "X-Request-ID",
@@ -75,6 +85,25 @@ class StaticPolicy:
     permissions: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class GatewayPermissionDecision:
+    allowed: bool
+    status: int
+    error_type: str
+    deny_reason: str
+    subject_id: str = ""
+    actor_id: str = ""
+    project_id: str = ""
+    organization_id: str = ""
+    token_id: str = ""
+    roles: tuple[str, ...] = ()
+    permissions: tuple[str, ...] = ()
+    policy_source: str = STATIC_POLICY_SOURCE
+    policy_version: str = STATIC_POLICY_VERSION
+    permission_source: str = STATIC_POLICY_SOURCE
+    resolved_at: str = ""
+
+
 ADMIN_POLICY = StaticPolicy(
     principal_id=HARNESS_PRINCIPAL_ID,
     actor_id=HARNESS_ACTOR_ID,
@@ -82,7 +111,13 @@ ADMIN_POLICY = StaticPolicy(
     organization_id=HARNESS_ORGANIZATION_ID,
     token_id=HARNESS_TOKEN_ID_ADMIN,
     roles=("control-plane-admin", "dogfood"),
-    permissions=("control_plane.registry.validate", "control_plane.registry.import_replace"),
+    permissions=(
+        PERMISSION_REGISTRY_VALIDATE,
+        PERMISSION_REGISTRY_IMPORT_REPLACE,
+        PERMISSION_SNAPSHOT_EXPORT_ARTIFACT,
+        PERMISSION_DISTRIBUTION_PUBLISH,
+        PERMISSION_DISTRIBUTION_READ_CURRENT,
+    ),
 )
 READONLY_POLICY = StaticPolicy(
     principal_id="gateway-harness-readonly-principal",
@@ -91,7 +126,7 @@ READONLY_POLICY = StaticPolicy(
     organization_id=HARNESS_ORGANIZATION_ID,
     token_id=HARNESS_TOKEN_ID_READONLY,
     roles=("control-plane-readonly", "dogfood"),
-    permissions=("control_plane.distribution.read_current",),
+    permissions=(PERMISSION_REGISTRY_VALIDATE, PERMISSION_DISTRIBUTION_READ_CURRENT),
 )
 PUBLIC_TOKEN_POLICIES = {
     PUBLIC_ADMIN_TOKEN: ADMIN_POLICY,
@@ -263,31 +298,115 @@ def bearer_token(header: str) -> str | None:
     return token or None
 
 
-def public_policy(headers: Any) -> StaticPolicy | None:
+def endpoint_permission(method: str, path: str) -> str | None:
+    return ENDPOINT_PERMISSIONS.get((method.upper(), path))
+
+
+def resolve_gateway_admin_principal(
+    headers: Any,
+    endpoint_required_permission: str,
+    *,
+    permission_source_available: bool = True,
+    resolved_at: str = "2026-06-01T00:00:00Z",
+) -> GatewayPermissionDecision:
+    if not permission_source_available:
+        return GatewayPermissionDecision(
+            allowed=False,
+            status=503,
+            error_type="PERMISSION_SOURCE_UNAVAILABLE",
+            deny_reason="gateway permission source is unavailable",
+            resolved_at=resolved_at,
+        )
+
     token = bearer_token(headers.get("Authorization", ""))
     if token is None:
-        return None
-    return PUBLIC_TOKEN_POLICIES.get(token)
+        return GatewayPermissionDecision(
+            allowed=False,
+            status=401,
+            error_type="PUBLIC_AUTH_REQUIRED",
+            deny_reason="public bearer authorization is required",
+            resolved_at=resolved_at,
+        )
+
+    policy = PUBLIC_TOKEN_POLICIES.get(token)
+    if policy is None:
+        return GatewayPermissionDecision(
+            allowed=False,
+            status=401,
+            error_type="PUBLIC_AUTH_INVALID",
+            deny_reason="public bearer authorization is invalid",
+            resolved_at=resolved_at,
+        )
+
+    if not policy.project_id:
+        return GatewayPermissionDecision(
+            allowed=False,
+            status=403,
+            error_type="PUBLIC_AUTHZ_DENIED",
+            deny_reason="public principal is missing project scope",
+            resolved_at=resolved_at,
+        )
+
+    if endpoint_required_permission not in policy.permissions:
+        return GatewayPermissionDecision(
+            allowed=False,
+            status=403,
+            error_type="PUBLIC_AUTHZ_DENIED",
+            deny_reason="public principal lacks endpoint permission",
+            subject_id=policy.principal_id,
+            actor_id=policy.actor_id,
+            project_id=policy.project_id,
+            organization_id=policy.organization_id,
+            token_id=policy.token_id,
+            roles=policy.roles,
+            permissions=policy.permissions,
+            resolved_at=resolved_at,
+        )
+
+    return GatewayPermissionDecision(
+        allowed=True,
+        status=200,
+        error_type="",
+        deny_reason="",
+        subject_id=policy.principal_id,
+        actor_id=policy.actor_id,
+        project_id=policy.project_id,
+        organization_id=policy.organization_id,
+        token_id=policy.token_id,
+        roles=policy.roles,
+        permissions=policy.permissions,
+        resolved_at=resolved_at,
+    )
 
 
-def forwarded_headers(headers: Any, policy: StaticPolicy, *, gateway_secret: str, gateway_key_id: str) -> dict[str, str]:
+def forwarded_headers(
+    headers: Any,
+    decision: GatewayPermissionDecision,
+    *,
+    gateway_secret: str,
+    gateway_key_id: str,
+    permissions_override: tuple[str, ...] | None = None,
+) -> dict[str, str]:
+    if not decision.allowed:
+        raise ValueError("cannot forward denied gateway permission decision")
     forwarded: dict[str, str] = {}
     for key, value in headers.items():
         lower = key.lower()
         if lower in SAFE_REQUEST_HEADERS:
             forwarded[SAFE_REQUEST_HEADERS[lower]] = value
 
+    permissions = decision.permissions if permissions_override is None else permissions_override
     forwarded.update(
         {
             "X-API2Agent-Gateway-Authorization": f"Bearer {gateway_secret}",
             "X-API2Agent-Gateway-Key-ID": gateway_key_id,
-            "X-API2Agent-Principal-ID": policy.principal_id,
-            "X-API2Agent-Actor-ID": policy.actor_id,
-            "X-API2Agent-Project-ID": policy.project_id,
-            "X-API2Agent-Organization-ID": policy.organization_id,
-            "X-API2Agent-Token-ID": policy.token_id,
-            "X-API2Agent-Roles": ",".join(policy.roles),
-            "X-API2Agent-Permissions": ",".join(policy.permissions),
+            "X-API2Agent-Principal-ID": decision.subject_id,
+            "X-API2Agent-Actor-ID": decision.actor_id,
+            "X-API2Agent-Project-ID": decision.project_id,
+            "X-API2Agent-Organization-ID": decision.organization_id,
+            "X-API2Agent-Token-ID": decision.token_id,
+            "X-API2Agent-Roles": ",".join(decision.roles),
+            "X-API2Agent-Permissions": ",".join(permissions),
         }
     )
     return forwarded
@@ -316,7 +435,10 @@ def assert_contract_helpers() -> None:
         "Cookie": "session=caller",
         "Proxy-Authorization": "Basic caller",
     }
-    headers = forwarded_headers(incoming, ADMIN_POLICY, gateway_secret=GATEWAY_SECRET, gateway_key_id=GATEWAY_KEY_ID)
+    decision = resolve_gateway_admin_principal(incoming, PERMISSION_REGISTRY_IMPORT_REPLACE)
+    if not decision.allowed:
+        raise RuntimeError(f"expected admin policy decision to allow import/replace, got {decision}")
+    headers = forwarded_headers(incoming, decision, gateway_secret=GATEWAY_SECRET, gateway_key_id=GATEWAY_KEY_ID)
     if headers.get("Authorization") is not None:
         raise RuntimeError("public Authorization must be consumed locally")
     for stripped in ["X-Actor-ID", "X-Project-ID", "Cookie", "Proxy-Authorization"]:
@@ -332,9 +454,25 @@ def assert_contract_helpers() -> None:
         raise RuntimeError(f"expected harness principal injection, got {headers}")
     if headers["X-API2Agent-Actor-ID"] != HARNESS_ACTOR_ID or headers["X-API2Agent-Project-ID"] != HARNESS_PROJECT_ID:
         raise RuntimeError(f"expected harness scope injection, got {headers}")
-    readonly = forwarded_headers({}, READONLY_POLICY, gateway_secret=GATEWAY_SECRET, gateway_key_id=GATEWAY_KEY_ID)
-    if readonly["X-API2Agent-Permissions"] != "control_plane.distribution.read_current":
+    readonly_decision = resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {PUBLIC_READONLY_TOKEN}"},
+        PERMISSION_REGISTRY_VALIDATE,
+    )
+    if not readonly_decision.allowed:
+        raise RuntimeError(f"expected readonly policy decision to allow validation, got {readonly_decision}")
+    readonly = forwarded_headers({}, readonly_decision, gateway_secret=GATEWAY_SECRET, gateway_key_id=GATEWAY_KEY_ID)
+    if readonly["X-API2Agent-Permissions"] != "control_plane.registry.validate,control_plane.distribution.read_current":
         raise RuntimeError(f"expected readonly policy to inject limited permissions, got {readonly}")
+    readonly_import = resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {PUBLIC_READONLY_TOKEN}"},
+        PERMISSION_REGISTRY_IMPORT_REPLACE,
+    )
+    if readonly_import.allowed or readonly_import.error_type != "PUBLIC_AUTHZ_DENIED":
+        raise RuntimeError(f"expected readonly import/replace to fail locally, got {readonly_import}")
+    if endpoint_permission("POST", "/v1/admin/distribution/publish") != PERMISSION_DISTRIBUTION_PUBLISH:
+        raise RuntimeError("expected gateway route map to include distribution publish permission")
+    if endpoint_permission("GET", "/v1/admin/distribution/current") != PERMISSION_DISTRIBUTION_READ_CURRENT:
+        raise RuntimeError("expected gateway route map to include distribution current permission")
 
 
 class GatewayHarnessHandler(BaseHTTPRequestHandler):
@@ -359,25 +497,43 @@ class GatewayHarnessHandler(BaseHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         method = self.command.upper()
         if path not in PATHS_WITH_METHODS:
-            self.write_local_error(404, "NOT_FOUND", "unsupported hosted admin gateway path")
+            self.write_local_error(404, "PUBLIC_ROUTE_NOT_FOUND", "unsupported hosted admin gateway path")
             return
         if method not in PATHS_WITH_METHODS[path]:
-            self.write_local_error(405, "INVALID_REQUEST", "method not allowed")
+            self.write_local_error(405, "PUBLIC_METHOD_NOT_ALLOWED", "method not allowed")
             return
         if (method, path) not in FORWARDED_PATHS:
-            self.write_local_error(404, "NOT_FOUND", "unsupported hosted admin gateway route")
+            self.write_local_error(404, "PUBLIC_ROUTE_NOT_FOUND", "unsupported hosted admin gateway route")
             return
         if path != "/healthz":
-            policy = public_policy(self.headers)
-            if policy is None:
-                self.write_local_error(401, "AUTH_ERROR", "invalid public gateway bearer token")
+            required_permission = endpoint_permission(method, path)
+            if required_permission is None:
+                self.write_local_error(404, "PUBLIC_ROUTE_NOT_FOUND", "unsupported hosted admin gateway route")
                 return
+            decision = resolve_gateway_admin_principal(
+                self.headers,
+                required_permission,
+                permission_source_available=self.server.permission_source_available,
+                resolved_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            )
+            if not decision.allowed:
+                self.write_local_error(
+                    decision.status,
+                    decision.error_type,
+                    decision.deny_reason,
+                    scope="platform" if decision.status == 503 else "caller",
+                    retryable=decision.status == 503,
+                )
+                return
+            permissions_override = self.server.force_forwarded_permissions
             headers = forwarded_headers(
                 self.headers,
-                policy,
+                decision,
                 gateway_secret=self.server.gateway_secret,
                 gateway_key_id=self.server.gateway_key_id,
+                permissions_override=permissions_override,
             )
+            self.server.permission_decisions.append(decision)
         else:
             headers = {}
             for key, value in self.headers.items():
@@ -422,7 +578,7 @@ class GatewayHarnessHandler(BaseHTTPRequestHandler):
             {
                 "error": {
                     "error_type": error_type,
-                    "scope": scope,
+                    "error_scope": scope,
                     "message": message,
                     "retryable": retryable,
                 }
@@ -442,6 +598,9 @@ class GatewayHarnessServer(ThreadingHTTPServer):
         self.control_plane_base_url = control_plane_base_url
         self.gateway_secret = gateway_secret
         self.gateway_key_id = gateway_key_id
+        self.permission_source_available = True
+        self.force_forwarded_permissions: tuple[str, ...] | None = None
+        self.permission_decisions: list[GatewayPermissionDecision] = []
 
 
 def start_gateway_harness(port: int, control_plane_base_url: str) -> tuple[GatewayHarnessServer, threading.Thread]:
@@ -561,14 +720,14 @@ def main() -> int:
             headers={"Authorization": "Bearer redacted-invalid-token"},
             expected_status={404},
         )
-        assert_error_type(unsupported_path_response, "NOT_FOUND")
+        assert_error_type(unsupported_path_response, "PUBLIC_ROUTE_NOT_FOUND")
         unsupported_method_status, unsupported_method_response, _ = request_json(
             "GET",
             f"{gateway_base_url}/v1/admin/registry/validate",
             headers={"Authorization": "Bearer redacted-invalid-token"},
             expected_status={405},
         )
-        assert_error_type(unsupported_method_response, "INVALID_REQUEST")
+        assert_error_type(unsupported_method_response, "PUBLIC_METHOD_NOT_ALLOWED")
 
         audit_rows_before_missing_auth = count_audit_rows(container)
         missing_public_auth_status, missing_public_auth_response, _ = request_json(
@@ -582,10 +741,34 @@ def main() -> int:
             },
             expected_status={401},
         )
-        assert_error_type(missing_public_auth_response, "AUTH_ERROR")
+        assert_error_type(missing_public_auth_response, "PUBLIC_AUTH_REQUIRED")
         audit_rows_after_missing_auth = count_audit_rows(container)
         if audit_rows_after_missing_auth != audit_rows_before_missing_auth:
             raise RuntimeError("gateway-local public auth failure must not create Control Plane audit rows")
+
+        invalid_public_auth_status, invalid_public_auth_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={"Authorization": "Bearer redacted-invalid-token"},
+            expected_status={401},
+        )
+        assert_error_type(invalid_public_auth_response, "PUBLIC_AUTH_INVALID")
+        audit_rows_after_invalid_auth = count_audit_rows(container)
+        if audit_rows_after_invalid_auth != audit_rows_before_missing_auth:
+            raise RuntimeError("gateway-local invalid public auth failure must not create Control Plane audit rows")
+
+        gateway.permission_source_available = False
+        unavailable_status, unavailable_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={"Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}"},
+            expected_status={503},
+        )
+        gateway.permission_source_available = True
+        assert_error_type(unavailable_response, "PERMISSION_SOURCE_UNAVAILABLE")
+        audit_rows_after_unavailable = count_audit_rows(container)
+        if audit_rows_after_unavailable != audit_rows_before_missing_auth:
+            raise RuntimeError("gateway-local permission source failure must not create Control Plane audit rows")
 
         validate_status, validate_response, _ = request_json(
             "POST",
@@ -616,10 +799,14 @@ def main() -> int:
         readonly_validate_status, readonly_validate_response, _ = request_json(
             "POST",
             f"{gateway_base_url}/v1/admin/registry/validate",
-            headers={"Authorization": f"Bearer {PUBLIC_READONLY_TOKEN}"},
-            expected_status={403},
+            headers={
+                "Authorization": f"Bearer {PUBLIC_READONLY_TOKEN}",
+                "X-Request-ID": "dogfood-gateway-contract-readonly-validate",
+            },
+            expected_status={200},
         )
-        assert_error_type(readonly_validate_response, "AUTHZ_DENIED")
+        if readonly_validate_response.get("valid") is not True:
+            raise RuntimeError(f"expected readonly registry validation success, got {readonly_validate_response}")
         readonly_import_status, readonly_import_response, _ = request_json(
             "POST",
             f"{gateway_base_url}/v1/admin/registry/import-replace",
@@ -631,7 +818,24 @@ def main() -> int:
             body={"registry": replacement_registry, "source": "dogfood_hosted_admin_gateway_contract_readonly"},
             expected_status={403},
         )
-        assert_error_type(readonly_import_response, "AUTHZ_DENIED")
+        assert_error_type(readonly_import_response, "PUBLIC_AUTHZ_DENIED")
+
+        audit_rows_after_readonly_deny = count_audit_rows(container)
+        if audit_rows_after_readonly_deny != audit_rows_before_missing_auth + 2:
+            raise RuntimeError("gateway-local readonly denial must not create Control Plane audit rows")
+
+        gateway.force_forwarded_permissions = (PERMISSION_DISTRIBUTION_READ_CURRENT,)
+        insufficient_forward_status, insufficient_forward_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={"Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}"},
+            expected_status={403},
+        )
+        gateway.force_forwarded_permissions = None
+        assert_error_type(insufficient_forward_response, "AUTHZ_DENIED")
+        audit_rows_after_insufficient_forward = count_audit_rows(container)
+        if audit_rows_after_insufficient_forward != audit_rows_after_readonly_deny:
+            raise RuntimeError("Control Plane authz denial before handler must not create audit rows")
 
         import_status, import_response, import_response_headers = request_json(
             "POST",
@@ -661,7 +865,7 @@ def main() -> int:
         }
         expected_counts = {
             "registry_revisions": 2,
-            "admin_audit_events": 2,
+            "admin_audit_events": 3,
             "idempotency_records": 1,
             "providers": 1,
         }
@@ -693,15 +897,28 @@ FROM (
 ) AS t;
 """,
         )
-        if len(audit_rows) != 2:
-            raise RuntimeError(f"expected two audit rows, got {audit_rows}")
+        if len(audit_rows) != 3:
+            raise RuntimeError(f"expected three audit rows, got {audit_rows}")
+        expected_audit_identities = {
+            "dogfood-gateway-contract-validate-1": (HARNESS_ACTOR_ID, HARNESS_PRINCIPAL_ID, HARNESS_TOKEN_ID_ADMIN),
+            "dogfood-gateway-contract-readonly-validate": (
+                READONLY_POLICY.actor_id,
+                READONLY_POLICY.principal_id,
+                HARNESS_TOKEN_ID_READONLY,
+            ),
+            "dogfood-gateway-contract-import-1": (HARNESS_ACTOR_ID, HARNESS_PRINCIPAL_ID, HARNESS_TOKEN_ID_ADMIN),
+        }
         for row in audit_rows:
-            if row["actor_id"] != HARNESS_ACTOR_ID:
-                raise RuntimeError(f"expected harness actor id in audit row, got {row}")
-            if row["principal_subject_id"] != HARNESS_PRINCIPAL_ID or row["project_id"] != HARNESS_PROJECT_ID:
-                raise RuntimeError(f"expected harness principal/project metadata, got {row}")
-            if row["organization_id"] != HARNESS_ORGANIZATION_ID or row["token_id"] != HARNESS_TOKEN_ID_ADMIN:
-                raise RuntimeError(f"expected harness org/token metadata, got {row}")
+            expected_identity = expected_audit_identities.get(row["request_id"])
+            if expected_identity is None:
+                raise RuntimeError(f"unexpected audit request id, got {row}")
+            expected_actor_id, expected_subject_id, expected_token_id = expected_identity
+            if row["actor_id"] != expected_actor_id:
+                raise RuntimeError(f"expected policy actor id in audit row, got {row}")
+            if row["principal_subject_id"] != expected_subject_id or row["project_id"] != HARNESS_PROJECT_ID:
+                raise RuntimeError(f"expected policy principal/project metadata, got {row}")
+            if row["organization_id"] != HARNESS_ORGANIZATION_ID or row["token_id"] != expected_token_id:
+                raise RuntimeError(f"expected policy org/token metadata, got {row}")
             if row["gateway_key_id"] != GATEWAY_KEY_ID:
                 raise RuntimeError(f"expected harness gateway key id metadata, got {row}")
             if row["auth_method"] != "trusted_gateway" or row["local_private"] != "false":
@@ -751,12 +968,25 @@ FROM (
                 "seed_stdout": seed.stdout.strip(),
                 "control_plane_health": control_plane_health,
                 "gateway_health": gateway_health,
+                "permission_source": STATIC_POLICY_SOURCE,
+                "policy_version": STATIC_POLICY_VERSION,
+                "endpoint_permission_map": {
+                    f"{method} {path}": permission for (method, path), permission in sorted(ENDPOINT_PERMISSIONS.items())
+                },
                 "unsupported_path_status": unsupported_path_status,
+                "unsupported_path_error_type": unsupported_path_response.get("error", {}).get("error_type"),
                 "unsupported_method_status": unsupported_method_status,
+                "unsupported_method_error_type": unsupported_method_response.get("error", {}).get("error_type"),
                 "missing_public_auth_status": missing_public_auth_status,
                 "missing_public_auth_error_type": missing_public_auth_response.get("error", {}).get("error_type"),
+                "invalid_public_auth_status": invalid_public_auth_status,
+                "invalid_public_auth_error_type": invalid_public_auth_response.get("error", {}).get("error_type"),
+                "permission_source_unavailable_status": unavailable_status,
+                "permission_source_unavailable_error_type": unavailable_response.get("error", {}).get("error_type"),
                 "audit_rows_before_missing_public_auth": audit_rows_before_missing_auth,
                 "audit_rows_after_missing_public_auth": audit_rows_after_missing_auth,
+                "audit_rows_after_invalid_public_auth": audit_rows_after_invalid_auth,
+                "audit_rows_after_permission_source_unavailable": audit_rows_after_unavailable,
                 "validate_status": validate_status,
                 "validate_response": {
                     "valid": validate_response.get("valid"),
@@ -764,11 +994,36 @@ FROM (
                     "registry_fingerprint": validate_response.get("registry_fingerprint"),
                 },
                 "readonly_validate_status": readonly_validate_status,
-                "readonly_validate_error_type": readonly_validate_response.get("error", {}).get("error_type"),
+                "readonly_validate_response": {
+                    "valid": readonly_validate_response.get("valid"),
+                    "registry_store": readonly_validate_response.get("registry_store"),
+                    "registry_fingerprint": readonly_validate_response.get("registry_fingerprint"),
+                },
                 "readonly_import_status": readonly_import_status,
                 "readonly_import_error_type": readonly_import_response.get("error", {}).get("error_type"),
+                "audit_rows_after_readonly_deny": audit_rows_after_readonly_deny,
+                "insufficient_forward_status": insufficient_forward_status,
+                "insufficient_forward_error_type": insufficient_forward_response.get("error", {}).get("error_type"),
+                "audit_rows_after_insufficient_forward": audit_rows_after_insufficient_forward,
                 "import_status": import_status,
                 "import_response": import_response,
+                "permission_decisions": [
+                    {
+                        "allowed": decision.allowed,
+                        "subject_id": decision.subject_id,
+                        "actor_id": decision.actor_id,
+                        "project_id": decision.project_id,
+                        "organization_id": decision.organization_id,
+                        "token_id": decision.token_id,
+                        "roles": list(decision.roles),
+                        "permissions": list(decision.permissions),
+                        "policy_source": decision.policy_source,
+                        "policy_version": decision.policy_version,
+                        "permission_source": decision.permission_source,
+                        "resolved_at": decision.resolved_at,
+                    }
+                    for decision in gateway.permission_decisions
+                ],
                 "audit_counts": counts,
                 "audit_rows": audit_rows,
                 "idempotency_rows": idempotency_rows,
