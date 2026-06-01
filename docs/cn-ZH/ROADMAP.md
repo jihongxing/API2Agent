@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout Complete
 ```
 
 战略判断：
@@ -945,7 +945,7 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Store Design v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
@@ -1017,29 +1017,30 @@ Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Store Design v0
 ```
 
-由于 private endpoint 已实现，下一项 boundary 是用 live Postgres 和 local gateway proof 证明它，然后再 closeout。
+由于 project-scoped mutation 已受约束，下一项 hosted product gap 是 static dogfood permission source；这项 hosted-readiness design 现在是当前项目立即下一项任务。
 
 范围：
 
-1. 通过 real service process 和 live Postgres 跑 project partition endpoint。
-2. 证明 trusted-gateway-only access、project partition success、cross-project/global rejection、audit/idempotency evidence 和 no secret leakage。
-3. 如果 dogfood evidence 符合 design，则关闭 implementation slice。
+1. 设计 durable hosted permission store boundary。
+2. 定义 gateway 如何替换 static dogfood policy lookup，同时不要过早新增 public role CRUD。
+3. 保持 trusted-gateway header issuance、Control Plane second-gate checks、audit/idempotency evidence 和 project-scoped mutation constraints。
 4. public CRUD、public auth provider implementation、durable permission storage 和 production gateway deployment 保持 out of scope。
 5. 不实现 automatic publish/reload、vault、billing、marketplace、workflow 或 provider onboarding。
 
 退出标准：
 
-- live dogfood 证明 hosted project partition mutation path。
-- evidence 确认 audit/idempotency partition metadata 和 secret redaction。
-- closeout 记录 remaining risks 和下一条 lane。
+- permission store data model 和 lookup contract 明确。
+- failure semantics 和 gateway-local deny behavior 明确。
+- implementation 保持 deferred。
 - 不包含 granular CRUD API、vault、billing、marketplace、workflow、provider onboarding 或 automatic propagation 工作。
 
 参考：

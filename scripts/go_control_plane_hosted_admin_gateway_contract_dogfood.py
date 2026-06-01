@@ -260,6 +260,38 @@ def create_replacement_registry(path: Path) -> dict:
     return data
 
 
+def create_harness_project_registry(path: Path) -> dict:
+    data = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    data["projects"][0]["id"] = HARNESS_PROJECT_ID
+    data["projects"][0]["name"] = "Gateway Harness Project"
+    data["api_keys"][0]["project_id"] = HARNESS_PROJECT_ID
+    data["credential_metadata"][0]["owner_id"] = HARNESS_PROJECT_ID
+    data["snapshot"]["version"] = "snapshot_service_api_v1"
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return data
+
+
+def create_project_partition_registry(path: Path) -> dict:
+    data = create_harness_project_registry(path)
+    data["api_keys"][0]["key_prefix"] = "harness_"
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return data
+
+
+def create_cross_project_partition_registry(path: Path) -> dict:
+    data = create_project_partition_registry(path)
+    data["projects"].append(
+        {
+            "id": "other-project",
+            "name": "Other Project",
+            "status": "active",
+            "default_mode": "proxy",
+        }
+    )
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return data
+
+
 def start_control_plane(binary: Path, dsn: str, distribution_dir: Path, addr: str) -> subprocess.Popen[str]:
     env = os.environ.copy()
     env["API2AGENT_CONTROL_PLANE_POSTGRES_DSN"] = dsn
@@ -693,6 +725,8 @@ def main() -> int:
             ["podman", "exec", "-i", container, "psql", "-U", "api2agent", "-d", "api2agent", "-v", "ON_ERROR_STOP=1"],
             input_text=SCHEMA.read_text(encoding="utf-8"),
         )
+        seed_registry_path = workdir / "hosted-admin-gateway-contract-seed-registry.json"
+        create_harness_project_registry(seed_registry_path)
         seed = run(
             [
                 "go",
@@ -700,7 +734,7 @@ def main() -> int:
                 "./cmd/api2agent-controlplane",
                 "seed-postgres",
                 "--registry",
-                str(REGISTRY),
+                str(seed_registry_path),
                 "--postgres-dsn",
                 dsn,
             ],
@@ -709,6 +743,10 @@ def main() -> int:
 
         replacement_path = workdir / "hosted-admin-gateway-contract-replacement-registry.json"
         replacement_registry = create_replacement_registry(replacement_path)
+        partition_path = workdir / "hosted-admin-gateway-contract-project-partition-registry.json"
+        partition_registry = create_project_partition_registry(partition_path)
+        cross_project_partition_path = workdir / "hosted-admin-gateway-contract-cross-project-partition-registry.json"
+        cross_project_partition_registry = create_cross_project_partition_registry(cross_project_partition_path)
 
         binary = workdir / ("api2agent-controlplane-hosted-gateway-contract.exe" if sys.platform == "win32" else "api2agent-controlplane-hosted-gateway-contract")
         run(["go", "build", "-o", str(binary), "./cmd/api2agent-controlplane"], cwd=CONTROL_PLANE)
@@ -832,6 +870,22 @@ def main() -> int:
         if audit_rows_after_readonly_deny != audit_rows_before_missing_auth + 2:
             raise RuntimeError("gateway-local readonly denial must not create Control Plane audit rows")
 
+        readonly_partition_status, readonly_partition_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/project-partition/replace",
+            headers={
+                "Authorization": f"Bearer {PUBLIC_READONLY_TOKEN}",
+                "X-Request-ID": "dogfood-gateway-contract-readonly-partition",
+                "Idempotency-Key": "dogfood-gateway-contract-readonly-partition-idempotency",
+            },
+            body={"registry": partition_registry, "source": "dogfood_project_partition_readonly"},
+            expected_status={403},
+        )
+        assert_error_type(readonly_partition_response, "PUBLIC_AUTHZ_DENIED")
+        audit_rows_after_readonly_partition_deny = count_audit_rows(container)
+        if audit_rows_after_readonly_partition_deny != audit_rows_after_readonly_deny:
+            raise RuntimeError("gateway-local readonly partition denial must not create Control Plane audit rows")
+
         gateway.force_forwarded_permissions = (PERMISSION_DISTRIBUTION_READ_CURRENT,)
         insufficient_forward_status, insufficient_forward_response, _ = request_json(
             "POST",
@@ -842,8 +896,61 @@ def main() -> int:
         gateway.force_forwarded_permissions = None
         assert_error_type(insufficient_forward_response, "AUTHZ_DENIED")
         audit_rows_after_insufficient_forward = count_audit_rows(container)
-        if audit_rows_after_insufficient_forward != audit_rows_after_readonly_deny:
+        if audit_rows_after_insufficient_forward != audit_rows_after_readonly_partition_deny:
             raise RuntimeError("Control Plane authz denial before handler must not create audit rows")
+
+        partition_status, partition_response, partition_response_headers = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/project-partition/replace",
+            headers={
+                "Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}",
+                "X-Request-ID": "dogfood-gateway-contract-partition-1",
+                "Idempotency-Key": "dogfood-gateway-contract-partition-idempotency-key",
+                "X-API2Agent-Gateway-Authorization": "Bearer caller-supplied-secret",
+                "X-API2Agent-Principal-ID": SPOOFED_PRINCIPAL_ID,
+                "X-API2Agent-Actor-ID": SPOOFED_ACTOR_ID,
+                "X-API2Agent-Project-ID": SPOOFED_PROJECT_ID,
+            },
+            body={"registry": partition_registry, "source": "dogfood_project_partition_replace"},
+            expected_status={201},
+        )
+        if partition_response.get("partition_project_id") != HARNESS_PROJECT_ID:
+            raise RuntimeError(f"expected partition project evidence, got {partition_response}")
+        if not partition_response.get("partition_diff_fingerprint"):
+            raise RuntimeError(f"expected partition diff fingerprint, got {partition_response}")
+        if partition_response.get("partition_counts", {}).get("api_keys_changed") != 1:
+            raise RuntimeError(f"expected one api key partition change, got {partition_response}")
+        if any(key.lower() == "idempotency-replayed" for key in partition_response_headers):
+            raise RuntimeError(f"first partition replace should not be replayed, got {partition_response_headers}")
+
+        partition_replay_status, partition_replay_response, partition_replay_headers = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/project-partition/replace",
+            headers={
+                "Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}",
+                "X-Request-ID": "dogfood-gateway-contract-partition-replay",
+                "Idempotency-Key": "dogfood-gateway-contract-partition-idempotency-key",
+            },
+            body={"registry": partition_registry, "source": "dogfood_project_partition_replace"},
+            expected_status={200},
+        )
+        if partition_replay_response.get("replayed") is not True:
+            raise RuntimeError(f"expected partition idempotency replay, got {partition_replay_response}")
+        if partition_replay_headers.get("Idempotency-Replayed") != "true":
+            raise RuntimeError(f"expected replay header, got {partition_replay_headers}")
+
+        partition_violation_status, partition_violation_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/project-partition/replace",
+            headers={
+                "Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}",
+                "X-Request-ID": "dogfood-gateway-contract-partition-violation",
+                "Idempotency-Key": "dogfood-gateway-contract-partition-violation-idempotency-key",
+            },
+            body={"registry": cross_project_partition_registry, "source": "dogfood_project_partition_violation"},
+            expected_status={403},
+        )
+        assert_error_type(partition_violation_response, "REGISTRY_PARTITION_VIOLATION")
 
         import_status, import_response, import_response_headers = request_json(
             "POST",
@@ -872,9 +979,9 @@ def main() -> int:
             "providers": int(query_postgres_scalar(container, "SELECT count(*) FROM providers;")),
         }
         expected_counts = {
-            "registry_revisions": 2,
-            "admin_audit_events": 3,
-            "idempotency_records": 1,
+            "registry_revisions": 3,
+            "admin_audit_events": 5,
+            "idempotency_records": 2,
             "providers": 1,
         }
         if counts != expected_counts:
@@ -898,6 +1005,9 @@ FROM (
     metadata->>'token_id' AS token_id,
     metadata->>'gateway_key_id' AS gateway_key_id,
     metadata->>'local_private' AS local_private,
+    metadata->>'partition_project_id' AS partition_project_id,
+    metadata->>'partition_diff_fingerprint' AS partition_diff_fingerprint,
+    metadata->>'api_keys_changed' AS api_keys_changed,
     metadata::text LIKE '%{SPOOFED_PRINCIPAL_ID}%' OR metadata::text LIKE '%{SPOOFED_ACTOR_ID}%' OR metadata::text LIKE '%{SPOOFED_PROJECT_ID}%' AS metadata_contains_spoofed_identity,
     metadata::text LIKE '%{GATEWAY_SECRET}%' AS metadata_contains_gateway_secret,
     metadata::text LIKE '%{PUBLIC_ADMIN_TOKEN}%' OR metadata::text LIKE '%{PUBLIC_READONLY_TOKEN}%' AS metadata_contains_public_token
@@ -905,14 +1015,20 @@ FROM (
 ) AS t;
 """,
         )
-        if len(audit_rows) != 3:
-            raise RuntimeError(f"expected three audit rows, got {audit_rows}")
+        if len(audit_rows) != 5:
+            raise RuntimeError(f"expected five audit rows, got {audit_rows}")
         expected_audit_identities = {
             "dogfood-gateway-contract-validate-1": (HARNESS_ACTOR_ID, HARNESS_PRINCIPAL_ID, HARNESS_TOKEN_ID_ADMIN),
             "dogfood-gateway-contract-readonly-validate": (
                 READONLY_POLICY.actor_id,
                 READONLY_POLICY.principal_id,
                 HARNESS_TOKEN_ID_READONLY,
+            ),
+            "dogfood-gateway-contract-partition-1": (HARNESS_ACTOR_ID, HARNESS_PRINCIPAL_ID, HARNESS_TOKEN_ID_ADMIN),
+            "dogfood-gateway-contract-partition-violation": (
+                HARNESS_ACTOR_ID,
+                HARNESS_PRINCIPAL_ID,
+                HARNESS_TOKEN_ID_ADMIN,
             ),
             "dogfood-gateway-contract-import-1": (HARNESS_ACTOR_ID, HARNESS_PRINCIPAL_ID, HARNESS_TOKEN_ID_ADMIN),
         }
@@ -931,6 +1047,14 @@ FROM (
                 raise RuntimeError(f"expected harness gateway key id metadata, got {row}")
             if row["auth_method"] != "trusted_gateway" or row["local_private"] != "false":
                 raise RuntimeError(f"expected trusted_gateway non-local audit metadata, got {row}")
+            if row["request_id"] == "dogfood-gateway-contract-partition-1":
+                if row["action"] != "registry.project_partition_replace" or row["partition_project_id"] != HARNESS_PROJECT_ID:
+                    raise RuntimeError(f"expected partition audit evidence, got {row}")
+                if not row["partition_diff_fingerprint"] or row["api_keys_changed"] != "1":
+                    raise RuntimeError(f"expected partition diff/count evidence, got {row}")
+            if row["request_id"] == "dogfood-gateway-contract-partition-violation":
+                if row["outcome"] != "failure" or row["partition_project_id"] != HARNESS_PROJECT_ID:
+                    raise RuntimeError(f"expected partition violation failure audit evidence, got {row}")
             if row["metadata_contains_spoofed_identity"] or row["metadata_contains_gateway_secret"] or row["metadata_contains_public_token"]:
                 raise RuntimeError(f"trusted/private value leaked into audit metadata: {row}")
 
@@ -956,19 +1080,22 @@ FROM (
 ) AS t;
 """,
         )
-        if len(idempotency_rows) != 1:
-            raise RuntimeError(f"expected one idempotency row, got {idempotency_rows}")
-        idempotency_row = idempotency_rows[0]
-        if idempotency_row["project_id"] != HARNESS_PROJECT_ID or idempotency_row["actor_id"] != HARNESS_ACTOR_ID:
-            raise RuntimeError(f"expected harness idempotency scope, got {idempotency_row}")
-        if idempotency_row["operation"] != "registry.import_replace":
-            raise RuntimeError(f"unexpected idempotency operation, got {idempotency_row}")
-        if idempotency_row["response_status_code"] != 201 or idempotency_row["noop"]:
-            raise RuntimeError(f"unexpected idempotency response evidence, got {idempotency_row}")
-        if not idempotency_row["has_registry_revision"] or not idempotency_row["has_admin_audit_event"]:
-            raise RuntimeError(f"expected idempotency evidence links, got {idempotency_row}")
-        if idempotency_row["row_contains_gateway_secret"] or idempotency_row["row_contains_public_token"]:
-            raise RuntimeError(f"secret or public token leaked into idempotency evidence: {idempotency_row}")
+        if len(idempotency_rows) != 2:
+            raise RuntimeError(f"expected two idempotency rows, got {idempotency_rows}")
+        idempotency_by_operation = {row["operation"]: row for row in idempotency_rows}
+        partition_idempotency_row = idempotency_by_operation.get("registry.project_partition_replace")
+        import_idempotency_row = idempotency_by_operation.get("registry.import_replace")
+        if partition_idempotency_row is None or import_idempotency_row is None:
+            raise RuntimeError(f"expected partition and import idempotency rows, got {idempotency_rows}")
+        for idempotency_row in idempotency_rows:
+            if idempotency_row["project_id"] != HARNESS_PROJECT_ID or idempotency_row["actor_id"] != HARNESS_ACTOR_ID:
+                raise RuntimeError(f"expected harness idempotency scope, got {idempotency_row}")
+            if idempotency_row["response_status_code"] != 201 or idempotency_row["noop"]:
+                raise RuntimeError(f"unexpected idempotency response evidence, got {idempotency_row}")
+            if not idempotency_row["has_registry_revision"] or not idempotency_row["has_admin_audit_event"]:
+                raise RuntimeError(f"expected idempotency evidence links, got {idempotency_row}")
+            if idempotency_row["row_contains_gateway_secret"] or idempotency_row["row_contains_public_token"]:
+                raise RuntimeError(f"secret or public token leaked into idempotency evidence: {idempotency_row}")
 
         report.update(
             {
@@ -1010,9 +1137,18 @@ FROM (
                 "readonly_import_status": readonly_import_status,
                 "readonly_import_error_type": readonly_import_response.get("error", {}).get("error_type"),
                 "audit_rows_after_readonly_deny": audit_rows_after_readonly_deny,
+                "readonly_partition_status": readonly_partition_status,
+                "readonly_partition_error_type": readonly_partition_response.get("error", {}).get("error_type"),
+                "audit_rows_after_readonly_partition_deny": audit_rows_after_readonly_partition_deny,
                 "insufficient_forward_status": insufficient_forward_status,
                 "insufficient_forward_error_type": insufficient_forward_response.get("error", {}).get("error_type"),
                 "audit_rows_after_insufficient_forward": audit_rows_after_insufficient_forward,
+                "partition_status": partition_status,
+                "partition_response": partition_response,
+                "partition_replay_status": partition_replay_status,
+                "partition_replay_response": partition_replay_response,
+                "partition_violation_status": partition_violation_status,
+                "partition_violation_error_type": partition_violation_response.get("error", {}).get("error_type"),
                 "import_status": import_status,
                 "import_response": import_response,
                 "permission_decisions": [
@@ -1036,6 +1172,8 @@ FROM (
                 "audit_rows": audit_rows,
                 "idempotency_rows": idempotency_rows,
                 "replacement_registry": str(replacement_path),
+                "partition_registry": str(partition_path),
+                "cross_project_partition_registry": str(cross_project_partition_path),
             }
         )
         assert_no_secret_or_public_token_leaks(report)

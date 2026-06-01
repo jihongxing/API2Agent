@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,7 +945,7 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Store Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
@@ -1017,29 +1017,30 @@ Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness v0
 Go Control Plane Tenant-Partitioned Registry Mutation Contract Harness Closeout + Phase Review v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Design v0
 Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Store Design v0
 ```
 
-This hosted-readiness evidence task is now the immediate next project task because the private endpoint is implemented and needs live Postgres plus local gateway proof before closeout.
+This hosted-readiness design is now the immediate next project task because project-scoped mutation is constrained and the static dogfood permission source is the next hosted product gap.
 
 Scope:
 
-1. Run the project partition endpoint through a real service process and live Postgres.
-2. Prove trusted-gateway-only access, project partition success, cross-project/global rejection, audit/idempotency evidence, and no secret leakage.
-3. Close the implementation slice if dogfood evidence matches the design.
+1. Design a durable hosted permission store boundary.
+2. Define how the gateway replaces static dogfood policy lookup without adding public role CRUD prematurely.
+3. Preserve trusted-gateway header issuance, Control Plane second-gate checks, audit/idempotency evidence, and project-scoped mutation constraints.
 4. Keep public CRUD, public auth provider implementation, durable permission storage, and production gateway deployment out of scope.
 5. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, or provider onboarding.
 
 Exit criteria:
 
-- live dogfood proves the hosted project partition mutation path.
-- evidence confirms audit/idempotency partition metadata and secret redaction.
-- closeout records remaining risks and next lane.
+- permission store data model and lookup contract are explicit.
+- failure semantics and gateway-local deny behavior are explicit.
+- implementation remains deferred.
 - no granular CRUD API, vault, billing, marketplace, workflow, provider onboarding, or automatic propagation work is included.
 
 References:

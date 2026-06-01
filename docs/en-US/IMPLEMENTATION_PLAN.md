@@ -18,7 +18,7 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation Complete
+Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout Complete
 ```
 
 The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is tenant-partitioned registry mutation private endpoint implementation.
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
+Go Control Plane Hosted Permission Store Design v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Implementation v0
+Go Control Plane Hosted Permission Store Design v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1056,11 +1056,15 @@ Current Phase 6 progress:
   - trusted-gateway-only project partition replacement, registry-layer same-transaction validation, project-scoped idempotency, partition audit evidence, HTTP response evidence, gateway permission mapping, and regression tests are implemented.
   - live Postgres dogfood remains the next evidence task.
   - see `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_IMPLEMENTATION_REPORT.md`.
+- Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0 is complete:
+  - real service plus live Postgres dogfood passed for project partition success, idempotency replay, partition violation, gateway-local readonly denial, audit/idempotency evidence, and secret-safe artifacts.
+  - the project mutation endpoint slice can close.
+  - see `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_LIVE_DOGFOOD_CLOSEOUT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Tenant-Partitioned Registry Mutation Private Endpoint Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Store Design v0
 ```
 
 References:
@@ -1091,6 +1095,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_CONTRACT_HARNESS_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_TENANT_PARTITIONED_REGISTRY_MUTATION_PRIVATE_ENDPOINT_LIVE_DOGFOOD_CLOSEOUT.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
