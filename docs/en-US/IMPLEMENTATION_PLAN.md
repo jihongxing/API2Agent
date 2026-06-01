@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Implementation Complete
+Go Control Plane Hosted Permission Store Read Model Closeout Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission store read model closeout.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission store read model live Postgres dogfood.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1091,11 +1091,16 @@ Current Phase 6 progress:
   - gateway runtime wiring, decision persistence, public CRUD, OAuth/OIDC, production gateway deployment, vault, billing, marketplace, workflow, and automatic propagation remain out of scope.
   - the next hosted-readiness task is read model closeout and phase review.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`.
+- Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0 is complete:
+  - the internal read-model implementation is accepted for v0.
+  - remaining risks are live Postgres seeded proof, gateway runtime wiring, decision persistence, seed/migration lifecycle, policy write lifecycle, real public identity lifecycle, production gateway deployment, and provider ownership hardening.
+  - the next hosted-readiness task is live Postgres dogfood for the read model.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_CLOSEOUT_PHASE_REVIEW.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Store Read Model Closeout + Phase Review v0
+Go Control Plane Hosted Permission Store Read Model Live Postgres Dogfood v0
 ```
 
 References:
@@ -1133,6 +1138,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_SCHEMA_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_IMPLEMENTATION_REPORT.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
