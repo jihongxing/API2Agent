@@ -341,6 +341,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Decision Persistence closeout completed; the local v0 proof is accepted, with duplicate/conflicting decision integrity, sentinel schema semantics, production gateway integration, and retention/privacy left as explicit hardening risks.
 - Go Control Plane Hosted Permission Decision Persistence Integrity Hardening design completed with controlled evidence comparison, duplicate conflict semantics, sentinel constraints, metadata allowlist, retention/privacy stance, test requirements, and dogfood probes.
 - Go Control Plane Hosted Permission Decision Persistence Integrity Hardening implemented with canonical controlled-evidence comparison, duplicate-equivalent no-op behavior, explicit `PERMISSION_DECISION_INTEGRITY_CONFLICT`, sentinel enforcement, regression coverage, and live dogfood proving row counts stay stable on duplicates/conflicts.
+- Go Control Plane Hosted Permission Decision Persistence Integrity Hardening closeout completed; local duplicate/conflict integrity is accepted for v0, and the next hosted-readiness gap is production persistence boundary design.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -348,4 +349,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0.
+- Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0.

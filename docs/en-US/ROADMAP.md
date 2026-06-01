@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation Complete
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission decision persistence integrity hardening implementation complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, and decision persistence integrity hardening implementation are complete.
+Status: hosted permission decision persistence integrity hardening closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, decision persistence integrity hardening implementation, and decision persistence integrity hardening closeout are complete.
 
 Goal:
 
@@ -1035,30 +1035,33 @@ Go Control Plane Hosted Permission Decision Persistence Implementation v0
 Go Control Plane Hosted Permission Decision Persistence Closeout + Phase Review v0
 Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Design v0
 Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
 ```
 
-This hosted-readiness closeout slice is now the immediate next project task because duplicate/conflicting decision integrity behavior is implemented and dogfooded.
+This hosted-readiness design slice is now the immediate next project task because local persistence and integrity semantics are implemented, dogfooded, and accepted for v0.
 
 Scope:
 
-1. Review whether integrity hardening satisfies design acceptance criteria.
-2. Confirm equivalent duplicate, conflicting duplicate, allowed fail-closed, and row-count evidence.
-3. Confirm sentinel and metadata constraints are sufficient for local v0.
-4. Rank remaining hosted-readiness risks after integrity hardening.
-5. Decide the next hosted-readiness slice.
+1. Define production persistence ownership and process/service boundary.
+2. Define connection lifecycle, retry/backoff, fail-closed/buffering posture, and observability.
+3. Define retention/privacy expectations and customer-visible history stance.
+4. Decide whether schema hardening is required before production use.
+5. Define tests and dogfood/canary evidence for a future implementation slice.
 6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, provider onboarding, OAuth/OIDC, public CRUD, policy write APIs, Data Plane mutable reads, or production gateway deployment.
 
 Exit criteria:
 
-- implementation report and dogfood artifact are reviewed.
-- acceptance criteria are marked pass/fail with evidence.
-- remaining risks and the next hosted-readiness task are explicit.
+- production persistence ownership and boundary are explicit.
+- operational behavior for failures and conflicts is documented.
+- retention/privacy and customer-visible history stance are documented.
+- schema hardening decision is explicit.
+- implementation tests and dogfood/canary requirements are defined.
 - OAuth/OIDC, public CRUD, production deployment, vault, billing, marketplace, workflow, provider onboarding, policy write APIs, Data Plane mutable reads, and automatic propagation remain deferred.
 
 References:

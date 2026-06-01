@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation Complete
+Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence integrity hardening closeout and phase review。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence production boundary design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1155,11 +1155,17 @@ Go Control Plane Minimum v0
   - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs、schema migration 和 Data Plane mutable reads 仍然 out of scope。
   - 下一项 hosted-readiness task 是 hosted permission decision persistence integrity hardening closeout and phase review。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_IMPLEMENTATION_REPORT.md`。
+- Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0 已完成：
+  - duplicate/conflicting decision integrity 被接受为 local v0。
+  - live Postgres dogfood 证明 equivalent duplicates no-op、conflicting duplicates fail closed、row counts 保持稳定，且 private Control Plane audit 不变。
+  - remaining risks 是 production persistence boundary、schema hardening、retention/privacy、public identity lifecycle、policy lifecycle 和 production gateway deployment。
+  - 下一项 hosted-readiness task 是 hosted permission decision persistence production boundary design。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_CLOSEOUT_PHASE_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
 ```
 
 参考：
@@ -1206,6 +1212,7 @@ Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Clos
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_IMPLEMENTATION_REPORT.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
