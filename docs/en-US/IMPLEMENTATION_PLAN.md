@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Design Complete
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision persistence production boundary implementation.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission decision persistence production boundary live dogfood and closeout.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1168,11 +1168,19 @@ Current Phase 6 progress:
   - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
   - the next hosted-readiness task is hosted permission decision persistence production boundary implementation.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_DESIGN.md`.
+- Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0 is complete:
+  - the local gateway-owned writer now records canonical `evidence_fingerprint` values for hosted permission decisions.
+  - the schema has tenant/time, subject/time, retention, and policy-fingerprint indexes for production-shaped evidence queries.
+  - bounded write timeout, transient retry budget, production boundary version, and secret-safe metadata are recorded with persisted rows.
+  - allowed persistence timeout and unavailable writes fail closed before forwarding; transient write failures retry within a small request budget.
+  - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
+  - the next hosted-readiness task is hosted permission decision persistence production boundary live dogfood and closeout.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
 ```
 
 References:
@@ -1221,6 +1229,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

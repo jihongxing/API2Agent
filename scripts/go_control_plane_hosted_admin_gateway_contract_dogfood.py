@@ -35,6 +35,7 @@ HOSTED_PERMISSION_STORE_SOURCE = "hosted-permission-store-fixture"
 HOSTED_POLICY_VERSION = "hosted-policy-v1"
 HOSTED_POLICY_FINGERPRINT = "sha256:hosted-permission-store-fixture-v1"
 HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION = "hosted-permission-decision-persistence-v0"
+HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION = "hosted-permission-decision-production-boundary-v0"
 HOSTED_PERMISSION_SENTINEL_POLICY_SOURCE = "hosted-permission-source-unavailable"
 HOSTED_PERMISSION_SENTINEL_POLICY_VERSION = "unavailable"
 HOSTED_PERMISSION_SENTINEL_POLICY_FINGERPRINT = "sha256:unavailable"
@@ -89,6 +90,10 @@ HOP_BY_HOP_RESPONSE_HEADERS = {
 
 PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE = "PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE"
 PERMISSION_DECISION_INTEGRITY_CONFLICT = "PERMISSION_DECISION_INTEGRITY_CONFLICT"
+
+
+class TransientPermissionDecisionPersistenceError(RuntimeError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -551,6 +556,9 @@ def canonical_permission_decision_evidence(decision: "GatewayPermissionDecision"
             "path",
             "gateway_key_id",
             "persistence_version",
+            "production_boundary_version",
+            "persistence_timeout_ms",
+            "persistence_retry_budget",
         )
         if key in metadata and metadata[key] not in ("", None)
     }
@@ -571,6 +579,11 @@ def canonical_permission_decision_evidence(decision: "GatewayPermissionDecision"
         "resolved_at": normalize_rfc3339_micro(decision.resolved_at),
         "metadata": controlled_metadata,
     }
+
+
+def permission_decision_evidence_fingerprint(evidence: dict[str, Any]) -> str:
+    canonical = json.dumps(evidence, sort_keys=True, separators=(",", ":"))
+    return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
 
 
 def create_replacement_registry(path: Path) -> dict:
@@ -1004,12 +1017,28 @@ class HostedReadModelPermissionSource:
 
 
 class HostedPermissionDecisionPersistence:
-    def __init__(self, container: str) -> None:
+    def __init__(
+        self,
+        container: str,
+        *,
+        write_timeout_seconds: float = 2.0,
+        max_transient_retries: int = 2,
+        retry_backoff_seconds: float = 0.01,
+    ) -> None:
         self.container = container
         self.fail_writes = False
+        self.force_write_timeout = False
+        self.transient_failures_before_success = 0
+        self.write_timeout_seconds = write_timeout_seconds
+        self.max_transient_retries = max_transient_retries
+        self.retry_backoff_seconds = retry_backoff_seconds
         self.failures: list[dict[str, str]] = []
         self.duplicate_equivalent_count = 0
         self.integrity_conflict_count = 0
+        self.write_attempt_count = 0
+        self.retry_count = 0
+        self.timeout_count = 0
+        self.rows_written_count = 0
 
     def persist(
         self,
@@ -1035,6 +1064,7 @@ class HostedPermissionDecisionPersistence:
         if contains_secret_like_material(metadata_json):
             raise RuntimeError("hosted permission decision metadata contains secret-like material")
         expected_evidence = canonical_permission_decision_evidence(decision, metadata)
+        evidence_fingerprint = permission_decision_evidence_fingerprint(expected_evidence)
         existing_evidence = self._existing_evidence(decision.decision_id)
         if existing_evidence is not None:
             if existing_evidence != expected_evidence:
@@ -1042,8 +1072,7 @@ class HostedPermissionDecisionPersistence:
                 raise RuntimeError(PERMISSION_DECISION_INTEGRITY_CONFLICT)
             self.duplicate_equivalent_count += 1
             return
-        execute_postgres(
-            self.container,
+        self._execute_insert_with_retry(
             f"""
 INSERT INTO hosted_permission_decisions (
   id,
@@ -1060,6 +1089,7 @@ INSERT INTO hosted_permission_decisions (
   policy_source,
   policy_version,
   policy_fingerprint,
+  evidence_fingerprint,
   resolved_at,
   metadata
 ) VALUES (
@@ -1077,11 +1107,13 @@ INSERT INTO hosted_permission_decisions (
   {sql_literal(decision.policy_source)},
   {sql_literal(decision.policy_version)},
   {sql_literal(decision.policy_fingerprint)},
+  {sql_literal(evidence_fingerprint)},
   {sql_literal(decision.resolved_at)}::timestamptz,
   {sql_literal(metadata_json)}::jsonb
 );
 """,
         )
+        self.rows_written_count += 1
 
     def record_failure(self, decision: GatewayPermissionDecision, error: Exception) -> None:
         self.failures.append(
@@ -1094,6 +1126,31 @@ INSERT INTO hosted_permission_decisions (
                 "error": str(error),
             }
         )
+
+    def _execute_insert_with_retry(self, sql: str) -> None:
+        attempts = 0
+        deadline = time.monotonic() + self.write_timeout_seconds
+        while True:
+            attempts += 1
+            self.write_attempt_count += 1
+            try:
+                if self.force_write_timeout or time.monotonic() >= deadline:
+                    self.timeout_count += 1
+                    raise TimeoutError("hosted permission decision persistence write timed out")
+                if self.transient_failures_before_success > 0:
+                    self.transient_failures_before_success -= 1
+                    raise TransientPermissionDecisionPersistenceError(
+                        "transient hosted permission decision persistence failure"
+                    )
+                execute_postgres(self.container, sql)
+                return
+            except TransientPermissionDecisionPersistenceError:
+                if attempts > self.max_transient_retries or time.monotonic() >= deadline:
+                    raise RuntimeError("hosted permission decision persistence is unavailable")
+                self.retry_count += 1
+                time.sleep(self.retry_backoff_seconds)
+            except TimeoutError as exc:
+                raise RuntimeError(str(exc))
 
     def _metadata(
         self,
@@ -1109,6 +1166,9 @@ INSERT INTO hosted_permission_decisions (
             "error_type": decision.error_type,
             "permission_source": decision.permission_source,
             "persistence_version": HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION,
+            "production_boundary_version": HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION,
+            "persistence_timeout_ms": int(self.write_timeout_seconds * 1000),
+            "persistence_retry_budget": self.max_transient_retries,
             "request_id": headers.get("X-Request-ID", ""),
             "method": method,
             "path": path,
@@ -1136,6 +1196,7 @@ FROM (
     policy_source,
     policy_version,
     policy_fingerprint,
+    evidence_fingerprint,
     to_char(resolved_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS resolved_at,
     metadata
   FROM hosted_permission_decisions
@@ -1772,6 +1833,19 @@ def main() -> int:
         if audit_rows_after_persistence_unavailable != audit_rows_before_missing_auth:
             raise RuntimeError("allowed decision persistence failure must fail closed before Control Plane audit")
 
+        gateway.decision_persistence.force_write_timeout = True
+        persistence_timeout_status, persistence_timeout_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={"Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}"},
+            expected_status={503},
+        )
+        gateway.decision_persistence.force_write_timeout = False
+        assert_error_type(persistence_timeout_response, PERMISSION_DECISION_PERSISTENCE_UNAVAILABLE)
+        audit_rows_after_persistence_timeout = count_audit_rows(container)
+        if audit_rows_after_persistence_timeout != audit_rows_before_missing_auth:
+            raise RuntimeError("allowed decision persistence timeout must fail closed before Control Plane audit")
+
         gateway.permission_source_available = False
         unavailable_status, unavailable_response, _ = request_json(
             "POST",
@@ -1893,6 +1967,19 @@ VALUES ('hosted-permission-store-secondary', 'hosted-policy-v2', 'sha256:hosted-
         if validate_response.get("valid") is not True:
             raise RuntimeError(f"expected registry validation success, got {validate_response}")
 
+        gateway.decision_persistence.transient_failures_before_success = 1
+        transient_retry_status, transient_retry_response, _ = request_json(
+            "POST",
+            f"{gateway_base_url}/v1/admin/registry/validate",
+            headers={
+                "Authorization": f"Bearer {PUBLIC_ADMIN_TOKEN}",
+                "X-Request-ID": "dogfood-gateway-contract-transient-retry",
+            },
+            expected_status={200},
+        )
+        if transient_retry_response.get("valid") is not True:
+            raise RuntimeError(f"expected transient retry validate success, got {transient_retry_response}")
+
         readonly_validate_status, readonly_validate_response, _ = request_json(
             "POST",
             f"{gateway_base_url}/v1/admin/registry/validate",
@@ -1918,7 +2005,7 @@ VALUES ('hosted-permission-store-secondary', 'hosted-policy-v2', 'sha256:hosted-
         assert_error_type(readonly_import_response, "PUBLIC_AUTHZ_DENIED")
 
         audit_rows_after_readonly_deny = count_audit_rows(container)
-        if audit_rows_after_readonly_deny != audit_rows_before_missing_auth + 2:
+        if audit_rows_after_readonly_deny != audit_rows_before_missing_auth + 3:
             raise RuntimeError("gateway-local readonly denial must not create Control Plane audit rows")
 
         readonly_partition_status, readonly_partition_response, _ = request_json(
@@ -2032,10 +2119,10 @@ VALUES ('hosted-permission-store-secondary', 'hosted-policy-v2', 'sha256:hosted-
         }
         expected_counts = {
             "registry_revisions": 3,
-            "admin_audit_events": 5,
+            "admin_audit_events": 6,
             "idempotency_records": 2,
             "providers": 1,
-            "hosted_permission_decisions": 15,
+            "hosted_permission_decisions": 16,
         }
         if counts != expected_counts:
             raise RuntimeError(f"unexpected persistent counts: {counts}")
@@ -2060,6 +2147,7 @@ FROM (
     policy_source,
     policy_version,
     policy_fingerprint,
+    evidence_fingerprint,
     resolved_at,
     metadata->>'decision_status' AS decision_status,
     metadata->>'error_type' AS error_type,
@@ -2068,6 +2156,9 @@ FROM (
     metadata->>'path' AS path,
     metadata->>'gateway_key_id' AS gateway_key_id,
     metadata->>'persistence_version' AS persistence_version,
+    metadata->>'production_boundary_version' AS production_boundary_version,
+    metadata->>'persistence_timeout_ms' AS persistence_timeout_ms,
+    metadata->>'persistence_retry_budget' AS persistence_retry_budget,
     row_to_json(hosted_permission_decisions)::text LIKE '%{GATEWAY_SECRET}%' AS row_contains_gateway_secret,
     row_to_json(hosted_permission_decisions)::text LIKE '%{PUBLIC_ADMIN_TOKEN}%'
       OR row_to_json(hosted_permission_decisions)::text LIKE '%{PUBLIC_READONLY_TOKEN}%'
@@ -2093,6 +2184,12 @@ FROM (
                 raise RuntimeError(f"expected gateway key evidence in decision row, got {decision_row}")
             if decision_row["persistence_version"] != HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION:
                 raise RuntimeError(f"expected persistence version evidence, got {decision_row}")
+            if decision_row["production_boundary_version"] != HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION:
+                raise RuntimeError(f"expected production boundary version evidence, got {decision_row}")
+            if not str(decision_row["evidence_fingerprint"]).startswith("sha256:"):
+                raise RuntimeError(f"expected evidence fingerprint, got {decision_row}")
+            if decision_row["persistence_timeout_ms"] != "2000" or decision_row["persistence_retry_budget"] != "2":
+                raise RuntimeError(f"expected bounded persistence configuration evidence, got {decision_row}")
             if (
                 decision_row["row_contains_gateway_secret"]
                 or decision_row["row_contains_public_token"]
@@ -2105,11 +2202,11 @@ FROM (
             required_permission = str(decision_row["required_permission"])
             required_permission_counts[required_permission] = required_permission_counts.get(required_permission, 0) + 1
 
-        expected_decision_status_counts = {"200": 7, "403": 5, "503": 3}
+        expected_decision_status_counts = {"200": 8, "403": 5, "503": 3}
         if decision_status_counts != expected_decision_status_counts:
             raise RuntimeError(f"unexpected decision status counts: {decision_status_counts}")
-        if required_permission_counts.get(PERMISSION_REGISTRY_VALIDATE) != 9:
-            raise RuntimeError(f"expected nine validate decision rows, got {required_permission_counts}")
+        if required_permission_counts.get(PERMISSION_REGISTRY_VALIDATE) != 10:
+            raise RuntimeError(f"expected ten validate decision rows, got {required_permission_counts}")
         if required_permission_counts.get(PERMISSION_REGISTRY_IMPORT_REPLACE) != 2:
             raise RuntimeError(f"expected two import decision rows, got {required_permission_counts}")
         if required_permission_counts.get(PERMISSION_REGISTRY_PROJECT_PARTITION_REPLACE) != 4:
@@ -2210,10 +2307,15 @@ FROM (
 ) AS t;
 """,
         )
-        if len(audit_rows) != 5:
-            raise RuntimeError(f"expected five audit rows, got {audit_rows}")
+        if len(audit_rows) != 6:
+            raise RuntimeError(f"expected six audit rows, got {audit_rows}")
         expected_audit_identities = {
             "dogfood-gateway-contract-validate-1": (HARNESS_ACTOR_ID, HARNESS_PRINCIPAL_ID, HARNESS_TOKEN_ID_ADMIN),
+            "dogfood-gateway-contract-transient-retry": (
+                HARNESS_ACTOR_ID,
+                HARNESS_PRINCIPAL_ID,
+                HARNESS_TOKEN_ID_ADMIN,
+            ),
             "dogfood-gateway-contract-readonly-validate": (
                 READONLY_POLICY.actor_id,
                 READONLY_POLICY.principal_id,
@@ -2330,7 +2432,12 @@ FROM (
                 "permission_decision_rows_after_invalid_public_auth": permission_decision_rows_after_invalid_auth,
                 "persistence_unavailable_status": persistence_unavailable_status,
                 "persistence_unavailable_error_type": persistence_unavailable_response.get("error", {}).get("error_type"),
+                "persistence_timeout_status": persistence_timeout_status,
+                "persistence_timeout_error_type": persistence_timeout_response.get("error", {}).get("error_type"),
+                "transient_retry_status": transient_retry_status,
+                "transient_retry_valid": transient_retry_response.get("valid"),
                 "audit_rows_after_persistence_unavailable": audit_rows_after_persistence_unavailable,
+                "audit_rows_after_persistence_timeout": audit_rows_after_persistence_timeout,
                 "audit_rows_after_permission_source_unavailable": audit_rows_after_unavailable,
                 "audit_rows_after_missing_membership": audit_rows_after_no_membership,
                 "audit_rows_after_suspended_membership": audit_rows_after_suspended_membership,
@@ -2404,6 +2511,18 @@ FROM (
                     gateway.decision_persistence.integrity_conflict_count
                     if gateway.decision_persistence is not None
                     else 0
+                ),
+                "permission_decision_write_attempt_count": (
+                    gateway.decision_persistence.write_attempt_count if gateway.decision_persistence is not None else 0
+                ),
+                "permission_decision_retry_count": (
+                    gateway.decision_persistence.retry_count if gateway.decision_persistence is not None else 0
+                ),
+                "permission_decision_timeout_count": (
+                    gateway.decision_persistence.timeout_count if gateway.decision_persistence is not None else 0
+                ),
+                "permission_decision_rows_written_count": (
+                    gateway.decision_persistence.rows_written_count if gateway.decision_persistence is not None else 0
                 ),
                 "audit_counts": counts,
                 "hosted_permission_decision_status_counts": decision_status_counts,

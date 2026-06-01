@@ -307,6 +307,7 @@ CREATE TABLE hosted_permission_decisions (
   policy_source TEXT NOT NULL,
   policy_version TEXT NOT NULL,
   policy_fingerprint TEXT NOT NULL,
+  evidence_fingerprint TEXT NOT NULL,
   resolved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -315,11 +316,24 @@ CREATE TABLE hosted_permission_decisions (
   CHECK (actor_id <> ''),
   CHECK (organization_id <> ''),
   CHECK (required_permission <> ''),
-  CHECK (policy_fingerprint LIKE 'sha256:%')
+  CHECK (policy_fingerprint LIKE 'sha256:%'),
+  CHECK (evidence_fingerprint LIKE 'sha256:%')
 );
 
 CREATE INDEX hosted_permission_decisions_subject_project_resolved_at
   ON hosted_permission_decisions (subject_id, project_id, resolved_at DESC);
 
+CREATE INDEX hosted_permission_decisions_project_resolved_at
+  ON hosted_permission_decisions (project_id, resolved_at DESC);
+
+CREATE INDEX hosted_permission_decisions_subject_resolved_at
+  ON hosted_permission_decisions (subject_id, resolved_at DESC);
+
+CREATE INDEX hosted_permission_decisions_created_at
+  ON hosted_permission_decisions (created_at);
+
 CREATE INDEX hosted_permission_decisions_policy_version
   ON hosted_permission_decisions (policy_source, policy_version);
+
+CREATE INDEX hosted_permission_decisions_policy_fingerprint
+  ON hosted_permission_decisions (policy_fingerprint);

@@ -267,7 +267,25 @@ def test_hosted_permission_decision_persistence_writes_secret_safe_sql() -> None
     assert captured_sql
     sql = captured_sql[0]
     assert "INSERT INTO hosted_permission_decisions" in sql
+    assert "evidence_fingerprint" in sql
+    metadata = {
+        "decision_status": decision.status,
+        "permission_source": decision.permission_source,
+        "persistence_version": harness.HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION,
+        "production_boundary_version": harness.HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION,
+        "persistence_timeout_ms": 2000,
+        "persistence_retry_budget": 2,
+        "request_id": "req-persist-1",
+        "method": "POST",
+        "path": "/v1/admin/registry/validate",
+        "gateway_key_id": harness.GATEWAY_KEY_ID,
+    }
+    expected_fingerprint = harness.permission_decision_evidence_fingerprint(
+        harness.canonical_permission_decision_evidence(decision, metadata)
+    )
+    assert expected_fingerprint in sql
     assert '"request_id": "req-persist-1"' in sql
+    assert harness.HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION in sql
     assert harness.HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION in sql
     assert harness.HOSTED_POLICY_FINGERPRINT in sql
     assert harness.PUBLIC_ADMIN_TOKEN not in sql
@@ -297,6 +315,9 @@ def test_hosted_permission_decision_persistence_accepts_equivalent_duplicate() -
             "decision_status": decision.status,
             "permission_source": decision.permission_source,
             "persistence_version": harness.HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION,
+            "production_boundary_version": harness.HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION,
+            "persistence_timeout_ms": 2000,
+            "persistence_retry_budget": 2,
             "request_id": "req-duplicate",
             "method": "POST",
             "path": "/v1/admin/registry/validate",
@@ -363,6 +384,9 @@ def test_hosted_permission_decision_persistence_rejects_conflicting_duplicate() 
             "decision_status": decision.status,
             "permission_source": decision.permission_source,
             "persistence_version": harness.HOSTED_PERMISSION_DECISION_PERSISTENCE_VERSION,
+            "production_boundary_version": harness.HOSTED_PERMISSION_DECISION_PRODUCTION_BOUNDARY_VERSION,
+            "persistence_timeout_ms": 2000,
+            "persistence_retry_budget": 2,
             "method": "POST",
             "path": "/v1/admin/registry/validate",
             "gateway_key_id": harness.GATEWAY_KEY_ID,
@@ -406,6 +430,86 @@ def test_hosted_permission_decision_persistence_rejects_conflicting_duplicate() 
         harness.query_postgres_json = original_query_postgres_json
 
     assert persistence.integrity_conflict_count == 1
+
+
+def test_hosted_permission_decision_persistence_retries_transient_write() -> None:
+    harness = load_harness_module()
+    captured_sql = []
+    original_execute_postgres = harness.execute_postgres
+    original_query_postgres_json = harness.query_postgres_json
+
+    def fake_execute_postgres(container, sql):
+        captured_sql.append(sql)
+
+    def fake_query_postgres_json(container, sql):
+        return []
+
+    decision = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}", "X-Request-ID": "req-transient"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+    )
+    harness.execute_postgres = fake_execute_postgres
+    harness.query_postgres_json = fake_query_postgres_json
+    try:
+        persistence = harness.HostedPermissionDecisionPersistence("container", retry_backoff_seconds=0)
+        persistence.transient_failures_before_success = 1
+        persistence.persist(
+            decision,
+            method="POST",
+            path="/v1/admin/registry/validate",
+            headers={"X-Request-ID": "req-transient"},
+            gateway_key_id=harness.GATEWAY_KEY_ID,
+        )
+    finally:
+        harness.execute_postgres = original_execute_postgres
+        harness.query_postgres_json = original_query_postgres_json
+
+    assert len(captured_sql) == 1
+    assert persistence.write_attempt_count == 2
+    assert persistence.retry_count == 1
+    assert persistence.rows_written_count == 1
+
+
+def test_hosted_permission_decision_persistence_timeout_fails_closed() -> None:
+    harness = load_harness_module()
+    captured_sql = []
+    original_execute_postgres = harness.execute_postgres
+    original_query_postgres_json = harness.query_postgres_json
+
+    def fake_execute_postgres(container, sql):
+        captured_sql.append(sql)
+
+    def fake_query_postgres_json(container, sql):
+        return []
+
+    decision = harness.resolve_gateway_admin_principal(
+        {"Authorization": f"Bearer {harness.PUBLIC_ADMIN_TOKEN}", "X-Request-ID": "req-timeout"},
+        harness.PERMISSION_REGISTRY_VALIDATE,
+    )
+    harness.execute_postgres = fake_execute_postgres
+    harness.query_postgres_json = fake_query_postgres_json
+    try:
+        persistence = harness.HostedPermissionDecisionPersistence("container")
+        persistence.force_write_timeout = True
+        try:
+            persistence.persist(
+                decision,
+                method="POST",
+                path="/v1/admin/registry/validate",
+                headers={"X-Request-ID": "req-timeout"},
+                gateway_key_id=harness.GATEWAY_KEY_ID,
+            )
+        except RuntimeError as exc:
+            assert "timed out" in str(exc)
+        else:
+            raise AssertionError("expected persistence timeout")
+    finally:
+        harness.execute_postgres = original_execute_postgres
+        harness.query_postgres_json = original_query_postgres_json
+
+    assert captured_sql == []
+    assert persistence.timeout_count == 1
+    assert persistence.rows_written_count == 0
 
 
 def test_hosted_permission_decision_persistence_rejects_allowed_sentinel_evidence() -> None:

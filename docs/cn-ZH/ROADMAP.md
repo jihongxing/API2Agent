@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Design Complete
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation Complete
 ```
 
 战略判断：
@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission decision persistence production boundary design 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout 和 decision persistence production boundary design 已完成。
+状态：hosted permission decision persistence production boundary implementation 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout、decision persistence production boundary design 和 decision persistence production boundary implementation 已完成。
 
 目标：
 
@@ -1037,32 +1037,31 @@ Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Desi
 Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Implementation v0
 Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Closeout + Phase Review v0
 Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0
+Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
 ```
 
-由于 production boundary design 已完成，且 local persistence 和 integrity semantics 已实现、通过 dogfood，并被接受为 v0，下一项 immediate project task 是 implementation。
+由于 production-boundary implementation 已在本地完成，下一项 immediate project task 是 live Postgres evidence 和 phase review。
 
 范围：
 
-1. 在 hosted admin gateway 中引入 production-shaped persistence writer boundary。
-2. 增加 bounded connection lifecycle、write timeout 和窄 retry/backoff behavior。
-3. 保持 private Control Plane forwarding 前的 allowed fail-closed behavior。
-4. 如果 local migration path 允许，增加 evidence fingerprint 和 tenant/time query support 的 schema hardening。
-5. 扩展 tests 和 local dogfood，覆盖 transient retry、exhausted persistence failure、duplicate conflicts、fingerprints、retention query shape 和 secret-safe evidence。
+1. 为 production-boundary persistence implementation 运行 live Postgres dogfood。
+2. 验证 evidence fingerprints、production boundary metadata、transient retry、timeout fail-closed behavior、duplicate conflict behavior 和 secret-safe artifacts。
+3. 确认 forwarded allowed requests 的 private Control Plane audit correlation。
+4. 编写 closeout and phase review。
+5. 基于 live evidence 决定下一项 hosted-readiness slice。
 6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow、provider onboarding、OAuth/OIDC、public CRUD、policy write APIs、Data Plane mutable reads 或 production gateway deployment。
 
 退出标准：
 
-- gateway-owned production-shaped persistence writer 已在本地实现。
-- bounded connection/retry/timeout behavior 已有 tests 覆盖。
-- allowed persistence failure 和 integrity conflict 会在 forwarding 前失败。
-- schema evidence fingerprint 和 tenant/time query support 已证明，或带着 documented schema 的 tests 明确 deferred。
-- local dogfood 证明 secret-safe rows、conflict behavior、transient retry、exhausted fail-closed behavior 和 gateway-to-Control-Plane audit correlation。
+- live dogfood artifact 用预期 production-boundary evidence 通过。
+- closeout 接受或拒绝 local v0 production-boundary implementation。
+- remaining risks 和下一项任务已文档化。
 - OAuth/OIDC、public CRUD、production deployment、vault、billing、marketplace、workflow、provider onboarding、policy write APIs、Data Plane mutable reads 和 automatic propagation 保持 deferred。
 
 参考：
@@ -1113,6 +1112,7 @@ Go Control Plane Hosted Permission Decision Persistence Production Boundary Impl
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
