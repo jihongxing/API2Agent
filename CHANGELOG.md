@@ -345,6 +345,7 @@ All notable API2Agent changes will be documented in this file.
 - Go Control Plane Hosted Permission Decision Persistence Production Boundary design completed with gateway-owned in-process persistence ownership, bounded connection/retry behavior, allowed fail-closed/no-silent-buffering posture, observability, retention/privacy stance, customer-visible history limits, schema hardening requirements, and implementation dogfood/canary evidence.
 - Go Control Plane Hosted Permission Decision Persistence Production Boundary implemented locally with `evidence_fingerprint` schema hardening, tenant/time and retention indexes, gateway-owned bounded timeout/retry writer behavior, production boundary metadata, transient retry proof, timeout fail-closed proof, regression coverage, and live dogfood requirements.
 - Go Control Plane Hosted Permission Decision Persistence Production Boundary live dogfood and closeout completed; local production-boundary proof is accepted for v0 with 16 secret-safe decision rows, evidence fingerprints, production-boundary metadata, transient retry proof, timeout fail-closed proof, and stable duplicate/conflict behavior.
+- Go Control Plane Hosted Permission Decision Persistence stage closeout completed; the full local v0 decision-persistence lane is accepted as 100% complete, Hosted Control Plane remains estimated at 70%, and the next hosted-readiness gap is decision retention and customer-history boundary design.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
@@ -352,4 +353,4 @@ All notable API2Agent changes will be documented in this file.
 
 ### Planned Next
 
-- Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0.
+- Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0.

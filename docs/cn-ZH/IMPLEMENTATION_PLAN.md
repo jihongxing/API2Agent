@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Closeout Complete
+Go Control Plane Hosted Permission Decision Persistence Stage Closeout Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision persistence stage closeout and readiness review。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission decision retention and customer-history boundary design。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
+Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
+Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1186,11 +1186,20 @@ Go Control Plane Minimum v0
   - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
   - 下一项 hosted-readiness task 是 hosted permission decision persistence stage closeout and readiness review。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0 已完成：
+  - 完整 hosted permission decision persistence lane 已接受为 local v0 complete。
+  - request-time decision evidence、duplicate/conflict integrity、production-shaped timeout/retry behavior、`evidence_fingerprint`、production-boundary metadata 和 secret-safe live dogfood evidence 已完成。
+  - hosted permission decision persistence lane completion 对 local v0 是 100%。
+  - 更大的 Hosted Control Plane phase completion 估算为 70%。
+  - remaining hosted-readiness risks 是 decision retention/customer history、public identity lifecycle、policy mutation lifecycle、production gateway deployment、production migration/operations 和 deferred product surfaces。
+  - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
+  - 下一项 hosted-readiness task 是 hosted permission decision retention and customer-history boundary design。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
+Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
 ```
 
 参考：
@@ -1241,6 +1250,7 @@ Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readine
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md`
 - `docs/cn-ZH/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`

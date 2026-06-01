@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Production Boundary Closeout Complete
+Go Control Plane Hosted Permission Decision Persistence Stage Closeout Complete
 ```
 
 Strategic thesis:
@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
+Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission decision persistence production boundary closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, decision persistence integrity hardening implementation, decision persistence integrity hardening closeout, decision persistence production boundary design, decision persistence production boundary implementation, and decision persistence production boundary closeout are complete.
+Status: hosted permission decision persistence stage closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, decision persistence integrity hardening implementation, decision persistence integrity hardening closeout, decision persistence production boundary design, decision persistence production boundary implementation, decision persistence production boundary closeout, and full decision persistence stage closeout are complete.
 
 Goal:
 
@@ -1039,30 +1039,31 @@ Go Control Plane Hosted Permission Decision Persistence Integrity Hardening Clos
 Go Control Plane Hosted Permission Decision Persistence Production Boundary Design v0
 Go Control Plane Hosted Permission Decision Persistence Production Boundary Implementation v0
 Go Control Plane Hosted Permission Decision Persistence Production Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readiness Review v0
+Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
 ```
 
-This hosted-readiness review slice is now the immediate next project task because the production-boundary lane is complete for local v0 and the full decision-persistence lane should be accepted or reopened before another hosted-readiness lane starts.
+This hosted-readiness design slice is now the immediate next project task because the full decision-persistence lane is accepted for local v0 and persisted decision rows need an explicit retention, history, privacy, export/delete, and access-control boundary before they become customer-visible product evidence.
 
 Scope:
 
-1. Summarize the full hosted permission decision persistence lane.
-2. Decide whether the lane is complete for local v0.
-3. Rank remaining hosted-readiness risks.
-4. Choose the next narrow task without expanding hosted product scope.
-5. Preserve the production-boundary lane completion estimate.
+1. Define retention classes and default retention stance for hosted permission decisions.
+2. Decide whether and how customers can query decision history.
+3. Define export, deletion, legal hold, audit, and operator-access boundaries.
+4. Define privacy redaction requirements for decision evidence.
+5. Define implementation and dogfood evidence required before any customer-visible history endpoint.
 6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, provider onboarding, OAuth/OIDC, public CRUD, policy write APIs, Data Plane mutable reads, or production gateway deployment.
 
 Exit criteria:
 
-- full hosted permission decision persistence lane is accepted or reopened.
-- production-boundary lane completion is recorded.
-- next hosted-readiness task is chosen from remaining risks.
+- retention/customer-history boundary is documented.
+- access-control, export/delete, legal hold, and audit expectations are explicit.
+- required implementation and dogfood evidence for the next slice is defined.
 - OAuth/OIDC, public CRUD, production deployment, vault, billing, marketplace, workflow, provider onboarding, policy write APIs, Data Plane mutable reads, and automatic propagation remain deferred.
 
 References:
@@ -1115,6 +1116,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_PRODUCTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_STAGE_CLOSEOUT_READINESS_REVIEW.md`
 - `docs/en-US/API2AGENT_HOSTED_CONTROL_PLANE_PAUSE_AND_AGENT_COMPILER_REENTRY.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_EXPANSION_DESIGN.md`
 - `docs/en-US/AGENT_CAPABILITY_COMPILER_QUALITY_DIAGNOSTICS_IMPLEMENTATION_REPORT.md`
