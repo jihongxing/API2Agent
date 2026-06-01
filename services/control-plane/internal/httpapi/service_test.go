@@ -1108,32 +1108,110 @@ func TestTrustedGatewayHostedPermissionPolicyMutationPromoteRequiresIdempotencyA
 	}
 }
 
-func TestTrustedGatewayHostedPermissionPolicyMutationMapsPolicyErrors(t *testing.T) {
-	mutator := &recordingHostedPolicyMutator{err: registry.RegistryMutationError{
-		ErrorType:  "POLICY_VERSION_CONFLICT",
-		Scope:      "caller",
-		Retryable:  false,
-		Underlying: fmt.Errorf("base policy is stale"),
-	}}
-	handler := newPostgresHostedPolicyMutationHandlerWithMutator(mutator)
-	handler.AdminIdentityMode = AdminIdentityModeHosted
-	handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
-	handler.TrustedGatewaySecret = "gateway-secret"
-	response := performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", map[string]any{
-		"operation":             registry.HostedPermissionPolicyMutationRollbackOperation,
-		"target_policy_version": "policy-v1",
-	}, "", trustedGatewayHeaders("gateway-secret", map[string]string{
-		"X-Request-ID":           "req-policy-rollback",
-		"Idempotency-Key":        "idem-policy-rollback",
-		trustedPermissionsHeader: registry.PermissionHostedPermissionPolicyRollback,
-	}))
-	if response.Code != http.StatusConflict {
-		t.Fatalf("expected status 409, got %d: %s", response.Code, response.Body.String())
+func TestTrustedGatewayHostedPermissionPolicyMutationMapsOperationalErrors(t *testing.T) {
+	tests := []struct {
+		name      string
+		errorType string
+		scope     string
+		retryable bool
+		status    int
+	}{
+		{
+			name:      "scope violation",
+			errorType: "POLICY_SCOPE_VIOLATION",
+			scope:     "caller",
+			status:    http.StatusForbidden,
+		},
+		{
+			name:      "state conflict",
+			errorType: "POLICY_STATE_CONFLICT",
+			scope:     "caller",
+			status:    http.StatusConflict,
+		},
+		{
+			name:      "version conflict",
+			errorType: "POLICY_VERSION_CONFLICT",
+			scope:     "caller",
+			status:    http.StatusConflict,
+		},
+		{
+			name:      "idempotency conflict",
+			errorType: "IDEMPOTENCY_KEY_CONFLICT",
+			scope:     "caller",
+			status:    http.StatusConflict,
+		},
+		{
+			name:      "idempotency in progress",
+			errorType: "IDEMPOTENCY_REQUEST_IN_PROGRESS",
+			scope:     "platform",
+			retryable: true,
+			status:    http.StatusConflict,
+		},
+		{
+			name:      "persistent read failure",
+			errorType: "PERSISTENT_STORE_READ_FAILED",
+			scope:     "platform",
+			retryable: true,
+			status:    http.StatusServiceUnavailable,
+		},
+		{
+			name:      "persistent write failure",
+			errorType: "PERSISTENT_STORE_WRITE_FAILED",
+			scope:     "platform",
+			retryable: true,
+			status:    http.StatusServiceUnavailable,
+		},
+		{
+			name:      "idempotency store write failure",
+			errorType: "IDEMPOTENCY_STORE_WRITE_FAILED",
+			scope:     "platform",
+			retryable: true,
+			status:    http.StatusServiceUnavailable,
+		},
+		{
+			name:      "audit write failure",
+			errorType: "AUDIT_WRITE_FAILED",
+			scope:     "platform",
+			retryable: true,
+			status:    http.StatusInternalServerError,
+		},
+		{
+			name:      "replay decode failure",
+			errorType: "IDEMPOTENCY_RESPONSE_REPLAY_FAILED",
+			scope:     "platform",
+			retryable: true,
+			status:    http.StatusInternalServerError,
+		},
 	}
-	var errorResponse ErrorResponse
-	decodeResponse(t, response, &errorResponse)
-	if errorResponse.Error.ErrorType != "POLICY_VERSION_CONFLICT" || errorResponse.Error.Retryable {
-		t.Fatalf("unexpected error response: %#v", errorResponse)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mutator := &recordingHostedPolicyMutator{err: registry.RegistryMutationError{
+				ErrorType:  test.errorType,
+				Scope:      test.scope,
+				Retryable:  test.retryable,
+				Underlying: fmt.Errorf("simulated %s", test.errorType),
+			}}
+			handler := newPostgresHostedPolicyMutationHandlerWithMutator(mutator)
+			handler.AdminIdentityMode = AdminIdentityModeHosted
+			handler.AdminAuthenticatorMode = AdminAuthenticatorModeTrustedGateway
+			handler.TrustedGatewaySecret = "gateway-secret"
+			response := performRequestWithHeaders(handler, http.MethodPost, "/v1/private/hosted/permission-policy/mutation", map[string]any{
+				"operation":             registry.HostedPermissionPolicyMutationRollbackOperation,
+				"target_policy_version": "policy-v1",
+			}, "", trustedGatewayHeaders("gateway-secret", map[string]string{
+				"X-Request-ID":           "req-policy-error",
+				"Idempotency-Key":        "idem-policy-error",
+				trustedPermissionsHeader: registry.PermissionHostedPermissionPolicyRollback,
+			}))
+			if response.Code != test.status {
+				t.Fatalf("expected status %d, got %d: %s", test.status, response.Code, response.Body.String())
+			}
+			var errorResponse ErrorResponse
+			decodeResponse(t, response, &errorResponse)
+			if errorResponse.Error.ErrorType != test.errorType || errorResponse.Error.ErrorScope != test.scope || errorResponse.Error.Retryable != test.retryable {
+				t.Fatalf("unexpected error response: %#v", errorResponse)
+			}
+		})
 	}
 }
 

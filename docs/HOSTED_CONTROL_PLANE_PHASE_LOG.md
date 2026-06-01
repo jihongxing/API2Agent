@@ -434,3 +434,39 @@ Completion:
 
 - serve boundary dogfood lane: 100%
 - Hosted Control Plane phase estimate: 85%
+
+## 2026-06-02
+
+Task: Go Control Plane Hosted Permission Policy Mutation Operational Error Semantics Review v0
+
+Commit: pending until this review slice is committed
+
+Changed:
+
+- reviewed hosted private policy mutation operational error mapping for caller/platform scope, retryability, and HTTP status
+- replaced the single policy-version conflict endpoint check with a hosted policy mutation error semantics matrix
+- covered policy scope/state/version conflicts, idempotency key conflicts, in-progress idempotency requests, persistent store failures, idempotency store failures, audit failures, and replay decode failures
+- kept the existing private trusted-gateway-only mutation route and did not introduce public policy CRUD
+
+Validation:
+
+- `go test ./internal/httpapi -run "TestTrustedGatewayHostedPermissionPolicyMutationMapsOperationalErrors" -v`
+- `go test ./internal/httpapi -run "TestTrustedGatewayHostedPermissionPolicyMutation|TestHostedPermissionPolicyMutation|TestImportReplaceRegistryMapsMutationErrors"`
+- `go test ./internal/registry -run "TestPostgresHostedPermissionPolicyMutation"`
+- `go test ./...`
+
+Decision:
+
+- operational error semantics review lane is complete for v0
+- hosted policy mutation endpoint error responses now have dedicated coverage for status, scope, and retryability
+- no standalone review report or closeout document was created under the new documentation policy
+- Hosted Control Plane completion estimate moves to 86%
+
+Next:
+
+- `Go Control Plane Hosted Permission Policy Mutation Idempotency Replay Evidence Review v0`
+
+Completion:
+
+- operational error semantics review lane: 100%
+- Hosted Control Plane phase estimate: 86%
