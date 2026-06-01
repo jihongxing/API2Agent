@@ -945,12 +945,12 @@ Tooling Re-entry 可以暂停。API-first hardening backlog 已关闭；除非�
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
 ## 9. Phase 6：Hosted Control Plane
 
-状态：hosted permission decision retention boundary closeout 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout、decision persistence production boundary design、decision persistence production boundary implementation、decision persistence production boundary closeout、完整 decision persistence stage closeout、decision retention/customer-history boundary design、decision retention boundary implementation 和 decision retention boundary closeout 已完成。
+状态：hosted permission policy mutation boundary design 已完成。Local Go Control Plane minimum、snapshot distribution、private import/replace、idempotency、hosted admin trusted gateway、local gateway contract harness、gateway permission-source proof、tenant partition validation、private project mutation endpoint、live dogfood closeout、durable permission-store boundary design、hosted permission-store contract harness and closeout、hosted permission-store schema、schema closeout、read model implementation、read model closeout、read model live Postgres dogfood、dogfood closeout、gateway runtime wiring design、gateway runtime wiring implementation、gateway runtime wiring closeout、decision persistence design、decision persistence implementation、decision persistence closeout、decision persistence integrity hardening design、decision persistence integrity hardening implementation、decision persistence integrity hardening closeout、decision persistence production boundary design、decision persistence production boundary implementation、decision persistence production boundary closeout、完整 decision persistence stage closeout、decision retention/customer-history boundary design、decision retention boundary implementation、decision retention boundary closeout 和 policy mutation boundary design 已完成。
 
 目标：
 
@@ -1043,30 +1043,33 @@ Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readine
 Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
 Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 ```
 
 下一项 hosted-readiness slice：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
-由于 decision read、persistence、production-shaped persistence 和 retention/history boundary proof 已完成 local v0，而 hosted roles、grants、memberships 和 policy versions 仍是 seed 的，下一项 immediate project task 是设计 policy mutation boundary。
+由于 policy mutation boundary design 已完成，而 mutation semantics 还没有被 local helpers/tests 或 live dogfood 证明，下一项 immediate project task 是 contract harness。
 
 范围：
 
-1. 设计 hosted roles、grants、memberships 和 policy versions 的 mutation boundary。
-2. 定义 review/promotion、rollback、idempotency、audit 和 conflict semantics。
-3. 定义 tenant/project authorization requirements，不启动 public CRUD 或 OAuth/OIDC。
-4. 定义后续 local/private implementation 的 tests 和 dogfood evidence。
+1. 实现 local/private mutation contract helpers，覆盖 hosted policy drafts、patching、validation、promotion、rollback、idempotency、audit 和 conflict handling。
+2. 证明 promotion 和 rollback 后的 gateway read-model compatibility。
+3. 保持 mutation private 且 trusted-gateway scoped，不启动 public CRUD 或 OAuth/OIDC。
+4. 为 mutation semantics 产出 local tests 和 dogfood evidence。
 5. 将 customer-facing decision history、export/delete、legal-hold API、public identity 和 production deployment 保持 deferred。
 6. 不实现 automatic publish/reload、vault、billing、marketplace、workflow、provider onboarding、OAuth/OIDC、public CRUD、policy write APIs、Data Plane mutable reads 或 production gateway deployment。
 
 退出标准：
 
-- hosted policy mutation boundary 已文档化。
-- review/promotion、rollback、audit、idempotency 和 conflict expectations 已明确。
-- implementation 和 dogfood evidence requirements 已定义。
+- local policy mutation contract helpers 已实现。
+- draft/review/promotion/rollback tests 通过。
+- idempotency replay、conflict、stale-base 和 scope-violation tests 通过。
+- gateway read-model decisions 能反映 promotion 和 rollback。
+- dogfood evidence 证明 secret-safe audit rows，并且 Data Plane 不读取 mutable tables。
 - OAuth/OIDC、public CRUD、production deployment、vault、billing、marketplace、workflow、provider onboarding、policy write APIs、Data Plane mutable reads 和 automatic propagation 保持 deferred。
 
 参考：
@@ -1078,6 +1081,7 @@ Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`

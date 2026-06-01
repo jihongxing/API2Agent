@@ -18,10 +18,10 @@ This proved local usability and the first controlled execution loop.
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Closeout Complete
+Go Control Plane Hosted Permission Policy Mutation Boundary Design Complete
 ```
 
-The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is hosted permission policy mutation boundary design.
+The Python implementation remains the reference implementation, local tooling surface, and dogfood harness. The Agent Capability Compiler re-entry phase is closed, and the current gate is the hosted permission policy mutation boundary contract harness.
 
 Implementation language decision:
 
@@ -121,13 +121,13 @@ Current re-entry plan:
 Next tooling task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
 ## 5. Next Major Build: Control Layer MVP
@@ -1221,11 +1221,21 @@ Current Phase 6 progress:
   - customer-facing decision history endpoints, public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
   - the next hosted-readiness task is hosted permission policy mutation boundary design.
   - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`.
+- Go Control Plane Hosted Permission Policy Mutation Boundary Design v0 is complete:
+  - mutation ownership for hosted subjects, memberships, roles, role bindings, permission grants, and policy versions is documented.
+  - draft/review/promotion/rollback lifecycle is explicit.
+  - idempotency, audit, conflict, authorization, and gateway read-model compatibility semantics are defined.
+  - local contract harness and dogfood evidence requirements are documented.
+  - hosted permission policy mutation boundary design lane completion is 100%.
+  - broader Hosted Control Plane phase completion is estimated at 73%.
+  - public CRUD, OAuth/OIDC, invitation/session lifecycle, production gateway deployment, customer-facing decision history, marketplace, vault, billing, workflow, automatic propagation, policy write APIs, and Data Plane mutable reads remain out of scope.
+  - the next hosted-readiness task is hosted permission policy mutation boundary contract harness.
+  - see `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`.
 
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
 References:
@@ -1268,6 +1278,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_DESIGN.md`

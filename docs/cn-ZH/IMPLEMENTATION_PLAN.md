@@ -18,10 +18,10 @@ OpenAPI / curl
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Decision Retention Boundary Closeout Complete
+Go Control Plane Hosted Permission Policy Mutation Boundary Design Complete
 ```
 
-Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission policy mutation boundary design。
+Python 实现保留为 reference implementation、local tooling surface 和 dogfood harness。Agent Capability Compiler re-entry phase 已关闭，当前 gate 是 hosted permission policy mutation boundary contract harness。
 
 实现语言决策：
 
@@ -121,13 +121,13 @@ docs/
 下一项 tooling task：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
 ## 5. 下一阶段主线：Control Layer MVP
@@ -1221,11 +1221,21 @@ Go Control Plane Minimum v0
   - customer-facing decision history endpoints、public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
   - 下一项 hosted-readiness task 是 hosted permission policy mutation boundary design。
   - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_RETENTION_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`。
+- Go Control Plane Hosted Permission Policy Mutation Boundary Design v0 已完成：
+  - hosted subjects、memberships、roles、role bindings、permission grants 和 policy versions 的 mutation ownership 已文档化。
+  - draft/review/promotion/rollback lifecycle 已明确。
+  - idempotency、audit、conflict、authorization 和 gateway read-model compatibility semantics 已定义。
+  - local contract harness 和 dogfood evidence requirements 已文档化。
+  - hosted permission policy mutation boundary design lane completion 是 100%。
+  - 更大的 Hosted Control Plane phase completion 估算为 73%。
+  - public CRUD、OAuth/OIDC、invitation/session lifecycle、production gateway deployment、customer-facing decision history、marketplace、vault、billing、workflow、automatic propagation、policy write APIs 和 Data Plane mutable reads 仍然 out of scope。
+  - 下一项 hosted-readiness task 是 hosted permission policy mutation boundary contract harness。
+  - 详见 `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`。
 
 下一项工程任务：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
 参考：
@@ -1268,6 +1278,7 @@ Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_STORE_READ_MODEL_LIVE_POSTGRES_DOGFOOD_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_READ_MODEL_GATEWAY_RUNTIME_WIRING_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_DESIGN.md`
+- `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_IMPLEMENTATION_REPORT.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_CLOSEOUT_PHASE_REVIEW.md`
 - `docs/cn-ZH/GO_CONTROL_PLANE_HOSTED_PERMISSION_DECISION_PERSISTENCE_INTEGRITY_HARDENING_DESIGN.md`

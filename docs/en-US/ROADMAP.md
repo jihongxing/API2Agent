@@ -945,12 +945,12 @@ Completed propagation closeout result:
 Next engineering task:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
 ## 9. Phase 6: Hosted Control Plane
 
-Status: hosted permission decision retention boundary closeout complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, decision persistence integrity hardening implementation, decision persistence integrity hardening closeout, decision persistence production boundary design, decision persistence production boundary implementation, decision persistence production boundary closeout, full decision persistence stage closeout, decision retention/customer-history boundary design, decision retention boundary implementation, and decision retention boundary closeout are complete.
+Status: hosted permission policy mutation boundary design complete. Local Go Control Plane minimum, snapshot distribution, private import/replace, idempotency, hosted admin trusted gateway, local gateway contract harness, gateway permission-source proof, tenant partition validation, private project mutation endpoint, live dogfood closeout, durable permission-store boundary design, hosted permission-store contract harness and closeout, hosted permission-store schema, schema closeout, read model implementation, read model closeout, read model live Postgres dogfood, dogfood closeout, gateway runtime wiring design, gateway runtime wiring implementation, gateway runtime wiring closeout, decision persistence design, decision persistence implementation, decision persistence closeout, decision persistence integrity hardening design, decision persistence integrity hardening implementation, decision persistence integrity hardening closeout, decision persistence production boundary design, decision persistence production boundary implementation, decision persistence production boundary closeout, full decision persistence stage closeout, decision retention/customer-history boundary design, decision retention boundary implementation, decision retention boundary closeout, and policy mutation boundary design are complete.
 
 Goal:
 
@@ -1043,30 +1043,33 @@ Go Control Plane Hosted Permission Decision Persistence Stage Closeout + Readine
 Go Control Plane Hosted Permission Decision Retention + Customer History Boundary Design v0
 Go Control Plane Hosted Permission Decision Retention Boundary Implementation v0
 Go Control Plane Hosted Permission Decision Retention Boundary Live Dogfood + Closeout v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
 ```
 
 Next hosted-readiness slice:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Design v0
+Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness v0
 ```
 
-This hosted-readiness design slice is now the immediate next project task because decision read, persistence, production-shaped persistence, and retention/history boundary proof are complete for local v0, while hosted roles, grants, memberships, and policy versions are still seeded rather than safely mutated.
+This hosted-readiness contract harness is now the immediate next project task because the policy mutation boundary design is complete, while the mutation semantics are not yet proven by local helpers/tests or live dogfood.
 
 Scope:
 
-1. Design the mutation boundary for hosted roles, grants, memberships, and policy versions.
-2. Define review/promotion, rollback, idempotency, audit, and conflict semantics.
-3. Define tenant/project authorization requirements without starting public CRUD or OAuth/OIDC.
-4. Define tests and dogfood evidence for a later local/private implementation.
+1. Implement local/private mutation contract helpers for hosted policy drafts, patching, validation, promotion, rollback, idempotency, audit, and conflict handling.
+2. Prove gateway read-model compatibility after promotion and rollback.
+3. Keep mutation private and trusted-gateway scoped, without public CRUD or OAuth/OIDC.
+4. Produce local tests and dogfood evidence for the mutation semantics.
 5. Preserve customer-facing decision history, export/delete, legal-hold API, public identity, and production deployment as deferred work.
 6. Do not implement automatic publish/reload, vault, billing, marketplace, workflow, provider onboarding, OAuth/OIDC, public CRUD, policy write APIs, Data Plane mutable reads, or production gateway deployment.
 
 Exit criteria:
 
-- hosted policy mutation boundary is documented.
-- review/promotion, rollback, audit, idempotency, and conflict expectations are explicit.
-- implementation and dogfood evidence requirements are defined.
+- local policy mutation contract helpers are implemented.
+- draft/review/promotion/rollback tests pass.
+- idempotency replay, conflict, stale-base, and scope-violation tests pass.
+- gateway read-model decisions reflect promotion and rollback.
+- dogfood evidence proves secret-safe audit rows and no Data Plane mutable table reads.
 - OAuth/OIDC, public CRUD, production deployment, vault, billing, marketplace, workflow, provider onboarding, policy write APIs, Data Plane mutable reads, and automatic propagation remain deferred.
 
 References:
@@ -1078,6 +1081,7 @@ References:
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_IDENTITY_BOUNDARY_CLOSEOUT_PHASE_REVIEW.md`
+- `docs/en-US/GO_CONTROL_PLANE_HOSTED_PERMISSION_POLICY_MUTATION_BOUNDARY_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_DESIGN.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_IMPLEMENTATION_REPORT.md`
 - `docs/en-US/GO_CONTROL_PLANE_HOSTED_ADMIN_AUTHENTICATOR_INTEGRATION_CLOSEOUT_PHASE_REVIEW.md`
