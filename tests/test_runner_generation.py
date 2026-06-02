@@ -10,6 +10,7 @@ from api2agent.parsers.graphql import parse_graphql_file
 from api2agent.parsers.har import parse_har_file
 from api2agent.parsers.insomnia import parse_insomnia_file
 from api2agent.parsers.openapi import parse_openapi_file
+from api2agent.parsers.protobuf import parse_proto_file
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "openapi"
@@ -239,6 +240,23 @@ def test_execute_tool_runs_bruno_request(tmp_path, monkeypatch) -> None:
             "X-API-Key": "bruno-secret",
             "X-Trace-Id": "trace-456",
         }
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_execute_tool_reports_grpc_scaffold_not_executable(tmp_path) -> None:
+    capability = parse_proto_file(Path("tests/fixtures/protobuf/user_service.proto"))
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        result = runner.execute_tool("user_service_get_user", {"body": {"user_id": "123"}})
+
+        assert result["ok"] is False
+        assert result["error"]["type"] == "grpc_unimplemented"
+        assert result["error"]["grpc"]["service"] == "UserService"
+        assert result["error"]["grpc"]["method"] == "GetUser"
     finally:
         sys.path.remove(str(output_dir))
         sys.modules.pop("runner", None)

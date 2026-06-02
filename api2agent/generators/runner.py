@@ -20,6 +20,16 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
     tool = _find_tool(name)
     if tool is None:
         return {{"ok": False, "error": {{"type": "unknown_tool", "message": f"Unknown tool: {{name}}"}}}}
+    grpc_metadata = _grpc_metadata(tool)
+    if grpc_metadata is not None:
+        return {{
+            "ok": False,
+            "error": {{
+                "type": "grpc_unimplemented",
+                "message": "Generated gRPC transport scaffolding is not executable yet. Wire this tool to a gRPC client or proxy before calling it.",
+                "grpc": grpc_metadata,
+            }},
+        }}
 
     missing = [p["name"] for p in tool.get("parameters", []) if p.get("required") and p["name"] not in params]
     if tool.get("request_body") and tool["request_body"].get("required") and "body" not in params:
@@ -254,6 +264,10 @@ def _request_json(tool: dict, body):
     if metadata.get("operationName"):
         payload["operationName"] = metadata["operationName"]
     return payload
+
+
+def _grpc_metadata(tool: dict):
+    return ((tool.get("request_body") or {{}}).get("schema") or {{}}).get("x-api2agent-grpc")
 
 
 def _base_url(tool: dict) -> str | dict:

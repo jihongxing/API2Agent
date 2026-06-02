@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package demo.users.v1;
+
+message GetUserRequest {
+  string user_id = 1;
+  bool include_profile = 2;
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  repeated string tags = 3;
+}
+
+message ListUsersRequest {
+  int32 page_size = 1;
+}
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc ListUsers(ListUsersRequest) returns (stream User);
+}

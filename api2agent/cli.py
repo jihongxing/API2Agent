@@ -32,6 +32,7 @@ from api2agent.parsers.har import parse_har_file
 from api2agent.parsers.insomnia import parse_insomnia_file
 from api2agent.parsers.openapi import parse_openapi_file
 from api2agent.parsers.postman import parse_postman_file
+from api2agent.parsers.protobuf import parse_proto_file
 from api2agent.parsers.workflow import parse_workflow_file
 from api2agent.replay import can_execute_replay, execute_replay
 from api2agent.response_docs import format_response_summary, response_category_counts
@@ -125,6 +126,11 @@ def generate(
         "--bruno",
         help="Bruno collection export JSON file to convert.",
     ),
+    proto: Optional[Path] = typer.Option(
+        None,
+        "--proto",
+        help="Protocol Buffers .proto file to convert into gRPC capability scaffolding.",
+    ),
     name: Optional[str] = typer.Option(
         None,
         "--name",
@@ -171,16 +177,16 @@ def generate(
 ) -> None:
     """Generate an Agent Capability Package."""
     source_count = sum(
-        1 for source in [spec, curl, postman, workflow, graphql, har, insomnia, bruno] if source is not None
+        1 for source in [spec, curl, postman, workflow, graphql, har, insomnia, bruno, proto] if source is not None
     )
     if source_count == 0:
         raise typer.BadParameter(
-            "Provide an OpenAPI file, --curl command, --postman collection, --workflow manifest, --graphql manifest, --har capture, --insomnia export, or --bruno export."
+            "Provide an OpenAPI file, --curl command, --postman collection, --workflow manifest, --graphql manifest, --har capture, --insomnia export, --bruno export, or --proto file."
         )
 
     if source_count > 1:
         raise typer.BadParameter(
-            "Use exactly one input source: OpenAPI file, --curl, --postman, --workflow, --graphql, --har, --insomnia, or --bruno."
+            "Use exactly one input source: OpenAPI file, --curl, --postman, --workflow, --graphql, --har, --insomnia, --bruno, or --proto."
         )
 
     if max_tools is not None and max_tools < 1:
@@ -207,6 +213,8 @@ def generate(
         if insomnia
         else "bruno"
         if bruno
+        else "proto"
+        if proto
         else "openapi"
     )
     if curl:
@@ -235,6 +243,10 @@ def generate(
         capability = filter_capability(capability, filters)
     elif bruno:
         capability = parse_bruno_file(bruno, name=name)
+        original_tool_count = len(capability.tools)
+        capability = filter_capability(capability, filters)
+    elif proto:
+        capability = parse_proto_file(proto, name=name)
         original_tool_count = len(capability.tools)
         capability = filter_capability(capability, filters)
     else:

@@ -505,6 +505,36 @@ def test_generate_command_accepts_bruno_collection(tmp_path) -> None:
     assert tools[0]["function"]["name"] == "get_user"
 
 
+def test_generate_command_accepts_proto_file(tmp_path) -> None:
+    output_dir = tmp_path / "api2agent-output"
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            "--proto",
+            "tests/fixtures/protobuf/user_service.proto",
+            "--include-tag",
+            "grpc",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    tools = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert capability["name"] == "demo_users_v1"
+    assert capability["source"].endswith("user_service.proto")
+    assert capability["base_url"] == "grpc://localhost:50051"
+    assert [tool["name"] for tool in capability["tools"]] == ["user_service_get_user"]
+    assert capability["tools"][0]["request_body"]["schema"]["x-api2agent-grpc"]["method"] == "GetUser"
+    assert tools[0]["function"]["name"] == "user_service_get_user"
+    assert tools[0]["function"]["parameters"]["properties"]["body"]["properties"]["user_id"]["type"] == "string"
+    assert "x-api2agent-grpc" not in json.dumps(tools)
+
+
 def test_generate_command_warns_for_large_unfiltered_openapi_package(tmp_path) -> None:
     paths = {
         f"/items/{index}": {
