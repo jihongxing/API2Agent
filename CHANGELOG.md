@@ -4,6 +4,10 @@ All notable API2Agent changes will be documented in this file.
 
 ## Unreleased
 
+No changes yet.
+
+## v0.1.0rc2 - 2026-06-02
+
 ### Added
 
 - Agent Capability Compiler Postman Collection source adapter started with Collection v2.x request import into the existing Capability IR, preserving folder tags, base URL variables, path/query/header parameters, JSON/form bodies, auth hints, filtering, and generated package output.
