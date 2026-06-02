@@ -18,6 +18,24 @@ from api2agent.parsers.openapi import parse_openapi_file
 runner = CliRunner()
 
 
+def test_generate_help_lists_all_supported_source_options() -> None:
+    result = runner.invoke(app, ["generate", "--help"])
+
+    assert result.exit_code == 0
+    for option in [
+        "--curl",
+        "--postman",
+        "--workflow",
+        "--graphql",
+        "--har",
+        "--insomnia",
+        "--bruno",
+        "--proto",
+        "--asyncapi",
+    ]:
+        assert option in result.output
+
+
 def test_test_command_executes_smoke_test(tmp_path, monkeypatch) -> None:
     package_dir = tmp_path / "package"
     package_dir.mkdir()

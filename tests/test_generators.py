@@ -2,33 +2,55 @@ import json
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 from api2agent.generators.package import generate_package
+from api2agent.parsers.asyncapi import parse_asyncapi_file
+from api2agent.parsers.bruno import parse_bruno_file
 from api2agent.parsers.curl import parse_curl
+from api2agent.parsers.graphql import parse_graphql_file
+from api2agent.parsers.har import parse_har_file
+from api2agent.parsers.insomnia import parse_insomnia_file
 from api2agent.parsers.openapi import parse_openapi_file
+from api2agent.parsers.postman import parse_postman_file
+from api2agent.parsers.protobuf import parse_proto_file
+from api2agent.parsers.workflow import parse_workflow_file
 
 
 FIXTURES = Path(__file__).parent / "fixtures" / "openapi"
+EXPECTED_PACKAGE_FILES = [
+    "README.md",
+    "capability.json",
+    "diagnostics.json",
+    "tools.json",
+    "runner.py",
+    "smoke_test.py",
+    "manual_write_test.py",
+    "mcp_server.py",
+    "auth.env.example",
+    "examples/openai_agent.py",
+    "examples/claude_desktop_config.json",
+]
+
+SOURCE_PACKAGE_CASES = [
+    ("openapi", lambda: parse_openapi_file(Path("tests/fixtures/openapi/basic.yaml"))),
+    ("curl", lambda: parse_curl("curl https://api.example.com/items?verbose=true")),
+    ("har", lambda: parse_har_file(Path("tests/fixtures/har/basic_capture.har"))),
+    ("postman", lambda: parse_postman_file(Path("tests/fixtures/postman/basic_collection.json"))),
+    ("insomnia", lambda: parse_insomnia_file(Path("tests/fixtures/insomnia/basic_export.json"))),
+    ("bruno", lambda: parse_bruno_file(Path("tests/fixtures/bruno/basic_collection.json"))),
+    ("graphql", lambda: parse_graphql_file(Path("tests/fixtures/graphql/basic_manifest.json"))),
+    ("workflow", lambda: parse_workflow_file(Path("tests/fixtures/workflow/basic_manifest.json"))),
+    ("protobuf", lambda: parse_proto_file(Path("tests/fixtures/protobuf/user_service.proto"))),
+    ("asyncapi", lambda: parse_asyncapi_file(Path("tests/fixtures/asyncapi/basic_webhook.yaml"))),
+]
 
 
 def test_generate_package(tmp_path: Path) -> None:
     capability = parse_openapi_file(FIXTURES / "basic.yaml")
     output_dir = generate_package(capability, tmp_path / "api2agent-output")
 
-    expected_files = [
-        "README.md",
-        "capability.json",
-        "diagnostics.json",
-        "tools.json",
-        "runner.py",
-        "smoke_test.py",
-        "manual_write_test.py",
-        "mcp_server.py",
-        "auth.env.example",
-        "examples/openai_agent.py",
-        "examples/claude_desktop_config.json",
-    ]
-
-    for filename in expected_files:
+    for filename in EXPECTED_PACKAGE_FILES:
         assert (output_dir / filename).exists()
 
     capability_json = json.loads((output_dir / "capability.json").read_text())
@@ -48,6 +70,47 @@ def test_generate_package(tmp_path: Path) -> None:
     assert "def dispatch_tool_call" in openai_example
     assert "client.responses.create" in openai_example
     assert claude_config["mcpServers"]["basic_api"]["args"][0].endswith("mcp_server.py")
+
+
+@pytest.mark.parametrize("source_name,capability_factory", SOURCE_PACKAGE_CASES)
+def test_generate_package_consistency_across_sources(tmp_path: Path, source_name, capability_factory) -> None:
+    capability = capability_factory()
+    output_dir = generate_package(capability, tmp_path / source_name)
+
+    for filename in EXPECTED_PACKAGE_FILES:
+        assert (output_dir / filename).exists()
+
+    capability_json = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    tools_json = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+    diagnostics_json = json.loads((output_dir / "diagnostics.json").read_text(encoding="utf-8"))
+    serialized_tools = json.dumps(tools_json)
+    runner = _load_generated_module(output_dir / "runner.py", f"generated_runner_{source_name}")
+
+    assert capability_json["tools"]
+    assert len(tools_json) == len(capability_json["tools"])
+    assert "x-api2agent-" not in serialized_tools
+    for tool in tools_json:
+        assert tool["type"] == "function"
+        assert tool["function"]["name"]
+        assert tool["function"]["parameters"]["type"] == "object"
+
+    assert diagnostics_json["contract_version"] == "api2agent.capability_diagnostics.v0"
+    assert diagnostics_json["status"] in {"pass", "warn", "fail"}
+    assert isinstance(diagnostics_json["score"], int)
+    assert isinstance(diagnostics_json["findings"], list)
+    assert hasattr(runner, "execute_tool")
+
+
+def test_generated_protobuf_runner_fails_clearly_until_transport_is_wired(tmp_path: Path) -> None:
+    capability = parse_proto_file(Path("tests/fixtures/protobuf/user_service.proto"))
+    output_dir = generate_package(capability, tmp_path / "protobuf")
+    runner = _load_generated_module(output_dir / "runner.py", "generated_runner_protobuf")
+
+    result = runner.execute_tool("user_service_get_user", {"body": {"user_id": "user_123"}})
+
+    assert result["ok"] is False
+    assert result["error"]["type"] == "grpc_unimplemented"
+    assert result["error"]["grpc"]["method"] == "GetUser"
 
 
 def test_generated_openai_example_dispatches_to_runner(tmp_path: Path) -> None:
@@ -71,9 +134,13 @@ def test_generated_openai_example_dispatches_to_runner(tmp_path: Path) -> None:
 
 
 def _load_generated_example(path: Path):
-    spec = importlib.util.spec_from_file_location("generated_openai_agent", path)
+    return _load_generated_module(path, "generated_openai_agent")
+
+
+def _load_generated_module(path: Path, module_name: str):
+    spec = importlib.util.spec_from_file_location(module_name, path)
     if spec is None or spec.loader is None:
-        raise AssertionError(f"Could not load generated example: {path}")
+        raise AssertionError(f"Could not load generated module: {path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

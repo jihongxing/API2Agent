@@ -385,10 +385,11 @@ All notable API2Agent changes will be documented in this file.
 - Generated capability packages now include a usable Claude Desktop-style MCP stdio config pointing at the generated `mcp_server.py`, plus generated README MCP wiring instructions.
 - Generated capability packages now include a usable OpenAI Responses API tool-calling example that loads `tools.json`, adapts function schemas, dispatches model tool calls through the generated runner, and stays importable without the OpenAI SDK installed.
 - Agent Capability Compiler final release checklist verified with source CLI smoke, wheel build, isolated venv install, installed console-script generate/diagnose/test smoke, and generated OpenAI example import/schema adaptation smoke.
+- Agent Capability Compiler RC2 hardening matrix added with source compatibility boundaries, cross-source generated package consistency checks, CLI source-option help coverage, and package-install smoke readiness.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
-- Python test suite: `239 passed`.
+- Python test suite: `289 passed`.
 
 ### Planned Next
 

@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout Complete
+Agent Capability Compiler RC2 Hardening + Real-World Dogfood
 ```
 
 Documentation mode:
@@ -60,6 +60,8 @@ Near-term Agent Capability Compiler source adapter sequence:
 2. Insomnia/Bruno collection adapters: extend collection-based onboarding beyond Postman while staying in HTTP API territory.
 3. gRPC/protobuf minimal adapter: compile unary RPC descriptions into capability metadata and generated-call scaffolding before considering streaming.
 4. AsyncAPI/webhook adapter: compile callable webhook or publish endpoints without becoming an event bus or workflow runtime.
+
+Status: complete. The next stage is Agent Capability Compiler RC2 hardening, focused on real-world dogfood, compatibility evidence, generated package consistency, CLI UX, packaging smoke, and release readiness. See `docs/en-US/AGENT_CAPABILITY_COMPILER_RC2_HARDENING_MATRIX.md`.
 
 v0.1-alpha product hook:
 

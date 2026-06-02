@@ -25,7 +25,7 @@ python -m pytest
 Expected test result:
 
 ```text
-277 passed
+289 passed
 ```
 
 ## 2. Generate From OpenAPI

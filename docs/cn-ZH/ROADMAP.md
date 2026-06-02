@@ -29,7 +29,7 @@ API2Agent
 当前阶段：
 
 ```text
-Go Control Plane Hosted Permission Policy Mutation Boundary Contract Harness Closeout Complete
+Agent Capability Compiler RC2 Hardening + Real-World Dogfood
 ```
 
 文档模式：
@@ -60,6 +60,8 @@ Capability source 边界：
 2. Insomnia/Bruno collection adapters：把 collection-based onboarding 从 Postman 扩展到更多 HTTP API 调试资产。
 3. gRPC/protobuf minimal adapter：先把 unary RPC 描述编译成 capability metadata 和 generated-call scaffolding，再考虑 streaming。
 4. AsyncAPI/webhook adapter：只编译可调用 webhook 或 publish endpoints，不变成 event bus 或 workflow runtime。
+
+状态：已完成。下一阶段是 Agent Capability Compiler RC2 hardening，重点是 real-world dogfood、compatibility evidence、generated package consistency、CLI UX、packaging smoke 和 release readiness。详见 `docs/cn-ZH/AGENT_CAPABILITY_COMPILER_RC2_HARDENING_MATRIX.md`。
 
 v0.1-alpha 产品抓手：
 

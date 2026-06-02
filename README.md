@@ -2,11 +2,11 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: expand the Agent Capability Compiler after the first release candidate. The release path stays narrow: convert API or API-equivalent descriptions into a local Agent capability package that can be inspected, diagnosed, smoke-tested, and exposed through MCP stdio.
+Current focus: harden the Agent Capability Compiler for the next release candidate. The release path stays narrow: convert API or API-equivalent descriptions into a local Agent capability package that can be inspected, diagnosed, smoke-tested, and exposed through MCP stdio.
 
 Strategic priority: make API-to-Agent onboarding fast, reproducible, and safe enough to be the base layer for later routing, observability, hosted control, and commercial workflows.
 
-Near-term source adapter order: HAR browser network capture, Insomnia/Bruno collections, minimal gRPC/protobuf, then AsyncAPI/webhook endpoints.
+RC2 hardening focus: real-world dogfood, source-adapter compatibility matrix, generated package consistency, CLI UX, packaging smoke, and release readiness.
 
 Current implementation boundary: API-first. API2Agent supports OpenAPI, curl, HAR browser network capture, Postman Collection, Insomnia export, Bruno collection export, minimal gRPC/protobuf scaffolding, AsyncAPI HTTP webhook endpoints, workflow endpoint manifests, GraphQL endpoint manifests, and HTTP APIs today and must not become a workflow engine.
 
