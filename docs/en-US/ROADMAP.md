@@ -29,7 +29,7 @@ API2Agent
 Current phase:
 
 ```text
-Agent Capability Compiler RC2 Hardening + Real-World Dogfood
+Agent Capability Compiler Release Surface + Real User Onboarding Dogfood
 ```
 
 Documentation mode:
@@ -54,14 +54,14 @@ Capability source boundary:
 
 > v0.1-alpha is API-first. Long term, API2Agent may support any source that can be adapted into `input -> execution -> output`, but non-API sources enter only as future adapters after API execution is reliable. See `docs/en-US/CAPABILITY_SOURCES.md`.
 
-Near-term Agent Capability Compiler source adapter sequence:
+Completed Agent Capability Compiler source adapter sequence:
 
 1. HAR browser network capture adapter: convert real observed HTTP requests into Agent-callable tools without requiring a formal API spec.
 2. Insomnia/Bruno collection adapters: extend collection-based onboarding beyond Postman while staying in HTTP API territory.
 3. gRPC/protobuf minimal adapter: compile unary RPC descriptions into capability metadata and generated-call scaffolding before considering streaming.
 4. AsyncAPI/webhook adapter: compile callable webhook or publish endpoints without becoming an event bus or workflow runtime.
 
-Status: complete. The next stage is Agent Capability Compiler RC2 hardening, focused on real-world dogfood, compatibility evidence, generated package consistency, CLI UX, packaging smoke, and release readiness. See `docs/en-US/AGENT_CAPABILITY_COMPILER_RC2_HARDENING_MATRIX.md`.
+Status: complete for RC2. Do not add broad new source adapters by default. The next stage is release-surface completion and real user onboarding dogfood: keep GitHub Release install instructions clear, decide whether PyPI/TestPyPI publishing is needed, run 2-3 real API/HAR/collection onboarding paths, and fix only the packaging, DX, docs, or runner issues those paths expose. See `docs/en-US/AGENT_CAPABILITY_COMPILER_RC2_HARDENING_MATRIX.md`.
 
 v0.1-alpha product hook:
 

@@ -2,11 +2,11 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: harden the Agent Capability Compiler for the next release candidate. The release path stays narrow: convert API or API-equivalent descriptions into a local Agent capability package that can be inspected, diagnosed, smoke-tested, and exposed through MCP stdio.
+Current focus: complete the Agent Capability Compiler release surface and dogfood real user onboarding paths. The release path stays narrow: convert API or API-equivalent descriptions into a local Agent capability package that can be inspected, diagnosed, smoke-tested, and exposed through MCP stdio.
 
 Strategic priority: make API-to-Agent onboarding fast, reproducible, and safe enough to be the base layer for later routing, observability, hosted control, and commercial workflows.
 
-RC2 hardening focus: real-world dogfood, source-adapter compatibility matrix, generated package consistency, CLI UX, packaging smoke, and release readiness.
+RC2 status: published as a GitHub prerelease. Current follow-up work is limited to release-surface fixes, packaging/DX fixes, docs, and real-world dogfood findings.
 
 Current implementation boundary: API-first. API2Agent supports OpenAPI, curl, HAR browser network capture, Postman Collection, Insomnia export, Bruno collection export, minimal gRPC/protobuf scaffolding, AsyncAPI HTTP webhook endpoints, workflow endpoint manifests, GraphQL endpoint manifests, and HTTP APIs today and must not become a workflow engine.
 
@@ -37,6 +37,25 @@ OpenAPI 3.x / curl / HAR / Postman / Insomnia / Bruno / protobuf / AsyncAPI webh
   -> smoke test
   -> MCP server
 ```
+
+## Install
+
+The current public release candidate is distributed through GitHub Release assets:
+
+- [v0.1.0rc2 release](https://github.com/jihongxing/API2Agent/releases/tag/v0.1.0rc2)
+- `api2agent-0.1.0rc2-py3-none-any.whl`
+- `api2agent-0.1.0rc2.tar.gz`
+
+Install the wheel directly:
+
+```bash
+python -m pip install https://github.com/jihongxing/API2Agent/releases/download/v0.1.0rc2/api2agent-0.1.0rc2-py3-none-any.whl
+api2agent --help
+```
+
+PyPI/TestPyPI publishing is not enabled yet. Until then, GitHub Release is the canonical public install path.
+
+When verifying an installed wheel, run import/version checks outside the repository root so the local source tree does not shadow the installed package.
 
 ## Development
 
@@ -110,6 +129,8 @@ api2agent run api2agent-output
 `api2agent run` starts the generated MCP stdio server and keeps the process open for the client.
 
 Generation refuses to write into a non-empty output directory unless you pass `--force`.
+
+For real-world dogfood, start with a small read-only endpoint you control or a stable public endpoint, then run `generate`, `inspect`, `diagnose`, and only then `test`. Public sample APIs can be stale or temporarily unavailable, so a failed smoke call is not always a compiler failure.
 
 Postman Collection input is also supported:
 

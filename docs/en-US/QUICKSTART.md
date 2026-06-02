@@ -16,6 +16,17 @@ The current release focus is the Agent Capability Compiler. Routing, proxy usage
 
 ## 1. Install
 
+Install the current release candidate from GitHub Release:
+
+```bash
+python -m pip install https://github.com/jihongxing/API2Agent/releases/download/v0.1.0rc2/api2agent-0.1.0rc2-py3-none-any.whl
+api2agent --help
+```
+
+PyPI/TestPyPI publishing is not enabled yet. Until then, GitHub Release is the canonical public install path.
+
+If you are developing API2Agent itself, use editable install instead:
+
 ```bash
 python -m pip install -e ".[dev]"
 python -m api2agent.cli --help
@@ -25,7 +36,7 @@ python -m pytest
 Expected test result:
 
 ```text
-289 passed
+290 passed
 ```
 
 ## 2. Generate From OpenAPI
@@ -102,6 +113,8 @@ You can also run one generated tool directly:
 ```bash
 python -m api2agent.cli test api2agent-output --tool get_post --params "{\"post_id\": 1}"
 ```
+
+For real-world dogfood, use a stable read-only endpoint first and treat live HTTP failures as evidence to inspect, not as automatic compiler failures. Public sample APIs can return stale servers, `404`, `503`, rate limits, or changed response bodies even when generation is correct.
 
 ## 6. Try OpenAI Tool Calling
 

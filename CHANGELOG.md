@@ -4,6 +4,10 @@ All notable API2Agent changes will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- Clarify GitHub Release as the canonical RC2 install path and move the active roadmap phase to release-surface completion plus real user onboarding dogfood.
+
 ### Fixed
 
 - Keep `api2agent.__version__` aligned with installed package metadata so wheel/sdist installs report the release-candidate version consistently.

@@ -16,6 +16,17 @@ OpenAPI 3.x / curl / HAR / Postman / Insomnia / Bruno / protobuf / AsyncAPI webh
 
 ## 1. 安装
 
+从 GitHub Release 安装当前 release candidate：
+
+```bash
+python -m pip install https://github.com/jihongxing/API2Agent/releases/download/v0.1.0rc2/api2agent-0.1.0rc2-py3-none-any.whl
+api2agent --help
+```
+
+PyPI/TestPyPI 还没有启用。在这之前，GitHub Release 是当前公开安装入口。
+
+如果你是在开发 API2Agent 本身，再使用 editable install：
+
 ```bash
 python -m pip install -e ".[dev]"
 python -m api2agent.cli --help
@@ -25,7 +36,7 @@ python -m pytest
 期望测试结果：
 
 ```text
-289 passed
+290 passed
 ```
 
 ## 2. 从 OpenAPI 生成
@@ -102,6 +113,8 @@ python -m api2agent.cli test api2agent-output --allow-write
 ```bash
 python -m api2agent.cli test api2agent-output --tool get_post --params "{\"post_id\": 1}"
 ```
+
+真实 dogfood 时，先选择稳定的 read-only endpoint，并把 live HTTP failure 当作需要检查的证据，而不是自动判定为 compiler failure。公开示例 API 可能出现 server 过期、`404`、`503`、rate limit 或 response body 变化，即使生成过程本身是正确的。
 
 ## 6. 试用 OpenAI Tool Calling
 
