@@ -4,7 +4,9 @@ All notable API2Agent changes will be documented in this file.
 
 ## Unreleased
 
-No changes yet.
+### Fixed
+
+- Keep `api2agent.__version__` aligned with installed package metadata so wheel/sdist installs report the release-candidate version consistently.
 
 ## v0.1.0rc2 - 2026-06-02
 
