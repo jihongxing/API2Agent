@@ -98,6 +98,22 @@ result = execute_tool("{example_tool}", {example_params!r})
 print(result)
 ```
 
+## OpenAI Tool Calling
+
+Start from the generated Responses API example:
+
+```text
+examples/openai_agent.py
+```
+
+It loads `tools.json`, dispatches OpenAI `function_call` items to `runner.execute_tool`, and returns `function_call_output` items back to the model. To run it directly, install the OpenAI SDK and set your API key:
+
+```bash
+python -m pip install openai
+OPENAI_API_KEY=...
+python examples/openai_agent.py
+```
+
 ## MCP Server
 
 Run the generated stdio server directly:

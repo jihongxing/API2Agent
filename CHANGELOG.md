@@ -2,7 +2,7 @@
 
 All notable API2Agent changes will be documented in this file.
 
-## v0.1-alpha baseline - Unreleased
+## v0.1.0rc1 - 2026-06-02
 
 ### Positioning
 
@@ -371,11 +371,13 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler release-candidate smoke path verified for OpenAPI generate, inspect, diagnose, safe smoke test, and curl generate/diagnose warning behavior.
 - Agent Capability Compiler release-candidate packaging path verified with wheel build, isolated venv install, installed `api2agent` console script, and installed OpenAPI generate/diagnose/test smoke.
 - Generated capability packages now include a usable Claude Desktop-style MCP stdio config pointing at the generated `mcp_server.py`, plus generated README MCP wiring instructions.
+- Generated capability packages now include a usable OpenAI Responses API tool-calling example that loads `tools.json`, adapts function schemas, dispatches model tool calls through the generated runner, and stays importable without the OpenAI SDK installed.
+- Agent Capability Compiler final release checklist verified with source CLI smoke, wheel build, isolated venv install, installed console-script generate/diagnose/test smoke, and generated OpenAI example import/schema adaptation smoke.
 - Receipt/trust strategy documented without changing the current implementation roadmap.
 - Go Data Plane tests: `go test ./...`.
 - Go Control Plane tests: `go test ./...`.
-- Python test suite: `238 passed`.
+- Python test suite: `239 passed`.
 
 ### Planned Next
 
-- Continue Agent Capability Compiler release-candidate hardening with release-blocker-only fixes, starting from generated OpenAI adapter example usability and final release checklist verification.
+- Prepare the Agent Capability Compiler release-candidate ship decision: tag/package only if no new release blockers are found.

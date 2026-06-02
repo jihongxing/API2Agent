@@ -25,7 +25,7 @@ python -m pytest
 Expected test result:
 
 ```text
-238 passed
+239 passed
 ```
 
 ## 2. Generate From OpenAPI
@@ -103,7 +103,19 @@ You can also run one generated tool directly:
 python -m api2agent.cli test api2agent-output --tool get_post --params "{\"post_id\": 1}"
 ```
 
-## 6. Run The MCP Server
+## 6. Try OpenAI Tool Calling
+
+The generated package includes a Responses API example that loads `tools.json` and dispatches tool calls through the generated runner:
+
+```bash
+python -m pip install openai
+OPENAI_API_KEY=...
+python api2agent-output/examples/openai_agent.py
+```
+
+The OpenAI SDK is optional for API2Agent itself; install it only when you want to run this example.
+
+## 7. Run The MCP Server
 
 ```bash
 python -m api2agent.cli run api2agent-output
@@ -117,7 +129,7 @@ For Claude Desktop-style wiring, start from:
 api2agent-output/examples/claude_desktop_config.json
 ```
 
-## 7. Generate From curl
+## 8. Generate From curl
 
 Use `--curl` when you do not have an OpenAPI file yet:
 
@@ -133,7 +145,7 @@ python -m api2agent.cli diagnose api2agent-curl-output
 
 curl-generated write tools intentionally produce stronger diagnostics. That is useful: the compiler should make risky generated packages visible before an Agent can call them.
 
-## 8. Narrow Large APIs
+## 9. Narrow Large APIs
 
 Large OpenAPI specs often expose too many endpoints for Agent tool selection. Filter before generating:
 
@@ -155,13 +167,14 @@ Filtering rules:
 - `--max-tools` applies after other filters
 - `--include-path` accepts exact paths, substrings, or glob patterns
 
-## 9. What This Proves
+## 10. What This Proves
 
 The release candidate proves that API2Agent can:
 
 - parse OpenAPI and curl API descriptions
 - compile them into a neutral capability model
 - generate OpenAI-compatible tool definitions
+- generate a runnable OpenAI Responses API tool-calling example
 - generate a local runner
 - generate an MCP stdio server
 - generate docs, examples, diagnostics, and test files

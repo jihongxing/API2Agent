@@ -25,7 +25,7 @@ python -m pytest
 期望测试结果：
 
 ```text
-238 passed
+239 passed
 ```
 
 ## 2. 从 OpenAPI 生成
@@ -103,7 +103,19 @@ python -m api2agent.cli test api2agent-output --allow-write
 python -m api2agent.cli test api2agent-output --tool get_post --params "{\"post_id\": 1}"
 ```
 
-## 6. 启动 MCP Server
+## 6. 试用 OpenAI Tool Calling
+
+生成包包含一个 Responses API 示例，会加载 `tools.json`，并把 tool call 分发给生成的 runner：
+
+```bash
+python -m pip install openai
+OPENAI_API_KEY=...
+python api2agent-output/examples/openai_agent.py
+```
+
+OpenAI SDK 不是 API2Agent 自身依赖；只有运行这个示例时才需要安装。
+
+## 7. 启动 MCP Server
 
 ```bash
 python -m api2agent.cli run api2agent-output
@@ -117,7 +129,7 @@ Claude Desktop 风格的配置入口在：
 api2agent-output/examples/claude_desktop_config.json
 ```
 
-## 7. 从 curl 生成
+## 8. 从 curl 生成
 
 如果还没有 OpenAPI 文件，可以先用 `--curl`：
 
@@ -133,7 +145,7 @@ python -m api2agent.cli diagnose api2agent-curl-output
 
 curl 生成出的 write tools 会刻意给出更强 diagnostics。这是好事：compiler 应该在 Agent 调用前把风险暴露出来。
 
-## 8. 收窄大型 API
+## 9. 收窄大型 API
 
 大型 OpenAPI spec 通常会暴露太多 endpoints，不适合直接给 Agent 做 tool selection。生成前先过滤：
 
@@ -155,13 +167,14 @@ python -m api2agent.cli generate api.github.com.json \
 - `--max-tools` 在其他 filter 之后生效
 - `--include-path` 支持精确路径、substring 或 glob pattern
 
-## 9. 证明了什么
+## 10. 证明了什么
 
 这个 release candidate 证明 API2Agent 可以：
 
 - 解析 OpenAPI 和 curl API 描述
 - 编译成中立的 capability model
 - 生成 OpenAI-compatible tools
+- 生成可运行的 OpenAI Responses API tool-calling 示例
 - 生成本地 runner
 - 生成 MCP stdio server
 - 生成 docs、examples、diagnostics 和 test files

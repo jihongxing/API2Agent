@@ -1,4 +1,5 @@
 import json
+import importlib.util
 from pathlib import Path
 
 from api2agent.generators.package import generate_package
@@ -23,6 +24,7 @@ def test_generate_package(tmp_path: Path) -> None:
         "manual_write_test.py",
         "mcp_server.py",
         "auth.env.example",
+        "examples/openai_agent.py",
         "examples/claude_desktop_config.json",
     ]
 
@@ -33,6 +35,7 @@ def test_generate_package(tmp_path: Path) -> None:
     tools_json = json.loads((output_dir / "tools.json").read_text())
     readme = (output_dir / "README.md").read_text(encoding="utf-8")
     smoke_test = (output_dir / "smoke_test.py").read_text(encoding="utf-8")
+    openai_example = (output_dir / "examples" / "openai_agent.py").read_text(encoding="utf-8")
     claude_config = json.loads((output_dir / "examples" / "claude_desktop_config.json").read_text(encoding="utf-8"))
 
     assert capability_json["name"] == "basic_api"
@@ -42,7 +45,38 @@ def test_generate_package(tmp_path: Path) -> None:
     assert "## MCP Server" in readme
     assert "python mcp_server.py" in readme
     assert "examples/claude_desktop_config.json" in readme
+    assert "def dispatch_tool_call" in openai_example
+    assert "client.responses.create" in openai_example
     assert claude_config["mcpServers"]["basic_api"]["args"][0].endswith("mcp_server.py")
+
+
+def test_generated_openai_example_dispatches_to_runner(tmp_path: Path) -> None:
+    capability = parse_openapi_file(FIXTURES / "basic.yaml")
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+    (output_dir / "runner.py").write_text(
+        "def execute_tool(name, params):\n"
+        "    return {\"ok\": True, \"name\": name, \"arguments\": params}\n",
+        encoding="utf-8",
+    )
+
+    module = _load_generated_example(output_dir / "examples" / "openai_agent.py")
+    result = module.dispatch_tool_call({"name": "get_user", "arguments": "{\"user_id\":\"u_123\"}"})
+    tools = module.load_tools()
+
+    assert result == {"ok": True, "name": "get_user", "arguments": {"user_id": "u_123"}}
+    assert tools[0]["type"] == "function"
+    assert tools[0]["name"] == "get_user"
+    assert "function" not in tools[0]
+    assert tools[0]["parameters"]["properties"]["user_id"]["type"] == "string"
+
+
+def _load_generated_example(path: Path):
+    spec = importlib.util.spec_from_file_location("generated_openai_agent", path)
+    if spec is None or spec.loader is None:
+        raise AssertionError(f"Could not load generated example: {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_generate_package_includes_guarded_manual_write_test(tmp_path: Path) -> None:
