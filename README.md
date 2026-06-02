@@ -92,6 +92,7 @@ Core Chinese docs:
 Project governance and active phase state:
 
 - [Documentation Policy](docs/DOCUMENTATION_POLICY.md)
+- [Project Suspension Handoff 2026-06-02](docs/cn-ZH/PROJECT_SUSPENSION_HANDOFF_2026_06_02.md)
 - [Hosted Control Plane Phase Log](docs/HOSTED_CONTROL_PLANE_PHASE_LOG.md) records the completed local v0 hosted-control work; it is not the current release-candidate focus.
 
 Historical design, implementation, dogfood, and closeout reports remain in `docs/en-US/` and `docs/cn-ZH/`. They are intentionally no longer listed one by one in this README; use `rg` or the phase log when older evidence is needed.
