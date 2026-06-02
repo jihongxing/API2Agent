@@ -373,6 +373,41 @@ def test_generate_command_accepts_workflow_manifest(tmp_path) -> None:
     assert tools[0]["function"]["name"] == "trigger_invoice_approval"
 
 
+def test_generate_command_accepts_graphql_manifest(tmp_path) -> None:
+    output_dir = tmp_path / "api2agent-output"
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            "--graphql",
+            "tests/fixtures/graphql/basic_manifest.json",
+            "--include-tag",
+            "query",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    auth_env = (output_dir / "auth.env.example").read_text(encoding="utf-8")
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+    tools = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert capability["name"] == "git_hub_graph_ql_demo"
+    assert capability["source"].endswith("basic_manifest.json")
+    assert capability["auth"]["type"] == "bearer"
+    assert "GITHUB_GRAPHQL_TOKEN=" in auth_env
+    assert [tool["name"] for tool in capability["tools"]] == ["get_viewer"]
+    assert capability["tools"][0]["path"] == "/graphql"
+    assert capability["tools"][0]["request_body"]["schema"]["x-api2agent-graphql"]["operationName"] == "GetViewer"
+    assert tools[0]["function"]["name"] == "get_viewer"
+    assert tools[0]["function"]["parameters"]["properties"]["body"]["required"] == ["login"]
+    assert "x-api2agent-graphql" not in json.dumps(tools)
+    assert "get_viewer" in readme
+
+
 def test_generate_command_warns_for_large_unfiltered_openapi_package(tmp_path) -> None:
     paths = {
         f"/items/{index}": {

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from api2agent.generators.package import generate_package
 from api2agent.parsers.curl import parse_curl
+from api2agent.parsers.graphql import parse_graphql_file
 from api2agent.parsers.openapi import parse_openapi_file
 
 
@@ -62,6 +63,50 @@ def test_execute_tool_sends_query_header_body_and_auth(tmp_path, monkeypatch) ->
         assert captured["kwargs"]["json"] == {"name": "demo"}
         assert captured["kwargs"]["headers"]["Authorization"] == "Bearer secret-token"
         assert captured["kwargs"]["headers"]["X-Trace-Id"] == "trace-123"
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_execute_tool_wraps_graphql_variables(tmp_path, monkeypatch) -> None:
+    capability = parse_graphql_file(Path("tests/fixtures/graphql/basic_manifest.json"))
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+
+            def json(self):
+                return {"data": {"user": {"login": "octocat"}}}
+
+        def fake_request(method, url, **kwargs):
+            captured["method"] = method
+            captured["url"] = url
+            captured["kwargs"] = kwargs
+            return FakeResponse()
+
+        monkeypatch.setattr(runner.httpx, "request", fake_request)
+        monkeypatch.setattr(
+            runner.os,
+            "getenv",
+            lambda key: "graphql-secret" if key == "GITHUB_GRAPHQL_TOKEN" else None,
+        )
+
+        result = runner.execute_tool("get_viewer", {"body": {"login": "octocat"}})
+
+        assert result["ok"] is True
+        assert captured["method"] == "POST"
+        assert captured["url"] == "https://api.github.com/graphql"
+        assert captured["kwargs"]["headers"]["Authorization"] == "Bearer graphql-secret"
+        assert captured["kwargs"]["json"] == {
+            "query": "query GetViewer($login: String!) { user(login: $login) { login name } }",
+            "operationName": "GetViewer",
+            "variables": {"login": "octocat"},
+        }
     finally:
         sys.path.remove(str(output_dir))
         sys.modules.pop("runner", None)

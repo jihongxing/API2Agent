@@ -205,6 +205,8 @@ def _shape_value(value: Any, *, direction: SchemaDirection) -> Any:
 
     shaped: dict[str, Any] = {}
     for key, raw_item in value.items():
+        if str(key).startswith("x-api2agent-"):
+            continue
         if key == "properties" and isinstance(raw_item, dict):
             properties: dict[str, Any] = {}
             skipped: set[str] = set()

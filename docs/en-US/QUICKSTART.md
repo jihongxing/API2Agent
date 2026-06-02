@@ -3,7 +3,7 @@
 This quickstart proves the release-candidate path:
 
 ```text
-OpenAPI 3.x / curl / Postman Collection / workflow endpoint
+OpenAPI 3.x / curl / Postman Collection / workflow endpoint / GraphQL endpoint
   -> API2Agent IR
   -> Agent capability package
   -> OpenAI tools schema
@@ -25,7 +25,7 @@ python -m pytest
 Expected test result:
 
 ```text
-245 passed
+252 passed
 ```
 
 ## 2. Generate From OpenAPI
@@ -177,7 +177,23 @@ python -m api2agent.cli diagnose api2agent-workflow-output
 
 API2Agent compiles the endpoint into one Agent-callable tool. It does not execute, persist, or orchestrate workflow steps.
 
-## 11. Narrow Large APIs
+## 11. Generate From GraphQL Endpoint
+
+Use `--graphql` when an existing GraphQL endpoint should expose fixed query or mutation operations as Agent-callable tools:
+
+```bash
+python -m api2agent.cli generate \
+  --graphql tests/fixtures/graphql/basic_manifest.json \
+  --output api2agent-graphql-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-graphql-output
+python -m api2agent.cli diagnose api2agent-graphql-output
+```
+
+The Agent supplies operation variables as `body`. The generated runner wraps them into `query`, `operationName`, and `variables` before calling the GraphQL endpoint.
+
+## 12. Narrow Large APIs
 
 Large OpenAPI specs often expose too many endpoints for Agent tool selection. Filter before generating:
 
@@ -199,11 +215,11 @@ Filtering rules:
 - `--max-tools` applies after other filters
 - `--include-path` accepts exact paths, substrings, or glob patterns
 
-## 12. What This Proves
+## 13. What This Proves
 
 The release candidate proves that API2Agent can:
 
-- parse OpenAPI, curl, Postman Collection, and workflow endpoint descriptions
+- parse OpenAPI, curl, Postman Collection, workflow endpoint, and GraphQL endpoint descriptions
 - compile them into a neutral capability model
 - generate OpenAI-compatible tool definitions
 - generate a runnable OpenAI Responses API tool-calling example

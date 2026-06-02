@@ -54,7 +54,7 @@ def execute_tool(name: str, params: dict | None = None) -> dict:
 
     request_kwargs = {{"headers": headers, "params": query, "timeout": 20}}
     if tool.get("request_body") and "body" in params:
-        request_kwargs["json"] = params["body"]
+        request_kwargs["json"] = _request_json(tool, params["body"])
     if use_proxy:
         return _proxy_call(tool, url, request_kwargs, proxy_url, _proxy_credential_intents(tool))
 
@@ -241,6 +241,19 @@ def _join_url(base_url: str, path: str) -> str:
     if not base_url:
         return path
     return base_url.rstrip("/") + "/" + path.lstrip("/")
+
+
+def _request_json(tool: dict, body):
+    metadata = ((tool.get("request_body") or {{}}).get("schema") or {{}}).get("x-api2agent-graphql")
+    if not isinstance(metadata, dict):
+        return body
+    payload = {{
+        "query": metadata.get("query"),
+        "variables": body if isinstance(body, dict) else {{}},
+    }}
+    if metadata.get("operationName"):
+        payload["operationName"] = metadata["operationName"]
+    return payload
 
 
 def _base_url(tool: dict) -> str | dict:

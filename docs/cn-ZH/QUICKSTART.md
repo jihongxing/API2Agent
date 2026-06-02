@@ -3,7 +3,7 @@
 这份 quickstart 证明当前可发布候选版本的主路径：
 
 ```text
-OpenAPI 3.x / curl / Postman Collection / workflow endpoint
+OpenAPI 3.x / curl / Postman Collection / workflow endpoint / GraphQL endpoint
   -> API2Agent IR
   -> Agent capability package
   -> OpenAI tools schema
@@ -25,7 +25,7 @@ python -m pytest
 期望测试结果：
 
 ```text
-245 passed
+252 passed
 ```
 
 ## 2. 从 OpenAPI 生成
@@ -177,7 +177,23 @@ python -m api2agent.cli diagnose api2agent-workflow-output
 
 API2Agent 会把这个 endpoint 编译成一个 Agent-callable tool。它不会执行、持久化或编排 workflow steps。
 
-## 11. 收窄大型 API
+## 11. 从 GraphQL Endpoint 生成
+
+如果已有 GraphQL endpoint，并且希望把固定 query 或 mutation operation 暴露成 Agent-callable tools，可以使用 `--graphql`：
+
+```bash
+python -m api2agent.cli generate \
+  --graphql tests/fixtures/graphql/basic_manifest.json \
+  --output api2agent-graphql-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-graphql-output
+python -m api2agent.cli diagnose api2agent-graphql-output
+```
+
+Agent 只需要把 operation variables 作为 `body` 传入。生成的 runner 会在调用 GraphQL endpoint 前包装成 `query`、`operationName` 和 `variables`。
+
+## 12. 收窄大型 API
 
 大型 OpenAPI spec 通常会暴露太多 endpoints，不适合直接给 Agent 做 tool selection。生成前先过滤：
 
@@ -199,11 +215,11 @@ python -m api2agent.cli generate api.github.com.json \
 - `--max-tools` 在其他 filter 之后生效
 - `--include-path` 支持精确路径、substring 或 glob pattern
 
-## 12. 证明了什么
+## 13. 证明了什么
 
 这个 release candidate 证明 API2Agent 可以：
 
-- 解析 OpenAPI、curl、Postman Collection 和 workflow endpoint 描述
+- 解析 OpenAPI、curl、Postman Collection、workflow endpoint 和 GraphQL endpoint 描述
 - 编译成中立的 capability model
 - 生成 OpenAI-compatible tools
 - 生成可运行的 OpenAI Responses API tool-calling 示例
