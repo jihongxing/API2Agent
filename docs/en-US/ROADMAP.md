@@ -54,6 +54,13 @@ Capability source boundary:
 
 > v0.1-alpha is API-first. Long term, API2Agent may support any source that can be adapted into `input -> execution -> output`, but non-API sources enter only as future adapters after API execution is reliable. See `docs/en-US/CAPABILITY_SOURCES.md`.
 
+Near-term Agent Capability Compiler source adapter sequence:
+
+1. HAR browser network capture adapter: convert real observed HTTP requests into Agent-callable tools without requiring a formal API spec.
+2. Insomnia/Bruno collection adapters: extend collection-based onboarding beyond Postman while staying in HTTP API territory.
+3. gRPC/protobuf minimal adapter: compile unary RPC descriptions into capability metadata and generated-call scaffolding before considering streaming.
+4. AsyncAPI/webhook adapter: compile callable webhook or publish endpoints without becoming an event bus or workflow runtime.
+
 v0.1-alpha product hook:
 
 ```text

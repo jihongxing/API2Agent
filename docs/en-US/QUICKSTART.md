@@ -3,7 +3,7 @@
 This quickstart proves the release-candidate path:
 
 ```text
-OpenAPI 3.x / curl / Postman Collection / workflow endpoint / GraphQL endpoint
+OpenAPI 3.x / curl / HAR / Postman Collection / workflow endpoint / GraphQL endpoint
   -> API2Agent IR
   -> Agent capability package
   -> OpenAI tools schema
@@ -25,7 +25,7 @@ python -m pytest
 Expected test result:
 
 ```text
-252 passed
+257 passed
 ```
 
 ## 2. Generate From OpenAPI
@@ -145,7 +145,23 @@ python -m api2agent.cli diagnose api2agent-curl-output
 
 curl-generated write tools intentionally produce stronger diagnostics. That is useful: the compiler should make risky generated packages visible before an Agent can call them.
 
-## 9. Generate From Postman Collection
+## 9. Generate From HAR Capture
+
+Use `--har` when you can capture real browser network traffic but do not have an OpenAPI file or collection yet:
+
+```bash
+python -m api2agent.cli generate \
+  --har tests/fixtures/har/basic_capture.har \
+  --output api2agent-har-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-har-output
+python -m api2agent.cli diagnose api2agent-har-output
+```
+
+API2Agent converts captured HTTP requests into tools, filters common browser noise headers, and preserves query, body, auth hint, and response-shape evidence.
+
+## 10. Generate From Postman Collection
 
 Use `--postman` when your API contract lives in a Postman Collection:
 
@@ -161,7 +177,7 @@ python -m api2agent.cli diagnose api2agent-postman-output
 
 Postman folders become tool tags, collection variables can provide the base URL, and request path/query/header/body shapes are compiled into the same generated package format.
 
-## 10. Generate From Workflow Endpoint
+## 11. Generate From Workflow Endpoint
 
 Use `--workflow` when an existing n8n, Zapier, Make, or custom webhook already exposes one HTTP endpoint:
 
@@ -177,7 +193,7 @@ python -m api2agent.cli diagnose api2agent-workflow-output
 
 API2Agent compiles the endpoint into one Agent-callable tool. It does not execute, persist, or orchestrate workflow steps.
 
-## 11. Generate From GraphQL Endpoint
+## 12. Generate From GraphQL Endpoint
 
 Use `--graphql` when an existing GraphQL endpoint should expose fixed query or mutation operations as Agent-callable tools:
 
@@ -193,7 +209,7 @@ python -m api2agent.cli diagnose api2agent-graphql-output
 
 The Agent supplies operation variables as `body`. The generated runner wraps them into `query`, `operationName`, and `variables` before calling the GraphQL endpoint.
 
-## 12. Narrow Large APIs
+## 13. Narrow Large APIs
 
 Large OpenAPI specs often expose too many endpoints for Agent tool selection. Filter before generating:
 
@@ -215,11 +231,11 @@ Filtering rules:
 - `--max-tools` applies after other filters
 - `--include-path` accepts exact paths, substrings, or glob patterns
 
-## 13. What This Proves
+## 14. What This Proves
 
 The release candidate proves that API2Agent can:
 
-- parse OpenAPI, curl, Postman Collection, workflow endpoint, and GraphQL endpoint descriptions
+- parse OpenAPI, curl, HAR, Postman Collection, workflow endpoint, and GraphQL endpoint descriptions
 - compile them into a neutral capability model
 - generate OpenAI-compatible tool definitions
 - generate a runnable OpenAI Responses API tool-calling example

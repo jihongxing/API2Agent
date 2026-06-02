@@ -27,6 +27,7 @@ from api2agent.filters import ToolFilter, filter_capability
 from api2agent.generators.package import generate_package
 from api2agent.parsers.curl import parse_curl
 from api2agent.parsers.graphql import parse_graphql_file
+from api2agent.parsers.har import parse_har_file
 from api2agent.parsers.openapi import parse_openapi_file
 from api2agent.parsers.postman import parse_postman_file
 from api2agent.parsers.workflow import parse_workflow_file
@@ -107,6 +108,11 @@ def generate(
         "--graphql",
         help="GraphQL endpoint manifest JSON file to convert.",
     ),
+    har: Optional[Path] = typer.Option(
+        None,
+        "--har",
+        help="HAR 1.2 browser network capture JSON file to convert.",
+    ),
     name: Optional[str] = typer.Option(
         None,
         "--name",
@@ -152,14 +158,16 @@ def generate(
     ),
 ) -> None:
     """Generate an Agent Capability Package."""
-    source_count = sum(1 for source in [spec, curl, postman, workflow, graphql] if source is not None)
+    source_count = sum(1 for source in [spec, curl, postman, workflow, graphql, har] if source is not None)
     if source_count == 0:
         raise typer.BadParameter(
-            "Provide an OpenAPI file, --curl command, --postman collection, --workflow manifest, or --graphql manifest."
+            "Provide an OpenAPI file, --curl command, --postman collection, --workflow manifest, --graphql manifest, or --har capture."
         )
 
     if source_count > 1:
-        raise typer.BadParameter("Use exactly one input source: OpenAPI file, --curl, --postman, --workflow, or --graphql.")
+        raise typer.BadParameter(
+            "Use exactly one input source: OpenAPI file, --curl, --postman, --workflow, --graphql, or --har."
+        )
 
     if max_tools is not None and max_tools < 1:
         raise typer.BadParameter("--max-tools must be greater than 0.")
@@ -170,7 +178,19 @@ def generate(
         include_operations=include_operation,
         max_tools=max_tools,
     )
-    source_kind = "curl" if curl else "postman" if postman else "workflow" if workflow else "graphql" if graphql else "openapi"
+    source_kind = (
+        "curl"
+        if curl
+        else "postman"
+        if postman
+        else "workflow"
+        if workflow
+        else "graphql"
+        if graphql
+        else "har"
+        if har
+        else "openapi"
+    )
     if curl:
         capability = parse_curl(curl, name=name)
         original_tool_count = len(capability.tools)
@@ -185,6 +205,10 @@ def generate(
         capability = filter_capability(capability, filters)
     elif graphql:
         capability = parse_graphql_file(graphql, name=name)
+        original_tool_count = len(capability.tools)
+        capability = filter_capability(capability, filters)
+    elif har:
+        capability = parse_har_file(har, name=name)
         original_tool_count = len(capability.tools)
         capability = filter_capability(capability, filters)
     else:
