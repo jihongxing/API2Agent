@@ -3,7 +3,7 @@
 This quickstart proves the release-candidate path:
 
 ```text
-OpenAPI 3.x / curl / HAR / Postman Collection / workflow endpoint / GraphQL endpoint
+OpenAPI 3.x / curl / HAR / Postman / Insomnia / Bruno / workflow endpoint / GraphQL endpoint
   -> API2Agent IR
   -> Agent capability package
   -> OpenAI tools schema
@@ -25,7 +25,7 @@ python -m pytest
 Expected test result:
 
 ```text
-257 passed
+267 passed
 ```
 
 ## 2. Generate From OpenAPI
@@ -177,7 +177,25 @@ python -m api2agent.cli diagnose api2agent-postman-output
 
 Postman folders become tool tags, collection variables can provide the base URL, and request path/query/header/body shapes are compiled into the same generated package format.
 
-## 11. Generate From Workflow Endpoint
+## 11. Generate From Insomnia Or Bruno
+
+Use `--insomnia` or `--bruno` when your API requests live in those collection tools:
+
+```bash
+python -m api2agent.cli generate \
+  --insomnia tests/fixtures/insomnia/basic_export.json \
+  --output api2agent-insomnia-output \
+  --force
+
+python -m api2agent.cli generate \
+  --bruno tests/fixtures/bruno/basic_collection.json \
+  --output api2agent-bruno-output \
+  --force
+```
+
+Both adapters compile HTTP requests, folder tags, query/header parameters, JSON bodies, auth hints, and generated runner calls into the same capability package format.
+
+## 12. Generate From Workflow Endpoint
 
 Use `--workflow` when an existing n8n, Zapier, Make, or custom webhook already exposes one HTTP endpoint:
 
@@ -193,7 +211,7 @@ python -m api2agent.cli diagnose api2agent-workflow-output
 
 API2Agent compiles the endpoint into one Agent-callable tool. It does not execute, persist, or orchestrate workflow steps.
 
-## 12. Generate From GraphQL Endpoint
+## 13. Generate From GraphQL Endpoint
 
 Use `--graphql` when an existing GraphQL endpoint should expose fixed query or mutation operations as Agent-callable tools:
 
@@ -209,7 +227,7 @@ python -m api2agent.cli diagnose api2agent-graphql-output
 
 The Agent supplies operation variables as `body`. The generated runner wraps them into `query`, `operationName`, and `variables` before calling the GraphQL endpoint.
 
-## 13. Narrow Large APIs
+## 14. Narrow Large APIs
 
 Large OpenAPI specs often expose too many endpoints for Agent tool selection. Filter before generating:
 
@@ -231,11 +249,11 @@ Filtering rules:
 - `--max-tools` applies after other filters
 - `--include-path` accepts exact paths, substrings, or glob patterns
 
-## 14. What This Proves
+## 15. What This Proves
 
 The release candidate proves that API2Agent can:
 
-- parse OpenAPI, curl, HAR, Postman Collection, workflow endpoint, and GraphQL endpoint descriptions
+- parse OpenAPI, curl, HAR, Postman Collection, Insomnia export, Bruno collection, workflow endpoint, and GraphQL endpoint descriptions
 - compile them into a neutral capability model
 - generate OpenAI-compatible tool definitions
 - generate a runnable OpenAI Responses API tool-calling example

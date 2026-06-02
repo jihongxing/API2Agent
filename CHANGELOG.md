@@ -10,6 +10,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler workflow endpoint source adapter started with manifest-based single-endpoint import for existing n8n/Zapier/Make/custom webhook-style workflows without adding workflow orchestration runtime behavior.
 - Agent Capability Compiler GraphQL endpoint source adapter started with manifest-based fixed query/mutation import, Agent-visible variable schemas, and generated runner request wrapping without adding GraphQL schema introspection or runtime behavior.
 - Agent Capability Compiler HAR source adapter started with browser network capture import, browser-noise header filtering, auth hints, request/response schema inference, filtering, and generated runner coverage.
+- Agent Capability Compiler Insomnia and Bruno collection source adapters started with collection request import, variable substitution, folder tags, auth hints, JSON body handling, filtering, and generated runner coverage.
 
 ## v0.1.0rc1 - 2026-06-02
 

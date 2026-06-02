@@ -1,0 +1,55 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "resources": [
+    {
+      "_id": "wrk_demo",
+      "_type": "workspace",
+      "name": "Insomnia Demo API"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "data": {
+        "base_url": "https://api.example.com"
+      }
+    },
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "name": "Users"
+    },
+    {
+      "_id": "req_get_user",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Get User",
+      "method": "GET",
+      "url": "{{ _.base_url }}/users/{{ user_id }}?verbose=true",
+      "headers": [
+        {
+          "name": "X-Trace-Id",
+          "value": "trace-123"
+        }
+      ],
+      "authentication": {
+        "type": "bearer"
+      }
+    },
+    {
+      "_id": "req_create_user",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Create User",
+      "method": "POST",
+      "url": "{{ _.base_url }}/users",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"name\":\"Ada\",\"active\":true}"
+      },
+      "authentication": {
+        "type": "bearer"
+      }
+    }
+  ]
+}

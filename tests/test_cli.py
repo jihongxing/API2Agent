@@ -441,6 +441,70 @@ def test_generate_command_accepts_har_capture(tmp_path) -> None:
     assert "get_users_123" in readme
 
 
+def test_generate_command_accepts_insomnia_export(tmp_path) -> None:
+    output_dir = tmp_path / "api2agent-output"
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            "--insomnia",
+            "tests/fixtures/insomnia/basic_export.json",
+            "--include-tag",
+            "Users",
+            "--max-tools",
+            "1",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    auth_env = (output_dir / "auth.env.example").read_text(encoding="utf-8")
+    tools = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert capability["name"] == "insomnia_demo_api"
+    assert capability["source"].endswith("basic_export.json")
+    assert capability["auth"]["type"] == "bearer"
+    assert "INSOMNIA_DEMO_API_TOKEN=" in auth_env
+    assert [tool["name"] for tool in capability["tools"]] == ["get_user"]
+    assert capability["tools"][0]["path"] == "/users/{user_id}"
+    assert tools[0]["function"]["name"] == "get_user"
+
+
+def test_generate_command_accepts_bruno_collection(tmp_path) -> None:
+    output_dir = tmp_path / "api2agent-output"
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            "--bruno",
+            "tests/fixtures/bruno/basic_collection.json",
+            "--include-tag",
+            "Users",
+            "--max-tools",
+            "1",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    auth_env = (output_dir / "auth.env.example").read_text(encoding="utf-8")
+    tools = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert capability["name"] == "bruno_demo_api"
+    assert capability["source"].endswith("basic_collection.json")
+    assert capability["auth"]["type"] == "api_key"
+    assert "BRUNO_DEMO_API_API_KEY=" in auth_env
+    assert [tool["name"] for tool in capability["tools"]] == ["get_user"]
+    assert capability["tools"][0]["path"] == "/users/123"
+    assert tools[0]["function"]["name"] == "get_user"
+
+
 def test_generate_command_warns_for_large_unfiltered_openapi_package(tmp_path) -> None:
     paths = {
         f"/items/{index}": {

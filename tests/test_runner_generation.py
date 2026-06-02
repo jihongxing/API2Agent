@@ -4,9 +4,11 @@ import sys
 from pathlib import Path
 
 from api2agent.generators.package import generate_package
+from api2agent.parsers.bruno import parse_bruno_file
 from api2agent.parsers.curl import parse_curl
 from api2agent.parsers.graphql import parse_graphql_file
 from api2agent.parsers.har import parse_har_file
+from api2agent.parsers.insomnia import parse_insomnia_file
 from api2agent.parsers.openapi import parse_openapi_file
 
 
@@ -149,6 +151,92 @@ def test_execute_tool_runs_har_captured_request(tmp_path, monkeypatch) -> None:
         assert captured["kwargs"]["params"] == {"verbose": "true"}
         assert captured["kwargs"]["headers"] == {
             "Authorization": "Bearer har-secret",
+            "X-Trace-Id": "trace-456",
+        }
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_execute_tool_runs_insomnia_request(tmp_path, monkeypatch) -> None:
+    capability = parse_insomnia_file(Path("tests/fixtures/insomnia/basic_export.json"))
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+
+            def json(self):
+                return {"id": "123"}
+
+        def fake_request(method, url, **kwargs):
+            captured["method"] = method
+            captured["url"] = url
+            captured["kwargs"] = kwargs
+            return FakeResponse()
+
+        monkeypatch.setattr(runner.httpx, "request", fake_request)
+        monkeypatch.setattr(
+            runner.os,
+            "getenv",
+            lambda key: "insomnia-secret" if key == "INSOMNIA_DEMO_API_TOKEN" else None,
+        )
+
+        result = runner.execute_tool("get_user", {"user_id": "123", "verbose": "true", "X-Trace-Id": "trace-456"})
+
+        assert result["ok"] is True
+        assert captured["method"] == "GET"
+        assert captured["url"] == "https://api.example.com/users/123"
+        assert captured["kwargs"]["params"] == {"verbose": "true"}
+        assert captured["kwargs"]["headers"] == {
+            "Authorization": "Bearer insomnia-secret",
+            "X-Trace-Id": "trace-456",
+        }
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_execute_tool_runs_bruno_request(tmp_path, monkeypatch) -> None:
+    capability = parse_bruno_file(Path("tests/fixtures/bruno/basic_collection.json"))
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 200
+
+            def json(self):
+                return {"id": "123"}
+
+        def fake_request(method, url, **kwargs):
+            captured["method"] = method
+            captured["url"] = url
+            captured["kwargs"] = kwargs
+            return FakeResponse()
+
+        monkeypatch.setattr(runner.httpx, "request", fake_request)
+        monkeypatch.setattr(
+            runner.os,
+            "getenv",
+            lambda key: "bruno-secret" if key == "BRUNO_DEMO_API_API_KEY" else None,
+        )
+
+        result = runner.execute_tool("get_user", {"verbose": "true", "X-Trace-Id": "trace-456"})
+
+        assert result["ok"] is True
+        assert captured["method"] == "GET"
+        assert captured["url"] == "https://api.example.com/users/123"
+        assert captured["kwargs"]["params"] == {"verbose": "true"}
+        assert captured["kwargs"]["headers"] == {
+            "X-API-Key": "bruno-secret",
             "X-Trace-Id": "trace-456",
         }
     finally:

@@ -1,0 +1,48 @@
+{
+  "name": "Bruno Demo API",
+  "version": "1.0.0",
+  "variables": {
+    "base_url": "https://api.example.com"
+  },
+  "items": [
+    {
+      "name": "Users",
+      "items": [
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/users/123?verbose=true",
+            "headers": [
+              {
+                "name": "X-Trace-Id",
+                "value": "trace-123"
+              }
+            ],
+            "auth": {
+              "type": "apiKey",
+              "key": "X-API-Key",
+              "location": "header"
+            }
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/users",
+            "body": {
+              "mimeType": "application/json",
+              "text": "{\"name\":\"Ada\",\"active\":true}"
+            },
+            "auth": {
+              "type": "apiKey",
+              "key": "X-API-Key",
+              "location": "header"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

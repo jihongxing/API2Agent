@@ -25,9 +25,11 @@ from api2agent.diagnostics import (
 )
 from api2agent.filters import ToolFilter, filter_capability
 from api2agent.generators.package import generate_package
+from api2agent.parsers.bruno import parse_bruno_file
 from api2agent.parsers.curl import parse_curl
 from api2agent.parsers.graphql import parse_graphql_file
 from api2agent.parsers.har import parse_har_file
+from api2agent.parsers.insomnia import parse_insomnia_file
 from api2agent.parsers.openapi import parse_openapi_file
 from api2agent.parsers.postman import parse_postman_file
 from api2agent.parsers.workflow import parse_workflow_file
@@ -113,6 +115,16 @@ def generate(
         "--har",
         help="HAR 1.2 browser network capture JSON file to convert.",
     ),
+    insomnia: Optional[Path] = typer.Option(
+        None,
+        "--insomnia",
+        help="Insomnia export JSON file to convert.",
+    ),
+    bruno: Optional[Path] = typer.Option(
+        None,
+        "--bruno",
+        help="Bruno collection export JSON file to convert.",
+    ),
     name: Optional[str] = typer.Option(
         None,
         "--name",
@@ -158,15 +170,17 @@ def generate(
     ),
 ) -> None:
     """Generate an Agent Capability Package."""
-    source_count = sum(1 for source in [spec, curl, postman, workflow, graphql, har] if source is not None)
+    source_count = sum(
+        1 for source in [spec, curl, postman, workflow, graphql, har, insomnia, bruno] if source is not None
+    )
     if source_count == 0:
         raise typer.BadParameter(
-            "Provide an OpenAPI file, --curl command, --postman collection, --workflow manifest, --graphql manifest, or --har capture."
+            "Provide an OpenAPI file, --curl command, --postman collection, --workflow manifest, --graphql manifest, --har capture, --insomnia export, or --bruno export."
         )
 
     if source_count > 1:
         raise typer.BadParameter(
-            "Use exactly one input source: OpenAPI file, --curl, --postman, --workflow, --graphql, or --har."
+            "Use exactly one input source: OpenAPI file, --curl, --postman, --workflow, --graphql, --har, --insomnia, or --bruno."
         )
 
     if max_tools is not None and max_tools < 1:
@@ -189,6 +203,10 @@ def generate(
         if graphql
         else "har"
         if har
+        else "insomnia"
+        if insomnia
+        else "bruno"
+        if bruno
         else "openapi"
     )
     if curl:
@@ -209,6 +227,14 @@ def generate(
         capability = filter_capability(capability, filters)
     elif har:
         capability = parse_har_file(har, name=name)
+        original_tool_count = len(capability.tools)
+        capability = filter_capability(capability, filters)
+    elif insomnia:
+        capability = parse_insomnia_file(insomnia, name=name)
+        original_tool_count = len(capability.tools)
+        capability = filter_capability(capability, filters)
+    elif bruno:
+        capability = parse_bruno_file(bruno, name=name)
         original_tool_count = len(capability.tools)
         capability = filter_capability(capability, filters)
     else:
