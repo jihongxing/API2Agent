@@ -344,6 +344,35 @@ def test_generate_command_accepts_postman_collection(tmp_path) -> None:
     assert "get_user" in readme
 
 
+def test_generate_command_accepts_workflow_manifest(tmp_path) -> None:
+    output_dir = tmp_path / "api2agent-output"
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            "--workflow",
+            "tests/fixtures/workflow/basic_manifest.json",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    auth_env = (output_dir / "auth.env.example").read_text(encoding="utf-8")
+    tools = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert capability["name"] == "invoice_approval_workflow"
+    assert capability["source"].endswith("basic_manifest.json")
+    assert capability["auth"]["type"] == "api_key"
+    assert "INVOICE_WORKFLOW_KEY=" in auth_env
+    assert [tool["name"] for tool in capability["tools"]] == ["trigger_invoice_approval"]
+    assert capability["tools"][0]["path"] == "/workflows/invoice-approval"
+    assert capability["tools"][0]["request_body"]["schema"]["required"] == ["invoice_id", "amount"]
+    assert tools[0]["function"]["name"] == "trigger_invoice_approval"
+
+
 def test_generate_command_warns_for_large_unfiltered_openapi_package(tmp_path) -> None:
     paths = {
         f"/items/{index}": {

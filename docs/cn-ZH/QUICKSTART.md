@@ -3,7 +3,7 @@
 这份 quickstart 证明当前可发布候选版本的主路径：
 
 ```text
-OpenAPI 3.x / curl / Postman Collection
+OpenAPI 3.x / curl / Postman Collection / workflow endpoint
   -> API2Agent IR
   -> Agent capability package
   -> OpenAI tools schema
@@ -25,7 +25,7 @@ python -m pytest
 期望测试结果：
 
 ```text
-242 passed
+245 passed
 ```
 
 ## 2. 从 OpenAPI 生成
@@ -161,7 +161,23 @@ python -m api2agent.cli diagnose api2agent-postman-output
 
 Postman folders 会变成 tool tags，collection variables 可提供 base URL，request path/query/header/body 会被编译进同一套生成包格式。
 
-## 10. 收窄大型 API
+## 10. 从 Workflow Endpoint 生成
+
+如果已有 n8n、Zapier、Make 或自建 webhook 暴露了一个 HTTP endpoint，可以使用 `--workflow`：
+
+```bash
+python -m api2agent.cli generate \
+  --workflow tests/fixtures/workflow/basic_manifest.json \
+  --output api2agent-workflow-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-workflow-output
+python -m api2agent.cli diagnose api2agent-workflow-output
+```
+
+API2Agent 会把这个 endpoint 编译成一个 Agent-callable tool。它不会执行、持久化或编排 workflow steps。
+
+## 11. 收窄大型 API
 
 大型 OpenAPI spec 通常会暴露太多 endpoints，不适合直接给 Agent 做 tool selection。生成前先过滤：
 
@@ -183,11 +199,11 @@ python -m api2agent.cli generate api.github.com.json \
 - `--max-tools` 在其他 filter 之后生效
 - `--include-path` 支持精确路径、substring 或 glob pattern
 
-## 11. 证明了什么
+## 12. 证明了什么
 
 这个 release candidate 证明 API2Agent 可以：
 
-- 解析 OpenAPI、curl 和 Postman Collection API 描述
+- 解析 OpenAPI、curl、Postman Collection 和 workflow endpoint 描述
 - 编译成中立的 capability model
 - 生成 OpenAI-compatible tools
 - 生成可运行的 OpenAI Responses API tool-calling 示例

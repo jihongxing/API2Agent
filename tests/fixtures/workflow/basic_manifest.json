@@ -1,0 +1,48 @@
+{
+  "name": "Invoice Approval Workflow",
+  "version": "1.0.0",
+  "description": "Trigger an existing invoice approval workflow endpoint.",
+  "endpoint": {
+    "name": "Trigger Invoice Approval",
+    "method": "POST",
+    "url": "https://hooks.example.com/workflows/invoice-approval?source=agent",
+    "content_type": "application/json"
+  },
+  "auth": {
+    "type": "api_key",
+    "location": "header",
+    "name": "X-Workflow-Key",
+    "env": "INVOICE_WORKFLOW_KEY"
+  },
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "invoice_id": {
+        "type": "string"
+      },
+      "amount": {
+        "type": "number"
+      },
+      "urgent": {
+        "type": "boolean"
+      }
+    },
+    "required": ["invoice_id", "amount"]
+  },
+  "example": {
+    "invoice_id": "inv_123",
+    "amount": 42.5,
+    "urgent": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "workflow_run_id": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      }
+    }
+  }
+}

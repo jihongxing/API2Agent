@@ -6,7 +6,7 @@ Current focus: expand the Agent Capability Compiler after the first release cand
 
 Strategic priority: make API-to-Agent onboarding fast, reproducible, and safe enough to be the base layer for later routing, observability, hosted control, and commercial workflows.
 
-Current implementation boundary: API-first. API2Agent supports OpenAPI, curl, Postman Collection, and HTTP APIs today and must not become a workflow engine.
+Current implementation boundary: API-first. API2Agent supports OpenAPI, curl, Postman Collection, workflow endpoint manifests, and HTTP APIs today and must not become a workflow engine.
 
 Implementation language boundary: Python remains the Tooling reference implementation and local dogfood harness; Go owns the production Data Plane and Control Plane direction. API2Agent's neutrality is protected by language-neutral protocol artifacts, not by treating Python as the only runtime.
 
@@ -19,7 +19,7 @@ Agent Capability Compiler
 Release candidate promise:
 
 ```text
-OpenAPI / curl / Postman Collection -> Agent-callable capability package
+OpenAPI / curl / Postman Collection / workflow endpoint -> Agent-callable capability package
 ```
 
 The release candidate must prove that API2Agent can take an existing API description and produce artifacts an Agent developer can actually use: `capability.json`, `tools.json`, `runner.py`, `mcp_server.py`, generated docs, diagnostics, and smoke tests.
@@ -29,7 +29,7 @@ Marketplace, hosted SaaS, billing, workflow runtime, and Hosted Control Plane wo
 Current build target:
 
 ```text
-OpenAPI 3.x / curl / Postman Collection
+OpenAPI 3.x / curl / Postman Collection / workflow endpoint
   -> API2Agent IR
   -> generated runner
   -> smoke test
@@ -113,6 +113,12 @@ Postman Collection input is also supported:
 
 ```bash
 api2agent generate --postman collection.json --output api2agent-postman-output --force
+```
+
+Existing workflow endpoints can be compiled as one-tool capabilities without turning API2Agent into a workflow runtime:
+
+```bash
+api2agent generate --workflow workflow.json --output api2agent-workflow-output --force
 ```
 
 ## SDK Core Loop

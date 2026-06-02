@@ -3,7 +3,7 @@
 This quickstart proves the release-candidate path:
 
 ```text
-OpenAPI 3.x / curl / Postman Collection
+OpenAPI 3.x / curl / Postman Collection / workflow endpoint
   -> API2Agent IR
   -> Agent capability package
   -> OpenAI tools schema
@@ -25,7 +25,7 @@ python -m pytest
 Expected test result:
 
 ```text
-242 passed
+245 passed
 ```
 
 ## 2. Generate From OpenAPI
@@ -161,7 +161,23 @@ python -m api2agent.cli diagnose api2agent-postman-output
 
 Postman folders become tool tags, collection variables can provide the base URL, and request path/query/header/body shapes are compiled into the same generated package format.
 
-## 10. Narrow Large APIs
+## 10. Generate From Workflow Endpoint
+
+Use `--workflow` when an existing n8n, Zapier, Make, or custom webhook already exposes one HTTP endpoint:
+
+```bash
+python -m api2agent.cli generate \
+  --workflow tests/fixtures/workflow/basic_manifest.json \
+  --output api2agent-workflow-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-workflow-output
+python -m api2agent.cli diagnose api2agent-workflow-output
+```
+
+API2Agent compiles the endpoint into one Agent-callable tool. It does not execute, persist, or orchestrate workflow steps.
+
+## 11. Narrow Large APIs
 
 Large OpenAPI specs often expose too many endpoints for Agent tool selection. Filter before generating:
 
@@ -183,11 +199,11 @@ Filtering rules:
 - `--max-tools` applies after other filters
 - `--include-path` accepts exact paths, substrings, or glob patterns
 
-## 11. What This Proves
+## 12. What This Proves
 
 The release candidate proves that API2Agent can:
 
-- parse OpenAPI, curl, and Postman Collection API descriptions
+- parse OpenAPI, curl, Postman Collection, and workflow endpoint descriptions
 - compile them into a neutral capability model
 - generate OpenAI-compatible tool definitions
 - generate a runnable OpenAI Responses API tool-calling example
