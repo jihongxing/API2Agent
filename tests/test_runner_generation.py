@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from api2agent.generators.package import generate_package
+from api2agent.parsers.asyncapi import parse_asyncapi_file
 from api2agent.parsers.bruno import parse_bruno_file
 from api2agent.parsers.curl import parse_curl
 from api2agent.parsers.graphql import parse_graphql_file
@@ -257,6 +258,46 @@ def test_execute_tool_reports_grpc_scaffold_not_executable(tmp_path) -> None:
         assert result["error"]["type"] == "grpc_unimplemented"
         assert result["error"]["grpc"]["service"] == "UserService"
         assert result["error"]["grpc"]["method"] == "GetUser"
+    finally:
+        sys.path.remove(str(output_dir))
+        sys.modules.pop("runner", None)
+
+
+def test_execute_tool_runs_asyncapi_webhook(tmp_path, monkeypatch) -> None:
+    capability = parse_asyncapi_file(Path("tests/fixtures/asyncapi/basic_webhook.yaml"))
+    output_dir = generate_package(capability, tmp_path / "api2agent-output")
+
+    runner = _load_runner(output_dir)
+    try:
+        captured = {}
+
+        class FakeResponse:
+            is_success = True
+            status_code = 202
+
+            def json(self):
+                return {"accepted": True}
+
+        def fake_request(method, url, **kwargs):
+            captured["method"] = method
+            captured["url"] = url
+            captured["kwargs"] = kwargs
+            return FakeResponse()
+
+        monkeypatch.setattr(runner.httpx, "request", fake_request)
+        monkeypatch.setattr(
+            runner.os,
+            "getenv",
+            lambda key: "asyncapi-secret" if key == "ORDER_EVENTS_API_TOKEN" else None,
+        )
+
+        result = runner.execute_tool("send_order_created", {"body": {"order_id": "ord_123", "amount": 42.5}})
+
+        assert result["ok"] is True
+        assert captured["method"] == "POST"
+        assert captured["url"] == "https://hooks.example.com/webhooks/order-created"
+        assert captured["kwargs"]["headers"] == {"Authorization": "Bearer asyncapi-secret"}
+        assert captured["kwargs"]["json"] == {"order_id": "ord_123", "amount": 42.5}
     finally:
         sys.path.remove(str(output_dir))
         sys.modules.pop("runner", None)

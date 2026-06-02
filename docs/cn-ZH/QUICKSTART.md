@@ -3,7 +3,7 @@
 这份 quickstart 证明当前可发布候选版本的主路径：
 
 ```text
-OpenAPI 3.x / curl / HAR / Postman / Insomnia / Bruno / protobuf / workflow endpoint / GraphQL endpoint
+OpenAPI 3.x / curl / HAR / Postman / Insomnia / Bruno / protobuf / AsyncAPI webhook / workflow endpoint / GraphQL endpoint
   -> API2Agent IR
   -> Agent capability package
   -> OpenAI tools schema
@@ -25,7 +25,7 @@ python -m pytest
 期望测试结果：
 
 ```text
-272 passed
+277 passed
 ```
 
 ## 2. 从 OpenAPI 生成
@@ -211,7 +211,23 @@ python -m api2agent.cli diagnose api2agent-grpc-output
 
 这个 adapter 会导入 unary RPC 的 request/response message schemas，并跳过 streaming RPC。生成的 gRPC tools 是 schema scaffolds；真实执行还需要后续接入 gRPC client 或 proxy transport。
 
-## 13. 从 Workflow Endpoint 生成
+## 13. 从 AsyncAPI Webhook 生成
+
+如果 AsyncAPI 文档描述了可调用的 HTTP webhook 或 publish endpoints，可以使用 `--asyncapi`：
+
+```bash
+python -m api2agent.cli generate \
+  --asyncapi tests/fixtures/asyncapi/basic_webhook.yaml \
+  --output api2agent-asyncapi-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-asyncapi-output
+python -m api2agent.cli diagnose api2agent-asyncapi-output
+```
+
+API2Agent 只会把 HTTP-bound publish/send operations 导入为 tools。它不会订阅事件、运行 broker、持久化 events，也不会变成 workflow runtime。
+
+## 14. 从 Workflow Endpoint 生成
 
 如果已有 n8n、Zapier、Make 或自建 webhook 暴露了一个 HTTP endpoint，可以使用 `--workflow`：
 
@@ -227,7 +243,7 @@ python -m api2agent.cli diagnose api2agent-workflow-output
 
 API2Agent 会把这个 endpoint 编译成一个 Agent-callable tool。它不会执行、持久化或编排 workflow steps。
 
-## 14. 从 GraphQL Endpoint 生成
+## 15. 从 GraphQL Endpoint 生成
 
 如果已有 GraphQL endpoint，并且希望把固定 query 或 mutation operation 暴露成 Agent-callable tools，可以使用 `--graphql`：
 
@@ -243,7 +259,7 @@ python -m api2agent.cli diagnose api2agent-graphql-output
 
 Agent 只需要把 operation variables 作为 `body` 传入。生成的 runner 会在调用 GraphQL endpoint 前包装成 `query`、`operationName` 和 `variables`。
 
-## 15. 收窄大型 API
+## 16. 收窄大型 API
 
 大型 OpenAPI spec 通常会暴露太多 endpoints，不适合直接给 Agent 做 tool selection。生成前先过滤：
 
@@ -265,11 +281,11 @@ python -m api2agent.cli generate api.github.com.json \
 - `--max-tools` 在其他 filter 之后生效
 - `--include-path` 支持精确路径、substring 或 glob pattern
 
-## 16. 证明了什么
+## 17. 证明了什么
 
 这个 release candidate 证明 API2Agent 可以：
 
-- 解析 OpenAPI、curl、HAR、Postman Collection、Insomnia export、Bruno collection、protobuf unary RPC、workflow endpoint 和 GraphQL endpoint 描述
+- 解析 OpenAPI、curl、HAR、Postman Collection、Insomnia export、Bruno collection、protobuf unary RPC、AsyncAPI HTTP webhook operations、workflow endpoint 和 GraphQL endpoint 描述
 - 编译成中立的 capability model
 - 生成 OpenAI-compatible tools
 - 生成可运行的 OpenAI Responses API tool-calling 示例

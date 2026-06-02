@@ -12,6 +12,7 @@ All notable API2Agent changes will be documented in this file.
 - Agent Capability Compiler HAR source adapter started with browser network capture import, browser-noise header filtering, auth hints, request/response schema inference, filtering, and generated runner coverage.
 - Agent Capability Compiler Insomnia and Bruno collection source adapters started with collection request import, variable substitution, folder tags, auth hints, JSON body handling, filtering, and generated runner coverage.
 - Agent Capability Compiler minimal gRPC/protobuf source adapter started with unary RPC schema import, streaming RPC exclusion, OpenAI tool schema shaping, and generated runner scaffold errors until a real gRPC transport is wired.
+- Agent Capability Compiler AsyncAPI HTTP webhook source adapter started with callable publish/send operation import, payload schema/examples, HTTP binding support, auth hints, filtering, and generated runner coverage without adding event-bus or workflow-runtime behavior.
 
 ## v0.1.0rc1 - 2026-06-02
 

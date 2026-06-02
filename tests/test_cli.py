@@ -535,6 +535,38 @@ def test_generate_command_accepts_proto_file(tmp_path) -> None:
     assert "x-api2agent-grpc" not in json.dumps(tools)
 
 
+def test_generate_command_accepts_asyncapi_file(tmp_path) -> None:
+    output_dir = tmp_path / "api2agent-output"
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            "--asyncapi",
+            "tests/fixtures/asyncapi/basic_webhook.yaml",
+            "--include-tag",
+            "asyncapi",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    auth_env = (output_dir / "auth.env.example").read_text(encoding="utf-8")
+    tools = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert capability["name"] == "order_events_api"
+    assert capability["source"].endswith("basic_webhook.yaml")
+    assert capability["base_url"] == "https://hooks.example.com"
+    assert capability["auth"]["type"] == "bearer"
+    assert "ORDER_EVENTS_API_TOKEN=" in auth_env
+    assert [tool["name"] for tool in capability["tools"]] == ["send_order_created"]
+    assert capability["tools"][0]["path"] == "/webhooks/order-created"
+    assert capability["tools"][0]["request_body"]["schema"]["required"] == ["order_id"]
+    assert tools[0]["function"]["name"] == "send_order_created"
+
+
 def test_generate_command_warns_for_large_unfiltered_openapi_package(tmp_path) -> None:
     paths = {
         f"/items/{index}": {
