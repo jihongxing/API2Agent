@@ -29,7 +29,7 @@ If you are developing API2Agent itself, use editable install instead:
 
 ```bash
 python -m pip install -e ".[dev]"
-python -m api2agent.cli --help
+api2agent --help
 python -m pytest
 ```
 
@@ -39,18 +39,22 @@ Expected test result:
 290 passed
 ```
 
-## 2. Generate From OpenAPI
+## 2. Generate A First Capability
+
+Start with a stable read-only endpoint. This path works after installing only the release wheel; it does not require cloning this repository.
 
 ```bash
-python -m api2agent.cli generate examples/openapi/basic.yaml --output api2agent-output --force
+api2agent generate --curl="curl https://api.github.com/rate_limit" --name github_rate_limit --provider-region global --output api2agent-output --force
 ```
 
 Expected output:
 
 ```text
 Generated capability package: api2agent-output
-Diagnostics: pass ...
+Diagnostics: warn score=90 errors=0 warnings=1 info=1
 ```
+
+The warning is expected for this curl-based first demo: curl captures the request, but it does not provide rich operation descriptions the way OpenAPI can. Continue through `inspect`, `diagnose`, and `test`; use your own OpenAPI spec when you want higher-quality Agent tool-selection metadata.
 
 The generated directory contains:
 
@@ -69,7 +73,7 @@ The generated directory contains:
 ## 3. Inspect The Package
 
 ```bash
-python -m api2agent.cli inspect api2agent-output
+api2agent inspect api2agent-output
 ```
 
 This shows the generated capability name, base URL, auth shape, safety summary, tool list, parameter requirements, and response summaries.
@@ -77,13 +81,13 @@ This shows the generated capability name, base URL, auth shape, safety summary, 
 For raw JSON:
 
 ```bash
-python -m api2agent.cli inspect api2agent-output --json
+api2agent inspect api2agent-output --json
 ```
 
 ## 4. Diagnose Readiness
 
 ```bash
-python -m api2agent.cli diagnose api2agent-output
+api2agent diagnose api2agent-output
 ```
 
 Diagnostics are advisory by default. They are meant to tell you whether the generated package is safe and clear enough to wire into an Agent.
@@ -99,19 +103,19 @@ Common signals:
 ## 5. Run The Smoke Test
 
 ```bash
-python -m api2agent.cli test api2agent-output
+api2agent test api2agent-output
 ```
 
 The default smoke test only runs a safe read-only path. If a generated package only contains write/delete tools, use `--allow-write` only against a target you control:
 
 ```bash
-python -m api2agent.cli test api2agent-output --allow-write
+api2agent test api2agent-output --allow-write
 ```
 
 You can also run one generated tool directly:
 
 ```bash
-python -m api2agent.cli test api2agent-output --tool get_post --params "{\"post_id\": 1}"
+api2agent test api2agent-output --tool get_rate_limit --params '{}'
 ```
 
 For real-world dogfood, use a stable read-only endpoint first and treat live HTTP failures as evidence to inspect, not as automatic compiler failures. Public sample APIs can return stale servers, `404`, `503`, rate limits, or changed response bodies even when generation is correct.
@@ -131,7 +135,7 @@ The OpenAI SDK is optional for API2Agent itself; install it only when you want t
 ## 7. Run The MCP Server
 
 ```bash
-python -m api2agent.cli run api2agent-output
+api2agent run api2agent-output
 ```
 
 This starts the generated MCP stdio server and keeps the process open for an MCP client.
@@ -142,34 +146,34 @@ For Claude Desktop-style wiring, start from:
 api2agent-output/examples/claude_desktop_config.json
 ```
 
-## 8. Generate From curl
+## 8. Generate From OpenAPI
 
-Use `--curl` when you do not have an OpenAPI file yet:
+Use an OpenAPI file when you already have one. The example path below exists in the source repository; if you installed only the release wheel, replace it with your own spec path.
 
 ```bash
-python -m api2agent.cli generate \
-  --curl="curl https://api.example.com/items?verbose=true --json '{\"name\":\"demo\"}'" \
-  --output api2agent-curl-output \
+api2agent generate \
+  examples/openapi/basic.yaml \
+  --output api2agent-openapi-output \
   --force
 
-python -m api2agent.cli inspect api2agent-curl-output
-python -m api2agent.cli diagnose api2agent-curl-output
+api2agent inspect api2agent-openapi-output
+api2agent diagnose api2agent-openapi-output
 ```
 
-curl-generated write tools intentionally produce stronger diagnostics. That is useful: the compiler should make risky generated packages visible before an Agent can call them.
+OpenAPI specs usually provide stronger operation descriptions, auth metadata, schemas, and response shapes than ad hoc request captures.
 
 ## 9. Generate From HAR Capture
 
 Use `--har` when you can capture real browser network traffic but do not have an OpenAPI file or collection yet:
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --har tests/fixtures/har/basic_capture.har \
   --output api2agent-har-output \
   --force
 
-python -m api2agent.cli inspect api2agent-har-output
-python -m api2agent.cli diagnose api2agent-har-output
+api2agent inspect api2agent-har-output
+api2agent diagnose api2agent-har-output
 ```
 
 API2Agent converts captured HTTP requests into tools, filters common browser noise headers, and preserves query, body, auth hint, and response-shape evidence.
@@ -179,13 +183,13 @@ API2Agent converts captured HTTP requests into tools, filters common browser noi
 Use `--postman` when your API contract lives in a Postman Collection:
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --postman tests/fixtures/postman/basic_collection.json \
   --output api2agent-postman-output \
   --force
 
-python -m api2agent.cli inspect api2agent-postman-output
-python -m api2agent.cli diagnose api2agent-postman-output
+api2agent inspect api2agent-postman-output
+api2agent diagnose api2agent-postman-output
 ```
 
 Postman folders become tool tags, collection variables can provide the base URL, and request path/query/header/body shapes are compiled into the same generated package format.
@@ -195,12 +199,12 @@ Postman folders become tool tags, collection variables can provide the base URL,
 Use `--insomnia` or `--bruno` when your API requests live in those collection tools:
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --insomnia tests/fixtures/insomnia/basic_export.json \
   --output api2agent-insomnia-output \
   --force
 
-python -m api2agent.cli generate \
+api2agent generate \
   --bruno tests/fixtures/bruno/basic_collection.json \
   --output api2agent-bruno-output \
   --force
@@ -213,13 +217,13 @@ Both adapters compile HTTP requests, folder tags, query/header parameters, JSON 
 Use `--proto` when you have a `.proto` file and want minimal gRPC capability scaffolding:
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --proto tests/fixtures/protobuf/user_service.proto \
   --output api2agent-grpc-output \
   --force
 
-python -m api2agent.cli inspect api2agent-grpc-output
-python -m api2agent.cli diagnose api2agent-grpc-output
+api2agent inspect api2agent-grpc-output
+api2agent diagnose api2agent-grpc-output
 ```
 
 The adapter imports unary RPC request/response message schemas and skips streaming RPCs. Generated gRPC tools are schema scaffolds; execution requires wiring a gRPC client or proxy transport.
@@ -229,13 +233,13 @@ The adapter imports unary RPC request/response message schemas and skips streami
 Use `--asyncapi` when an AsyncAPI document describes callable HTTP webhook or publish endpoints:
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --asyncapi tests/fixtures/asyncapi/basic_webhook.yaml \
   --output api2agent-asyncapi-output \
   --force
 
-python -m api2agent.cli inspect api2agent-asyncapi-output
-python -m api2agent.cli diagnose api2agent-asyncapi-output
+api2agent inspect api2agent-asyncapi-output
+api2agent diagnose api2agent-asyncapi-output
 ```
 
 API2Agent imports HTTP-bound publish/send operations as tools. It does not subscribe to events, run brokers, persist events, or become a workflow runtime.
@@ -245,13 +249,13 @@ API2Agent imports HTTP-bound publish/send operations as tools. It does not subsc
 Use `--workflow` when an existing n8n, Zapier, Make, or custom webhook already exposes one HTTP endpoint:
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --workflow tests/fixtures/workflow/basic_manifest.json \
   --output api2agent-workflow-output \
   --force
 
-python -m api2agent.cli inspect api2agent-workflow-output
-python -m api2agent.cli diagnose api2agent-workflow-output
+api2agent inspect api2agent-workflow-output
+api2agent diagnose api2agent-workflow-output
 ```
 
 API2Agent compiles the endpoint into one Agent-callable tool. It does not execute, persist, or orchestrate workflow steps.
@@ -261,13 +265,13 @@ API2Agent compiles the endpoint into one Agent-callable tool. It does not execut
 Use `--graphql` when an existing GraphQL endpoint should expose fixed query or mutation operations as Agent-callable tools:
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --graphql tests/fixtures/graphql/basic_manifest.json \
   --output api2agent-graphql-output \
   --force
 
-python -m api2agent.cli inspect api2agent-graphql-output
-python -m api2agent.cli diagnose api2agent-graphql-output
+api2agent inspect api2agent-graphql-output
+api2agent diagnose api2agent-graphql-output
 ```
 
 The Agent supplies operation variables as `body`. The generated runner wraps them into `query`, `operationName`, and `variables` before calling the GraphQL endpoint.
@@ -277,7 +281,7 @@ The Agent supplies operation variables as `body`. The generated runner wraps the
 Large OpenAPI specs often expose too many endpoints for Agent tool selection. Filter before generating:
 
 ```bash
-python -m api2agent.cli generate api.github.com.json \
+api2agent generate api.github.com.json \
   --include-tag repos \
   --include-path /repos \
   --include-operation listRepos \

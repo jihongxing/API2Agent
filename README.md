@@ -6,7 +6,7 @@ Current focus: complete the Agent Capability Compiler release surface and dogfoo
 
 Strategic priority: make API-to-Agent onboarding fast, reproducible, and safe enough to be the base layer for later routing, observability, hosted control, and commercial workflows.
 
-RC2 status: published as a GitHub prerelease. Current follow-up work is limited to release-surface fixes, packaging/DX fixes, docs, and real-world dogfood findings.
+RC3 status: published as a GitHub prerelease. Current follow-up work is limited to release-surface fixes, packaging/DX fixes, docs, and real-world dogfood findings.
 
 Current implementation boundary: API-first. API2Agent supports OpenAPI, curl, HAR browser network capture, Postman Collection, Insomnia export, Bruno collection export, minimal gRPC/protobuf scaffolding, AsyncAPI HTTP webhook endpoints, workflow endpoint manifests, GraphQL endpoint manifests, and HTTP APIs today and must not become a workflow engine.
 
@@ -105,7 +105,7 @@ API2Agent is planned as an open-core project: the local compiler, CLI, generated
 ## First Demo
 
 ```bash
-api2agent generate examples/openapi/basic.yaml --output api2agent-output --force
+api2agent generate --curl="curl https://api.github.com/rate_limit" --name github_rate_limit --provider-region global --output api2agent-output --force
 api2agent inspect api2agent-output
 api2agent diagnose api2agent-output
 api2agent test api2agent-output
@@ -130,7 +130,7 @@ api2agent run api2agent-output
 
 Generation refuses to write into a non-empty output directory unless you pass `--force`.
 
-For real-world dogfood, start with a small read-only endpoint you control or a stable public endpoint, then run `generate`, `inspect`, `diagnose`, and only then `test`. Public sample APIs can be stale or temporarily unavailable, so a failed smoke call is not always a compiler failure.
+For real-world dogfood, start with a small read-only endpoint you control or a stable public endpoint, then run `generate`, `inspect`, `diagnose`, and only then `test`. A curl-generated package may still warn about weak tool descriptions because curl has less semantic metadata than OpenAPI. Public sample APIs can be stale or temporarily unavailable, so a failed smoke call is not always a compiler failure.
 
 Postman Collection input is also supported:
 

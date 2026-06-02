@@ -29,7 +29,7 @@ PyPI/TestPyPI 还没有启用。在这之前，GitHub Release 是当前公开安
 
 ```bash
 python -m pip install -e ".[dev]"
-python -m api2agent.cli --help
+api2agent --help
 python -m pytest
 ```
 
@@ -39,18 +39,22 @@ python -m pytest
 290 passed
 ```
 
-## 2. 从 OpenAPI 生成
+## 2. 生成第一个 Capability
+
+先用一个稳定的 read-only endpoint。这条路径只安装 release wheel 就能跑，不需要 clone 仓库。
 
 ```bash
-python -m api2agent.cli generate examples/openapi/basic.yaml --output api2agent-output --force
+api2agent generate --curl="curl https://api.github.com/rate_limit" --name github_rate_limit --provider-region global --output api2agent-output --force
 ```
 
 期望输出：
 
 ```text
 Generated capability package: api2agent-output
-Diagnostics: pass ...
+Diagnostics: warn score=90 errors=0 warnings=1 info=1
 ```
+
+这个 warning 对 curl first demo 来说是预期内的：curl 能捕获请求，但不像 OpenAPI 那样提供充分的 operation description。继续跑 `inspect`、`diagnose` 和 `test`；如果要给 Agent 更好的 tool-selection metadata，优先使用你自己的 OpenAPI spec。
 
 生成目录包含：
 
@@ -69,7 +73,7 @@ Diagnostics: pass ...
 ## 3. Inspect 生成包
 
 ```bash
-python -m api2agent.cli inspect api2agent-output
+api2agent inspect api2agent-output
 ```
 
 这会展示生成后的 capability 名称、base URL、auth 形态、safety 摘要、tool 列表、参数要求和 response 摘要。
@@ -77,13 +81,13 @@ python -m api2agent.cli inspect api2agent-output
 查看原始 JSON：
 
 ```bash
-python -m api2agent.cli inspect api2agent-output --json
+api2agent inspect api2agent-output --json
 ```
 
 ## 4. Diagnose 可用性
 
 ```bash
-python -m api2agent.cli diagnose api2agent-output
+api2agent diagnose api2agent-output
 ```
 
 Diagnostics 默认是 advisory，用来判断生成包是否足够安全、清晰，能不能接给 Agent 使用。
@@ -99,19 +103,19 @@ Diagnostics 默认是 advisory，用来判断生成包是否足够安全、清�
 ## 5. 运行 Smoke Test
 
 ```bash
-python -m api2agent.cli test api2agent-output
+api2agent test api2agent-output
 ```
 
 默认 smoke test 只运行安全的 read-only 路径。如果生成包只有 write/delete tools，只能在你控制的目标上显式使用 `--allow-write`：
 
 ```bash
-python -m api2agent.cli test api2agent-output --allow-write
+api2agent test api2agent-output --allow-write
 ```
 
 也可以直接运行某个生成 tool：
 
 ```bash
-python -m api2agent.cli test api2agent-output --tool get_post --params "{\"post_id\": 1}"
+api2agent test api2agent-output --tool get_rate_limit --params '{}'
 ```
 
 真实 dogfood 时，先选择稳定的 read-only endpoint，并把 live HTTP failure 当作需要检查的证据，而不是自动判定为 compiler failure。公开示例 API 可能出现 server 过期、`404`、`503`、rate limit 或 response body 变化，即使生成过程本身是正确的。
@@ -131,7 +135,7 @@ OpenAI SDK 不是 API2Agent 自身依赖；只有运行这个示例时才需要�
 ## 7. 启动 MCP Server
 
 ```bash
-python -m api2agent.cli run api2agent-output
+api2agent run api2agent-output
 ```
 
 这会启动生成的 MCP stdio server，并保持进程打开，等待 MCP client 连接。
@@ -142,34 +146,34 @@ Claude Desktop 风格的配置入口在：
 api2agent-output/examples/claude_desktop_config.json
 ```
 
-## 8. 从 curl 生成
+## 8. 从 OpenAPI 生成
 
-如果还没有 OpenAPI 文件，可以先用 `--curl`：
+如果已有 OpenAPI 文件，优先用 OpenAPI。下面的示例路径存在于源码仓库；如果你只是安装了 release wheel，请替换成自己的 spec 路径。
 
 ```bash
-python -m api2agent.cli generate \
-  --curl="curl https://api.example.com/items?verbose=true --json '{\"name\":\"demo\"}'" \
-  --output api2agent-curl-output \
+api2agent generate \
+  examples/openapi/basic.yaml \
+  --output api2agent-openapi-output \
   --force
 
-python -m api2agent.cli inspect api2agent-curl-output
-python -m api2agent.cli diagnose api2agent-curl-output
+api2agent inspect api2agent-openapi-output
+api2agent diagnose api2agent-openapi-output
 ```
 
-curl 生成出的 write tools 会刻意给出更强 diagnostics。这是好事：compiler 应该在 Agent 调用前把风险暴露出来。
+OpenAPI spec 通常比临时 request capture 提供更强的 operation 描述、auth metadata、schemas 和 response shapes。
 
 ## 9. 从 HAR Capture 生成
 
 如果能在浏览器里抓到真实 network traffic，但还没有 OpenAPI 文件或 collection，可以使用 `--har`：
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --har tests/fixtures/har/basic_capture.har \
   --output api2agent-har-output \
   --force
 
-python -m api2agent.cli inspect api2agent-har-output
-python -m api2agent.cli diagnose api2agent-har-output
+api2agent inspect api2agent-har-output
+api2agent diagnose api2agent-har-output
 ```
 
 API2Agent 会把捕获到的 HTTP requests 转成 tools，过滤常见浏览器噪声 headers，并保留 query、body、auth hint 和 response-shape 证据。
@@ -179,13 +183,13 @@ API2Agent 会把捕获到的 HTTP requests 转成 tools，过滤常见浏览器�
 如果 API contract 在 Postman Collection 里，可以使用 `--postman`：
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --postman tests/fixtures/postman/basic_collection.json \
   --output api2agent-postman-output \
   --force
 
-python -m api2agent.cli inspect api2agent-postman-output
-python -m api2agent.cli diagnose api2agent-postman-output
+api2agent inspect api2agent-postman-output
+api2agent diagnose api2agent-postman-output
 ```
 
 Postman folders 会变成 tool tags，collection variables 可提供 base URL，request path/query/header/body 会被编译进同一套生成包格式。
@@ -195,12 +199,12 @@ Postman folders 会变成 tool tags，collection variables 可提供 base URL，
 如果 API requests 保存在 Insomnia 或 Bruno collection 工具里，可以使用 `--insomnia` 或 `--bruno`：
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --insomnia tests/fixtures/insomnia/basic_export.json \
   --output api2agent-insomnia-output \
   --force
 
-python -m api2agent.cli generate \
+api2agent generate \
   --bruno tests/fixtures/bruno/basic_collection.json \
   --output api2agent-bruno-output \
   --force
@@ -213,13 +217,13 @@ python -m api2agent.cli generate \
 如果已有 `.proto` 文件，并且希望生成最小 gRPC capability scaffolding，可以使用 `--proto`：
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --proto tests/fixtures/protobuf/user_service.proto \
   --output api2agent-grpc-output \
   --force
 
-python -m api2agent.cli inspect api2agent-grpc-output
-python -m api2agent.cli diagnose api2agent-grpc-output
+api2agent inspect api2agent-grpc-output
+api2agent diagnose api2agent-grpc-output
 ```
 
 这个 adapter 会导入 unary RPC 的 request/response message schemas，并跳过 streaming RPC。生成的 gRPC tools 是 schema scaffolds；真实执行还需要后续接入 gRPC client 或 proxy transport。
@@ -229,13 +233,13 @@ python -m api2agent.cli diagnose api2agent-grpc-output
 如果 AsyncAPI 文档描述了可调用的 HTTP webhook 或 publish endpoints，可以使用 `--asyncapi`：
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --asyncapi tests/fixtures/asyncapi/basic_webhook.yaml \
   --output api2agent-asyncapi-output \
   --force
 
-python -m api2agent.cli inspect api2agent-asyncapi-output
-python -m api2agent.cli diagnose api2agent-asyncapi-output
+api2agent inspect api2agent-asyncapi-output
+api2agent diagnose api2agent-asyncapi-output
 ```
 
 API2Agent 只会把 HTTP-bound publish/send operations 导入为 tools。它不会订阅事件、运行 broker、持久化 events，也不会变成 workflow runtime。
@@ -245,13 +249,13 @@ API2Agent 只会把 HTTP-bound publish/send operations 导入为 tools。它不�
 如果已有 n8n、Zapier、Make 或自建 webhook 暴露了一个 HTTP endpoint，可以使用 `--workflow`：
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --workflow tests/fixtures/workflow/basic_manifest.json \
   --output api2agent-workflow-output \
   --force
 
-python -m api2agent.cli inspect api2agent-workflow-output
-python -m api2agent.cli diagnose api2agent-workflow-output
+api2agent inspect api2agent-workflow-output
+api2agent diagnose api2agent-workflow-output
 ```
 
 API2Agent 会把这个 endpoint 编译成一个 Agent-callable tool。它不会执行、持久化或编排 workflow steps。
@@ -261,13 +265,13 @@ API2Agent 会把这个 endpoint 编译成一个 Agent-callable tool。它不会�
 如果已有 GraphQL endpoint，并且希望把固定 query 或 mutation operation 暴露成 Agent-callable tools，可以使用 `--graphql`：
 
 ```bash
-python -m api2agent.cli generate \
+api2agent generate \
   --graphql tests/fixtures/graphql/basic_manifest.json \
   --output api2agent-graphql-output \
   --force
 
-python -m api2agent.cli inspect api2agent-graphql-output
-python -m api2agent.cli diagnose api2agent-graphql-output
+api2agent inspect api2agent-graphql-output
+api2agent diagnose api2agent-graphql-output
 ```
 
 Agent 只需要把 operation variables 作为 `body` 传入。生成的 runner 会在调用 GraphQL endpoint 前包装成 `query`、`operationName` 和 `variables`。
@@ -277,7 +281,7 @@ Agent 只需要把 operation variables 作为 `body` 传入。生成的 runner �
 大型 OpenAPI spec 通常会暴露太多 endpoints，不适合直接给 Agent 做 tool selection。生成前先过滤：
 
 ```bash
-python -m api2agent.cli generate api.github.com.json \
+api2agent generate api.github.com.json \
   --include-tag repos \
   --include-path /repos \
   --include-operation listRepos \
