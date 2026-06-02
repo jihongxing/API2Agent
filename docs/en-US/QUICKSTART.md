@@ -3,7 +3,7 @@
 This quickstart proves the release-candidate path:
 
 ```text
-OpenAPI 3.x / curl
+OpenAPI 3.x / curl / Postman Collection
   -> API2Agent IR
   -> Agent capability package
   -> OpenAI tools schema
@@ -25,7 +25,7 @@ python -m pytest
 Expected test result:
 
 ```text
-239 passed
+242 passed
 ```
 
 ## 2. Generate From OpenAPI
@@ -145,7 +145,23 @@ python -m api2agent.cli diagnose api2agent-curl-output
 
 curl-generated write tools intentionally produce stronger diagnostics. That is useful: the compiler should make risky generated packages visible before an Agent can call them.
 
-## 9. Narrow Large APIs
+## 9. Generate From Postman Collection
+
+Use `--postman` when your API contract lives in a Postman Collection:
+
+```bash
+python -m api2agent.cli generate \
+  --postman tests/fixtures/postman/basic_collection.json \
+  --output api2agent-postman-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-postman-output
+python -m api2agent.cli diagnose api2agent-postman-output
+```
+
+Postman folders become tool tags, collection variables can provide the base URL, and request path/query/header/body shapes are compiled into the same generated package format.
+
+## 10. Narrow Large APIs
 
 Large OpenAPI specs often expose too many endpoints for Agent tool selection. Filter before generating:
 
@@ -167,11 +183,11 @@ Filtering rules:
 - `--max-tools` applies after other filters
 - `--include-path` accepts exact paths, substrings, or glob patterns
 
-## 10. What This Proves
+## 11. What This Proves
 
 The release candidate proves that API2Agent can:
 
-- parse OpenAPI and curl API descriptions
+- parse OpenAPI, curl, and Postman Collection API descriptions
 - compile them into a neutral capability model
 - generate OpenAI-compatible tool definitions
 - generate a runnable OpenAI Responses API tool-calling example

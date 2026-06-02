@@ -2,11 +2,11 @@
 
 API2Agent is the neutral infrastructure for turning APIs into Agent-callable capabilities.
 
-Current focus: ship the Agent Capability Compiler release candidate. The release path is intentionally narrow: convert OpenAPI 3.x or curl input into a local Agent capability package that can be inspected, diagnosed, smoke-tested, and exposed through MCP stdio.
+Current focus: expand the Agent Capability Compiler after the first release candidate. The release path stays narrow: convert API or API-equivalent descriptions into a local Agent capability package that can be inspected, diagnosed, smoke-tested, and exposed through MCP stdio.
 
 Strategic priority: make API-to-Agent onboarding fast, reproducible, and safe enough to be the base layer for later routing, observability, hosted control, and commercial workflows.
 
-Current implementation boundary: API-first. API2Agent supports OpenAPI/curl/HTTP APIs today and must not become a workflow engine.
+Current implementation boundary: API-first. API2Agent supports OpenAPI, curl, Postman Collection, and HTTP APIs today and must not become a workflow engine.
 
 Implementation language boundary: Python remains the Tooling reference implementation and local dogfood harness; Go owns the production Data Plane and Control Plane direction. API2Agent's neutrality is protected by language-neutral protocol artifacts, not by treating Python as the only runtime.
 
@@ -19,7 +19,7 @@ Agent Capability Compiler
 Release candidate promise:
 
 ```text
-OpenAPI / curl -> Agent-callable capability package
+OpenAPI / curl / Postman Collection -> Agent-callable capability package
 ```
 
 The release candidate must prove that API2Agent can take an existing API description and produce artifacts an Agent developer can actually use: `capability.json`, `tools.json`, `runner.py`, `mcp_server.py`, generated docs, diagnostics, and smoke tests.
@@ -29,7 +29,7 @@ Marketplace, hosted SaaS, billing, workflow runtime, and Hosted Control Plane wo
 Current build target:
 
 ```text
-OpenAPI 3.x / curl
+OpenAPI 3.x / curl / Postman Collection
   -> API2Agent IR
   -> generated runner
   -> smoke test
@@ -108,6 +108,12 @@ api2agent run api2agent-output
 `api2agent run` starts the generated MCP stdio server and keeps the process open for the client.
 
 Generation refuses to write into a non-empty output directory unless you pass `--force`.
+
+Postman Collection input is also supported:
+
+```bash
+api2agent generate --postman collection.json --output api2agent-postman-output --force
+```
 
 ## SDK Core Loop
 

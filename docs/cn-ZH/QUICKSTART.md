@@ -3,7 +3,7 @@
 这份 quickstart 证明当前可发布候选版本的主路径：
 
 ```text
-OpenAPI 3.x / curl
+OpenAPI 3.x / curl / Postman Collection
   -> API2Agent IR
   -> Agent capability package
   -> OpenAI tools schema
@@ -25,7 +25,7 @@ python -m pytest
 期望测试结果：
 
 ```text
-239 passed
+242 passed
 ```
 
 ## 2. 从 OpenAPI 生成
@@ -145,7 +145,23 @@ python -m api2agent.cli diagnose api2agent-curl-output
 
 curl 生成出的 write tools 会刻意给出更强 diagnostics。这是好事：compiler 应该在 Agent 调用前把风险暴露出来。
 
-## 9. 收窄大型 API
+## 9. 从 Postman Collection 生成
+
+如果 API contract 在 Postman Collection 里，可以使用 `--postman`：
+
+```bash
+python -m api2agent.cli generate \
+  --postman tests/fixtures/postman/basic_collection.json \
+  --output api2agent-postman-output \
+  --force
+
+python -m api2agent.cli inspect api2agent-postman-output
+python -m api2agent.cli diagnose api2agent-postman-output
+```
+
+Postman folders 会变成 tool tags，collection variables 可提供 base URL，request path/query/header/body 会被编译进同一套生成包格式。
+
+## 10. 收窄大型 API
 
 大型 OpenAPI spec 通常会暴露太多 endpoints，不适合直接给 Agent 做 tool selection。生成前先过滤：
 
@@ -167,11 +183,11 @@ python -m api2agent.cli generate api.github.com.json \
 - `--max-tools` 在其他 filter 之后生效
 - `--include-path` 支持精确路径、substring 或 glob pattern
 
-## 10. 证明了什么
+## 11. 证明了什么
 
 这个 release candidate 证明 API2Agent 可以：
 
-- 解析 OpenAPI 和 curl API 描述
+- 解析 OpenAPI、curl 和 Postman Collection API 描述
 - 编译成中立的 capability model
 - 生成 OpenAI-compatible tools
 - 生成可运行的 OpenAI Responses API tool-calling 示例

@@ -313,6 +313,37 @@ def test_generate_command_writes_provider_region_metadata(tmp_path) -> None:
     assert capability["provider_regions"] == ["us-east"]
 
 
+def test_generate_command_accepts_postman_collection(tmp_path) -> None:
+    output_dir = tmp_path / "api2agent-output"
+
+    result = runner.invoke(
+        app,
+        [
+            "generate",
+            "--postman",
+            "tests/fixtures/postman/basic_collection.json",
+            "--include-tag",
+            "Users",
+            "--max-tools",
+            "1",
+            "--output",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    capability = json.loads((output_dir / "capability.json").read_text(encoding="utf-8"))
+    readme = (output_dir / "README.md").read_text(encoding="utf-8")
+    tools = json.loads((output_dir / "tools.json").read_text(encoding="utf-8"))
+
+    assert capability["name"] == "postman_demo_api"
+    assert capability["source"].endswith("basic_collection.json")
+    assert [tool["name"] for tool in capability["tools"]] == ["get_user"]
+    assert capability["tools"][0]["path"] == "/users/{user_id}"
+    assert tools[0]["function"]["name"] == "get_user"
+    assert "get_user" in readme
+
+
 def test_generate_command_warns_for_large_unfiltered_openapi_package(tmp_path) -> None:
     paths = {
         f"/items/{index}": {
