@@ -42,14 +42,14 @@ OpenAPI 3.x / curl / HAR / Postman / Insomnia / Bruno / protobuf / AsyncAPI webh
 
 The current public release candidate is distributed through GitHub Release assets:
 
-- [v0.1.0rc2 release](https://github.com/jihongxing/API2Agent/releases/tag/v0.1.0rc2)
-- `api2agent-0.1.0rc2-py3-none-any.whl`
-- `api2agent-0.1.0rc2.tar.gz`
+- [v0.1.0rc3 release](https://github.com/jihongxing/API2Agent/releases/tag/v0.1.0rc3)
+- `api2agent-0.1.0rc3-py3-none-any.whl`
+- `api2agent-0.1.0rc3.tar.gz`
 
 Install the wheel directly:
 
 ```bash
-python -m pip install https://github.com/jihongxing/API2Agent/releases/download/v0.1.0rc2/api2agent-0.1.0rc2-py3-none-any.whl
+python -m pip install https://github.com/jihongxing/API2Agent/releases/download/v0.1.0rc3/api2agent-0.1.0rc3-py3-none-any.whl
 api2agent --help
 ```
 

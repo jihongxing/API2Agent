@@ -19,7 +19,7 @@ The current release focus is the Agent Capability Compiler. Routing, proxy usage
 Install the current release candidate from GitHub Release:
 
 ```bash
-python -m pip install https://github.com/jihongxing/API2Agent/releases/download/v0.1.0rc2/api2agent-0.1.0rc2-py3-none-any.whl
+python -m pip install https://github.com/jihongxing/API2Agent/releases/download/v0.1.0rc3/api2agent-0.1.0rc3-py3-none-any.whl
 api2agent --help
 ```
 

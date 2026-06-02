@@ -4,9 +4,13 @@ All notable API2Agent changes will be documented in this file.
 
 ## Unreleased
 
+No changes yet.
+
+## v0.1.0rc3 - 2026-06-02
+
 ### Changed
 
-- Clarify GitHub Release as the canonical RC2 install path and move the active roadmap phase to release-surface completion plus real user onboarding dogfood.
+- Clarify GitHub Release as the canonical RC3 install path and move the active roadmap phase to release-surface completion plus real user onboarding dogfood.
 
 ### Fixed
 

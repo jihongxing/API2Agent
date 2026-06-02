@@ -19,7 +19,7 @@ OpenAPI 3.x / curl / HAR / Postman / Insomnia / Bruno / protobuf / AsyncAPI webh
 从 GitHub Release 安装当前 release candidate：
 
 ```bash
-python -m pip install https://github.com/jihongxing/API2Agent/releases/download/v0.1.0rc2/api2agent-0.1.0rc2-py3-none-any.whl
+python -m pip install https://github.com/jihongxing/API2Agent/releases/download/v0.1.0rc3/api2agent-0.1.0rc3-py3-none-any.whl
 api2agent --help
 ```
 
